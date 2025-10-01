@@ -12,7 +12,7 @@ This plan follows the steering guidance:
 **Overview:** HUD: Inject a Shadow DOM panel (draggable, high `z-index`, non‑blocking `pointer-events`). Controls: Detect, Auto‑solve, Step, direction priority. Adapters: Implement two per the steering contract: play2048‑style and generic numeric 4×4. Use the Adapter Registry pattern. Driver: Naive DOM‑change loop. Send preferred direction; wait ~120–150 ms; accept only on board hash change; randomize if stuck. Change detection: Add a MutationObserver on likely containers; pause loop when `document.visibilityState !== 'visible'`. Shared runtime: Organize code to compile to both IIFE (bookmarklet) and MV3 `content.js` with no logic drift. Target site: Ensure compatibility with https://mitchgu.github.io/GetMIT/. Deliverables: `2048-hud.min.js` and `content.js` from one codebase.
 **Requirements:** 1.2, 1.4, 1.5, 3.1, 3.2, 3.5, 7.1, 7.4
 
-- [ ] 0.1 Core game detection and adapter system
+- [x] 0.1 Core game detection and adapter system
 
   - Create base Adapter interface with canAttach(), readBoard(), sendMove() methods per steering contract
   - Implement play2048‑style adapter with DOM selectors for tiles and score
@@ -21,7 +21,7 @@ This plan follows the steering guidance:
   - Ensure compatibility with https://mitchgu.github.io/GetMIT/
   - _Requirements: 1.3, 3.1, 3.5_
 
-- [ ] 0.2 Shadow DOM HUD overlay
+- [x] 0.2 Shadow DOM HUD overlay
 
   - Inject Shadow DOM panel (draggable, high `z-index`, non‑blocking `pointer-events`)
   - Implement draggable, collapsible HUD panel
@@ -29,7 +29,7 @@ This plan follows the steering guidance:
   - Style with CSS to avoid conflicts with host page
   - _Requirements: 1.2, 7.2_
 
-- [ ] 0.3 Basic move execution system (Driver)
+- [x] 0.3 Basic move execution system (Driver)
 
   - Implement naive DOM‑change loop
   - Send preferred direction; wait ~120–150 ms; accept only on board hash change; randomize if stuck
@@ -39,7 +39,7 @@ This plan follows the steering guidance:
   - Add DOM change detection to verify move completion
   - _Requirements: 3.2, 7.1, 7.4_
 
-- [ ] 0.4 Change detection and visibility handling
+- [x] 0.4 Change detection and visibility handling
 
   - Add MutationObserver on likely containers
   - Pause loop when `document.visibilityState !== 'visible'`
@@ -48,7 +48,7 @@ This plan follows the steering guidance:
   - Create game end detection logic
   - _Requirements: 1.4, 6.3, 6.4_
 
-- [ ] 0.5 Shared runtime architecture
+- [x] 0.5 Shared runtime architecture
   - Organize code to compile to both IIFE (bookmarklet) and MV3 `content.js` with no logic drift
   - Structure code for dual compilation (IIFE + content script)
   - Create build system for bookmarklet and extension outputs

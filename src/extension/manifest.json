@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "2048 HUD Solver",
+  "version": "0.1.0",
+  "description": "Detects 2048-like boards, overlays a HUD, and can auto-play via simulated inputs.",
+  "action": { "default_title": "2048 HUD" },
+  "host_permissions": ["<all_urls>"],
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
+

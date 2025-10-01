@@ -28,6 +28,7 @@ export class Runtime {
     this.observer = null;
     this.visibilityHandler = null;
     this.currentAdapter = null;
+    this.directionPriority = null;
 
     // State
     this.isInitialized = false;
@@ -59,6 +60,10 @@ export class Runtime {
       // Initialize HUD
       if (this.options.enableHUD) {
         this.hud = initHUD();
+        if (this.hud) {
+          this.hud.setController(this._createHUDController());
+          this.directionPriority = this.hud.getDirectionPriority();
+        }
 
         // Connect HUD to visibility handler
         if (this.visibilityHandler) {
@@ -123,6 +128,14 @@ export class Runtime {
 
     this.driver.setAdapter(this.currentAdapter);
 
+    // Apply direction priority from HUD/user selection if available
+    if (this.hud) {
+      this.directionPriority = this.hud.getDirectionPriority();
+    }
+    if (this.directionPriority) {
+      this.driver.setDirectionPriority([...this.directionPriority]);
+    }
+
     // Set up driver callbacks
     this.driver.onBoardChange = this.handleBoardChange;
     this.driver.onGameOver = this.handleGameOver;
@@ -171,6 +184,10 @@ export class Runtime {
     this.driver.start();
     this.isRunning = true;
 
+    if (this.hud) {
+      this.hud.updateRunState(true);
+    }
+
     console.log("Runtime started");
   }
 
@@ -188,6 +205,9 @@ export class Runtime {
     }
 
     this.isRunning = false;
+    if (this.hud) {
+      this.hud.updateRunState(false);
+    }
     console.log("Runtime stopped");
   }
 
@@ -197,7 +217,11 @@ export class Runtime {
   pause() {
     if (this.driver && this.isRunning) {
       this.driver.pause();
+      this.isRunning = false;
       console.log("Runtime paused");
+      if (this.hud) {
+        this.hud.updateRunState(false);
+      }
     }
   }
 
@@ -205,9 +229,13 @@ export class Runtime {
    * Resume automated solving
    */
   resume() {
-    if (this.driver && this.isRunning) {
+    if (this.driver && !this.isRunning) {
       this.driver.resume();
+      this.isRunning = true;
       console.log("Runtime resumed");
+      if (this.hud) {
+        this.hud.updateRunState(true);
+      }
     }
   }
 
@@ -275,6 +303,30 @@ export class Runtime {
   }
 
   /**
+   * Create controller interface for HUD interactions
+   * @private
+   * @returns {Object} Controller API used by HUD
+   */
+  _createHUDController() {
+    return {
+      detectGame: () => this.detectGame(),
+      start: () => this.start(),
+      stop: () => this.stop(),
+      step: () => this.step(),
+      isRunning: () => this.isRunning,
+      getCurrentAdapter: () => this.currentAdapter,
+      setDirectionPriority: (priorities) => {
+        if (Array.isArray(priorities) && priorities.length === 4) {
+          this.directionPriority = [...priorities];
+          if (this.driver) {
+            this.driver.setDirectionPriority([...priorities]);
+          }
+        }
+      },
+    };
+  }
+
+  /**
    * Get runtime statistics
    * @returns {Object} Statistics object
    */
@@ -311,6 +363,7 @@ export class Runtime {
     }
 
     if (this.hud) {
+      this.hud.setController(null);
       destroyHUD();
       this.hud = null;
     }

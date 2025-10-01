@@ -75,6 +75,19 @@ runtime.resume();
 runtime.stop();
 ```
 
+## 🛠️ Build Outputs
+
+```
+node scripts/build-phase0.js
+```
+
+The build script bundles the shared runtime into both delivery targets:
+
+- `src/extension/content.js` – MV3/WebExtension content script (generated)
+- `dist/2048-hud.js` / `dist/2048-hud.min.js` – bookmarklet/IIFE payload
+
+> The `.min.js` file is currently a direct copy of the bundle; run your preferred minifier if further compression is required.
+
 ## 🎮 Supported Games
 
 ### Primary Target

@@ -96,11 +96,32 @@ export class Play2048Adapter extends Adapter {
    */
   getScore() {
     try {
-      const scoreElement = document.querySelector(".score-container .score");
-      if (scoreElement) {
-        const scoreText = scoreElement.textContent.trim();
-        const score = parseInt(scoreText.replace(/,/g, ""), 10);
-        return isNaN(score) ? null : score;
+      const selectors = [
+        ".score-container .score",
+        ".score-container",
+        ".current-score",
+        "#score",
+      ];
+
+      for (const selector of selectors) {
+        const scoreElement = document.querySelector(selector);
+        if (scoreElement) {
+          // Ignore best score containers
+          if (scoreElement.classList?.contains("best-container")) {
+            continue;
+          }
+
+          const scoreText = (scoreElement.textContent || "").trim();
+          if (!scoreText) continue;
+
+          const sanitized = scoreText.replace(/[^\d]/g, "");
+          if (!sanitized) continue;
+
+          const score = parseInt(sanitized, 10);
+          if (!Number.isNaN(score)) {
+            return score;
+          }
+        }
       }
       return null;
     } catch (error) {

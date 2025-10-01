@@ -19,6 +19,8 @@ export class HUD {
     this.dragOffset = { x: 0, y: 0 };
     this.currentAdapter = null;
     this.isAutoSolving = false;
+    this.autoSolveTimeout = null;
+    this.controller = null;
     this.directionPriority = [
       Direction.LEFT,
       Direction.DOWN,
@@ -373,6 +375,13 @@ export class HUD {
     directionSelect.addEventListener("change", (e) => {
       const priorities = e.target.value.split(",").map(Number);
       this.directionPriority = priorities;
+      if (this.controller && this.controller.setDirectionPriority) {
+        try {
+          this.controller.setDirectionPriority([...priorities]);
+        } catch (error) {
+          console.warn("HUD: Failed to update direction priority via controller", error);
+        }
+      }
     });
 
     // Global mouse events for dragging
@@ -449,7 +458,28 @@ export class HUD {
    * Handle detect game button click
    * @private
    */
-  handleDetectClick() {
+  async handleDetectClick() {
+    if (this.controller) {
+      try {
+        const detectFn = this.controller.detectGame?.bind(this.controller);
+        const detected = detectFn ? await Promise.resolve(detectFn()) : false;
+        if (this.controller.getCurrentAdapter) {
+          const adapterFromController = this.controller.getCurrentAdapter();
+          if (adapterFromController) {
+            this.currentAdapter = adapterFromController;
+          }
+        }
+        this.updateStatus();
+        if (!detected && !this.currentAdapter) {
+          this.showMessage("No game detected.");
+        }
+      } catch (error) {
+        console.warn("HUD: Controller-driven detect failed", error);
+        this.showMessage("Detect failed. Check console.");
+      }
+      return;
+    }
+
     this.currentAdapter = detectGame();
     this.updateStatus();
   }
@@ -458,9 +488,37 @@ export class HUD {
    * Handle auto-solve button click
    * @private
    */
-  handleAutoSolveClick() {
+  async handleAutoSolveClick() {
     if (!this.currentAdapter) {
-      this.showMessage('No game detected. Click "Detect Game" first.');
+      await this.handleDetectClick();
+      if (!this.currentAdapter) {
+        this.showMessage('No game detected. Click "Detect Game" first.');
+        return;
+      }
+    }
+
+    if (this.controller) {
+      try {
+        const isRunning = this.controller.isRunning?.bind(this.controller);
+        const currentlyRunning = isRunning ? !!isRunning() : this.isAutoSolving;
+
+        if (currentlyRunning) {
+          const stopFn = this.controller.stop?.bind(this.controller);
+          if (stopFn) {
+            await Promise.resolve(stopFn());
+          }
+          this.updateRunState(false);
+        } else {
+          const startFn = this.controller.start?.bind(this.controller);
+          if (startFn) {
+            await Promise.resolve(startFn());
+          }
+          this.updateRunState(true);
+        }
+      } catch (error) {
+        console.warn("HUD: Failed to toggle auto-solve via controller", error);
+        this.showMessage("Auto-solve toggle failed. Check console.");
+      }
       return;
     }
 
@@ -475,9 +533,25 @@ export class HUD {
    * Handle step button click
    * @private
    */
-  handleStepClick() {
+  async handleStepClick() {
     if (!this.currentAdapter) {
-      this.showMessage('No game detected. Click "Detect Game" first.');
+      await this.handleDetectClick();
+      if (!this.currentAdapter) {
+        this.showMessage('No game detected. Click "Detect Game" first.');
+        return;
+      }
+    }
+
+    if (this.controller) {
+      try {
+        const stepFn = this.controller.step?.bind(this.controller);
+        if (stepFn) {
+          await Promise.resolve(stepFn());
+        }
+      } catch (error) {
+        console.warn("HUD: Step failed via controller", error);
+        this.showMessage("Step failed. Check console.");
+      }
       return;
     }
 
@@ -501,6 +575,13 @@ export class HUD {
    * @private
    */
   updateStatus() {
+    if (this.controller && this.controller.getCurrentAdapter) {
+      const controllerAdapter = this.controller.getCurrentAdapter();
+      if (controllerAdapter) {
+        this.currentAdapter = controllerAdapter;
+      }
+    }
+
     const gameStatus = this.shadowRoot.getElementById("game-status");
     const scoreStatus = this.shadowRoot.getElementById("score-status");
     const autoSolveBtn = this.shadowRoot.getElementById("auto-solve-btn");
@@ -526,16 +607,45 @@ export class HUD {
   }
 
   /**
+   * Update run state UI to reflect automation status
+   * @param {boolean} isRunning Whether automation is active
+   */
+  updateRunState(isRunning) {
+    this.isAutoSolving = !!isRunning;
+
+    if (this.hudElement) {
+      this.hudElement.classList.toggle("auto-solving", this.isAutoSolving);
+    }
+
+    const autoSolveBtn = this.shadowRoot?.getElementById("auto-solve-btn");
+    if (autoSolveBtn) {
+      autoSolveBtn.textContent = this.isAutoSolving
+        ? "⏸️ Pause"
+        : "▶️ Auto-solve";
+    }
+  }
+
+  /**
    * Start auto-solving
    * @private
    */
-  startAutoSolve() {
-    this.isAutoSolving = true;
-    this.hudElement.classList.add("auto-solving");
+  async startAutoSolve() {
+    if (this.controller) {
+      try {
+        const startFn = this.controller.start?.bind(this.controller);
+        if (startFn) {
+          await Promise.resolve(startFn());
+        }
+        const running = this.controller.isRunning?.bind(this.controller);
+        this.updateRunState(running ? !!running() : true);
+      } catch (error) {
+        console.warn("HUD: startAutoSolve controller invocation failed", error);
+        this.showMessage("Auto-solve failed. Check console.");
+      }
+      return;
+    }
 
-    const autoSolveBtn = this.shadowRoot.getElementById("auto-solve-btn");
-    autoSolveBtn.textContent = "⏸️ Pause";
-
+    this.updateRunState(true);
     this.autoSolveLoop();
   }
 
@@ -543,12 +653,26 @@ export class HUD {
    * Stop auto-solving
    * @private
    */
-  stopAutoSolve() {
-    this.isAutoSolving = false;
-    this.hudElement.classList.remove("auto-solving");
+  async stopAutoSolve() {
+    if (this.controller) {
+      try {
+        const stopFn = this.controller.stop?.bind(this.controller);
+        if (stopFn) {
+          await Promise.resolve(stopFn());
+        }
+      } catch (error) {
+        console.warn("HUD: stopAutoSolve controller invocation failed", error);
+      }
+      this.updateRunState(false);
+      return;
+    }
 
-    const autoSolveBtn = this.shadowRoot.getElementById("auto-solve-btn");
-    autoSolveBtn.textContent = "▶️ Auto-solve";
+    if (this.autoSolveTimeout) {
+      clearTimeout(this.autoSolveTimeout);
+      this.autoSolveTimeout = null;
+    }
+
+    this.updateRunState(false);
   }
 
   /**
@@ -572,7 +696,7 @@ export class HUD {
     this.updateStatus();
 
     // Continue loop with delay
-    setTimeout(() => {
+    this.autoSolveTimeout = setTimeout(() => {
       this.autoSolveLoop();
     }, 150); // 150ms delay between moves
   }
@@ -641,11 +765,51 @@ export class HUD {
   }
 
   /**
+   * Connect HUD to external controller (e.g., runtime)
+   * @param {Object|null} controller Controller interface
+   */
+  setController(controller) {
+    this.controller = controller || null;
+
+    if (this.controller && this.controller.getCurrentAdapter) {
+      const adapter = this.controller.getCurrentAdapter();
+      if (adapter) {
+        this.currentAdapter = adapter;
+      }
+    }
+
+    if (this.controller && this.controller.isRunning) {
+      try {
+        this.updateRunState(!!this.controller.isRunning());
+      } catch (error) {
+        console.warn("HUD: Failed to read controller run state", error);
+      }
+    } else {
+      this.updateRunState(false);
+    }
+
+    this.updateStatus();
+  }
+
+  /**
+   * Get current direction priority selection
+   * @returns {number[]} Direction priority array
+   */
+  getDirectionPriority() {
+    return [...this.directionPriority];
+  }
+
+  /**
    * Destroy the HUD and clean up
    */
   destroy() {
     if (this.isAutoSolving) {
       this.stopAutoSolve();
+    }
+
+    if (this.autoSolveTimeout) {
+      clearTimeout(this.autoSolveTimeout);
+      this.autoSolveTimeout = null;
     }
 
     // Remove event listeners

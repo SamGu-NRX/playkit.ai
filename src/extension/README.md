@@ -2,7 +2,7 @@
 
 What’s included
 - `manifest.json`: MV3 manifest to inject a content script on all pages.
-- `content.js`: Shadow‑DOM HUD, detectors (play2048 + generic numeric), and a naive driver that dispatches arrow keys and synthetic swipes.
+- `content.js`: Generated bundle from the shared runtime (`node scripts/build-phase0.js`). Includes the Shadow DOM HUD, adapter registry, driver, mutation observer, and runtime glue code.
 
 Load as an unpacked extension
 1. Open Chrome/Edge/Brave → `chrome://extensions`.
@@ -12,13 +12,12 @@ Load as an unpacked extension
 
 Notes
 - HUD runs in a Shadow DOM with a high `z-index` and is draggable.
-- Adapters are pluggable. To add one, push an object with `canAttach`, `readBoard`, `sendMove` into the `adapters` array in `content.js`.
+- Extend functionality by editing the source modules in `src/` (e.g., `src/adapters`, `src/hud`, `src/runtime`) and regenerate the bundle via `node scripts/build-phase0.js`.
 - The driver throttles to ~130ms per attempt and only advances when the board DOM changes.
-- For mobile-only clones, `sendMove` also simulates a swipe gesture.
+- For mobile-only clones, adapters also simulate swipe gestures when available.
 
 Bookmarklet (optional)
 - See `src/bookmarklet/loader.js` for a bookmarklet loader. You’ll need to host a minified build of `content.js` and replace `CDN_URL` in the snippet.
 
 Future integration with C++/WASM
 - The existing C++ solver in `solver/` can be compiled to WebAssembly and integrated behind the HUD. The current content script isolates the UI/driver so a WASM solver can be swapped in later via a small interface.
-

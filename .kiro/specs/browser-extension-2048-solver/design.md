@@ -43,6 +43,15 @@ In addition to the full MV3/WebExtension architecture above (popup + background 
 
 This path is desktop‑first and lets us ship a bookmarklet for quick testing. The extension remains the primary delivery for reliability under restrictive CSP.
 
+### Language & Build Strategy
+
+- Default source: JavaScript with JSDoc types for adapters, driver, and HUD.
+- Optional: TypeScript for internal modules if/when a bundler is introduced; ship JS bundles either way.
+- Outputs: a single shared runtime compiled into two targets:
+  - IIFE for the bookmarklet (`2048-hud.min.js`)
+  - MV3/WebExtension content script (`content.js`)
+- Constraints: keep bundle small (target ≤ ~20 KB gzipped) and rely on DOM/Shadow DOM APIs only (no frameworks, no external network calls by default).
+
 ### Component Architecture
 
 1. **Extension Core**
@@ -72,6 +81,15 @@ This path is desktop‑first and lets us ship a bookmarklet for quick testing. T
    - Shadow DOM isolation, high z-index
    - Minimal controls: Detect, Auto‑solve, Step, Strategy/priority selector
    - Non‑blocking pointer events to avoid interfering with the game canvas
+
+### Canvas‑Only Variants (Optional Fallbacks)
+
+Some sites render the board exclusively to `<canvas>`. Provide opt‑in fallbacks behind a feature flag (disabled by default):
+
+- OCR mode: capture canvas to image and run digit recognition (e.g., Tesseract.js). Slower; best‑effort.
+- Trainer mode: user marks 16 hotspots once; HUD records bounding boxes and tracks values from DOM hints.
+
+These do not block the DOM‑based overlay path.
 
 ## Components and Interfaces
 
@@ -348,6 +366,12 @@ class ErrorHandler {
 
 - Primary distribution is extension builds (MV3/WebExtension/Safari) to bypass restrictive CSP.
 - Provide a minified IIFE bundle for use as a bookmarklet; document an inline, self‑contained variant when remote loads are blocked.
+
+## Language Choice (TS vs JS)
+
+- Ship a no‑build JavaScript path first (bookmarklet + content script).
+- If a bundler exists, adopt TypeScript internally while keeping public interfaces stable. Emit `.d.ts` when helpful.
+- Do not block delivery on TypeScript.
 
 ## Mobile Platform Support
 

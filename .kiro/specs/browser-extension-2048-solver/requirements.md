@@ -16,10 +16,12 @@ This feature involves creating a browser extension that can automatically play 2
    - a Manifest V3 extension build for desktop Chromium browsers (Chrome/Edge/Brave),
    - a WebExtension build for desktop Firefox,
    - and a Safari Web Extension package for Safari (desktop and iOS via Apple tooling).
-2. WHEN a user visits a webpage containing a 2048-like game THEN the system SHALL display an in‑page activation control in a Shadow‑DOM HUD overlay (content script/bookmarklet), without conflicting with page CSS.
+2. WHEN a user visits a webpage containing a 2048-like game THEN the system SHALL display an in‑page activation control in a Shadow‑DOM HUD overlay (content script/bookmarklet), without conflicting with page CSS and without blocking the game canvas (high `z-index`, appropriate `pointer-events`).
 3. WHEN the game board is detected THEN the system SHALL extract the current 4×4 grid state and tile values via a pluggable adapter.
 4. WHEN the user clicks the activation button THEN the system SHALL begin automatically playing using the current strategy.
 5. WHEN Content Security Policy (CSP) blocks remote scripts or eval THEN the Chromium/Firefox/Safari extension builds SHALL continue to function; additionally, a bookmarklet mode SHALL be provided for quick ad‑hoc use, with documentation on an inline (self‑contained) fallback.
+6. The bookmarklet and extension SHALL share a single runtime codebase compiled into two outputs (IIFE and content script) to minimize drift.
+7. The bookmarklet bundle SHOULD be ≤ ~20 KB gzipped and SHALL avoid heavy frameworks.
 
 ### Requirement 2 — Strategy Selection & Parameters
 
@@ -29,7 +31,7 @@ This feature involves creating a browser extension that can automatically play 2
 
 1. WHEN the user opens settings (popup or HUD) THEN the system SHALL display strategies including Expectimax, Monte Carlo, and heuristic-based approaches, with a default “naive” runtime strategy (direction bias + DOM‑change check).
 2. WHEN the user selects an AI strategy THEN the system SHALL allow configuration of strategy-specific parameters (depth, trials, heuristic weights) and persist them per origin.
-3. WHEN the user changes algorithm settings THEN the system SHALL apply the new configuration to subsequent moves without requiring page reload.
+3. WHEN the user changes algorithm settings THEN the system SHALL apply the new configuration to subsequent moves without requiring page reload and persist settings per‑origin.
 4. WHEN using Expectimax strategy THEN the system SHALL allow selection of heuristics (corner, monotonicity, wall-building, score-based) consistent with the C++ implementation.
 
 ### Requirement 3 — Cross‑Implementation Support & Mobile Reality
@@ -43,6 +45,7 @@ This feature involves creating a browser extension that can automatically play 2
 3. WHEN targeting mobile platforms THEN the system SHALL provide packaged support for Firefox for Android and Safari on iOS (via Safari Web Extension). Chrome on Android/iOS lacks extension support and SHALL be documented as unsupported; optional alternatives (bookmarklet with limitations or a mini‑browser app) SHALL be documented.
 4. WHEN running on supported mobile browsers THEN the system SHALL maintain detection and move execution parity with desktop.
 5. WHEN the extension encounters the target site https://mitchgu.github.io/GetMIT/ THEN the system SHALL successfully detect and play the game (adapter may be site‑specific).
+6. WHEN the game is canvas‑only THEN the system MAY provide an OCR or trainer fallback behind a feature flag and disabled by default.
 
 ### Requirement 4 — Real‑Time Feedback & Control
 
@@ -67,6 +70,7 @@ This feature involves creating a browser extension that can automatically play 2
 3. WHEN heuristics are applied THEN the system SHALL produce identical evaluations to the C++ implementation.
 4. WHEN strategies are executed THEN the system SHALL achieve similar performance metrics (win rates, average scores) as the original solver.
 5. WHEN the WASM module fails to load or initialize THEN the system SHALL fall back to the naive runtime strategy (direction bias + DOM‑change check) without crashing.
+6. The WebAssembly integration SHALL not introduce external network dependencies; artifacts are packaged with the extension.
 
 ### Requirement 6 — Robustness & Edge Cases
 
@@ -79,6 +83,7 @@ This feature involves creating a browser extension that can automatically play 2
 3. WHEN the game ends (win or lose) THEN the system SHALL detect the end state and stop automation.
 4. WHEN the webpage structure changes THEN the system SHALL attempt to re-detect the game board automatically and reattach the adapter.
 5. WHEN visibility changes to hidden THEN the system SHALL pause the automation loop and resume when visible.
+6. WHEN the DOM structure changes on a supported site THEN the system SHALL attempt adapter re‑detection and re‑attachment with bounded retries.
 
 ### Requirement 7 — Performance, CSP, and Overlay UX
 
@@ -89,7 +94,14 @@ This feature involves creating a browser extension that can automatically play 2
 1. WHEN running the automation loop THEN the system SHALL throttle attempts to roughly 100–150 ms and only enqueue a new move when a DOM change indicates progress.
 2. WHEN injecting the HUD THEN the system SHALL render it inside a Shadow DOM, maintain a high `z-index`, and use `pointer-events` to avoid blocking the game canvas.
 3. WHEN CSP blocks remote scripts THEN the system SHALL use the extension build; the bookmarklet SHALL offer an inline self-contained build option.
-4. WHEN executing moves THEN the system SHALL verify changes via a board hash and log no‑ops for diagnostics.
+4. WHEN executing moves THEN the system SHALL verify changes via a board hash and log no‑ops for diagnostics; a `MutationObserver` SHOULD be used to reduce polling and as a wakeup signal.
+5. The runtime SHALL avoid heavy dependencies and keep bundle size small to minimize page impact.
+
+### Requirement 9 — Language & Tooling (Pragmatic TS)
+
+1. The implementation SHALL function without a build step using JavaScript with JSDoc types where practical.
+2. If a bundler is introduced, the implementation MAY adopt TypeScript for internal modules while shipping JavaScript bundles; TypeScript adoption SHALL NOT block delivery.
+3. Public interfaces (adapters, solver engine) SHALL remain stable regardless of JS/TS choice.
 
 ### Requirement 8 — Ethics & TOS
 

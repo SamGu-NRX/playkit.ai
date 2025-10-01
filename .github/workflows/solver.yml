@@ -1,0 +1,32 @@
+name: Solver CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'solver/**'
+      - '.github/workflows/solver.yml'
+  pull_request:
+    paths:
+      - 'solver/**'
+      - '.github/workflows/solver.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./solver
+
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install C++ compiler (clang)
+        run: sudo apt-get update && sudo apt-get install -y clang
+
+      - name: Build and run tests
+        run: ./run.sh

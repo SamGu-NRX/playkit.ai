@@ -1561,6 +1561,7 @@
         this.adapter = null;
         this.isRunning = false;
         this.isPaused = false;
+        this.solverEngine = null;
     
         // Configuration
         this.config = {
@@ -1615,6 +1616,14 @@
         if (Array.isArray(priorities) && priorities.length === 4) {
           this.directionPriority = [...priorities];
         }
+      }
+    
+      /**
+       * Attach a solver engine to generate move priorities.
+       * @param {Object|null} engine Solver engine with getMoveOrder(board) method
+       */
+      setSolverEngine(engine) {
+        this.solverEngine = engine || null;
       }
     
       /**
@@ -1758,9 +1767,9 @@
         }
     
         const hashBefore = BoardUtils.hashBoard(boardBefore);
+        const movePriority = await this.getMovePriority(boardBefore);
     
-        // Try each direction in priority order
-        for (const direction of this.directionPriority) {
+        for (const direction of movePriority) {
           const success = await this.tryMove(direction, hashBefore);
           if (success) {
             this.moveCount++;
@@ -1815,12 +1824,40 @@
       }
     
       /**
+       * Compute ordered directions using solver engine if available.
+       * @private
+       * @param {number[][]} board
+       * @returns {Promise<number[]>}
+       */
+      async getMovePriority(board) {
+        const fallback = [...this.directionPriority];
+    
+        if (!this.solverEngine || typeof this.solverEngine.getMoveOrder !== "function") {
+          return fallback;
+        }
+    
+        try {
+          const nextDirections = await this.solverEngine.getMoveOrder(board);
+          return normalizeMovePriority(nextDirections, fallback);
+        } catch (error) {
+          console.warn("Driver: solver getMoveOrder failed", error);
+          if (this.onError) {
+            this.onError(error);
+          }
+          return fallback;
+        }
+      }
+    
+      /**
        * Execute a random move when stuck
        * @private
        * @returns {Promise<boolean>} True if move was successful
        */
       async executeRandomMove() {
-        const randomDirection = Math.floor(Math.random() * 4);
+        const priority = await this.getMovePriority(
+          this.adapter.readBoard() || BoardUtils.createEmptyBoard(),
+        );
+        const randomDirection = priority[Math.floor(Math.random() * priority.length)] ?? 0;
         console.log(`Driver stuck, trying random direction: ${randomDirection}`);
     
         const boardBefore = this.adapter.readBoard();
@@ -1893,6 +1930,7 @@
         );
     
         this.adapter = null;
+        this.solverEngine = null;
         this.onMove = null;
         this.onBoardChange = null;
         this.onGameOver = null;
@@ -1915,6 +1953,37 @@
       }
     
       return driver;
+    }
+    
+    /**
+     * Sanitize solver-provided direction order.
+     * @param {number[]} directions
+     * @param {number[]} fallback
+     * @returns {number[]}
+     */
+    function normalizeMovePriority(directions, fallback) {
+      const result = [];
+      const seen = new Set();
+    
+      const append = (dir) => {
+        if (!Number.isInteger(dir)) return;
+        if (dir < 0 || dir > 3) return;
+        if (seen.has(dir)) return;
+        seen.add(dir);
+        result.push(dir);
+      };
+    
+      if (Array.isArray(directions)) {
+        directions.forEach(append);
+      }
+    
+      (fallback || []).forEach(append);
+    
+      for (let dir = 0; dir < 4 && result.length < 4; dir++) {
+        append(dir);
+      }
+    
+      return result.slice(0, 4);
     }
     
     exports.Driver = Driver;
@@ -1961,6 +2030,20 @@
           Direction.RIGHT,
           Direction.UP,
         ];
+        this.solverConfig = {
+          type: "expectimax-depth",
+          heuristic: "corner",
+          depth: 4,
+          probability: 0.0025,
+        };
+        this.solverElements = {
+          status: null,
+          strategy: null,
+          heuristic: null,
+          depth: null,
+          probability: null,
+        };
+        this._isUpdatingSolverControls = false;
     
         // Bind methods for event handlers
         this.handleMouseDown = this.handleMouseDown.bind(this);
@@ -1970,6 +2053,7 @@
         this.handleAutoSolveClick = this.handleAutoSolveClick.bind(this);
         this.handleStepClick = this.handleStepClick.bind(this);
         this.handleCollapseClick = this.handleCollapseClick.bind(this);
+        this.handleSolverControlChange = this.handleSolverControlChange.bind(this);
       }
     
       /**
@@ -1982,8 +2066,10 @@
         }
     
         this.createShadowDOM();
+        this.cacheDomReferences();
         this.attachEventListeners();
         this.updateStatus();
+        this.updateSolverStatus(null);
     
         console.log("HUD initialized");
       }
@@ -2011,6 +2097,22 @@
     
         // Position HUD in top-right corner initially
         this.positionHUD(window.innerWidth - 320, 20);
+      }
+    
+      /**
+       * Cache frequently used DOM references inside the shadow root
+       * @private
+       */
+      cacheDomReferences() {
+        if (!this.shadowRoot) return;
+    
+        this.solverElements = {
+          status: this.shadowRoot.getElementById("solver-status"),
+          strategy: this.shadowRoot.getElementById("solver-strategy"),
+          heuristic: this.shadowRoot.getElementById("solver-heuristic"),
+          depth: this.shadowRoot.getElementById("solver-depth"),
+          probability: this.shadowRoot.getElementById("solver-probability"),
+        };
       }
     
       /**
@@ -2045,6 +2147,10 @@
                   <span class="status-label">Score:</span>
                   <span class="status-value" id="score-status">-</span>
                 </div>
+                <div class="status-item">
+                  <span class="status-label">Solver:</span>
+                  <span class="status-value" id="solver-status">Initializing…</span>
+                </div>
               </div>
     
               <div class="hud-actions">
@@ -2068,6 +2174,30 @@
                     <option value="1,3,0,2">Right → Left → Up → Down</option>
                     <option value="2,0,3,1">Down → Up → Left → Right</option>
                   </select>
+                </div>
+                <div class="setting-group">
+                  <label class="setting-label">Solver Strategy:</label>
+                  <select class="setting-select" id="solver-strategy">
+                    <option value="expectimax-depth" selected>Expectimax (Depth)</option>
+                    <option value="expectimax-probability">Expectimax (Probability)</option>
+                  </select>
+                </div>
+                <div class="setting-group">
+                  <label class="setting-label">Heuristic:</label>
+                  <select class="setting-select" id="solver-heuristic">
+                    <option value="corner" selected>Corner Bias</option>
+                    <option value="monotonicity">Monotonicity</option>
+                    <option value="wall">Wall Building</option>
+                    <option value="score">Score Focus</option>
+                  </select>
+                </div>
+                <div class="setting-group">
+                  <label class="setting-label" for="solver-depth">Depth:</label>
+                  <input class="setting-input" id="solver-depth" type="number" min="1" max="8" step="1" value="4" />
+                </div>
+                <div class="setting-group">
+                  <label class="setting-label" for="solver-probability">Probability:</label>
+                  <input class="setting-input" id="solver-probability" type="number" min="0.0001" max="0.2" step="0.0001" value="0.0025" />
                 </div>
               </div>
             </div>
@@ -2265,6 +2395,22 @@
             color: white;
           }
     
+          .setting-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+          }
+    
+          .setting-input:disabled,
+          .setting-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+    
           /* Animation for auto-solving */
           .hud-panel.auto-solving .hud-btn-success {
             animation: pulse 1s infinite;
@@ -2321,6 +2467,144 @@
         // Global mouse events for dragging
         document.addEventListener("mousemove", this.handleMouseMove);
         document.addEventListener("mouseup", this.handleMouseUp);
+    
+        this.setupSolverControls();
+      }
+    
+      /**
+       * Attach listeners for solver configuration controls
+       * @private
+       */
+      setupSolverControls() {
+        const controls = [
+          this.solverElements.strategy,
+          this.solverElements.heuristic,
+          this.solverElements.depth,
+          this.solverElements.probability,
+        ].filter(Boolean);
+    
+        controls.forEach((el) => {
+          el.addEventListener("change", this.handleSolverControlChange);
+        });
+    
+        this.applySolverControlState();
+      }
+    
+      /**
+       * Enable/disable solver inputs based on selected strategy
+       * @private
+       */
+      applySolverControlState() {
+        const isProbability = this.solverConfig.type === "expectimax-probability";
+    
+        if (this.solverElements.depth) {
+          this.solverElements.depth.disabled = isProbability;
+        }
+    
+        if (this.solverElements.probability) {
+          this.solverElements.probability.disabled = !isProbability;
+        }
+      }
+    
+      /**
+       * Handle updates to solver configuration controls
+       * @private
+       */
+      handleSolverControlChange() {
+        if (this._isUpdatingSolverControls) {
+          return;
+        }
+    
+        const nextConfig = {
+          type: this.solverElements.strategy?.value || this.solverConfig.type,
+          heuristic: this.solverElements.heuristic?.value || this.solverConfig.heuristic,
+          depth: parseInt(this.solverElements.depth?.value, 10) || this.solverConfig.depth,
+          probability:
+            parseFloat(this.solverElements.probability?.value) || this.solverConfig.probability,
+        };
+    
+        nextConfig.depth = Math.max(1, Math.min(8, nextConfig.depth));
+        nextConfig.probability = Math.max(0.0001, Math.min(0.2, nextConfig.probability));
+    
+        this.solverConfig = nextConfig;
+        this.applySolverControlState();
+    
+        if (this.controller && this.controller.setSolverStrategy) {
+          try {
+            this.controller.setSolverStrategy({ ...this.solverConfig });
+          } catch (error) {
+            console.warn("HUD: Failed to update solver strategy", error);
+          }
+        }
+      }
+    
+      /**
+       * Update solver status indicator and synchronize controls
+       * @param {Object|null} status Solver status object from runtime
+       */
+      updateSolverStatus(status) {
+        const statusEl = this.solverElements.status;
+        if (statusEl) {
+          let text = "Initializing…";
+          let color = "#fbbf24";
+          let title = "Solver is starting";
+    
+          if (status) {
+            if (status.status === "ready" && status.mode === "wasm") {
+              text = "WASM ready";
+              color = "#34d399";
+              title = "Native solver active";
+            } else if (status.status === "ready" || status.mode === "fallback") {
+              text = "Fallback";
+              color = "#facc15";
+              title = "Using JS fallback solver";
+            } else if (status.status === "fallback") {
+              text = "Fallback";
+              color = "#facc15";
+              title = "Using JS fallback solver";
+            } else if (status.status === "error") {
+              text = "Error";
+              color = "#f87171";
+              title = status.lastError ? String(status.lastError) : "Solver error";
+            } else if (status.status === "idle" || status.status === "loading") {
+              text = "Loading…";
+              color = "#fbbf24";
+              title = "Loading solver";
+            }
+    
+            if (status.lastError) {
+              title = `Fallback: ${status.lastError}`;
+            }
+          }
+    
+          statusEl.textContent = text;
+          statusEl.style.color = color;
+          statusEl.title = title;
+        }
+    
+        if (status && status.strategy) {
+          this._isUpdatingSolverControls = true;
+          this.solverConfig = {
+            ...this.solverConfig,
+            ...status.strategy,
+          };
+    
+          if (this.solverElements.strategy) {
+            this.solverElements.strategy.value = this.solverConfig.type;
+          }
+          if (this.solverElements.heuristic) {
+            this.solverElements.heuristic.value = this.solverConfig.heuristic;
+          }
+          if (this.solverElements.depth) {
+            this.solverElements.depth.value = String(this.solverConfig.depth);
+          }
+          if (this.solverElements.probability) {
+            this.solverElements.probability.value = String(this.solverConfig.probability);
+          }
+    
+          this._isUpdatingSolverControls = false;
+          this.applySolverControlState();
+        }
       }
     
       /**
@@ -2538,6 +2822,15 @@
           autoSolveBtn.disabled = true;
           stepBtn.disabled = true;
         }
+    
+        if (this.controller && this.controller.getSolverStatus) {
+          try {
+            const solverStatus = this.controller.getSolverStatus();
+            this.updateSolverStatus(solverStatus || null);
+          } catch (error) {
+            console.warn("HUD: Failed to refresh solver status", error);
+          }
+        }
       }
     
       /**
@@ -2723,6 +3016,17 @@
         }
     
         this.updateStatus();
+    
+        if (this.controller && this.controller.getSolverStatus) {
+          try {
+            const solverStatus = this.controller.getSolverStatus();
+            this.updateSolverStatus(solverStatus || null);
+          } catch (error) {
+            console.warn("HUD: Failed to fetch solver status", error);
+          }
+        } else {
+          this.updateSolverStatus(null);
+        }
       }
     
       /**
@@ -3646,6 +3950,7 @@
     const { detectGame, globalAdapterRegistry } = require("./src/adapters/index.js");
     const { createDriver } = require("./src/driver/index.js");
     const { createGameObserver, getVisibilityHandler } = require("./src/observer/index.js");
+    const { createSolverManager } = require("./src/solver/index.js");
     
     /**
      * Main runtime class for the 2048 AI Solver
@@ -3668,6 +3973,7 @@
         this.visibilityHandler = null;
         this.currentAdapter = null;
         this.directionPriority = null;
+        this.solverManager = createSolverManager(options.solver || {});
     
         // State
         this.isInitialized = false;
@@ -3708,6 +4014,18 @@
             if (this.visibilityHandler) {
               this.visibilityHandler.addManagedComponent(this.hud, "HUD");
             }
+          }
+    
+          // Kick off solver initialization in the background
+          if (this.solverManager) {
+            this.solverManager
+              .initialize()
+              .catch((error) => {
+                console.warn("Runtime: solver initialization failed", error);
+              })
+              .finally(() => {
+                this._notifySolverStatus();
+              });
           }
     
           // Try to detect game
@@ -3766,6 +4084,11 @@
         });
     
         this.driver.setAdapter(this.currentAdapter);
+    
+        if (this.solverManager) {
+          this.driver.setSolverEngine(this.solverManager);
+          this._notifySolverStatus();
+        }
     
         // Apply direction priority from HUD/user selection if available
         if (this.hud) {
@@ -3939,6 +4262,8 @@
         if (this.hud) {
           this.hud.showMessage(`Error: ${error.message}`);
         }
+    
+        this._notifySolverStatus();
       }
     
       /**
@@ -3954,6 +4279,8 @@
           step: () => this.step(),
           isRunning: () => this.isRunning,
           getCurrentAdapter: () => this.currentAdapter,
+          getSolverStatus: () =>
+            this.solverManager ? this.solverManager.getStatus() : null,
           setDirectionPriority: (priorities) => {
             if (Array.isArray(priorities) && priorities.length === 4) {
               this.directionPriority = [...priorities];
@@ -3962,6 +4289,7 @@
               }
             }
           },
+          setSolverStrategy: (strategy) => this.setSolverStrategy(strategy),
         };
       }
     
@@ -3979,7 +4307,44 @@
           visibilityStats: this.visibilityHandler
             ? this.visibilityHandler.getStats()
             : null,
+          solver: this.solverManager ? this.solverManager.getStatus() : null,
         };
+      }
+    
+      /**
+       * Update solver configuration from HUD/controller
+       * @param {Object} strategy Strategy configuration object
+       */
+      async setSolverStrategy(strategy) {
+        if (!this.solverManager) {
+          return;
+        }
+    
+        try {
+          await this.solverManager.setStrategy(strategy);
+        } catch (error) {
+          console.warn("Runtime: failed to apply solver strategy", error);
+        }
+    
+        this._notifySolverStatus();
+      }
+    
+      /**
+       * Get current solver status snapshot
+       * @returns {Object|null}
+       */
+      getSolverStatus() {
+        return this.solverManager ? this.solverManager.getStatus() : null;
+      }
+    
+      /**
+       * Push solver status updates to HUD if available
+       * @private
+       */
+      _notifySolverStatus() {
+        if (this.hud && typeof this.hud.updateSolverStatus === "function") {
+          this.hud.updateSolverStatus(this.getSolverStatus());
+        }
       }
     
       /**
@@ -4011,6 +4376,8 @@
           this.visibilityHandler.destroy();
           this.visibilityHandler = null;
         }
+    
+        this.solverManager = createSolverManager(this.options.solver || {});
     
         // Clear adapter
         this.currentAdapter = null;
@@ -4085,6 +4452,733 @@
     exports.getRuntime = getRuntime;
     exports.destroyRuntime = destroyRuntime;
     exports.quickStart = quickStart;
+  },
+  "./src/solver/board-utils.js": function (exports, module, require) {
+    /**
+     * @fileoverview Board conversion helpers for WASM solver integration.
+     */
+    
+    const { BoardUtils } = require("./src/adapters/index.js");
+    
+    const BOARD_SIZE = 4;
+    const MAX_EXPONENT = 15;
+    const ALL_DIRECTIONS = [0, 1, 2, 3];
+    
+    function flattenBoard(board) {
+      return board.reduce((acc, row) => acc.concat(row), []);
+    }
+    
+    function isPowerOfTwo(value) {
+      return value > 0 && (value & (value - 1)) === 0;
+    }
+    
+    function detectExponentBoard(flatTiles) {
+      return flatTiles.some((value) => value > 0 && !isPowerOfTwo(value));
+    }
+    
+    function tileToExponent(value, treatAsExponent) {
+      if (!Number.isFinite(value) || value <= 0) {
+        return 0;
+      }
+    
+      const clamped = Math.min(Math.floor(value), 1 << MAX_EXPONENT);
+      if (treatAsExponent) {
+        return Math.min(clamped, MAX_EXPONENT);
+      }
+    
+      let exponent = 0;
+      let current = clamped;
+      while (current > 1 && (current & 1) === 0 && exponent < MAX_EXPONENT) {
+        current >>= 1;
+        exponent += 1;
+      }
+    
+      if (current !== 1) {
+        const approx = Math.round(Math.log2(clamped));
+        return Math.max(0, Math.min(approx, MAX_EXPONENT));
+      }
+    
+      return exponent;
+    }
+    
+    function exponentToValue(exponent) {
+      if (exponent <= 0) {
+        return 0;
+      }
+      if (exponent >= MAX_EXPONENT) {
+        return 1 << MAX_EXPONENT;
+      }
+      return 1 << exponent;
+    }
+    
+    const BoardEncoder = {
+      ensureBoard(board) {
+        if (!BoardUtils.isValidBoard(board)) {
+          throw new Error("BoardEncoder: expected a 4x4 matrix");
+        }
+        return board.map((row) => row.map((value) => (Number.isFinite(value) ? value : 0)));
+      },
+    
+      toExponentArray(board) {
+        const normalized = this.ensureBoard(board);
+        const flatTiles = flattenBoard(normalized);
+        const treatAsExponent = detectExponentBoard(flatTiles);
+    
+        return flatTiles.map((value) => tileToExponent(value, treatAsExponent));
+      },
+    
+      toBitboard(board) {
+        const exponents = this.toExponentArray(board);
+        return exponents.reduce((acc, value, index) => {
+          const exponent = BigInt(value & 0xF);
+          const shift = BigInt(index * 4);
+          return acc | (exponent << shift);
+        }, 0n);
+      },
+    
+      fromExponentArray(exponents) {
+        if (!Array.isArray(exponents) || exponents.length !== BOARD_SIZE * BOARD_SIZE) {
+          throw new Error("BoardEncoder: expected 16-element exponent array");
+        }
+    
+        const rows = [];
+        for (let r = 0; r < BOARD_SIZE; r++) {
+          const row = [];
+          for (let c = 0; c < BOARD_SIZE; c++) {
+            const index = r * BOARD_SIZE + c;
+            row.push(exponentToValue(exponents[index] ?? 0));
+          }
+          rows.push(row);
+        }
+        return rows;
+      },
+    
+      fromBitboard(bitboard) {
+        if (typeof bitboard !== "bigint") {
+          throw new Error("BoardEncoder: expected bigint bitboard");
+        }
+    
+        const exponents = new Array(BOARD_SIZE * BOARD_SIZE).fill(0);
+        for (let index = 0; index < exponents.length; index++) {
+          const shift = BigInt(index * 4);
+          const mask = 0xFn << shift;
+          const value = Number((bitboard & mask) >> shift) & 0xF;
+          exponents[index] = value;
+        }
+        return this.fromExponentArray(exponents);
+      },
+    
+      uniqueDirections(list) {
+        const seen = new Set();
+        const deduped = [];
+        for (const direction of list) {
+          if (ALL_DIRECTIONS.includes(direction) && !seen.has(direction)) {
+            seen.add(direction);
+            deduped.push(direction);
+          }
+        }
+    
+        for (const direction of ALL_DIRECTIONS) {
+          if (!seen.has(direction)) {
+            deduped.push(direction);
+          }
+        }
+    
+        return deduped.slice(0, ALL_DIRECTIONS.length);
+      },
+    };
+    
+    
+    exports.BoardEncoder = BoardEncoder;
+  },
+  "./src/solver/index.js": function (exports, module, require) {
+    /**
+     * @fileoverview Solver subsystem exports.
+     */
+    
+    const __reExport0 = require("./src/solver/board-utils.js");
+    exports.BoardEncoder = __reExport0.BoardEncoder;
+    const __reExport1 = require("./src/solver/naive-solver.js");
+    exports.NaiveSolverEngine = __reExport1.NaiveSolverEngine;
+    const __reExport2 = require("./src/solver/wasm-solver.js");
+    exports.WASMSolverEngine = __reExport2.WASMSolverEngine;
+    const __reExport3 = require("./src/solver/solver-manager.js");
+    exports.SolverManager = __reExport3.SolverManager;
+    exports.createSolverManager = __reExport3.createSolverManager;
+    
+    
+  },
+  "./src/solver/naive-solver.js": function (exports, module, require) {
+    /**
+     * @fileoverview Minimal JS fallback solver used when WASM is unavailable.
+     */
+    
+    const { Direction } = require("./src/adapters/index.js");
+    const { BoardEncoder } = require("./src/solver/board-utils.js");
+    
+    const ALL_DIRECTIONS = [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT];
+    
+    function cloneBoard(board) {
+      return board.map((row) => [...row]);
+    }
+    
+    function rotateBoardClockwise(board) {
+      const rotated = Array.from({ length: 4 }, () => Array(4).fill(0));
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          rotated[c][3 - r] = board[r][c];
+        }
+      }
+      return rotated;
+    }
+    
+    function rotateBoardCounterClockwise(board) {
+      const rotated = Array.from({ length: 4 }, () => Array(4).fill(0));
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          rotated[3 - c][r] = board[r][c];
+        }
+      }
+      return rotated;
+    }
+    
+    function mergeLine(values) {
+      const filtered = values.filter((value) => value !== 0);
+      const merged = [];
+      let skip = false;
+    
+      for (let i = 0; i < filtered.length; i++) {
+        if (skip) {
+          skip = false;
+          continue;
+        }
+    
+        const current = filtered[i];
+        const next = filtered[i + 1];
+        if (next && current === next) {
+          merged.push(current * 2);
+          skip = true;
+        } else {
+          merged.push(current);
+        }
+      }
+    
+      while (merged.length < 4) {
+        merged.push(0);
+      }
+    
+      return merged;
+    }
+    
+    function moveLeft(board) {
+      const result = cloneBoard(board);
+      for (let r = 0; r < 4; r++) {
+        result[r] = mergeLine(result[r]);
+      }
+      return result;
+    }
+    
+    function moveRight(board) {
+      const result = cloneBoard(board);
+      for (let r = 0; r < 4; r++) {
+        const reversed = [...result[r]].reverse();
+        result[r] = mergeLine(reversed).reverse();
+      }
+      return result;
+    }
+    
+    function moveUp(board) {
+      const rotated = rotateBoardCounterClockwise(board);
+      const moved = moveLeft(rotated);
+      return rotateBoardClockwise(moved);
+    }
+    
+    function moveDown(board) {
+      const rotated = rotateBoardClockwise(board);
+      const moved = moveLeft(rotated);
+      return rotateBoardCounterClockwise(moved);
+    }
+    
+    const MOVE_SIMULATORS = {
+      [Direction.LEFT]: moveLeft,
+      [Direction.RIGHT]: moveRight,
+      [Direction.UP]: moveUp,
+      [Direction.DOWN]: moveDown,
+    };
+    
+    function boardsEqual(a, b) {
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          if (a[r][c] !== b[r][c]) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    
+    function findMaxTilePosition(board) {
+      let best = { value: 0, row: 0, col: 0 };
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          const value = board[r][c];
+          if (value > best.value) {
+            best = { value, row: r, col: c };
+          }
+        }
+      }
+      return best;
+    }
+    
+    function directionBiasForPosition(pos) {
+      if (pos.row <= 1 && pos.col <= 1) {
+        return [Direction.UP, Direction.LEFT, Direction.RIGHT, Direction.DOWN];
+      }
+      if (pos.row <= 1 && pos.col >= 2) {
+        return [Direction.UP, Direction.RIGHT, Direction.LEFT, Direction.DOWN];
+      }
+      if (pos.row >= 2 && pos.col <= 1) {
+        return [Direction.DOWN, Direction.LEFT, Direction.RIGHT, Direction.UP];
+      }
+      return [Direction.DOWN, Direction.RIGHT, Direction.LEFT, Direction.UP];
+    }
+    
+    function wouldChangeBoard(board, direction) {
+      const simulator = MOVE_SIMULATORS[direction];
+      if (!simulator) {
+        return false;
+      }
+      const next = simulator(board);
+      return !boardsEqual(board, next);
+    }
+    
+    class NaiveSolverEngine {
+      constructor(config = {}) {
+        this.status = "ready";
+        this.strategy = {
+          bias: config.bias ?? Direction.DOWN,
+        };
+      }
+    
+      async initialize() {
+        this.status = "ready";
+      }
+    
+      async ensureReady() {
+        return;
+      }
+    
+      async getMoveOrder(board) {
+        const normalized = BoardEncoder.ensureBoard(board);
+        const maxPos = findMaxTilePosition(normalized);
+        const priorities = directionBiasForPosition(maxPos);
+    
+        const ordered = [];
+        for (const direction of priorities) {
+          if (wouldChangeBoard(normalized, direction)) {
+            ordered.push(direction);
+          }
+        }
+    
+        if (ordered.length === 0) {
+          return [...ALL_DIRECTIONS];
+        }
+    
+        return BoardEncoder.uniqueDirections(ordered);
+      }
+    
+      async setStrategy(config = {}) {
+        if (typeof config.bias === "number") {
+          this.strategy.bias = config.bias;
+        }
+      }
+    
+      getStatus() {
+        return {
+          type: "naive",
+          ready: this.status === "ready",
+          strategy: { ...this.strategy },
+        };
+      }
+    }
+    
+    
+    exports.NaiveSolverEngine = NaiveSolverEngine;
+  },
+  "./src/solver/solver-manager.js": function (exports, module, require) {
+    /**
+     * @fileoverview Orchestrates WASM solver loading with naive fallback.
+     */
+    
+    const { BoardEncoder } = require("./src/solver/board-utils.js");
+    const { NaiveSolverEngine } = require("./src/solver/naive-solver.js");
+    const { WASMSolverEngine } = require("./src/solver/wasm-solver.js");
+    
+    const DEFAULT_STRATEGY = {
+      type: "expectimax-depth",
+      heuristic: "corner",
+      depth: 4,
+      probability: 0.0025,
+    };
+    
+    function mergeStrategy(base, overrides) {
+      return {
+        ...base,
+        ...(overrides || {}),
+      };
+    }
+    
+    class SolverManager {
+      constructor(options = {}) {
+        this.options = options;
+        this.strategy = mergeStrategy(DEFAULT_STRATEGY, options.strategy);
+    
+        this.naiveEngine = new NaiveSolverEngine(this.strategy);
+        this.wasmEngine = options.disableWasm
+          ? null
+          : new WASMSolverEngine({ ...options, strategy: this.strategy });
+    
+        this.activeEngine = this.naiveEngine;
+        this.status = this.wasmEngine ? "idle" : "fallback"; // idle | ready | fallback
+        this.lastError = null;
+        this._initializationPromise = null;
+      }
+    
+      async initialize() {
+        if (!this.wasmEngine) {
+          await this.naiveEngine.initialize();
+          this.status = "fallback";
+          return;
+        }
+    
+        if (this.status === "ready" || this.status === "fallback") {
+          return;
+        }
+    
+        if (this._initializationPromise) {
+          return this._initializationPromise;
+        }
+    
+        await this.naiveEngine.initialize();
+    
+        this._initializationPromise = this.wasmEngine
+          .initialize()
+          .then(() => {
+            this.activeEngine = this.wasmEngine;
+            this.status = "ready";
+            this.lastError = null;
+          })
+          .catch((error) => {
+            console.warn("SolverManager: WASM initialization failed, using fallback", error);
+            this.activeEngine = this.naiveEngine;
+            this.status = "fallback";
+            this.lastError = error;
+          })
+          .finally(() => {
+            this._initializationPromise = null;
+          });
+    
+        return this._initializationPromise;
+      }
+    
+      async ensureInitialized() {
+        if (this.status === "idle") {
+          await this.initialize();
+        }
+      }
+    
+      async getMoveOrder(board) {
+        const normalized = BoardEncoder.ensureBoard(board);
+        await this.ensureInitialized();
+    
+        try {
+          const order = await this.activeEngine.getMoveOrder(normalized);
+          return BoardEncoder.uniqueDirections(order || []);
+        } catch (error) {
+          if (this.activeEngine === this.wasmEngine && this.naiveEngine) {
+            console.warn("SolverManager: WASM getMoveOrder failed, switching to fallback", error);
+            this.lastError = error;
+            this.activeEngine = this.naiveEngine;
+            this.status = "fallback";
+            const fallbackOrder = await this.naiveEngine.getMoveOrder(normalized);
+            return BoardEncoder.uniqueDirections(fallbackOrder || []);
+          }
+          throw error;
+        }
+      }
+    
+      async getBoardInfo(board) {
+        if (this.activeEngine === this.wasmEngine && this.wasmEngine) {
+          return this.wasmEngine.getBoardInfo(board);
+        }
+        return null;
+      }
+    
+      async setStrategy(strategy) {
+        this.strategy = mergeStrategy(this.strategy, strategy);
+        await Promise.all([
+          this.naiveEngine?.setStrategy?.(this.strategy),
+          this.wasmEngine?.setStrategy?.(this.strategy),
+        ]);
+      }
+    
+      isWasmActive() {
+        return this.activeEngine === this.wasmEngine && this.status === "ready";
+      }
+    
+      getStatus() {
+        return {
+          mode: this.isWasmActive() ? "wasm" : "fallback",
+          status: this.status,
+          lastError: this.lastError ? String(this.lastError.message || this.lastError) : null,
+          strategy: { ...this.strategy },
+          wasm: this.wasmEngine ? this.wasmEngine.getStatus() : null,
+          naive: this.naiveEngine.getStatus(),
+        };
+      }
+    }
+    
+    function createSolverManager(options = {}) {
+      return new SolverManager(options);
+    }
+    
+    
+    exports.SolverManager = SolverManager;
+    exports.createSolverManager = createSolverManager;
+  },
+  "./src/solver/wasm-solver.js": function (exports, module, require) {
+    /**
+     * @fileoverview WASM-backed solver engine that bridges to the C++ strategy.
+     */
+    
+    const { BoardEncoder } = require("./src/solver/board-utils.js");
+    
+    const DEFAULT_STRATEGY = {
+      type: "expectimax-depth",
+      heuristic: "corner",
+      depth: 4,
+      probability: 0.0025,
+    };
+    
+    const ALL_DIRECTIONS = [0, 1, 2, 3];
+    
+    function getRuntimeAPI() {
+      if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL) {
+        return chrome.runtime;
+      }
+      if (typeof browser !== "undefined" && browser.runtime && browser.runtime.getURL) {
+        return browser.runtime;
+      }
+      return null;
+    }
+    
+    function resolveAssetUrl(filename, options = {}) {
+      if (filename === "solver.mjs" && options.moduleUrl) {
+        return options.moduleUrl;
+      }
+      if (filename === "solver.wasm" && options.wasmUrl) {
+        return options.wasmUrl;
+      }
+      if (options.baseUrl) {
+        return new URL(filename, options.baseUrl).toString();
+      }
+      const runtime = getRuntimeAPI();
+      if (runtime) {
+        return runtime.getURL(`wasm/${filename}`);
+      }
+      if (typeof document !== "undefined") {
+        const base = options.documentBase || document.baseURI || window.location.href;
+        return new URL(filename, base).toString();
+      }
+      throw new Error(`Unable to resolve solver asset: ${filename}`);
+    }
+    
+    function sanitizeStrategy(config = {}) {
+      return {
+        type: config.type || DEFAULT_STRATEGY.type,
+        heuristic: config.heuristic || DEFAULT_STRATEGY.heuristic,
+        depth:
+          typeof config.depth === "number" && Number.isFinite(config.depth)
+            ? Math.max(1, Math.floor(config.depth))
+            : DEFAULT_STRATEGY.depth,
+        probability:
+          typeof config.probability === "number" && Number.isFinite(config.probability)
+            ? Math.max(0.0001, config.probability)
+            : DEFAULT_STRATEGY.probability,
+      };
+    }
+    
+    class WASMSolverEngine {
+      constructor(options = {}) {
+        this.options = options;
+        this.status = "idle"; // idle | loading | ready | error
+        this.lastError = null;
+        this.module = null;
+        this.strategyWrapper = null;
+        this._loadPromise = null;
+        this.strategyConfig = sanitizeStrategy(options.strategy);
+      }
+    
+      async initialize() {
+        if (this.status === "ready") {
+          return;
+        }
+        if (this._loadPromise) {
+          return this._loadPromise;
+        }
+    
+        this.status = "loading";
+        this._loadPromise = this.loadModule()
+          .then(() => {
+            this.status = "ready";
+            this.lastError = null;
+          })
+          .catch((error) => {
+            this.status = "error";
+            this.lastError = error;
+            throw error;
+          })
+          .finally(() => {
+            this._loadPromise = null;
+          });
+    
+        return this._loadPromise;
+      }
+    
+      async ensureReady() {
+        if (this.status === "ready") {
+          return;
+        }
+        await this.initialize();
+      }
+    
+      async loadModule() {
+        const moduleUrl = resolveAssetUrl("solver.mjs", this.options);
+        const wasmUrl = resolveAssetUrl("solver.wasm", this.options);
+    
+        const importResult = await import(/* webpackIgnore: true */ moduleUrl);
+        const factory = importResult && importResult.default ? importResult.default : importResult;
+        if (typeof factory !== "function") {
+          throw new Error("Invalid solver module factory");
+        }
+    
+        const module = await factory({
+          locateFile: (path) => (path.endsWith(".wasm") ? wasmUrl : path),
+        });
+    
+        if (!module || typeof module.StrategyWrapper !== "function") {
+          throw new Error("Solver module missing StrategyWrapper export");
+        }
+    
+        this.module = module;
+        this.strategyWrapper = new module.StrategyWrapper(
+          this.strategyConfig.type,
+          this.strategyConfig.heuristic,
+          this.strategyConfig.depth,
+          this.strategyConfig.probability,
+        );
+      }
+    
+      async setStrategy(config = {}) {
+        this.strategyConfig = sanitizeStrategy({ ...this.strategyConfig, ...config });
+    
+        if (this.status !== "ready" || !this.strategyWrapper) {
+          return;
+        }
+    
+        try {
+          this.strategyWrapper.configure(
+            this.strategyConfig.type,
+            this.strategyConfig.heuristic,
+            this.strategyConfig.depth,
+            this.strategyConfig.probability,
+          );
+        } catch (error) {
+          console.warn("WASMSolverEngine: failed to apply strategy", error);
+        }
+      }
+    
+      async getMoveOrder(board) {
+        await this.ensureReady();
+        if (!this.module || !this.strategyWrapper) {
+          throw new Error("WASM solver not initialized");
+        }
+    
+        const exponents = BoardEncoder.toExponentArray(board);
+        const boardValue = this.module.boardFromArray(exponents);
+    
+        let preferred = 0;
+        try {
+          preferred = this.strategyWrapper.pickMove(boardValue);
+        } catch (error) {
+          console.warn("WASMSolverEngine: pickMove failed", error);
+        }
+    
+        const candidates = [];
+        for (const direction of ALL_DIRECTIONS) {
+          let valid = false;
+          let score = Number.NEGATIVE_INFINITY;
+          try {
+            valid = this.module.isValidMove(boardValue, direction);
+            if (valid) {
+              const nextBoard = this.module.makeMove(boardValue, direction);
+              score = this.strategyWrapper.evaluateBoard(nextBoard);
+            }
+          } catch (error) {
+            valid = false;
+          }
+    
+          candidates.push({ direction, valid, score });
+        }
+    
+        const validMoves = candidates.filter((item) => item.valid);
+        const ordered = validMoves
+          .sort((a, b) => {
+            if (a.direction === preferred && b.direction !== preferred) return -1;
+            if (b.direction === preferred && a.direction !== preferred) return 1;
+            return b.score - a.score;
+          })
+          .map((item) => item.direction);
+    
+        if (!ordered.length) {
+          return BoardEncoder.uniqueDirections([preferred]);
+        }
+    
+        return BoardEncoder.uniqueDirections(ordered);
+      }
+    
+      async getBoardInfo(board) {
+        if (this.status !== "ready" || !this.module) {
+          return null;
+        }
+    
+        try {
+          const exponents = BoardEncoder.toExponentArray(board);
+          const boardValue = this.module.boardFromArray(exponents);
+          return {
+            score: this.module.getScore(boardValue),
+            maxTile: this.module.getMaxTile(boardValue),
+            gameOver: this.module.isGameOver(boardValue),
+          };
+        } catch (error) {
+          console.warn("WASMSolverEngine: getBoardInfo failed", error);
+          return null;
+        }
+      }
+    
+      getStatus() {
+        return {
+          type: "wasm",
+          status: this.status,
+          ready: this.status === "ready",
+          lastError: this.lastError ? String(this.lastError.message || this.lastError) : null,
+          strategy: { ...this.strategyConfig },
+        };
+      }
+    }
+    
+    
+    exports.WASMSolverEngine = WASMSolverEngine;
   }
   };
   const cache = {};

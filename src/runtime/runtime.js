@@ -7,6 +7,7 @@ import { initHUD, getHUD, destroyHUD } from "../hud/index.js";
 import { detectGame, globalAdapterRegistry } from "../adapters/index.js";
 import { createDriver } from "../driver/index.js";
 import { createGameObserver, getVisibilityHandler } from "../observer/index.js";
+import { createSolverManager } from "../solver/index.js";
 
 /**
  * Main runtime class for the 2048 AI Solver
@@ -29,6 +30,7 @@ export class Runtime {
     this.visibilityHandler = null;
     this.currentAdapter = null;
     this.directionPriority = null;
+    this.solverManager = createSolverManager(options.solver || {});
 
     // State
     this.isInitialized = false;
@@ -69,6 +71,18 @@ export class Runtime {
         if (this.visibilityHandler) {
           this.visibilityHandler.addManagedComponent(this.hud, "HUD");
         }
+      }
+
+      // Kick off solver initialization in the background
+      if (this.solverManager) {
+        this.solverManager
+          .initialize()
+          .catch((error) => {
+            console.warn("Runtime: solver initialization failed", error);
+          })
+          .finally(() => {
+            this._notifySolverStatus();
+          });
       }
 
       // Try to detect game
@@ -127,6 +141,11 @@ export class Runtime {
     });
 
     this.driver.setAdapter(this.currentAdapter);
+
+    if (this.solverManager) {
+      this.driver.setSolverEngine(this.solverManager);
+      this._notifySolverStatus();
+    }
 
     // Apply direction priority from HUD/user selection if available
     if (this.hud) {
@@ -300,6 +319,8 @@ export class Runtime {
     if (this.hud) {
       this.hud.showMessage(`Error: ${error.message}`);
     }
+
+    this._notifySolverStatus();
   }
 
   /**
@@ -315,6 +336,8 @@ export class Runtime {
       step: () => this.step(),
       isRunning: () => this.isRunning,
       getCurrentAdapter: () => this.currentAdapter,
+      getSolverStatus: () =>
+        this.solverManager ? this.solverManager.getStatus() : null,
       setDirectionPriority: (priorities) => {
         if (Array.isArray(priorities) && priorities.length === 4) {
           this.directionPriority = [...priorities];
@@ -323,6 +346,7 @@ export class Runtime {
           }
         }
       },
+      setSolverStrategy: (strategy) => this.setSolverStrategy(strategy),
     };
   }
 
@@ -340,7 +364,44 @@ export class Runtime {
       visibilityStats: this.visibilityHandler
         ? this.visibilityHandler.getStats()
         : null,
+      solver: this.solverManager ? this.solverManager.getStatus() : null,
     };
+  }
+
+  /**
+   * Update solver configuration from HUD/controller
+   * @param {Object} strategy Strategy configuration object
+   */
+  async setSolverStrategy(strategy) {
+    if (!this.solverManager) {
+      return;
+    }
+
+    try {
+      await this.solverManager.setStrategy(strategy);
+    } catch (error) {
+      console.warn("Runtime: failed to apply solver strategy", error);
+    }
+
+    this._notifySolverStatus();
+  }
+
+  /**
+   * Get current solver status snapshot
+   * @returns {Object|null}
+   */
+  getSolverStatus() {
+    return this.solverManager ? this.solverManager.getStatus() : null;
+  }
+
+  /**
+   * Push solver status updates to HUD if available
+   * @private
+   */
+  _notifySolverStatus() {
+    if (this.hud && typeof this.hud.updateSolverStatus === "function") {
+      this.hud.updateSolverStatus(this.getSolverStatus());
+    }
   }
 
   /**
@@ -372,6 +433,8 @@ export class Runtime {
       this.visibilityHandler.destroy();
       this.visibilityHandler = null;
     }
+
+    this.solverManager = createSolverManager(this.options.solver || {});
 
     // Clear adapter
     this.currentAdapter = null;

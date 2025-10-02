@@ -1,457 +1,220 @@
 /**
  * @fileoverview Shadow DOM HUD overlay for 2048 solver
- * Implements draggable, collapsible HUD panel with game controls
+ * Breaks the HUD into controller and view layers for maintainability.
  */
 
-import { detectGame, Direction } from "../adapters/index.js";
+import { detectGame } from "../adapters/index.js";
+import {
+  DEFAULT_DIRECTION_PRIORITY,
+  DEFAULT_SOLVER_CONFIG,
+  clampSolverConfig,
+} from "./config.js";
+import { HUDView } from "./view.js";
 
 /**
- * HUD overlay clareates a Shadow DOM panel
- * Provides controls for game detection and automation
+ * HUD overlay controller coordinates the runtime interactions while delegating
+ * DOM management to {@link HUDView}.
  */
 export class HUD {
   constructor() {
-    this.shadowHost = null;
-    this.shadowRoot = null;
-    this.hudElement = null;
+    this.view = new HUDView({
+      onDetect: this.handleDetectClick.bind(this),
+      onAutoSolve: this.handleAutoSolveClick.bind(this),
+      onStep: this.handleStepClick.bind(this),
+      onCollapse: this.handleCollapseToggle.bind(this),
+      onDirectionPriorityChange: this.handleDirectionPriorityChange.bind(this),
+      onSolverControlChange: this.handleSolverControlChange.bind(this),
+    });
+
     this.isCollapsed = false;
-    this.isDragging = false;
-    this.dragOffset = { x: 0, y: 0 };
     this.currentAdapter = null;
+    this.controller = null;
     this.isAutoSolving = false;
     this.autoSolveTimeout = null;
-    this.controller = null;
-    this.directionPriority = [
-      Direction.LEFT,
-      Direction.DOWN,
-      Direction.RIGHT,
-      Direction.UP,
-    ];
 
-    // Bind methods for event handlers
-    this.handleMouseDown = this.handleMouseDown.bind(this);
-    this.handleMouseMove = this.handleMouseMove.bind(this);
-    this.handleMouseUp = this.handleMouseUp.bind(this);
-    this.handleDetectClick = this.handleDetectClick.bind(this);
-    this.handleAutoSolveClick = this.handleAutoSolveClick.bind(this);
-    this.handleStepClick = this.handleStepClick.bind(this);
-    this.handleCollapseClick = this.handleCollapseClick.bind(this);
+    this.directionPriority = [...DEFAULT_DIRECTION_PRIORITY];
+    this.solverConfig = { ...DEFAULT_SOLVER_CONFIG };
+
+    this.isInitialized = false;
   }
 
   /**
    * Initialize and inject the HUD into the page
    */
   init() {
-    if (this.shadowHost) {
+    if (this.isInitialized) {
       console.warn("HUD already initialized");
       return;
     }
 
-    this.createShadowDOM();
-    this.attachEventListeners();
+    this.view.mount();
+    this.view.setDirectionPriority(this.directionPriority);
+    this.view.setSolverControlValues(this.solverConfig);
+    this.applySolverControlState();
+
     this.updateStatus();
+    this.updateSolverStatus(null);
+
+    this.isInitialized = true;
 
     console.log("HUD initialized");
   }
 
   /**
-   * Create Shadow DOM structure and inject into page
+   * Enable/disable solver inputs based on selected strategy
    * @private
    */
-  createShadowDOM() {
-    // Create shadow host element
-    this.shadowHost = document.createElement("div");
-    this.shadowHost.id = "ai-2048-solver-hud";
-
-    // Attach shadow root
-    this.shadowRoot = this.shadowHost.attachShadow({ mode: "open" });
-
-    // Create HUD structure
-    this.shadowRoot.innerHTML = this.getHUDHTML();
-
-    // Get reference to HUD element
-    this.hudElement = this.shadowRoot.querySelector(".hud-panel");
-
-    // Inject into page
-    document.body.appendChild(this.shadowHost);
-
-    // Position HUD in top-right corner initially
-    this.positionHUD(window.innerWidth - 320, 20);
+  applySolverControlState() {
+    const isProbability = this.solverConfig.type === "expectimax-probability";
+    this.view.setSolverControlAvailability(!isProbability, isProbability);
   }
 
   /**
-   * Get the complete HUD HTML structure with embedded CSS
+   * Handle updates to solver configuration controls
    * @private
-   * @returns {string} HTML string
+   * @param {{type:string, heuristic:string, depth:number, probability:number}} nextConfig
    */
-  getHUDHTML() {
-    return `
-      <style>
-        ${this.getHUDCSS()}
-      </style>
-      <div class="hud-panel" data-collapsed="false">
-        <div class="hud-header">
-          <div class="hud-title">
-            <span class="hud-icon">🎯</span>
-            <span class="hud-text">2048 AI Solver</span>
-          </div>
-          <div class="hud-controls">
-            <button class="hud-btn hud-btn-collapse" title="Collapse/Expand">
-              <span class="collapse-icon">−</span>
-            </button>
-          </div>
-        </div>
-        <div class="hud-content">
-          <div class="hud-status">
-            <div class="status-item">
-              <span class="status-label">Game:</span>
-              <span class="status-value" id="game-status">Not detected</span>
-            </div>
-            <div class="status-item">
-              <span class="status-label">Score:</span>
-              <span class="status-value" id="score-status">-</span>
-            </div>
-          </div>
+  handleSolverControlChange(nextConfig) {
+    const clamped = clampSolverConfig(nextConfig);
 
-          <div class="hud-actions">
-            <button class="hud-btn hud-btn-primary" id="detect-btn">
-              🔍 Detect Game
-            </button>
-            <button class="hud-btn hud-btn-success" id="auto-solve-btn" disabled>
-              ▶️ Auto-solve
-            </button>
-            <button class="hud-btn hud-btn-secondary" id="step-btn" disabled>
-              ⏭️ Step
-            </button>
-          </div>
+    this.solverConfig = {
+      ...this.solverConfig,
+      ...nextConfig,
+      depth: clamped.depth,
+      probability: clamped.probability,
+    };
 
-          <div class="hud-settings">
-            <div class="setting-group">
-              <label class="setting-label">Direction Priority:</label>
-              <select class="setting-select" id="direction-priority">
-                <option value="0,2,1,3">Up → Down → Right → Left</option>
-                <option value="3,2,1,0" selected>Left → Down → Right → Up</option>
-                <option value="1,3,0,2">Right → Left → Up → Down</option>
-                <option value="2,0,3,1">Down → Up → Left → Right</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    this.view.setSolverControlValues(this.solverConfig);
+    this.applySolverControlState();
+
+    if (this.controller && this.controller.setSolverStrategy) {
+      try {
+        this.controller.setSolverStrategy({ ...this.solverConfig });
+      } catch (error) {
+        console.warn("HUD: Failed to update solver strategy", error);
+      }
+    }
   }
 
   /**
-   * Get the HUD CSS styles
-   * @private
-   * @returns {string} CSS string
+   * Apply solver status indicator and synchronize controls
+   * @param {Object|null} status Solver status from runtime
    */
-  getHUDCSS() {
-    return `
-      :host {
-        all: initial;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 2147483647;
-        pointer-events: none;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        line-height: 1.4;
+  updateSolverStatus(status) {
+    const state = {
+      text: "Initializing…",
+      color: "#fbbf24",
+      title: "Solver is starting",
+    };
+
+    if (status) {
+      if (status.status === "ready" && status.mode === "wasm") {
+        state.text = "WASM ready";
+        state.color = "#34d399";
+        state.title = "Native solver active";
+      } else if (status.status === "ready" || status.mode === "fallback") {
+        state.text = "Fallback";
+        state.color = "#facc15";
+        state.title = "Using JS fallback solver";
+      } else if (status.status === "fallback") {
+        state.text = "Fallback";
+        state.color = "#facc15";
+        state.title = "Using JS fallback solver";
+      } else if (status.status === "error") {
+        state.text = "Error";
+        state.color = "#f87171";
+        state.title = status.lastError ? String(status.lastError) : "Solver error";
+      } else if (status.status === "idle" || status.status === "loading") {
+        state.text = "Loading…";
+        state.color = "#fbbf24";
+        state.title = "Loading solver";
       }
 
-      .hud-panel {
-        position: absolute;
-        width: 300px;
-        background: rgba(0, 0, 0, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        color: white;
-        pointer-events: auto;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
-        user-select: none;
+      if (status.lastError) {
+        state.title = `Fallback: ${status.lastError}`;
       }
+    }
 
-      .hud-panel[data-collapsed="true"] {
-        height: 40px;
-        overflow: hidden;
-      }
+    this.view.setSolverStatus(state);
 
-      .hud-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 7px 7px 0 0;
-        cursor: move;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
+    if (status && status.strategy) {
+      const clamped = clampSolverConfig(status.strategy);
+      this.solverConfig = {
+        ...this.solverConfig,
+        ...status.strategy,
+        depth: clamped.depth,
+        probability: clamped.probability,
+      };
 
-      .hud-title {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 600;
-        font-size: 13px;
-      }
-
-      .hud-icon {
-        font-size: 16px;
-      }
-
-      .hud-controls {
-        display: flex;
-        gap: 4px;
-      }
-
-      .hud-btn {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .hud-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        transform: translateY(-1px);
-      }
-
-      .hud-btn:active {
-        transform: translateY(0);
-      }
-
-      .hud-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none !important;
-      }
-
-      .hud-btn-collapse {
-        width: 24px;
-        height: 24px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        font-weight: bold;
-      }
-
-      .hud-btn-primary {
-        background: rgba(59, 130, 246, 0.8);
-        border-color: rgba(59, 130, 246, 1);
-      }
-
-      .hud-btn-success {
-        background: rgba(34, 197, 94, 0.8);
-        border-color: rgba(34, 197, 94, 1);
-      }
-
-      .hud-btn-secondary {
-        background: rgba(107, 114, 128, 0.8);
-        border-color: rgba(107, 114, 128, 1);
-      }
-
-      .hud-content {
-        padding: 12px;
-      }
-
-      .hud-status {
-        margin-bottom: 12px;
-        padding: 8px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 4px;
-      }
-
-      .status-item {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 4px;
-      }
-
-      .status-item:last-child {
-        margin-bottom: 0;
-      }
-
-      .status-label {
-        font-size: 12px;
-        opacity: 0.8;
-      }
-
-      .status-value {
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .hud-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin-bottom: 12px;
-      }
-
-      .hud-settings {
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding-top: 12px;
-      }
-
-      .setting-group {
-        margin-bottom: 8px;
-      }
-
-      .setting-label {
-        display: block;
-        font-size: 12px;
-        margin-bottom: 4px;
-        opacity: 0.8;
-      }
-
-      .setting-select {
-        width: 100%;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-      }
-
-      .setting-select option {
-        background: #1a1a1a;
-        color: white;
-      }
-
-      /* Animation for auto-solving */
-      .hud-panel.auto-solving .hud-btn-success {
-        animation: pulse 1s infinite;
-      }
-
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
-      }
-
-      /* Dragging state */
-      .hud-panel.dragging {
-        transition: none;
-        cursor: grabbing;
-      }
-    `;
+      this.view.setSolverControlValues(this.solverConfig);
+      this.applySolverControlState();
+    }
   }
 
   /**
-   * Attach event listeners to HUD elements
-   * @private
+   * Update HUD labels based on adapter availability
    */
-  attachEventListeners() {
-    // Header drag functionality
-    const header = this.shadowRoot.querySelector(".hud-header");
-    header.addEventListener("mousedown", this.handleMouseDown);
-
-    // Button event listeners
-    const detectBtn = this.shadowRoot.getElementById("detect-btn");
-    const autoSolveBtn = this.shadowRoot.getElementById("auto-solve-btn");
-    const stepBtn = this.shadowRoot.getElementById("step-btn");
-    const collapseBtn = this.shadowRoot.querySelector(".hud-btn-collapse");
-
-    detectBtn.addEventListener("click", this.handleDetectClick);
-    autoSolveBtn.addEventListener("click", this.handleAutoSolveClick);
-    stepBtn.addEventListener("click", this.handleStepClick);
-    collapseBtn.addEventListener("click", this.handleCollapseClick);
-
-    // Direction priority change
-    const directionSelect =
-      this.shadowRoot.getElementById("direction-priority");
-    directionSelect.addEventListener("change", (e) => {
-      const priorities = e.target.value.split(",").map(Number);
-      this.directionPriority = priorities;
-      if (this.controller && this.controller.setDirectionPriority) {
-        try {
-          this.controller.setDirectionPriority([...priorities]);
-        } catch (error) {
-          console.warn("HUD: Failed to update direction priority via controller", error);
-        }
+  updateStatus() {
+    if (this.controller && this.controller.getCurrentAdapter) {
+      const controllerAdapter = this.controller.getCurrentAdapter();
+      if (controllerAdapter) {
+        this.currentAdapter = controllerAdapter;
       }
-    });
+    }
 
-    // Global mouse events for dragging
-    document.addEventListener("mousemove", this.handleMouseMove);
-    document.addEventListener("mouseup", this.handleMouseUp);
+    if (this.currentAdapter) {
+      this.view.setGameStatus({
+        text: `${this.currentAdapter.getName()}`,
+        color: "#34d399",
+      });
+
+      const score = this.currentAdapter.getScore();
+      this.view.setScore(score !== null ? score.toLocaleString() : "-");
+      this.view.setControlsEnabled({ autoSolve: true, step: true });
+    } else {
+      this.view.setGameStatus({ text: "Not detected", color: "#f87171" });
+      this.view.setScore("-");
+      this.view.setControlsEnabled({ autoSolve: false, step: false });
+    }
+
+    if (this.controller && this.controller.getSolverStatus) {
+      try {
+        const solverStatus = this.controller.getSolverStatus();
+        this.updateSolverStatus(solverStatus || null);
+      } catch (error) {
+        console.warn("HUD: Failed to refresh solver status", error);
+      }
+    }
   }
 
   /**
-   * Position the HUD at specific coordinates
+   * Handle direction priority changes from the UI.
    * @private
-   * @param {number} x X coordinate
-   * @param {number} y Y coordinate
+   * @param {number[]} priorities
    */
-  positionHUD(x, y) {
-    if (!this.hudElement) return;
+  handleDirectionPriorityChange(priorities) {
+    if (!Array.isArray(priorities) || priorities.length === 0) {
+      return;
+    }
 
-    // Constrain to viewport
-    const rect = this.hudElement.getBoundingClientRect();
-    const maxX = window.innerWidth - rect.width;
-    const maxY = window.innerHeight - rect.height;
+    this.directionPriority = priorities;
 
-    x = Math.max(0, Math.min(x, maxX));
-    y = Math.max(0, Math.min(y, maxY));
-
-    this.hudElement.style.left = x + "px";
-    this.hudElement.style.top = y + "px";
+    if (this.controller && this.controller.setDirectionPriority) {
+      try {
+        this.controller.setDirectionPriority([...priorities]);
+      } catch (error) {
+        console.warn("HUD: Failed to update direction priority via controller", error);
+      }
+    }
   }
 
   /**
-   * Handle mouse down on header (start dragging)
+   * Handle collapse button toggle to update local state.
+   * @param {boolean} isCollapsed
    * @private
-   * @param {MouseEvent} e Mouse event
    */
-  handleMouseDown(e) {
-    if (e.target.closest(".hud-btn")) return; // Don't drag when clicking buttons
-
-    this.isDragging = true;
-    this.hudElement.classList.add("dragging");
-
-    const rect = this.hudElement.getBoundingClientRect();
-    this.dragOffset.x = e.clientX - rect.left;
-    this.dragOffset.y = e.clientY - rect.top;
-
-    e.preventDefault();
-  }
-
-  /**
-   * Handle mouse move (dragging)
-   * @private
-   * @param {MouseEvent} e Mouse event
-   */
-  handleMouseMove(e) {
-    if (!this.isDragging) return;
-
-    const x = e.clientX - this.dragOffset.x;
-    const y = e.clientY - this.dragOffset.y;
-
-    this.positionHUD(x, y);
-  }
-
-  /**
-   * Handle mouse up (stop dragging)
-   * @private
-   * @param {MouseEvent} e Mouse event
-   */
-  handleMouseUp(e) {
-    if (!this.isDragging) return;
-
-    this.isDragging = false;
-    this.hudElement.classList.remove("dragging");
+  handleCollapseToggle(isCollapsed) {
+    this.isCollapsed = Boolean(isCollapsed);
   }
 
   /**
@@ -482,6 +245,10 @@ export class HUD {
 
     this.currentAdapter = detectGame();
     this.updateStatus();
+
+    if (!this.currentAdapter) {
+      this.showMessage("No game detected.");
+    }
   }
 
   /**
@@ -555,55 +322,8 @@ export class HUD {
       return;
     }
 
-    this.executeStep();
-  }
-
-  /**
-   * Handle collapse button click
-   * @private
-   */
-  handleCollapseClick() {
-    this.isCollapsed = !this.isCollapsed;
-    this.hudElement.setAttribute("data-collapsed", this.isCollapsed.toString());
-
-    const collapseIcon = this.shadowRoot.querySelector(".collapse-icon");
-    collapseIcon.textContent = this.isCollapsed ? "+" : "−";
-  }
-
-  /**
-   * Update HUD status display
-   * @private
-   */
-  updateStatus() {
-    if (this.controller && this.controller.getCurrentAdapter) {
-      const controllerAdapter = this.controller.getCurrentAdapter();
-      if (controllerAdapter) {
-        this.currentAdapter = controllerAdapter;
-      }
-    }
-
-    const gameStatus = this.shadowRoot.getElementById("game-status");
-    const scoreStatus = this.shadowRoot.getElementById("score-status");
-    const autoSolveBtn = this.shadowRoot.getElementById("auto-solve-btn");
-    const stepBtn = this.shadowRoot.getElementById("step-btn");
-
-    if (this.currentAdapter) {
-      gameStatus.textContent = `${this.currentAdapter.getName()}`;
-      gameStatus.style.color = "#34d399";
-
-      const score = this.currentAdapter.getScore();
-      scoreStatus.textContent = score !== null ? score.toLocaleString() : "-";
-
-      autoSolveBtn.disabled = false;
-      stepBtn.disabled = false;
-    } else {
-      gameStatus.textContent = "Not detected";
-      gameStatus.style.color = "#f87171";
-      scoreStatus.textContent = "-";
-
-      autoSolveBtn.disabled = true;
-      stepBtn.disabled = true;
-    }
+    await this.executeStep();
+    this.updateStatus();
   }
 
   /**
@@ -612,17 +332,7 @@ export class HUD {
    */
   updateRunState(isRunning) {
     this.isAutoSolving = !!isRunning;
-
-    if (this.hudElement) {
-      this.hudElement.classList.toggle("auto-solving", this.isAutoSolving);
-    }
-
-    const autoSolveBtn = this.shadowRoot?.getElementById("auto-solve-btn");
-    if (autoSolveBtn) {
-      autoSolveBtn.textContent = this.isAutoSolving
-        ? "⏸️ Pause"
-        : "▶️ Auto-solve";
-    }
+    this.view.setAutoSolveRunning(this.isAutoSolving);
   }
 
   /**
@@ -682,27 +392,22 @@ export class HUD {
   async autoSolveLoop() {
     if (!this.isAutoSolving || !this.currentAdapter) return;
 
-    // Check if game is over
     if (this.currentAdapter.isGameOver()) {
       this.stopAutoSolve();
       this.showMessage("Game over!");
       return;
     }
 
-    // Execute a step
     await this.executeStep();
-
-    // Update status
     this.updateStatus();
 
-    // Continue loop with delay
     this.autoSolveTimeout = setTimeout(() => {
       this.autoSolveLoop();
-    }, 150); // 150ms delay between moves
+    }, 150);
   }
 
   /**
-   * Execute a single step
+   * Execute a single move iteration
    * @private
    */
   async executeStep() {
@@ -711,11 +416,9 @@ export class HUD {
     const boardBefore = this.currentAdapter.readBoard();
     if (!boardBefore) return;
 
-    // Try each direction in priority order
     for (const direction of this.directionPriority) {
       this.currentAdapter.sendMove(direction);
 
-      // Wait for move to complete
       await new Promise((resolve) => setTimeout(resolve, 120));
 
       const boardAfter = this.currentAdapter.readBoard();
@@ -723,45 +426,21 @@ export class HUD {
         boardAfter &&
         JSON.stringify(boardBefore) !== JSON.stringify(boardAfter)
       ) {
-        // Move was successful
         return;
       }
     }
 
-    // If no move worked, try random direction
     const randomDir = Math.floor(Math.random() * 4);
     this.currentAdapter.sendMove(randomDir);
   }
 
   /**
-   * Show temporary message
+   * Show temporary message via the view layer
    * @private
-   * @param {string} message Message to show
+   * @param {string} message
    */
   showMessage(message) {
-    // Create temporary message element
-    const messageEl = document.createElement("div");
-    messageEl.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 6px;
-      z-index: 2147483648;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 14px;
-      pointer-events: none;
-    `;
-    messageEl.textContent = message;
-
-    document.body.appendChild(messageEl);
-
-    setTimeout(() => {
-      document.body.removeChild(messageEl);
-    }, 2000);
+    this.view.showMessage(message);
   }
 
   /**
@@ -789,6 +468,17 @@ export class HUD {
     }
 
     this.updateStatus();
+
+    if (this.controller && this.controller.getSolverStatus) {
+      try {
+        const solverStatus = this.controller.getSolverStatus();
+        this.updateSolverStatus(solverStatus || null);
+      } catch (error) {
+        console.warn("HUD: Failed to fetch solver status", error);
+      }
+    } else {
+      this.updateSolverStatus(null);
+    }
   }
 
   /**
@@ -812,19 +502,11 @@ export class HUD {
       this.autoSolveTimeout = null;
     }
 
-    // Remove event listeners
-    document.removeEventListener("mousemove", this.handleMouseMove);
-    document.removeEventListener("mouseup", this.handleMouseUp);
+    this.view.destroy();
 
-    // Remove from DOM
-    if (this.shadowHost && this.shadowHost.parentNode) {
-      this.shadowHost.parentNode.removeChild(this.shadowHost);
-    }
-
-    this.shadowHost = null;
-    this.shadowRoot = null;
-    this.hudElement = null;
     this.currentAdapter = null;
+    this.controller = null;
+    this.isInitialized = false;
   }
 }
 

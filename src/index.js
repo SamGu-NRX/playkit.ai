@@ -9,6 +9,7 @@ export * from "./hud/index.js";
 export * from "./driver/index.js";
 export * from "./observer/index.js";
 export * from "./runtime/index.js";
+export * from "./solver/index.js";
 
 // Convenience re-exports for common use cases
 export { detectGame, isGameDetected } from "./adapters/index.js";

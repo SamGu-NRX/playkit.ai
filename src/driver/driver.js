@@ -14,6 +14,7 @@ export class Driver {
     this.adapter = null;
     this.isRunning = false;
     this.isPaused = false;
+    this.solverEngine = null;
 
     // Configuration
     this.config = {
@@ -68,6 +69,14 @@ export class Driver {
     if (Array.isArray(priorities) && priorities.length === 4) {
       this.directionPriority = [...priorities];
     }
+  }
+
+  /**
+   * Attach a solver engine to generate move priorities.
+   * @param {Object|null} engine Solver engine with getMoveOrder(board) method
+   */
+  setSolverEngine(engine) {
+    this.solverEngine = engine || null;
   }
 
   /**
@@ -211,9 +220,9 @@ export class Driver {
     }
 
     const hashBefore = BoardUtils.hashBoard(boardBefore);
+    const movePriority = await this.getMovePriority(boardBefore);
 
-    // Try each direction in priority order
-    for (const direction of this.directionPriority) {
+    for (const direction of movePriority) {
       const success = await this.tryMove(direction, hashBefore);
       if (success) {
         this.moveCount++;
@@ -268,12 +277,40 @@ export class Driver {
   }
 
   /**
+   * Compute ordered directions using solver engine if available.
+   * @private
+   * @param {number[][]} board
+   * @returns {Promise<number[]>}
+   */
+  async getMovePriority(board) {
+    const fallback = [...this.directionPriority];
+
+    if (!this.solverEngine || typeof this.solverEngine.getMoveOrder !== "function") {
+      return fallback;
+    }
+
+    try {
+      const nextDirections = await this.solverEngine.getMoveOrder(board);
+      return normalizeMovePriority(nextDirections, fallback);
+    } catch (error) {
+      console.warn("Driver: solver getMoveOrder failed", error);
+      if (this.onError) {
+        this.onError(error);
+      }
+      return fallback;
+    }
+  }
+
+  /**
    * Execute a random move when stuck
    * @private
    * @returns {Promise<boolean>} True if move was successful
    */
   async executeRandomMove() {
-    const randomDirection = Math.floor(Math.random() * 4);
+    const priority = await this.getMovePriority(
+      this.adapter.readBoard() || BoardUtils.createEmptyBoard(),
+    );
+    const randomDirection = priority[Math.floor(Math.random() * priority.length)] ?? 0;
     console.log(`Driver stuck, trying random direction: ${randomDirection}`);
 
     const boardBefore = this.adapter.readBoard();
@@ -346,6 +383,7 @@ export class Driver {
     );
 
     this.adapter = null;
+    this.solverEngine = null;
     this.onMove = null;
     this.onBoardChange = null;
     this.onGameOver = null;
@@ -368,4 +406,35 @@ export function createDriver(options = {}) {
   }
 
   return driver;
+}
+
+/**
+ * Sanitize solver-provided direction order.
+ * @param {number[]} directions
+ * @param {number[]} fallback
+ * @returns {number[]}
+ */
+function normalizeMovePriority(directions, fallback) {
+  const result = [];
+  const seen = new Set();
+
+  const append = (dir) => {
+    if (!Number.isInteger(dir)) return;
+    if (dir < 0 || dir > 3) return;
+    if (seen.has(dir)) return;
+    seen.add(dir);
+    result.push(dir);
+  };
+
+  if (Array.isArray(directions)) {
+    directions.forEach(append);
+  }
+
+  (fallback || []).forEach(append);
+
+  for (let dir = 0; dir < 4 && result.length < 4; dir++) {
+    append(dir);
+  }
+
+  return result.slice(0, 4);
 }

@@ -91,6 +91,9 @@ node scripts/build-phase0.js
 # Outputs land in:
 # - dist/2048-hud.js and dist/2048-hud.min.js (bookmarklet / IIFE)
 # - src/extension/content.js (extension content script)
+
+# Optional: compile the C++ solver to WebAssembly (requires `emcc`)
+node scripts/build-wasm.js --release
 ```
 
 Loading the runtime:
@@ -146,4 +149,3 @@ We welcome new adapters, strategies, and documentation improvements. Please read
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE). See the notice at the bottom of the license file for attribution guidance.
-

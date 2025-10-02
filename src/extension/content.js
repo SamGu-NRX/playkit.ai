@@ -2000,218 +2000,645 @@
     exports.createDriver = __reExport0.createDriver;
     
   },
+  "./src/hud/config.js": function (exports, module, require) {
+    /**
+     * @fileoverview Shared configuration values for the HUD layer
+     */
+    
+    const { Direction } = require("./src/adapters/index.js");
+    
+    /**
+     * Default move priority order when no user preference is set.
+     * @type {number[]}
+     */
+    const DEFAULT_DIRECTION_PRIORITY = [
+      Direction.LEFT,
+      Direction.DOWN,
+      Direction.RIGHT,
+      Direction.UP,
+    ];
+    
+    /**
+     * Default solver configuration that mirrors the runtime defaults.
+     * @type {{type: string, heuristic: string, depth: number, probability: number}}
+     */
+    const DEFAULT_SOLVER_CONFIG = {
+      type: "expectimax-depth",
+      heuristic: "corner",
+      depth: 4,
+      probability: 0.0025,
+    };
+    
+    /**
+     * Limits enforced for solver tuning inputs.
+     */
+    const SOLVER_LIMITS = {
+      MIN_DEPTH: 1,
+      MAX_DEPTH: 8,
+      MIN_PROBABILITY: 0.0001,
+      MAX_PROBABILITY: 0.2,
+    };
+    
+    /**
+     * Clamp solver settings to safe bounds while preserving precision.
+     * @param {{depth:number, probability:number}} config Partial solver config
+     * @returns {{depth:number, probability:number}} Normalised values
+     */
+    function clampSolverConfig({ depth, probability }) {
+      const safeDepth = Math.max(
+        SOLVER_LIMITS.MIN_DEPTH,
+        Math.min(SOLVER_LIMITS.MAX_DEPTH, depth || SOLVER_LIMITS.MIN_DEPTH),
+      );
+    
+      const safeProbability = Math.max(
+        SOLVER_LIMITS.MIN_PROBABILITY,
+        Math.min(SOLVER_LIMITS.MAX_PROBABILITY, probability || SOLVER_LIMITS.MIN_PROBABILITY),
+      );
+    
+      return {
+        depth: safeDepth,
+        probability: safeProbability,
+      };
+    }
+    
+    exports.clampSolverConfig = clampSolverConfig;
+    exports.DEFAULT_DIRECTION_PRIORITY = DEFAULT_DIRECTION_PRIORITY;
+    exports.DEFAULT_SOLVER_CONFIG = DEFAULT_SOLVER_CONFIG;
+    exports.SOLVER_LIMITS = SOLVER_LIMITS;
+  },
   "./src/hud/hud.js": function (exports, module, require) {
     /**
      * @fileoverview Shadow DOM HUD overlay for 2048 solver
-     * Implements draggable, collapsible HUD panel with game controls
+     * Breaks the HUD into controller and view layers for maintainability.
      */
     
-    const { detectGame, Direction } = require("./src/adapters/index.js");
+    const { detectGame } = require("./src/adapters/index.js");
+    const { DEFAULT_DIRECTION_PRIORITY, DEFAULT_SOLVER_CONFIG, clampSolverConfig } = require("./src/hud/config.js");
+    const { HUDView } = require("./src/hud/view.js");
     
     /**
-     * HUD overlay clareates a Shadow DOM panel
-     * Provides controls for game detection and automation
+     * HUD overlay controller coordinates the runtime interactions while delegating
+     * DOM management to {@link HUDView}.
      */
     class HUD {
       constructor() {
-        this.shadowHost = null;
-        this.shadowRoot = null;
-        this.hudElement = null;
+        this.view = new HUDView({
+          onDetect: this.handleDetectClick.bind(this),
+          onAutoSolve: this.handleAutoSolveClick.bind(this),
+          onStep: this.handleStepClick.bind(this),
+          onCollapse: this.handleCollapseToggle.bind(this),
+          onDirectionPriorityChange: this.handleDirectionPriorityChange.bind(this),
+          onSolverControlChange: this.handleSolverControlChange.bind(this),
+        });
+    
         this.isCollapsed = false;
-        this.isDragging = false;
-        this.dragOffset = { x: 0, y: 0 };
         this.currentAdapter = null;
+        this.controller = null;
         this.isAutoSolving = false;
         this.autoSolveTimeout = null;
-        this.controller = null;
-        this.directionPriority = [
-          Direction.LEFT,
-          Direction.DOWN,
-          Direction.RIGHT,
-          Direction.UP,
-        ];
-        this.solverConfig = {
-          type: "expectimax-depth",
-          heuristic: "corner",
-          depth: 4,
-          probability: 0.0025,
-        };
-        this.solverElements = {
-          status: null,
-          strategy: null,
-          heuristic: null,
-          depth: null,
-          probability: null,
-        };
-        this._isUpdatingSolverControls = false;
     
-        // Bind methods for event handlers
-        this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleMouseUp = this.handleMouseUp.bind(this);
-        this.handleDetectClick = this.handleDetectClick.bind(this);
-        this.handleAutoSolveClick = this.handleAutoSolveClick.bind(this);
-        this.handleStepClick = this.handleStepClick.bind(this);
-        this.handleCollapseClick = this.handleCollapseClick.bind(this);
-        this.handleSolverControlChange = this.handleSolverControlChange.bind(this);
+        this.directionPriority = [...DEFAULT_DIRECTION_PRIORITY];
+        this.solverConfig = { ...DEFAULT_SOLVER_CONFIG };
+    
+        this.isInitialized = false;
       }
     
       /**
        * Initialize and inject the HUD into the page
        */
       init() {
-        if (this.shadowHost) {
+        if (this.isInitialized) {
           console.warn("HUD already initialized");
           return;
         }
     
-        this.createShadowDOM();
-        this.cacheDomReferences();
-        this.attachEventListeners();
+        this.view.mount();
+        this.view.setDirectionPriority(this.directionPriority);
+        this.view.setSolverControlValues(this.solverConfig);
+        this.applySolverControlState();
+    
         this.updateStatus();
         this.updateSolverStatus(null);
+    
+        this.isInitialized = true;
     
         console.log("HUD initialized");
       }
     
       /**
-       * Create Shadow DOM structure and inject into page
+       * Enable/disable solver inputs based on selected strategy
        * @private
        */
-      createShadowDOM() {
-        // Create shadow host element
-        this.shadowHost = document.createElement("div");
-        this.shadowHost.id = "ai-2048-solver-hud";
-    
-        // Attach shadow root
-        this.shadowRoot = this.shadowHost.attachShadow({ mode: "open" });
-    
-        // Create HUD structure
-        this.shadowRoot.innerHTML = this.getHUDHTML();
-    
-        // Get reference to HUD element
-        this.hudElement = this.shadowRoot.querySelector(".hud-panel");
-    
-        // Inject into page
-        document.body.appendChild(this.shadowHost);
-    
-        // Position HUD in top-right corner initially
-        this.positionHUD(window.innerWidth - 320, 20);
+      applySolverControlState() {
+        const isProbability = this.solverConfig.type === "expectimax-probability";
+        this.view.setSolverControlAvailability(!isProbability, isProbability);
       }
     
       /**
-       * Cache frequently used DOM references inside the shadow root
+       * Handle updates to solver configuration controls
        * @private
+       * @param {{type:string, heuristic:string, depth:number, probability:number}} nextConfig
        */
-      cacheDomReferences() {
-        if (!this.shadowRoot) return;
+      handleSolverControlChange(nextConfig) {
+        const clamped = clampSolverConfig(nextConfig);
     
-        this.solverElements = {
-          status: this.shadowRoot.getElementById("solver-status"),
-          strategy: this.shadowRoot.getElementById("solver-strategy"),
-          heuristic: this.shadowRoot.getElementById("solver-heuristic"),
-          depth: this.shadowRoot.getElementById("solver-depth"),
-          probability: this.shadowRoot.getElementById("solver-probability"),
+        this.solverConfig = {
+          ...this.solverConfig,
+          ...nextConfig,
+          depth: clamped.depth,
+          probability: clamped.probability,
         };
+    
+        this.view.setSolverControlValues(this.solverConfig);
+        this.applySolverControlState();
+    
+        if (this.controller && this.controller.setSolverStrategy) {
+          try {
+            this.controller.setSolverStrategy({ ...this.solverConfig });
+          } catch (error) {
+            console.warn("HUD: Failed to update solver strategy", error);
+          }
+        }
       }
     
       /**
-       * Get the complete HUD HTML structure with embedded CSS
-       * @private
-       * @returns {string} HTML string
+       * Apply solver status indicator and synchronize controls
+       * @param {Object|null} status Solver status from runtime
        */
-      getHUDHTML() {
-        return `
-          <style>
-            ${this.getHUDCSS()}
-          </style>
-          <div class="hud-panel" data-collapsed="false">
-            <div class="hud-header">
-              <div class="hud-title">
-                <span class="hud-icon">🎯</span>
-                <span class="hud-text">2048 AI Solver</span>
-              </div>
-              <div class="hud-controls">
-                <button class="hud-btn hud-btn-collapse" title="Collapse/Expand">
-                  <span class="collapse-icon">−</span>
-                </button>
-              </div>
-            </div>
-            <div class="hud-content">
-              <div class="hud-status">
-                <div class="status-item">
-                  <span class="status-label">Game:</span>
-                  <span class="status-value" id="game-status">Not detected</span>
-                </div>
-                <div class="status-item">
-                  <span class="status-label">Score:</span>
-                  <span class="status-value" id="score-status">-</span>
-                </div>
-                <div class="status-item">
-                  <span class="status-label">Solver:</span>
-                  <span class="status-value" id="solver-status">Initializing…</span>
-                </div>
-              </div>
+      updateSolverStatus(status) {
+        const state = {
+          text: "Initializing…",
+          color: "#fbbf24",
+          title: "Solver is starting",
+        };
     
-              <div class="hud-actions">
-                <button class="hud-btn hud-btn-primary" id="detect-btn">
-                  🔍 Detect Game
-                </button>
-                <button class="hud-btn hud-btn-success" id="auto-solve-btn" disabled>
-                  ▶️ Auto-solve
-                </button>
-                <button class="hud-btn hud-btn-secondary" id="step-btn" disabled>
-                  ⏭️ Step
-                </button>
-              </div>
+        if (status) {
+          if (status.status === "ready" && status.mode === "wasm") {
+            state.text = "WASM ready";
+            state.color = "#34d399";
+            state.title = "Native solver active";
+          } else if (status.status === "ready" || status.mode === "fallback") {
+            state.text = "Fallback";
+            state.color = "#facc15";
+            state.title = "Using JS fallback solver";
+          } else if (status.status === "fallback") {
+            state.text = "Fallback";
+            state.color = "#facc15";
+            state.title = "Using JS fallback solver";
+          } else if (status.status === "error") {
+            state.text = "Error";
+            state.color = "#f87171";
+            state.title = status.lastError ? String(status.lastError) : "Solver error";
+          } else if (status.status === "idle" || status.status === "loading") {
+            state.text = "Loading…";
+            state.color = "#fbbf24";
+            state.title = "Loading solver";
+          }
     
-              <div class="hud-settings">
-                <div class="setting-group">
-                  <label class="setting-label">Direction Priority:</label>
-                  <select class="setting-select" id="direction-priority">
-                    <option value="0,2,1,3">Up → Down → Right → Left</option>
-                    <option value="3,2,1,0" selected>Left → Down → Right → Up</option>
-                    <option value="1,3,0,2">Right → Left → Up → Down</option>
-                    <option value="2,0,3,1">Down → Up → Left → Right</option>
-                  </select>
-                </div>
-                <div class="setting-group">
-                  <label class="setting-label">Solver Strategy:</label>
-                  <select class="setting-select" id="solver-strategy">
-                    <option value="expectimax-depth" selected>Expectimax (Depth)</option>
-                    <option value="expectimax-probability">Expectimax (Probability)</option>
-                  </select>
-                </div>
-                <div class="setting-group">
-                  <label class="setting-label">Heuristic:</label>
-                  <select class="setting-select" id="solver-heuristic">
-                    <option value="corner" selected>Corner Bias</option>
-                    <option value="monotonicity">Monotonicity</option>
-                    <option value="wall">Wall Building</option>
-                    <option value="score">Score Focus</option>
-                  </select>
-                </div>
-                <div class="setting-group">
-                  <label class="setting-label" for="solver-depth">Depth:</label>
-                  <input class="setting-input" id="solver-depth" type="number" min="1" max="8" step="1" value="4" />
-                </div>
-                <div class="setting-group">
-                  <label class="setting-label" for="solver-probability">Probability:</label>
-                  <input class="setting-input" id="solver-probability" type="number" min="0.0001" max="0.2" step="0.0001" value="0.0025" />
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
+          if (status.lastError) {
+            state.title = `Fallback: ${status.lastError}`;
+          }
+        }
+    
+        this.view.setSolverStatus(state);
+    
+        if (status && status.strategy) {
+          const clamped = clampSolverConfig(status.strategy);
+          this.solverConfig = {
+            ...this.solverConfig,
+            ...status.strategy,
+            depth: clamped.depth,
+            probability: clamped.probability,
+          };
+    
+          this.view.setSolverControlValues(this.solverConfig);
+          this.applySolverControlState();
+        }
       }
     
       /**
-       * Get the HUD CSS styles
-       * @private
-       * @returns {string} CSS string
+       * Update HUD labels based on adapter availability
        */
-      getHUDCSS() {
-        return `
+      updateStatus() {
+        if (this.controller && this.controller.getCurrentAdapter) {
+          const controllerAdapter = this.controller.getCurrentAdapter();
+          if (controllerAdapter) {
+            this.currentAdapter = controllerAdapter;
+          }
+        }
+    
+        if (this.currentAdapter) {
+          this.view.setGameStatus({
+            text: `${this.currentAdapter.getName()}`,
+            color: "#34d399",
+          });
+    
+          const score = this.currentAdapter.getScore();
+          this.view.setScore(score !== null ? score.toLocaleString() : "-");
+          this.view.setControlsEnabled({ autoSolve: true, step: true });
+        } else {
+          this.view.setGameStatus({ text: "Not detected", color: "#f87171" });
+          this.view.setScore("-");
+          this.view.setControlsEnabled({ autoSolve: false, step: false });
+        }
+    
+        if (this.controller && this.controller.getSolverStatus) {
+          try {
+            const solverStatus = this.controller.getSolverStatus();
+            this.updateSolverStatus(solverStatus || null);
+          } catch (error) {
+            console.warn("HUD: Failed to refresh solver status", error);
+          }
+        }
+      }
+    
+      /**
+       * Handle direction priority changes from the UI.
+       * @private
+       * @param {number[]} priorities
+       */
+      handleDirectionPriorityChange(priorities) {
+        if (!Array.isArray(priorities) || priorities.length === 0) {
+          return;
+        }
+    
+        this.directionPriority = priorities;
+    
+        if (this.controller && this.controller.setDirectionPriority) {
+          try {
+            this.controller.setDirectionPriority([...priorities]);
+          } catch (error) {
+            console.warn("HUD: Failed to update direction priority via controller", error);
+          }
+        }
+      }
+    
+      /**
+       * Handle collapse button toggle to update local state.
+       * @param {boolean} isCollapsed
+       * @private
+       */
+      handleCollapseToggle(isCollapsed) {
+        this.isCollapsed = Boolean(isCollapsed);
+      }
+    
+      /**
+       * Handle detect game button click
+       * @private
+       */
+      async handleDetectClick() {
+        if (this.controller) {
+          try {
+            const detectFn = this.controller.detectGame?.bind(this.controller);
+            const detected = detectFn ? await Promise.resolve(detectFn()) : false;
+            if (this.controller.getCurrentAdapter) {
+              const adapterFromController = this.controller.getCurrentAdapter();
+              if (adapterFromController) {
+                this.currentAdapter = adapterFromController;
+              }
+            }
+            this.updateStatus();
+            if (!detected && !this.currentAdapter) {
+              this.showMessage("No game detected.");
+            }
+          } catch (error) {
+            console.warn("HUD: Controller-driven detect failed", error);
+            this.showMessage("Detect failed. Check console.");
+          }
+          return;
+        }
+    
+        this.currentAdapter = detectGame();
+        this.updateStatus();
+    
+        if (!this.currentAdapter) {
+          this.showMessage("No game detected.");
+        }
+      }
+    
+      /**
+       * Handle auto-solve button click
+       * @private
+       */
+      async handleAutoSolveClick() {
+        if (!this.currentAdapter) {
+          await this.handleDetectClick();
+          if (!this.currentAdapter) {
+            this.showMessage('No game detected. Click "Detect Game" first.');
+            return;
+          }
+        }
+    
+        if (this.controller) {
+          try {
+            const isRunning = this.controller.isRunning?.bind(this.controller);
+            const currentlyRunning = isRunning ? !!isRunning() : this.isAutoSolving;
+    
+            if (currentlyRunning) {
+              const stopFn = this.controller.stop?.bind(this.controller);
+              if (stopFn) {
+                await Promise.resolve(stopFn());
+              }
+              this.updateRunState(false);
+            } else {
+              const startFn = this.controller.start?.bind(this.controller);
+              if (startFn) {
+                await Promise.resolve(startFn());
+              }
+              this.updateRunState(true);
+            }
+          } catch (error) {
+            console.warn("HUD: Failed to toggle auto-solve via controller", error);
+            this.showMessage("Auto-solve toggle failed. Check console.");
+          }
+          return;
+        }
+    
+        if (this.isAutoSolving) {
+          this.stopAutoSolve();
+        } else {
+          this.startAutoSolve();
+        }
+      }
+    
+      /**
+       * Handle step button click
+       * @private
+       */
+      async handleStepClick() {
+        if (!this.currentAdapter) {
+          await this.handleDetectClick();
+          if (!this.currentAdapter) {
+            this.showMessage('No game detected. Click "Detect Game" first.');
+            return;
+          }
+        }
+    
+        if (this.controller) {
+          try {
+            const stepFn = this.controller.step?.bind(this.controller);
+            if (stepFn) {
+              await Promise.resolve(stepFn());
+            }
+          } catch (error) {
+            console.warn("HUD: Step failed via controller", error);
+            this.showMessage("Step failed. Check console.");
+          }
+          return;
+        }
+    
+        await this.executeStep();
+        this.updateStatus();
+      }
+    
+      /**
+       * Update run state UI to reflect automation status
+       * @param {boolean} isRunning Whether automation is active
+       */
+      updateRunState(isRunning) {
+        this.isAutoSolving = !!isRunning;
+        this.view.setAutoSolveRunning(this.isAutoSolving);
+      }
+    
+      /**
+       * Start auto-solving
+       * @private
+       */
+      async startAutoSolve() {
+        if (this.controller) {
+          try {
+            const startFn = this.controller.start?.bind(this.controller);
+            if (startFn) {
+              await Promise.resolve(startFn());
+            }
+            const running = this.controller.isRunning?.bind(this.controller);
+            this.updateRunState(running ? !!running() : true);
+          } catch (error) {
+            console.warn("HUD: startAutoSolve controller invocation failed", error);
+            this.showMessage("Auto-solve failed. Check console.");
+          }
+          return;
+        }
+    
+        this.updateRunState(true);
+        this.autoSolveLoop();
+      }
+    
+      /**
+       * Stop auto-solving
+       * @private
+       */
+      async stopAutoSolve() {
+        if (this.controller) {
+          try {
+            const stopFn = this.controller.stop?.bind(this.controller);
+            if (stopFn) {
+              await Promise.resolve(stopFn());
+            }
+          } catch (error) {
+            console.warn("HUD: stopAutoSolve controller invocation failed", error);
+          }
+          this.updateRunState(false);
+          return;
+        }
+    
+        if (this.autoSolveTimeout) {
+          clearTimeout(this.autoSolveTimeout);
+          this.autoSolveTimeout = null;
+        }
+    
+        this.updateRunState(false);
+      }
+    
+      /**
+       * Auto-solve loop
+       * @private
+       */
+      async autoSolveLoop() {
+        if (!this.isAutoSolving || !this.currentAdapter) return;
+    
+        if (this.currentAdapter.isGameOver()) {
+          this.stopAutoSolve();
+          this.showMessage("Game over!");
+          return;
+        }
+    
+        await this.executeStep();
+        this.updateStatus();
+    
+        this.autoSolveTimeout = setTimeout(() => {
+          this.autoSolveLoop();
+        }, 150);
+      }
+    
+      /**
+       * Execute a single move iteration
+       * @private
+       */
+      async executeStep() {
+        if (!this.currentAdapter) return;
+    
+        const boardBefore = this.currentAdapter.readBoard();
+        if (!boardBefore) return;
+    
+        for (const direction of this.directionPriority) {
+          this.currentAdapter.sendMove(direction);
+    
+          await new Promise((resolve) => setTimeout(resolve, 120));
+    
+          const boardAfter = this.currentAdapter.readBoard();
+          if (
+            boardAfter &&
+            JSON.stringify(boardBefore) !== JSON.stringify(boardAfter)
+          ) {
+            return;
+          }
+        }
+    
+        const randomDir = Math.floor(Math.random() * 4);
+        this.currentAdapter.sendMove(randomDir);
+      }
+    
+      /**
+       * Show temporary message via the view layer
+       * @private
+       * @param {string} message
+       */
+      showMessage(message) {
+        this.view.showMessage(message);
+      }
+    
+      /**
+       * Connect HUD to external controller (e.g., runtime)
+       * @param {Object|null} controller Controller interface
+       */
+      setController(controller) {
+        this.controller = controller || null;
+    
+        if (this.controller && this.controller.getCurrentAdapter) {
+          const adapter = this.controller.getCurrentAdapter();
+          if (adapter) {
+            this.currentAdapter = adapter;
+          }
+        }
+    
+        if (this.controller && this.controller.isRunning) {
+          try {
+            this.updateRunState(!!this.controller.isRunning());
+          } catch (error) {
+            console.warn("HUD: Failed to read controller run state", error);
+          }
+        } else {
+          this.updateRunState(false);
+        }
+    
+        this.updateStatus();
+    
+        if (this.controller && this.controller.getSolverStatus) {
+          try {
+            const solverStatus = this.controller.getSolverStatus();
+            this.updateSolverStatus(solverStatus || null);
+          } catch (error) {
+            console.warn("HUD: Failed to fetch solver status", error);
+          }
+        } else {
+          this.updateSolverStatus(null);
+        }
+      }
+    
+      /**
+       * Get current direction priority selection
+       * @returns {number[]} Direction priority array
+       */
+      getDirectionPriority() {
+        return [...this.directionPriority];
+      }
+    
+      /**
+       * Destroy the HUD and clean up
+       */
+      destroy() {
+        if (this.isAutoSolving) {
+          this.stopAutoSolve();
+        }
+    
+        if (this.autoSolveTimeout) {
+          clearTimeout(this.autoSolveTimeout);
+          this.autoSolveTimeout = null;
+        }
+    
+        this.view.destroy();
+    
+        this.currentAdapter = null;
+        this.controller = null;
+        this.isInitialized = false;
+      }
+    }
+    
+    /**
+     * Global HUD instance
+     */
+    let globalHUD = null;
+    
+    /**
+     * Initialize HUD if not already present
+     * @returns {HUD} HUD instance
+     */
+    function initHUD() {
+      if (!globalHUD) {
+        globalHUD = new HUD();
+        globalHUD.init();
+      }
+      return globalHUD;
+    }
+    
+    /**
+     * Get current HUD instance
+     * @returns {HUD|null} HUD instance or null
+     */
+    function getHUD() {
+      return globalHUD;
+    }
+    
+    /**
+     * Destroy current HUD instance
+     */
+    function destroyHUD() {
+      if (globalHUD) {
+        globalHUD.destroy();
+        globalHUD = null;
+      }
+    }
+    
+    exports.HUD = HUD;
+    exports.initHUD = initHUD;
+    exports.getHUD = getHUD;
+    exports.destroyHUD = destroyHUD;
+  },
+  "./src/hud/index.js": function (exports, module, require) {
+    /**
+     * @fileoverview HUD system exports
+     * Main entry point for the Shadow DOM HUD overlay
+     */
+    
+    const __reExport0 = require("./src/hud/hud.js");
+    exports.HUD = __reExport0.HUD;
+    exports.initHUD = __reExport0.initHUD;
+    exports.getHUD = __reExport0.getHUD;
+    exports.destroyHUD = __reExport0.destroyHUD;
+    
+  },
+  "./src/hud/templates.js": function (exports, module, require) {
+    /**
+     * @fileoverview Markup and style templates for the HUD shadow DOM
+     */
+    
+    /**
+     * Returns the CSS rules injected inside the HUD shadow root.
+     * @returns {string}
+     */
+    function getHUDCSS() {
+      return `
           :host {
             all: initial;
             position: fixed;
@@ -2411,7 +2838,6 @@
             cursor: not-allowed;
           }
     
-          /* Animation for auto-solving */
           .hud-panel.auto-solving .hud-btn-success {
             animation: pulse 1s infinite;
           }
@@ -2421,552 +2847,592 @@
             50% { opacity: 0.7; }
           }
     
-          /* Dragging state */
           .hud-panel.dragging {
             transition: none;
             cursor: grabbing;
           }
         `;
-      }
+    }
     
-      /**
-       * Attach event listeners to HUD elements
-       * @private
-       */
-      attachEventListeners() {
-        // Header drag functionality
-        const header = this.shadowRoot.querySelector(".hud-header");
-        header.addEventListener("mousedown", this.handleMouseDown);
+    /**
+     * Returns the full HTML template for the HUD overlay.
+     * @returns {string}
+     */
+    function getHUDHTML() {
+      return `
+          <style>
+            ${getHUDCSS()}
+          </style>
+          <div class="hud-panel" data-collapsed="false">
+            <div class="hud-header">
+              <div class="hud-title">
+                <span class="hud-icon">🎯</span>
+                <span class="hud-text">2048 AI Solver</span>
+              </div>
+              <div class="hud-controls">
+                <button class="hud-btn hud-btn-collapse" title="Collapse/Expand">
+                  <span class="collapse-icon">−</span>
+                </button>
+              </div>
+            </div>
+            <div class="hud-content">
+              <div class="hud-status">
+                <div class="status-item">
+                  <span class="status-label">Game:</span>
+                  <span class="status-value" id="game-status">Not detected</span>
+                </div>
+                <div class="status-item">
+                  <span class="status-label">Score:</span>
+                  <span class="status-value" id="score-status">-</span>
+                </div>
+                <div class="status-item">
+                  <span class="status-label">Solver:</span>
+                  <span class="status-value" id="solver-status">Initializing…</span>
+                </div>
+              </div>
     
-        // Button event listeners
-        const detectBtn = this.shadowRoot.getElementById("detect-btn");
-        const autoSolveBtn = this.shadowRoot.getElementById("auto-solve-btn");
-        const stepBtn = this.shadowRoot.getElementById("step-btn");
-        const collapseBtn = this.shadowRoot.querySelector(".hud-btn-collapse");
+              <div class="hud-actions">
+                <button class="hud-btn hud-btn-primary" id="detect-btn">
+                  🔍 Detect Game
+                </button>
+                <button class="hud-btn hud-btn-success" id="auto-solve-btn" disabled>
+                  ▶️ Auto-solve
+                </button>
+                <button class="hud-btn hud-btn-secondary" id="step-btn" disabled>
+                  ⏭️ Step
+                </button>
+              </div>
     
-        detectBtn.addEventListener("click", this.handleDetectClick);
-        autoSolveBtn.addEventListener("click", this.handleAutoSolveClick);
-        stepBtn.addEventListener("click", this.handleStepClick);
-        collapseBtn.addEventListener("click", this.handleCollapseClick);
+              <div class="hud-settings">
+                <div class="setting-group">
+                  <label class="setting-label">Direction Priority:</label>
+                  <select class="setting-select" id="direction-priority">
+                    <option value="0,2,1,3">Up → Down → Right → Left</option>
+                    <option value="3,2,1,0" selected>Left → Down → Right → Up</option>
+                    <option value="1,3,0,2">Right → Left → Up → Down</option>
+                    <option value="2,0,3,1">Down → Up → Left → Right</option>
+                  </select>
+                </div>
+                <div class="setting-group">
+                  <label class="setting-label">Solver Strategy:</label>
+                  <select class="setting-select" id="solver-strategy">
+                    <option value="expectimax-depth" selected>Expectimax (Depth)</option>
+                    <option value="expectimax-probability">Expectimax (Probability)</option>
+                  </select>
+                </div>
+                <div class="setting-group">
+                  <label class="setting-label">Heuristic:</label>
+                  <select class="setting-select" id="solver-heuristic">
+                    <option value="corner" selected>Corner Bias</option>
+                    <option value="monotonicity">Monotonicity</option>
+                    <option value="wall">Wall Building</option>
+                    <option value="score">Score Focus</option>
+                  </select>
+                </div>
+                <div class="setting-group">
+                  <label class="setting-label" for="solver-depth">Depth:</label>
+                  <input class="setting-input" id="solver-depth" type="number" min="1" max="8" step="1" value="4" />
+                </div>
+                <div class="setting-group">
+                  <label class="setting-label" for="solver-probability">Probability:</label>
+                  <input class="setting-input" id="solver-probability" type="number" min="0.0001" max="0.2" step="0.0001" value="0.0025" />
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+    }
     
-        // Direction priority change
-        const directionSelect =
-          this.shadowRoot.getElementById("direction-priority");
-        directionSelect.addEventListener("change", (e) => {
-          const priorities = e.target.value.split(",").map(Number);
-          this.directionPriority = priorities;
-          if (this.controller && this.controller.setDirectionPriority) {
-            try {
-              this.controller.setDirectionPriority([...priorities]);
-            } catch (error) {
-              console.warn("HUD: Failed to update direction priority via controller", error);
-            }
-          }
-        });
+    exports.getHUDCSS = getHUDCSS;
+    exports.getHUDHTML = getHUDHTML;
+  },
+  "./src/hud/view.js": function (exports, module, require) {
+    /**
+     * @fileoverview Presentation layer for the HUD overlay
+     */
     
-        // Global mouse events for dragging
-        document.addEventListener("mousemove", this.handleMouseMove);
-        document.addEventListener("mouseup", this.handleMouseUp);
+    const { getHUDHTML } = require("./src/hud/templates.js");
     
-        this.setupSolverControls();
-      }
+    const COLLAPSE_ICON = {
+      COLLAPSED: "+",
+      EXPANDED: "−",
+    };
     
-      /**
-       * Attach listeners for solver configuration controls
-       * @private
-       */
-      setupSolverControls() {
-        const controls = [
-          this.solverElements.strategy,
-          this.solverElements.heuristic,
-          this.solverElements.depth,
-          this.solverElements.probability,
-        ].filter(Boolean);
-    
-        controls.forEach((el) => {
-          el.addEventListener("change", this.handleSolverControlChange);
-        });
-    
-        this.applySolverControlState();
-      }
-    
-      /**
-       * Enable/disable solver inputs based on selected strategy
-       * @private
-       */
-      applySolverControlState() {
-        const isProbability = this.solverConfig.type === "expectimax-probability";
-    
-        if (this.solverElements.depth) {
-          this.solverElements.depth.disabled = isProbability;
-        }
-    
-        if (this.solverElements.probability) {
-          this.solverElements.probability.disabled = !isProbability;
-        }
-      }
-    
-      /**
-       * Handle updates to solver configuration controls
-       * @private
-       */
-      handleSolverControlChange() {
-        if (this._isUpdatingSolverControls) {
-          return;
-        }
-    
-        const nextConfig = {
-          type: this.solverElements.strategy?.value || this.solverConfig.type,
-          heuristic: this.solverElements.heuristic?.value || this.solverConfig.heuristic,
-          depth: parseInt(this.solverElements.depth?.value, 10) || this.solverConfig.depth,
-          probability:
-            parseFloat(this.solverElements.probability?.value) || this.solverConfig.probability,
+    /**
+     * Encapsulates the DOM management for the HUD overlay so controller logic can
+     * remain focused on behaviour instead of markup manipulation.
+     */
+    class HUDView {
+      constructor(callbacks = {}) {
+        this.callbacks = {
+          onDetect: callbacks.onDetect || null,
+          onAutoSolve: callbacks.onAutoSolve || null,
+          onStep: callbacks.onStep || null,
+          onCollapse: callbacks.onCollapse || null,
+          onDirectionPriorityChange: callbacks.onDirectionPriorityChange || null,
+          onSolverControlChange: callbacks.onSolverControlChange || null,
         };
     
-        nextConfig.depth = Math.max(1, Math.min(8, nextConfig.depth));
-        nextConfig.probability = Math.max(0.0001, Math.min(0.2, nextConfig.probability));
+        this.shadowHost = null;
+        this.shadowRoot = null;
+        this.panel = null;
     
-        this.solverConfig = nextConfig;
-        this.applySolverControlState();
+        this.elements = {
+          status: null,
+          gameStatus: null,
+          scoreStatus: null,
+          detectBtn: null,
+          autoSolveBtn: null,
+          stepBtn: null,
+          collapseBtn: null,
+          collapseIcon: null,
+          directionSelect: null,
+          solverStrategy: null,
+          solverHeuristic: null,
+          solverDepth: null,
+          solverProbability: null,
+        };
     
-        if (this.controller && this.controller.setSolverStrategy) {
-          try {
-            this.controller.setSolverStrategy({ ...this.solverConfig });
-          } catch (error) {
-            console.warn("HUD: Failed to update solver strategy", error);
-          }
-        }
+        this.isCollapsed = false;
+        this.isDragging = false;
+        this.dragOffset = { x: 0, y: 0 };
+        this._suppressSolverEvents = false;
+    
+        this.boundHandlers = {
+          headerMouseDown: this.handleHeaderMouseDown.bind(this),
+          documentMouseMove: this.handleDocumentMouseMove.bind(this),
+          documentMouseUp: this.handleDocumentMouseUp.bind(this),
+          detectClick: this.forwardCallback("onDetect"),
+          autoSolveClick: this.forwardCallback("onAutoSolve"),
+          stepClick: this.forwardCallback("onStep"),
+          collapseClick: this.handleCollapseClick.bind(this),
+          directionChange: this.handleDirectionChange.bind(this),
+          solverControlChange: this.handleSolverControlChange.bind(this),
+        };
       }
     
       /**
-       * Update solver status indicator and synchronize controls
-       * @param {Object|null} status Solver status object from runtime
+       * Inject HUD markup inside a new shadow root and wire listeners.
        */
-      updateSolverStatus(status) {
-        const statusEl = this.solverElements.status;
-        if (statusEl) {
-          let text = "Initializing…";
-          let color = "#fbbf24";
-          let title = "Solver is starting";
-    
-          if (status) {
-            if (status.status === "ready" && status.mode === "wasm") {
-              text = "WASM ready";
-              color = "#34d399";
-              title = "Native solver active";
-            } else if (status.status === "ready" || status.mode === "fallback") {
-              text = "Fallback";
-              color = "#facc15";
-              title = "Using JS fallback solver";
-            } else if (status.status === "fallback") {
-              text = "Fallback";
-              color = "#facc15";
-              title = "Using JS fallback solver";
-            } else if (status.status === "error") {
-              text = "Error";
-              color = "#f87171";
-              title = status.lastError ? String(status.lastError) : "Solver error";
-            } else if (status.status === "idle" || status.status === "loading") {
-              text = "Loading…";
-              color = "#fbbf24";
-              title = "Loading solver";
-            }
-    
-            if (status.lastError) {
-              title = `Fallback: ${status.lastError}`;
-            }
-          }
-    
-          statusEl.textContent = text;
-          statusEl.style.color = color;
-          statusEl.title = title;
+      mount() {
+        if (this.shadowHost) {
+          console.warn("HUDView: mount called twice");
+          return;
         }
     
-        if (status && status.strategy) {
-          this._isUpdatingSolverControls = true;
-          this.solverConfig = {
-            ...this.solverConfig,
-            ...status.strategy,
-          };
+        this.shadowHost = document.createElement("div");
+        this.shadowHost.id = "ai-2048-solver-hud";
+        this.shadowRoot = this.shadowHost.attachShadow({ mode: "open" });
+        this.shadowRoot.innerHTML = getHUDHTML();
     
-          if (this.solverElements.strategy) {
-            this.solverElements.strategy.value = this.solverConfig.type;
-          }
-          if (this.solverElements.heuristic) {
-            this.solverElements.heuristic.value = this.solverConfig.heuristic;
-          }
-          if (this.solverElements.depth) {
-            this.solverElements.depth.value = String(this.solverConfig.depth);
-          }
-          if (this.solverElements.probability) {
-            this.solverElements.probability.value = String(this.solverConfig.probability);
-          }
+        this.panel = this.shadowRoot.querySelector(".hud-panel");
     
-          this._isUpdatingSolverControls = false;
-          this.applySolverControlState();
-        }
+        document.body.appendChild(this.shadowHost);
+    
+        this.cacheElements();
+        this.attachEventListeners();
+        this.position(window.innerWidth - 320, 20);
       }
     
       /**
-       * Position the HUD at specific coordinates
+       * Remove event listeners and DOM nodes.
+       */
+      destroy() {
+        if (!this.shadowHost) {
+          return;
+        }
+    
+        this.detachEventListeners();
+    
+        if (this.shadowHost.parentNode) {
+          this.shadowHost.parentNode.removeChild(this.shadowHost);
+        }
+    
+        this.shadowHost = null;
+        this.shadowRoot = null;
+        this.panel = null;
+      }
+    
+      /**
+       * Cache frequently accessed elements for quick updates.
+       */
+      cacheElements() {
+        if (!this.shadowRoot) {
+          return;
+        }
+    
+        this.elements = {
+          status: this.shadowRoot.getElementById("solver-status"),
+          gameStatus: this.shadowRoot.getElementById("game-status"),
+          scoreStatus: this.shadowRoot.getElementById("score-status"),
+          detectBtn: this.shadowRoot.getElementById("detect-btn"),
+          autoSolveBtn: this.shadowRoot.getElementById("auto-solve-btn"),
+          stepBtn: this.shadowRoot.getElementById("step-btn"),
+          collapseBtn: this.shadowRoot.querySelector(".hud-btn-collapse"),
+          collapseIcon: this.shadowRoot.querySelector(".collapse-icon"),
+          directionSelect: this.shadowRoot.getElementById("direction-priority"),
+          solverStrategy: this.shadowRoot.getElementById("solver-strategy"),
+          solverHeuristic: this.shadowRoot.getElementById("solver-heuristic"),
+          solverDepth: this.shadowRoot.getElementById("solver-depth"),
+          solverProbability: this.shadowRoot.getElementById("solver-probability"),
+        };
+      }
+    
+      /**
+       * Attach DOM event listeners for interactivity.
+       */
+      attachEventListeners() {
+        if (!this.shadowRoot || !this.panel) {
+          return;
+        }
+    
+        const header = this.shadowRoot.querySelector(".hud-header");
+        header?.addEventListener("mousedown", this.boundHandlers.headerMouseDown);
+    
+        document.addEventListener("mousemove", this.boundHandlers.documentMouseMove);
+        document.addEventListener("mouseup", this.boundHandlers.documentMouseUp);
+    
+        this.elements.detectBtn?.addEventListener("click", this.boundHandlers.detectClick);
+        this.elements.autoSolveBtn?.addEventListener(
+          "click",
+          this.boundHandlers.autoSolveClick,
+        );
+        this.elements.stepBtn?.addEventListener("click", this.boundHandlers.stepClick);
+        this.elements.collapseBtn?.addEventListener("click", this.boundHandlers.collapseClick);
+        this.elements.directionSelect?.addEventListener(
+          "change",
+          this.boundHandlers.directionChange,
+        );
+    
+        const solverControls = [
+          this.elements.solverStrategy,
+          this.elements.solverHeuristic,
+          this.elements.solverDepth,
+          this.elements.solverProbability,
+        ].filter(Boolean);
+    
+        solverControls.forEach((control) => {
+          control.addEventListener("change", this.boundHandlers.solverControlChange);
+        });
+      }
+    
+      /**
+       * Remove listeners. Used during destroy() and when remounting.
+       */
+      detachEventListeners() {
+        if (!this.shadowRoot) {
+          return;
+        }
+    
+        const header = this.shadowRoot.querySelector(".hud-header");
+        header?.removeEventListener("mousedown", this.boundHandlers.headerMouseDown);
+    
+        document.removeEventListener("mousemove", this.boundHandlers.documentMouseMove);
+        document.removeEventListener("mouseup", this.boundHandlers.documentMouseUp);
+    
+        this.elements.detectBtn?.removeEventListener("click", this.boundHandlers.detectClick);
+        this.elements.autoSolveBtn?.removeEventListener(
+          "click",
+          this.boundHandlers.autoSolveClick,
+        );
+        this.elements.stepBtn?.removeEventListener("click", this.boundHandlers.stepClick);
+        this.elements.collapseBtn?.removeEventListener(
+          "click",
+          this.boundHandlers.collapseClick,
+        );
+        this.elements.directionSelect?.removeEventListener(
+          "change",
+          this.boundHandlers.directionChange,
+        );
+    
+        const solverControls = [
+          this.elements.solverStrategy,
+          this.elements.solverHeuristic,
+          this.elements.solverDepth,
+          this.elements.solverProbability,
+        ].filter(Boolean);
+    
+        solverControls.forEach((control) => {
+          control.removeEventListener("change", this.boundHandlers.solverControlChange);
+        });
+      }
+    
+      /**
+       * Proxy helper that calls a stored callback when available.
        * @private
-       * @param {number} x X coordinate
-       * @param {number} y Y coordinate
        */
-      positionHUD(x, y) {
-        if (!this.hudElement) return;
-    
-        // Constrain to viewport
-        const rect = this.hudElement.getBoundingClientRect();
-        const maxX = window.innerWidth - rect.width;
-        const maxY = window.innerHeight - rect.height;
-    
-        x = Math.max(0, Math.min(x, maxX));
-        y = Math.max(0, Math.min(y, maxY));
-    
-        this.hudElement.style.left = x + "px";
-        this.hudElement.style.top = y + "px";
+      forwardCallback(key) {
+        return (event) => {
+          const cb = this.callbacks[key];
+          if (typeof cb === "function") {
+            cb(event);
+          }
+        };
       }
     
       /**
-       * Handle mouse down on header (start dragging)
+       * Handle drag start from the HUD header.
+       * @param {MouseEvent} event
        * @private
-       * @param {MouseEvent} e Mouse event
        */
-      handleMouseDown(e) {
-        if (e.target.closest(".hud-btn")) return; // Don't drag when clicking buttons
+      handleHeaderMouseDown(event) {
+        if (event.target.closest(".hud-btn")) {
+          return;
+        }
+    
+        if (!this.panel) {
+          return;
+        }
     
         this.isDragging = true;
-        this.hudElement.classList.add("dragging");
+        this.panel.classList.add("dragging");
     
-        const rect = this.hudElement.getBoundingClientRect();
-        this.dragOffset.x = e.clientX - rect.left;
-        this.dragOffset.y = e.clientY - rect.top;
+        const rect = this.panel.getBoundingClientRect();
+        this.dragOffset.x = event.clientX - rect.left;
+        this.dragOffset.y = event.clientY - rect.top;
     
-        e.preventDefault();
+        event.preventDefault();
       }
     
       /**
-       * Handle mouse move (dragging)
+       * Handle mouse move while dragging.
+       * @param {MouseEvent} event
        * @private
-       * @param {MouseEvent} e Mouse event
        */
-      handleMouseMove(e) {
-        if (!this.isDragging) return;
+      handleDocumentMouseMove(event) {
+        if (!this.isDragging) {
+          return;
+        }
     
-        const x = e.clientX - this.dragOffset.x;
-        const y = e.clientY - this.dragOffset.y;
-    
-        this.positionHUD(x, y);
+        const x = event.clientX - this.dragOffset.x;
+        const y = event.clientY - this.dragOffset.y;
+        this.position(x, y);
       }
     
       /**
-       * Handle mouse up (stop dragging)
+       * Handle mouse up to finish dragging.
        * @private
-       * @param {MouseEvent} e Mouse event
        */
-      handleMouseUp(e) {
-        if (!this.isDragging) return;
+      handleDocumentMouseUp() {
+        if (!this.isDragging || !this.panel) {
+          return;
+        }
     
         this.isDragging = false;
-        this.hudElement.classList.remove("dragging");
+        this.panel.classList.remove("dragging");
       }
     
       /**
-       * Handle detect game button click
-       * @private
-       */
-      async handleDetectClick() {
-        if (this.controller) {
-          try {
-            const detectFn = this.controller.detectGame?.bind(this.controller);
-            const detected = detectFn ? await Promise.resolve(detectFn()) : false;
-            if (this.controller.getCurrentAdapter) {
-              const adapterFromController = this.controller.getCurrentAdapter();
-              if (adapterFromController) {
-                this.currentAdapter = adapterFromController;
-              }
-            }
-            this.updateStatus();
-            if (!detected && !this.currentAdapter) {
-              this.showMessage("No game detected.");
-            }
-          } catch (error) {
-            console.warn("HUD: Controller-driven detect failed", error);
-            this.showMessage("Detect failed. Check console.");
-          }
-          return;
-        }
-    
-        this.currentAdapter = detectGame();
-        this.updateStatus();
-      }
-    
-      /**
-       * Handle auto-solve button click
-       * @private
-       */
-      async handleAutoSolveClick() {
-        if (!this.currentAdapter) {
-          await this.handleDetectClick();
-          if (!this.currentAdapter) {
-            this.showMessage('No game detected. Click "Detect Game" first.');
-            return;
-          }
-        }
-    
-        if (this.controller) {
-          try {
-            const isRunning = this.controller.isRunning?.bind(this.controller);
-            const currentlyRunning = isRunning ? !!isRunning() : this.isAutoSolving;
-    
-            if (currentlyRunning) {
-              const stopFn = this.controller.stop?.bind(this.controller);
-              if (stopFn) {
-                await Promise.resolve(stopFn());
-              }
-              this.updateRunState(false);
-            } else {
-              const startFn = this.controller.start?.bind(this.controller);
-              if (startFn) {
-                await Promise.resolve(startFn());
-              }
-              this.updateRunState(true);
-            }
-          } catch (error) {
-            console.warn("HUD: Failed to toggle auto-solve via controller", error);
-            this.showMessage("Auto-solve toggle failed. Check console.");
-          }
-          return;
-        }
-    
-        if (this.isAutoSolving) {
-          this.stopAutoSolve();
-        } else {
-          this.startAutoSolve();
-        }
-      }
-    
-      /**
-       * Handle step button click
-       * @private
-       */
-      async handleStepClick() {
-        if (!this.currentAdapter) {
-          await this.handleDetectClick();
-          if (!this.currentAdapter) {
-            this.showMessage('No game detected. Click "Detect Game" first.');
-            return;
-          }
-        }
-    
-        if (this.controller) {
-          try {
-            const stepFn = this.controller.step?.bind(this.controller);
-            if (stepFn) {
-              await Promise.resolve(stepFn());
-            }
-          } catch (error) {
-            console.warn("HUD: Step failed via controller", error);
-            this.showMessage("Step failed. Check console.");
-          }
-          return;
-        }
-    
-        this.executeStep();
-      }
-    
-      /**
-       * Handle collapse button click
+       * Toggle collapse/expand state while updating the icon.
        * @private
        */
       handleCollapseClick() {
         this.isCollapsed = !this.isCollapsed;
-        this.hudElement.setAttribute("data-collapsed", this.isCollapsed.toString());
+        this.panel?.setAttribute("data-collapsed", String(this.isCollapsed));
     
-        const collapseIcon = this.shadowRoot.querySelector(".collapse-icon");
-        collapseIcon.textContent = this.isCollapsed ? "+" : "−";
+        if (this.elements.collapseIcon) {
+          this.elements.collapseIcon.textContent = this.isCollapsed
+            ? COLLAPSE_ICON.COLLAPSED
+            : COLLAPSE_ICON.EXPANDED;
+        }
+    
+        if (typeof this.callbacks.onCollapse === "function") {
+          this.callbacks.onCollapse(this.isCollapsed);
+        }
       }
     
       /**
-       * Update HUD status display
+       * Handle direction priority selector updates.
+       * @param {Event} event
        * @private
        */
-      updateStatus() {
-        if (this.controller && this.controller.getCurrentAdapter) {
-          const controllerAdapter = this.controller.getCurrentAdapter();
-          if (controllerAdapter) {
-            this.currentAdapter = controllerAdapter;
-          }
-        }
-    
-        const gameStatus = this.shadowRoot.getElementById("game-status");
-        const scoreStatus = this.shadowRoot.getElementById("score-status");
-        const autoSolveBtn = this.shadowRoot.getElementById("auto-solve-btn");
-        const stepBtn = this.shadowRoot.getElementById("step-btn");
-    
-        if (this.currentAdapter) {
-          gameStatus.textContent = `${this.currentAdapter.getName()}`;
-          gameStatus.style.color = "#34d399";
-    
-          const score = this.currentAdapter.getScore();
-          scoreStatus.textContent = score !== null ? score.toLocaleString() : "-";
-    
-          autoSolveBtn.disabled = false;
-          stepBtn.disabled = false;
-        } else {
-          gameStatus.textContent = "Not detected";
-          gameStatus.style.color = "#f87171";
-          scoreStatus.textContent = "-";
-    
-          autoSolveBtn.disabled = true;
-          stepBtn.disabled = true;
-        }
-    
-        if (this.controller && this.controller.getSolverStatus) {
-          try {
-            const solverStatus = this.controller.getSolverStatus();
-            this.updateSolverStatus(solverStatus || null);
-          } catch (error) {
-            console.warn("HUD: Failed to refresh solver status", error);
-          }
-        }
-      }
-    
-      /**
-       * Update run state UI to reflect automation status
-       * @param {boolean} isRunning Whether automation is active
-       */
-      updateRunState(isRunning) {
-        this.isAutoSolving = !!isRunning;
-    
-        if (this.hudElement) {
-          this.hudElement.classList.toggle("auto-solving", this.isAutoSolving);
-        }
-    
-        const autoSolveBtn = this.shadowRoot?.getElementById("auto-solve-btn");
-        if (autoSolveBtn) {
-          autoSolveBtn.textContent = this.isAutoSolving
-            ? "⏸️ Pause"
-            : "▶️ Auto-solve";
-        }
-      }
-    
-      /**
-       * Start auto-solving
-       * @private
-       */
-      async startAutoSolve() {
-        if (this.controller) {
-          try {
-            const startFn = this.controller.start?.bind(this.controller);
-            if (startFn) {
-              await Promise.resolve(startFn());
-            }
-            const running = this.controller.isRunning?.bind(this.controller);
-            this.updateRunState(running ? !!running() : true);
-          } catch (error) {
-            console.warn("HUD: startAutoSolve controller invocation failed", error);
-            this.showMessage("Auto-solve failed. Check console.");
-          }
+      handleDirectionChange(event) {
+        const value = event?.target?.value;
+        if (!value) {
           return;
         }
     
-        this.updateRunState(true);
-        this.autoSolveLoop();
+        const priorities = value.split(",").map(Number).filter((n) => !Number.isNaN(n));
+    
+        if (typeof this.callbacks.onDirectionPriorityChange === "function") {
+          this.callbacks.onDirectionPriorityChange(priorities);
+        }
       }
     
       /**
-       * Stop auto-solving
+       * Bridge solver control events back to the controller layer.
        * @private
        */
-      async stopAutoSolve() {
-        if (this.controller) {
-          try {
-            const stopFn = this.controller.stop?.bind(this.controller);
-            if (stopFn) {
-              await Promise.resolve(stopFn());
-            }
-          } catch (error) {
-            console.warn("HUD: stopAutoSolve controller invocation failed", error);
-          }
-          this.updateRunState(false);
+      handleSolverControlChange() {
+        if (this._suppressSolverEvents) {
           return;
         }
     
-        if (this.autoSolveTimeout) {
-          clearTimeout(this.autoSolveTimeout);
-          this.autoSolveTimeout = null;
-        }
-    
-        this.updateRunState(false);
-      }
-    
-      /**
-       * Auto-solve loop
-       * @private
-       */
-      async autoSolveLoop() {
-        if (!this.isAutoSolving || !this.currentAdapter) return;
-    
-        // Check if game is over
-        if (this.currentAdapter.isGameOver()) {
-          this.stopAutoSolve();
-          this.showMessage("Game over!");
+        if (typeof this.callbacks.onSolverControlChange !== "function") {
           return;
         }
     
-        // Execute a step
-        await this.executeStep();
-    
-        // Update status
-        this.updateStatus();
-    
-        // Continue loop with delay
-        this.autoSolveTimeout = setTimeout(() => {
-          this.autoSolveLoop();
-        }, 150); // 150ms delay between moves
+        this.callbacks.onSolverControlChange(this.getSolverControlValues());
       }
     
       /**
-       * Execute a single step
-       * @private
+       * Return the currently selected solver configuration from the UI.
+       * @returns {{type:string, heuristic:string, depth:number, probability:number}}
        */
-      async executeStep() {
-        if (!this.currentAdapter) return;
+      getSolverControlValues() {
+        return {
+          type: this.elements.solverStrategy?.value || "expectimax-depth",
+          heuristic: this.elements.solverHeuristic?.value || "corner",
+          depth: parseInt(this.elements.solverDepth?.value, 10) || 4,
+          probability: parseFloat(this.elements.solverProbability?.value) || 0.0025,
+        };
+      }
     
-        const boardBefore = this.currentAdapter.readBoard();
-        if (!boardBefore) return;
+      /**
+       * Synchronise solver control inputs without triggering change events.
+       * @param {{type:string, heuristic:string, depth:number, probability:number}} config
+       */
+      setSolverControlValues(config) {
+        this._suppressSolverEvents = true;
     
-        // Try each direction in priority order
-        for (const direction of this.directionPriority) {
-          this.currentAdapter.sendMove(direction);
-    
-          // Wait for move to complete
-          await new Promise((resolve) => setTimeout(resolve, 120));
-    
-          const boardAfter = this.currentAdapter.readBoard();
-          if (
-            boardAfter &&
-            JSON.stringify(boardBefore) !== JSON.stringify(boardAfter)
-          ) {
-            // Move was successful
-            return;
-          }
+        if (this.elements.solverStrategy) {
+          this.elements.solverStrategy.value = config.type;
         }
     
-        // If no move worked, try random direction
-        const randomDir = Math.floor(Math.random() * 4);
-        this.currentAdapter.sendMove(randomDir);
+        if (this.elements.solverHeuristic) {
+          this.elements.solverHeuristic.value = config.heuristic;
+        }
+    
+        if (this.elements.solverDepth) {
+          this.elements.solverDepth.value = String(config.depth);
+        }
+    
+        if (this.elements.solverProbability) {
+          this.elements.solverProbability.value = String(config.probability);
+        }
+    
+        this._suppressSolverEvents = false;
       }
     
       /**
-       * Show temporary message
-       * @private
-       * @param {string} message Message to show
+       * Enable or disable solver input fields as needed for the current mode.
+       * @param {boolean} depthEnabled
+       * @param {boolean} probabilityEnabled
+       */
+      setSolverControlAvailability(depthEnabled, probabilityEnabled) {
+        if (this.elements.solverDepth) {
+          this.elements.solverDepth.disabled = !depthEnabled;
+        }
+    
+        if (this.elements.solverProbability) {
+          this.elements.solverProbability.disabled = !probabilityEnabled;
+        }
+      }
+    
+      /**
+       * Update the solver status indicator text and colour.
+       * @param {{text:string, color:string, title:string}} status
+       */
+      setSolverStatus(status) {
+        if (!this.elements.status) {
+          return;
+        }
+    
+        this.elements.status.textContent = status.text;
+        this.elements.status.style.color = status.color;
+        this.elements.status.title = status.title;
+      }
+    
+      /**
+       * Update game detection message and colour indicator.
+       * @param {{text:string, color:string}}
+       */
+      setGameStatus({ text, color }) {
+        if (!this.elements.gameStatus) {
+          return;
+        }
+    
+        this.elements.gameStatus.textContent = text;
+        this.elements.gameStatus.style.color = color;
+      }
+    
+      /**
+       * Show latest score value.
+       * @param {string} scoreText
+       */
+      setScore(scoreText) {
+        if (this.elements.scoreStatus) {
+          this.elements.scoreStatus.textContent = scoreText;
+        }
+      }
+    
+      /**
+       * Enable or disable the key control buttons.
+       * @param {{autoSolve:boolean, step:boolean}}
+       */
+      setControlsEnabled({ autoSolve, step }) {
+        if (this.elements.autoSolveBtn) {
+          this.elements.autoSolveBtn.disabled = !autoSolve;
+        }
+    
+        if (this.elements.stepBtn) {
+          this.elements.stepBtn.disabled = !step;
+        }
+      }
+    
+      /**
+       * Reflect whether auto solving is running on the button and panel.
+       * @param {boolean} isRunning
+       */
+      setAutoSolveRunning(isRunning) {
+        if (this.panel) {
+          this.panel.classList.toggle("auto-solving", Boolean(isRunning));
+        }
+    
+        if (this.elements.autoSolveBtn) {
+          this.elements.autoSolveBtn.textContent = isRunning ? "⏸️ Pause" : "▶️ Auto-solve";
+        }
+      }
+    
+      /**
+       * Update the selected direction priority option.
+       * @param {number[]} priorities
+       */
+      setDirectionPriority(priorities) {
+        if (!this.elements.directionSelect) {
+          return;
+        }
+    
+        const value = priorities.join(",");
+        this.elements.directionSelect.value = value;
+      }
+    
+      /**
+       * Position the HUD within the viewport, clamped to visible area.
+       * @param {number} x
+       * @param {number} y
+       */
+      position(x, y) {
+        if (!this.panel) {
+          return;
+        }
+    
+        const rect = this.panel.getBoundingClientRect();
+        const maxX = window.innerWidth - rect.width;
+        const maxY = window.innerHeight - rect.height;
+    
+        const clampedX = Math.max(0, Math.min(x, maxX));
+        const clampedY = Math.max(0, Math.min(y, maxY));
+    
+        this.panel.style.left = `${clampedX}px`;
+        this.panel.style.top = `${clampedY}px`;
+      }
+    
+      /**
+       * Show a temporary toast-like message centred on the screen.
+       * @param {string} message
        */
       showMessage(message) {
-        // Create temporary message element
         const messageEl = document.createElement("div");
         messageEl.style.cssText = `
           position: fixed;
@@ -2987,137 +3453,14 @@
         document.body.appendChild(messageEl);
     
         setTimeout(() => {
-          document.body.removeChild(messageEl);
+          if (messageEl.parentNode) {
+            messageEl.parentNode.removeChild(messageEl);
+          }
         }, 2000);
       }
-    
-      /**
-       * Connect HUD to external controller (e.g., runtime)
-       * @param {Object|null} controller Controller interface
-       */
-      setController(controller) {
-        this.controller = controller || null;
-    
-        if (this.controller && this.controller.getCurrentAdapter) {
-          const adapter = this.controller.getCurrentAdapter();
-          if (adapter) {
-            this.currentAdapter = adapter;
-          }
-        }
-    
-        if (this.controller && this.controller.isRunning) {
-          try {
-            this.updateRunState(!!this.controller.isRunning());
-          } catch (error) {
-            console.warn("HUD: Failed to read controller run state", error);
-          }
-        } else {
-          this.updateRunState(false);
-        }
-    
-        this.updateStatus();
-    
-        if (this.controller && this.controller.getSolverStatus) {
-          try {
-            const solverStatus = this.controller.getSolverStatus();
-            this.updateSolverStatus(solverStatus || null);
-          } catch (error) {
-            console.warn("HUD: Failed to fetch solver status", error);
-          }
-        } else {
-          this.updateSolverStatus(null);
-        }
-      }
-    
-      /**
-       * Get current direction priority selection
-       * @returns {number[]} Direction priority array
-       */
-      getDirectionPriority() {
-        return [...this.directionPriority];
-      }
-    
-      /**
-       * Destroy the HUD and clean up
-       */
-      destroy() {
-        if (this.isAutoSolving) {
-          this.stopAutoSolve();
-        }
-    
-        if (this.autoSolveTimeout) {
-          clearTimeout(this.autoSolveTimeout);
-          this.autoSolveTimeout = null;
-        }
-    
-        // Remove event listeners
-        document.removeEventListener("mousemove", this.handleMouseMove);
-        document.removeEventListener("mouseup", this.handleMouseUp);
-    
-        // Remove from DOM
-        if (this.shadowHost && this.shadowHost.parentNode) {
-          this.shadowHost.parentNode.removeChild(this.shadowHost);
-        }
-    
-        this.shadowHost = null;
-        this.shadowRoot = null;
-        this.hudElement = null;
-        this.currentAdapter = null;
-      }
     }
     
-    /**
-     * Global HUD instance
-     */
-    let globalHUD = null;
-    
-    /**
-     * Initialize HUD if not already present
-     * @returns {HUD} HUD instance
-     */
-    function initHUD() {
-      if (!globalHUD) {
-        globalHUD = new HUD();
-        globalHUD.init();
-      }
-      return globalHUD;
-    }
-    
-    /**
-     * Get current HUD instance
-     * @returns {HUD|null} HUD instance or null
-     */
-    function getHUD() {
-      return globalHUD;
-    }
-    
-    /**
-     * Destroy current HUD instance
-     */
-    function destroyHUD() {
-      if (globalHUD) {
-        globalHUD.destroy();
-        globalHUD = null;
-      }
-    }
-    
-    exports.HUD = HUD;
-    exports.initHUD = initHUD;
-    exports.getHUD = getHUD;
-    exports.destroyHUD = destroyHUD;
-  },
-  "./src/hud/index.js": function (exports, module, require) {
-    /**
-     * @fileoverview HUD system exports
-     * Main entry point for the Shadow DOM HUD overlay
-     */
-    
-    const __reExport0 = require("./src/hud/hud.js");
-    exports.HUD = __reExport0.HUD;
-    exports.initHUD = __reExport0.initHUD;
-    exports.getHUD = __reExport0.getHUD;
-    exports.destroyHUD = __reExport0.destroyHUD;
-    
+    exports.HUDView = HUDView;
   },
   "./src/observer/index.js": function (exports, module, require) {
     /**

@@ -7,6 +7,7 @@ Playkit.ai is building an open marketplace for lightweight automations that can 
 The long-term goal is to let developers publish their own agents, browse community strategies, and run matchups, but today the stack is laser-focused on proving out 2048. This README captures the current surface area, how to get started, and where we are heading next.
 
 ## Contents
+
 - [Current Capabilities](#current-capabilities)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
@@ -54,15 +55,15 @@ Playkit.ai is split into three collaborating systems:
 
 ## Project Layout
 
-| Path | Description |
-| --- | --- |
-| `src/` | Browser runtime sources, HUD overlay, and adapter implementations. |
-| `scripts/` | Tooling for building the WASM bundle, packaging extensions, and running CI tasks. |
-| `frontend/` | Next.js application for the public site and documentation portal. |
-| `solver/` | Standalone C++ solver, benchmarks, and research assets that feed the WASM build. |
-| `docs/` | Statically generated documentation pages and design exports. |
-| `.kiro/specs/` | Product and engineering specs (architecture, requirements, task breakdowns). |
-| `.kiro/steering/` | Coding standards, testing guidelines, and architectural guardrails. |
+| Path              | Description                                                                       |
+| ----------------- | --------------------------------------------------------------------------------- |
+| `src/`            | Browser runtime sources, HUD overlay, and adapter implementations.                |
+| `scripts/`        | Tooling for building the WASM bundle, packaging extensions, and running CI tasks. |
+| `frontend/`       | Next.js application for the public site and documentation portal.                 |
+| `solver/`         | Standalone C++ solver, benchmarks, and research assets that feed the WASM build.  |
+| `docs/`           | Statically generated documentation pages and design exports.                      |
+| `.kiro/specs/`    | Product and engineering specs (architecture, requirements, task breakdowns).      |
+| `.kiro/steering/` | Coding standards, testing guidelines, and architectural guardrails.               |
 
 ## Getting Started
 
@@ -70,8 +71,8 @@ Playkit.ai is split into three collaborating systems:
 
 ```bash
 # Clone the repo
-git clone https://github.com/SamGu-NRX/playkit-ai.git
-cd playkit-ai
+git clone https://github.com/SamGu-NRX/playkit.ai.git
+cd playkit.ai
 
 # Recommended toolchain
 # - Node.js 20+

@@ -61,7 +61,7 @@ This plan follows the steering guidance:
 **Overview:** MV3: Add `manifest.json` and content script entry that loads the shared runtime. Docs: Update `src/extension/README.md` with unpacked install instructions and parity notes. Performance: Keep bundle small (goal ≤ ~20 KB gzipped); avoid frameworks; no external network calls.
 **Requirements:** 1.1, 1.6, 7.5, 8.1
 
-- [ ] 1.1 Extension manifest and packaging
+- [x] 1.1 Extension manifest and packaging
 
   - Add `manifest.json` and content script entry that loads the shared runtime
   - Create Manifest V3 configuration with minimal permissions
@@ -70,7 +70,7 @@ This plan follows the steering guidance:
   - Create extension directory structure
   - _Requirements: 1.1, 1.5, 7.5_
 
-- [ ] 1.2 Documentation and performance optimization
+- [x] 1.2 Documentation and performance optimization
   - Update `src/extension/README.md` with unpacked install instructions and parity notes
   - Keep bundle small (goal ≤ ~20 KB gzipped); avoid frameworks; no external network calls
   - Optimize bundle size and loading performance

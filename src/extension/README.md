@@ -1,23 +1,25 @@
-2048 HUD Solver (MV3)
+2048 AI Solver — MV3 package
 
-What’s included
-- `manifest.json`: MV3 manifest to inject a content script on all pages.
-- `content.js`: Generated bundle from the shared runtime (`node scripts/build-phase0.js`). Includes the Shadow DOM HUD, adapter registry, driver, mutation observer, and runtime glue code.
+What ships in `src/extension/`
+- `manifest.json`: MV3 manifest with targeted host permissions for common 2048 implementations and `<all_urls>` access only for static assets (`web_accessible_resources`).
+- `content.js`: Bundle generated from the shared runtime (`node scripts/build-phase0.js`). Contains the Shadow DOM HUD, adapter registry, driver, mutation observer, and runtime glue.
+- `assets/` & `wasm/`: Staging folders for icons or compiled WebAssembly binaries; everything under these directories is copied into the `dist/extension` package.
+
+Rebuilding & packaging
+1. Run `node scripts/build-phase0.js` from the repository root.
+2. The script rebuilds `src/extension/content.js`, produces bookmarklet outputs in `dist/`, and mirrors the MV3 payload into `dist/extension` (manifest, content script, static assets).
+3. Zip `dist/extension` if you need an installable archive (`zip -r dist/2048-ai-solver.zip dist/extension`).
 
 Load as an unpacked extension
-1. Open Chrome/Edge/Brave → `chrome://extensions`.
-2. Enable Developer mode.
-3. Click “Load unpacked” and select this directory: `src/extension`.
-4. Visit a 2048 page (e.g., play2048.co) → click “Detect” then “Auto‑solve”.
+1. Chrome/Edge/Brave → open `chrome://extensions` and enable *Developer mode*.
+2. Click **Load unpacked** and point to either `src/extension` (dev flow) or `dist/extension` (build artifact).
+3. Navigate to a supported 2048 board (e.g., `https://play2048.co`, `https://mitchgu.github.io/GetMIT/`). The HUD exposes *Detect*, *Auto-solve*, *Step*, and direction priority controls.
 
-Notes
-- HUD runs in a Shadow DOM with a high `z-index` and is draggable.
-- Extend functionality by editing the source modules in `src/` (e.g., `src/adapters`, `src/hud`, `src/runtime`) and regenerate the bundle via `node scripts/build-phase0.js`.
-- The driver throttles to ~130ms per attempt and only advances when the board DOM changes.
-- For mobile-only clones, adapters also simulate swipe gestures when available.
+Parity & performance notes
+- Shared runtime: bookmarklet (`dist/2048-hud.min.js`) and MV3 content script originate from the same source modules, preventing logic drift.
+- Runtime size: `dist/extension/content.js` is ~121 KB uncompressed (~22 KB gzipped) and has no third-party dependencies or network calls.
+- Host scope: content scripts are limited to URLs that contain “2048” plus the explicit target hosts. Adjust `manifest.json` if you need broader detection.
+- Future WASM: place compiled solver artifacts in `src/extension/wasm/` and rebuild; the manifest already exposes `wasm/*.wasm` as web-accessible resources for the content script.
 
 Bookmarklet (optional)
-- See `src/bookmarklet/loader.js` for a bookmarklet loader. You’ll need to host a minified build of `content.js` and replace `CDN_URL` in the snippet.
-
-Future integration with C++/WASM
-- The existing C++ solver in `solver/` can be compiled to WebAssembly and integrated behind the HUD. The current content script isolates the UI/driver so a WASM solver can be swapped in later via a small interface.
+- See `src/bookmarklet/loader.js` for a bookmarklet loader. Host `dist/2048-hud.min.js` and update the CDN placeholder accordingly.

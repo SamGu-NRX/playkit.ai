@@ -1,17 +1,34 @@
 {
   "manifest_version": 3,
-  "name": "2048 HUD Solver",
+  "name": "2048 AI Solver",
   "version": "0.1.0",
-  "description": "Detects 2048-like boards, overlays a HUD, and can auto-play via simulated inputs.",
-  "action": { "default_title": "2048 HUD" },
-  "host_permissions": ["<all_urls>"],
+  "description": "Detects 2048-style games, overlays a HUD, and can auto-play via simulated inputs.",
+  "action": {
+    "default_title": "2048 AI Solver"
+  },
   "permissions": ["storage"],
+  "host_permissions": [
+    "https://play2048.co/*",
+    "https://*.play2048.co/*",
+    "https://mitchgu.github.io/GetMIT/*",
+    "*://*/*2048*"
+  ],
   "content_scripts": [
     {
-      "matches": ["*://*/*"],
+      "matches": [
+        "https://play2048.co/*",
+        "https://*.play2048.co/*",
+        "https://mitchgu.github.io/GetMIT/*",
+        "*://*/*2048*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["wasm/*.wasm", "assets/*"],
+      "matches": ["<all_urls>"]
+    }
   ]
 }
-

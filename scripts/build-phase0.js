@@ -190,6 +190,26 @@ function bundle(entryRelativePath, outputRelativePath) {
   fs.writeFileSync(outputAbs, output, "utf8");
 }
 
+function copyDirectoryContents(srcDir, destDir) {
+  if (!fs.existsSync(srcDir)) {
+    return;
+  }
+
+  fs.mkdirSync(destDir, { recursive: true });
+
+  for (const entry of fs.readdirSync(srcDir)) {
+    const srcEntry = path.join(srcDir, entry);
+    const destEntry = path.join(destDir, entry);
+    const stats = fs.statSync(srcEntry);
+
+    if (stats.isDirectory()) {
+      copyDirectoryContents(srcEntry, destEntry);
+    } else {
+      fs.copyFileSync(srcEntry, destEntry);
+    }
+  }
+}
+
 function main() {
   const targets = [
     {
@@ -212,6 +232,29 @@ function main() {
   const minifiedOutput = path.resolve(rootDir, "dist/2048-hud.min.js");
   fs.copyFileSync(bookmarkletOutput, minifiedOutput);
   console.log("Created dist/2048-hud.min.js (pre-minified copy)");
+
+  // Mirror extension bundle into dist/extension for packaging
+  const extensionSrcDir = path.resolve(rootDir, "src/extension");
+  const extensionDistDir = path.resolve(rootDir, "dist/extension");
+  fs.rmSync(extensionDistDir, { recursive: true, force: true });
+  fs.mkdirSync(extensionDistDir, { recursive: true });
+
+  const filesToCopy = ["manifest.json", "content.js", "README.md"];
+  filesToCopy.forEach((file) => {
+    const srcPath = path.join(extensionSrcDir, file);
+    if (fs.existsSync(srcPath)) {
+      fs.copyFileSync(srcPath, path.join(extensionDistDir, file));
+    }
+  });
+
+  // Copy static asset directories if present (e.g., wasm or assets)
+  ["wasm", "assets"].forEach((dirName) => {
+    const srcDir = path.join(extensionSrcDir, dirName);
+    const distDir = path.join(extensionDistDir, dirName);
+    copyDirectoryContents(srcDir, distDir);
+  });
+
+  console.log("Mirrored extension bundle into dist/extension");
 }
 
 if (require.main === module) {

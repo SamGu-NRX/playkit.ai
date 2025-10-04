@@ -89,7 +89,8 @@ This plan follows the steering guidance:
 
 ## Phase 3 — WebAssembly solver integration
 
-**Overview:** Compile solver: Use Emscripten; base on `solver/demo/website/export_players.cpp`. Package artifacts with the extension. Loader/interface: Implement `ISolverEngine` + board conversion utilities matching C++ bitwise representation. Strategies: Expectimax (depth/probability) with selectable heuristics (corner, monotonicity, wall‑building, score‑based). Fallback: On WASM load/init failure, continue with naive runtime.
+**Overview:** Compile solver: Use Emscripten; base on `solver/demo/website/export_players.cpp
+`. Package artifacts with the extension. Loader/interface: Implement `ISolverEngine` + board conversion utilities matching C++ bitwise representation. Strategies: Expectimax (depth/probability) with selectable heuristics (corner, monotonicity, wall‑building, score‑based). Fallback: On WASM load/init failure, continue with naive runtime.
 **Requirements:** 2.1, 2.2, 5.1, 5.2, 5.3, 5.5
 
 - [ ] 3.1 WebAssembly compilation and integration

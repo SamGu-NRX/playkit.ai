@@ -11,8 +11,13 @@ export { Play2048Adapter } from "./play2048-adapter.js";
 export { GenericAdapter } from "./generic-adapter.js";
 export { GetMITAdapter } from "./getmit-adapter.js";
 
-// Registry system
-export { AdapterRegistry, globalAdapterRegistry } from "./adapter-registry.js";
+// Registry system.
+// FIX-8 (bench finding): index.js previously only re-exported
+// globalAdapterRegistry; detectGame()/getDetectionInfo() below referenced the
+// bare identifier, which is undefined in module scope outside the bundler
+// (ReferenceError in every direct ESM consumer, e.g. Runtime.init).
+import { AdapterRegistry, globalAdapterRegistry } from "./adapter-registry.js";
+export { AdapterRegistry, globalAdapterRegistry };
 
 /**
  * Convenience function to detect and get the best adapter for current page

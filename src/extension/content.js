@@ -1194,10 +1194,14 @@
     const __reExport3 = require("./src/adapters/getmit-adapter.js");
     exports.GetMITAdapter = __reExport3.GetMITAdapter;
     
-    // Registry system
-    const __reExport4 = require("./src/adapters/adapter-registry.js");
-    exports.AdapterRegistry = __reExport4.AdapterRegistry;
-    exports.globalAdapterRegistry = __reExport4.globalAdapterRegistry;
+    // Registry system.
+    // FIX-8 (bench finding): index.js previously only re-exported
+    // globalAdapterRegistry; detectGame()/getDetectionInfo() below referenced the
+    // bare identifier, which is undefined in module scope outside the bundler
+    // (ReferenceError in every direct ESM consumer, e.g. Runtime.init).
+    const { AdapterRegistry, globalAdapterRegistry } = require("./src/adapters/adapter-registry.js");
+    exports.AdapterRegistry = AdapterRegistry;
+    exports.globalAdapterRegistry = globalAdapterRegistry;
     
     /**
      * Convenience function to detect and get the best adapter for current page
@@ -5042,6 +5046,8 @@
       return rotateBoardCounterClockwise(moved);
     }
     
+    // Exported for testability: tests cross-check these simulators against an
+    // independent reference implementation (test/helpers/reference-2048.mjs).
     const MOVE_SIMULATORS = {
       [Direction.LEFT]: moveLeft,
       [Direction.RIGHT]: moveRight,
@@ -5147,6 +5153,7 @@
     
     
     exports.NaiveSolverEngine = NaiveSolverEngine;
+    exports.MOVE_SIMULATORS = MOVE_SIMULATORS;
   },
   "./src/solver/solver-manager.js": function (exports, module, require) {
     /**

@@ -45,7 +45,8 @@ const adapterChoice = params.adapter || "auto";
 const enableHUD = params.hud !== "0";
 const autoStart = params.autoStart === "1";
 
-const game = window.__createFixtureGame({
+// Awaiting: __createFixtureGame is async (dynamically imports the engine).
+const game = await window.__createFixtureGame({
   seed,
   scenario,
 });

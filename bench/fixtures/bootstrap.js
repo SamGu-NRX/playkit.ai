@@ -93,6 +93,19 @@ async function bootstrap() {
         onMessage: { addListener() {} },
       },
     };
+    // Capture the bundle's console output — its main() catches its own init
+    // errors and only logs them, so this is the primary error surface.
+    window.__BENCH_CONSOLE__ = [];
+    for (const level of ["error", "warn"]) {
+      const original = console[level].bind(console);
+      console[level] = (...args) => {
+        window.__BENCH_CONSOLE__.push({
+          level,
+          text: args.map((a) => (a instanceof Error ? String(a.stack || a) : String(a))).join(" "),
+        });
+        original(...args);
+      };
+    }
     await loadClassicScript(new URL("../../src/extension/content.js", location.href).href);
     runtime = await waitFor(() => window.ai2048Runtime, 8000, "bundle runtime");
   } else {

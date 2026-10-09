@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>bench fixture — play2048-style</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #faf8ef; color: #776e65; margin: 0; padding: 16px; }
+  .bench-banner { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
+  .container.game-container { width: 468px; margin: 0 auto; position: relative; }
+  .heading { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .score-container { background: #bbada0; border-radius: 4px; padding: 6px 16px; color: #fff; min-width: 60px; text-align: right; }
+  .score { font-weight: bold; font-size: 20px; }
+  .tile-container { position: relative; width: 468px; height: 468px; background: #bbada0; border-radius: 6px; }
+  .grid-cell, .tile { width: 106px; height: 106px; position: absolute; border-radius: 4px; }
+  .grid-cell { background: rgba(238, 228, 218, 0.35); }
+  .tile { background: #eee4da; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; color: #776e65; transition: none; }
+  .tile-2 { background: #eee4da; } .tile-4 { background: #ede0c8; } .tile-8 { background: #f2b179; color: #fff; }
+  .tile-16 { background: #f59563; color: #fff; } .tile-32 { background: #f67c5f; color: #fff; }
+  .tile-64 { background: #f65e3b; color: #fff; } .tile-128 { background: #edcf72; color: #fff; font-size: 34px; }
+  .tile-256 { background: #edcc61; color: #fff; font-size: 34px; } .tile-512 { background: #edc850; color: #fff; font-size: 34px; }
+  .tile-1024 { background: #edc53f; color: #fff; font-size: 28px; } .tile-2048 { background: #edc22e; color: #fff; font-size: 28px; }
+  .game-message { display: none; position: absolute; inset: 0; background: rgba(238,228,218,0.73); z-index: 10; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; border-radius: 6px; }
+  .game-container.game-over .game-message, .game-container.game-won .game-message { display: flex; }
+</style>
+</head>
+<body>
+  <div class="bench-banner">playkit bench fixture — play2048-style DOM (script: <span id="fixture-script-info"></span>)</div>
+  <div class="container game-container" data-game-input>
+    <div class="heading">
+      <div class="score-container"><span class="score">0</span></div>
+    </div>
+    <div class="tile-container"></div>
+    <div class="game-message"><p>Game over!</p></div>
+  </div>
+
+  <script>
+    // Background grid cells (like play2048.co) so the DOM always has shape.
+    (function buildGrid() {
+      const container = document.querySelector(".tile-container");
+      for (let r = 1; r <= 4; r++) {
+        for (let c = 1; c <= 4; c++) {
+          const cell = document.createElement("div");
+          cell.className = `grid-cell grid-cell-${c}-${r}`;
+          cell.style.transform = `translate(${(c - 1) * 116 + 8}px, ${(r - 1) * 116 + 8}px)`;
+          container.appendChild(cell);
+        }
+      }
+      document.getElementById("fixture-script-info").textContent = "grid built";
+    })();
+
+    window.__createFixtureGame = async function ({ seed, scenario }) {
+      const { FixtureGame } = await import("./game-engine.js");
+      const gameContainer = document.querySelector(".container.game-container");
+      const tileContainer = document.querySelector(".tile-container");
+      const scoreEl = document.querySelector(".score-container .score");
+      let tileNodes = [];
+
+      const game = new FixtureGame({
+        seed,
+        scenario,
+        onRender(state) {
+          tileNodes.forEach((n) => n.remove());
+          tileNodes = [];
+          for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+              const v = state.board[r][c];
+              if (!v) continue;
+              const tile = document.createElement("div");
+              // play2048.co convention: position classes are 1-based COL-ROW.
+              tile.className = `tile tile-${v} tile-position-${c + 1}-${r + 1}`;
+              const inner = document.createElement("div");
+              inner.className = "tile-inner";
+              inner.textContent = String(v);
+              tile.appendChild(inner);
+              tile.style.transform = `translate(${c * 116 + 8}px, ${r * 116 + 8}px)`;
+              tileContainer.appendChild(tile);
+              tileNodes.push(tile);
+            }
+          }
+          scoreEl.textContent = String(state.score);
+          gameContainer.classList.toggle("game-over", state.gameOver);
+          gameContainer.classList.toggle("game-won", state.won && !state.gameOver);
+        },
+      });
+      game.onVanish = () => gameContainer.remove();
+      return game;
+    };
+  </script>
+  <script type="module" src="./bootstrap.js"></script>
+</body>
+</html>

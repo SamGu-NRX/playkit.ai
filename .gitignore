@@ -25,6 +25,8 @@ export_players
 logs/
 *.log
 results/
+# ...except the solver-budgets study, whose methodology commits raw runs
+!experiments/solver-budgets/results/
 results-*.csv
 solver/results-stage1.csv
 solver/results-stage2.csv

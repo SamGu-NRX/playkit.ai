@@ -1,0 +1,73 @@
+{
+  "experiment": "solver-budgets",
+  "version": 1,
+  "arms": [
+    {
+      "id": "naive",
+      "engine": "naive",
+      "description": "production JS fallback solver (src/solver/naive-solver.js) — baseline arm and fallback engine"
+    },
+    {
+      "id": "native-cpp",
+      "engine": "native-cpp",
+      "strategy": {
+        "type": "expectimax-depth",
+        "heuristic": "corner",
+        "depth": 3,
+        "probability": 0.5,
+        "trials": 256
+      },
+      "description": "2048-solver submodule strategies compiled natively (g++), driven through the persistent shim; separately labelled build, not the WASM arm"
+    },
+    {
+      "id": "wasm",
+      "engine": "wasm",
+      "strategy": {
+        "type": "expectimax-depth",
+        "heuristic": "corner",
+        "depth": 3,
+        "probability": 0.5,
+        "trials": 256
+      },
+      "description": "same C++ sources built by Emscripten through the extension's embind surface; included only when the local build succeeds"
+    }
+  ],
+  "games": {
+    "seeds": [
+      102390421,
+      748250013,
+      2184029351,
+      1405507563,
+      920410571,
+      3049172549,
+      558014027,
+      1817759143,
+      2641089319,
+      432697811,
+      3319042651,
+      712205321,
+      2095813883,
+      1645901357,
+      3802694791,
+      843329821,
+      2957014493,
+      1192047301,
+      2675890139,
+      615494003
+    ],
+    "gamesPerArm": 20,
+    "spawnHistoryFile": "spawn-history.json"
+  },
+  "budgets": {
+    "timeBudgetMsPerMove": 200,
+    "maxMovesPerGame": 5000
+  },
+  "rules": {
+    "spawnPolicy": "frozen per-seed streams of (uCell, uValue) draws from spawn-history.json; standard empty-cell selection with 10% four-tile odds; every arm replays the identical stream for a seed",
+    "moveModel": "game state advances only through test/helpers/reference-2048.mjs; solver-internal simulators are never trusted to advance state",
+    "fallback": "on time-budget overrun, engine error, or no legal entry in the engine's order, the naive arm supplies the move (canonical Up,Right,Down,Left order if naive is unavailable); raw engine output is still committed",
+    "purity": "naive and scripted arms are considered purer than native-cpp and wasm because every part of their move production is JS; native-cpp/wasm carry the cross-language convention risk that the native-crosscheck test pins down",
+    "strategyEncoding": "type and heuristic are the SUBMODULE STRINGS (expectimax-depth, corner) — the shim and embind factory both match on names; numeric codes would silently fall back to defaults. depth=3 is the deepest expectimax depth whose measured latency (~10 ms median, this machine) fits the 200 ms per-move budget; depth 4 measured ~300 ms and overruns."
+  },
+  "scopeNote": "Results are machine-specific measurements on 20 seeds. They carry no universal latency or performance claim."
+}

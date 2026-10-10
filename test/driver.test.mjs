@@ -350,8 +350,8 @@ describe("Driver", () => {
     });
   });
 
-  describe("failed reads (current reality vs FIX-5 target)", () => {
-    test("documents current behavior: readBoard returning null never presses and the driver keeps retrying", async () => {
+  describe("failed reads (FIX-5 implemented on the hardening branch)", () => {
+    test("FIX-5: readBoard returning null never presses and the driver stops after maxRetries with exactly one onError", async () => {
       const adapter = new FakeAdapter({ failReads: "null" });
       const solver = new FakeSolver(() => [LEFT]);
       const driver = makeDriver({ stuckThreshold: 2, maxRetries: 2 });
@@ -361,17 +361,21 @@ describe("Driver", () => {
       driver.onGameOver = recorder();
       driver.start();
       try {
-        assert.ok(await waitFor(() => adapter.reads >= 6), "driver did not keep retrying");
-        assert.equal(driver.isRunning, true);
+        assert.ok(await waitFor(() => driver.onError.calls.length >= 1), "driver never surfaced the failed reads");
+        assert.equal(driver.isRunning, false, "driver must stop after maxRetries failed reads");
+        assert.equal(adapter.reads, 2, "driver must stop after exactly maxRetries failed reads");
         assert.equal(adapter.sent.length, 0, "driver pressed despite failed reads");
-        assert.deepEqual(driver.onError.calls, [], "null reads are not treated as errors today");
-        assert.deepEqual(driver.onGameOver.calls, []);
+        assert.equal(driver.onError.calls.length, 1, "onError must fire exactly once");
+        assert.equal(driver.onGameOver.calls.length, 0, "failed reads are not game over");
       } finally {
         driver.stop();
       }
     });
 
-    test("documents current behavior: readBoard throwing fires onError on EVERY tick, never presses, loop continues", async () => {
+    // Throwing reads surface onError per tick and the loop continues — now
+    // bounded by maxNoProgressTicks (20 by default), after which the driver
+    // stops with a "no board progress (last: tick error)" reason.
+    test("documents throwing reads: onError on every tick, never presses, loop continues (bounded)", async () => {
       const adapter = new FakeAdapter({ failReads: "throw" });
       const solver = new FakeSolver(() => [LEFT]);
       const driver = makeDriver({ maxRetries: 2 });
@@ -391,10 +395,9 @@ describe("Driver", () => {
   });
 
   describe("known bugs — target behavior (skipped until integration fixes land)", () => {
-    // TODO(FIX-2): normalizeMovePriority (src/driver/driver.js) pads an empty
-    // solver order with the fallback priority, so a dead game is pressed
-    // forever. When the integration fix lands, unskip.
-    test("TODO(FIX-2): solver returning [] => onGameOver fires, driver stops, zero sendMove calls", { skip: "TODO(FIX-2): empty solver order must be game over; current driver pads it to all four directions." }, async () => {
+    // FIX-2 (implemented on the hardening branch): an empty solver order is
+    // treated as game over — onGameOver fires, driver stops, zero presses.
+    test("solver returning [] => onGameOver fires, driver stops, zero sendMove calls", async () => {
       const adapter = new FakeAdapter(); // board still moveable — the solver is the game-over signal
       const solver = new FakeSolver(() => []);
       const onGameOver = recorder();
@@ -409,9 +412,9 @@ describe("Driver", () => {
       assert.equal(driver.isRunning, false, "driver did not stop on game over");
     });
 
-    // TODO(FIX-5): config.maxRetries is dead code today. Target: stop +
-    // onError exactly once after maxRetries consecutive failed reads.
-    test("TODO(FIX-5): after maxRetries consecutive failed reads, driver stops and fires onError exactly once, zero further sendMove calls", { skip: "TODO(FIX-5): options.maxRetries is never read; current driver retries failed reads forever." }, async () => {
+    // FIX-5 (implemented on the hardening branch): config.maxRetries is live —
+    // stop + onError exactly once after maxRetries consecutive failed reads.
+    test("after maxRetries consecutive failed reads, driver stops and fires onError exactly once, zero further sendMove calls", async () => {
       const adapter = new FakeAdapter({ failReads: "null" });
       const solver = new FakeSolver(() => [LEFT]);
       const onError = recorder();
@@ -429,11 +432,9 @@ describe("Driver", () => {
       assert.equal(driver.isRunning, false, "driver did not stop after maxRetries");
     });
 
-    // TODO(FIX-5b): contract pin — failed reads must never press keys even
-    // before maxRetries is exhausted. executeMove reads the board first and
-    // bails before any sendMove, so this already holds today (see the active
-    // pins above); the skip is lifted together with the FIX-5 work.
-    test("TODO(FIX-5b): failed reads never cause sendMove calls even before maxRetries is exhausted", { skip: "TODO(FIX-5b): already holds today (pinned by active tests); unskip alongside FIX-5 as the formal contract." }, async () => {
+    // FIX-5b (contract pin): failed reads never press keys, even before
+    // maxRetries is exhausted (random escapes bail before sending too).
+    test("failed reads never cause sendMove calls even before maxRetries is exhausted", async () => {
       const adapter = new FakeAdapter({ failReads: "null" });
       const solver = new FakeSolver(() => [LEFT]);
       const driver = makeDriver({ maxRetries: 10, stuckThreshold: 1 });

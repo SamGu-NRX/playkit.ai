@@ -450,16 +450,27 @@
       _detectGameBoard() {
         const now = Date.now();
     
-        // Return cached result if recent
+        // Return cached result if recent — but only while the cached elements
+        // are still connected. FIX-7 (bench finding): a cached hit whose board
+        // was removed or replaced from the DOM is a stale observation and must
+        // not be served as a live board.
         if (
           this._cachedBoardElements &&
           now - this._lastScanTime < this._scanCacheMs
         ) {
-          return {
-            found: true,
-            elements: this._cachedBoardElements,
-            container: this._cachedGameContainer,
-          };
+          if (
+            this._cachedGameContainer &&
+            this._cachedGameContainer.isConnected === false
+          ) {
+            this._cachedBoardElements = null;
+            this._cachedGameContainer = null;
+          } else {
+            return {
+              found: true,
+              elements: this._cachedBoardElements,
+              container: this._cachedGameContainer,
+            };
+          }
         }
     
         // Look for 4x4 grid patterns
@@ -1282,10 +1293,22 @@
        */
       readBoard() {
         try {
+          // FIX-7 (bench finding, vanish scenario): an absent board structure is
+          // an UNOBSERVABLE board, not an empty one. Returning a fabricated
+          // all-zero board made every downstream consumer (naive solver, WASM,
+          // driver) act on fiction. Contract: return null when the board cannot
+          // actually be observed.
+          const tileContainer = document.querySelector(".tile-container");
+          const gameContainer = document.querySelector(".game-container");
+          if (!tileContainer && !gameContainer) {
+            return null;
+          }
+    
           const board = BoardUtils.createEmptyBoard();
     
           // Get all tiles with position classes
           const tiles = document.querySelectorAll(".tile");
+          let parsed = 0;
     
           for (const tile of tiles) {
             const position = this._extractTilePosition(tile);
@@ -1296,14 +1319,35 @@
               if (row >= 0 && row < 4 && col >= 0 && col < 4) {
                 // Use the highest value if multiple tiles occupy same position
                 board[row][col] = Math.max(board[row][col], value);
+                parsed++;
               }
             }
+          }
+    
+          // Tiles exist but none could be mapped onto the grid: the DOM layout
+          // is not representable by this adapter — report it as unobservable
+          // instead of fabricating an empty board.
+          if (tiles.length > 0 && parsed === 0) {
+            return null;
           }
     
           return board;
         } catch (error) {
           console.warn("Play2048Adapter: Failed to read board:", error);
           return null;
+        }
+      }
+    
+      /**
+       * Check the DOM for the game-over overlay (play2048.co shows
+       * .game-message inside a .game-container that gains a .game-over class).
+       * @returns {boolean} True if the game-over overlay is visible
+       */
+      isGameOver() {
+        try {
+          return !!document.querySelector(".game-container.game-over");
+        } catch (error) {
+          return false;
         }
       }
     
@@ -1575,6 +1619,7 @@
           pauseWhenHidden: options.pauseWhenHidden !== false,
           maxRetries: options.maxRetries || 3,
           stuckThreshold: options.stuckThreshold || 5,
+          maxNoProgressTicks: options.maxNoProgressTicks || 20,
         };
     
         // State tracking
@@ -1653,11 +1698,15 @@
     
       /**
        * Stop the automated driving loop
+       * @param {string|null} [reason] Why the driver stopped (for diagnostics)
        */
-      stop() {
+      stop(reason = null) {
         this.isRunning = false;
         this.isPaused = false;
-        console.log("Driver stopped");
+        if (reason) {
+          this.stopReason = reason;
+        }
+        console.log(reason ? `Driver stopped: ${reason}` : "Driver stopped");
       }
     
       /**
@@ -1700,6 +1749,9 @@
         this.lastBoardHash = "";
         this.moveCount = 0;
         this.stuckCount = 0;
+        this.failedReads = 0;
+        this.noProgressCount = 0;
+        this.stopReason = null;
       }
     
       /**
@@ -1724,7 +1776,7 @@
         try {
           // Check if game is over
           if (this.adapter.isGameOver && this.adapter.isGameOver()) {
-            this.stop();
+            this.stop("game over");
             if (this.onGameOver) {
               this.onGameOver();
             }
@@ -1735,15 +1787,50 @@
           const moveSuccessful = await this.executeMove();
     
           if (!moveSuccessful) {
+            // FIX-5: failed reads take precedence over the stuck/no-progress
+            // machinery — an unobservable board must never be pressed.
+            if (this.failedReads >= this.config.maxRetries) {
+              this.stop(
+                `abandoned after ${this.failedReads} consecutive failed board reads`,
+              );
+              if (this.onError) {
+                this.onError(
+                  new Error(
+                    `Driver stopped: ${this.failedReads} consecutive failed board reads`,
+                  ),
+                );
+              }
+              return;
+            }
+    
             this.stuckCount++;
+            this.noProgressCount++;
     
             // If stuck too many times, try random moves
             if (this.stuckCount >= this.config.stuckThreshold) {
               await this.executeRandomMove();
               this.stuckCount = 0;
             }
+    
+            // Bench finding (gameover scenario): the loop must be bounded. After
+            // maxNoProgressTicks consecutive ticks without a board change, give
+            // up instead of pressing forever.
+            if (this.noProgressCount >= this.config.maxNoProgressTicks) {
+              this.stop(
+                `no board progress for ${this.noProgressCount} consecutive ticks`,
+              );
+              if (this.onError) {
+                this.onError(
+                  new Error(
+                    `Driver stopped: no board progress after ${this.noProgressCount} consecutive ticks`,
+                  ),
+                );
+              }
+              return;
+            }
           } else {
             this.stuckCount = 0;
+            this.noProgressCount = 0;
           }
     
           // Continue loop with throttling
@@ -1752,6 +1839,16 @@
           console.error("Driver tick error:", error);
           if (this.onError) {
             this.onError(error);
+          }
+    
+          // Errors also count as no progress: a persistently throwing adapter
+          // must not loop forever either.
+          this.noProgressCount++;
+          if (this.noProgressCount >= this.config.maxNoProgressTicks) {
+            this.stop(
+              `no board progress for ${this.noProgressCount} consecutive ticks (last: tick error)`,
+            );
+            return;
           }
     
           // Continue loop even after error
@@ -1767,11 +1864,26 @@
       async executeMove() {
         const boardBefore = this.adapter.readBoard();
         if (!boardBefore) {
+          // FIX-5: count consecutive failed reads; tick stops once maxRetries is
+          // exhausted. Reset on any successful observation.
+          this.failedReads++;
           return false;
         }
+        this.failedReads = 0;
     
         const hashBefore = BoardUtils.hashBoard(boardBefore);
         const movePriority = await this.getMovePriority(boardBefore);
+    
+        // FIX-2: null means the solver found no valid moves on the observed
+        // board — the game is over. Stop and notify; never fall back to pressing
+        // all four directions on a dead game.
+        if (movePriority === null) {
+          this.stop("game over (solver found no valid moves)");
+          if (this.onGameOver) {
+            this.onGameOver();
+          }
+          return false;
+        }
     
         for (const direction of movePriority) {
           const success = await this.tryMove(direction, hashBefore);
@@ -1842,6 +1954,14 @@
     
         try {
           const nextDirections = await this.solverEngine.getMoveOrder(board);
+    
+          // FIX-2: an exactly-empty solver order means the solver found no valid
+          // moves on the observed board. Return null (game-over signal) instead
+          // of letting normalizeMovePriority pad it back to all four directions.
+          if (Array.isArray(nextDirections) && nextDirections.length === 0) {
+            return null;
+          }
+    
           return normalizeMovePriority(nextDirections, fallback);
         } catch (error) {
           console.warn("Driver: solver getMoveOrder failed", error);
@@ -1910,6 +2030,9 @@
           isPaused: this.isPaused,
           moveCount: this.moveCount,
           stuckCount: this.stuckCount,
+          noProgressCount: this.noProgressCount,
+          failedReads: this.failedReads,
+          stopReason: this.stopReason,
           lastBoardHash: this.lastBoardHash,
           adapterName: this.adapter ? this.adapter.getName() : null,
         };
@@ -2426,6 +2549,35 @@
     
         this.updateRunState(true);
         this.autoSolveLoop();
+      }
+    
+      /**
+       * Suspend HUD-side timers when the page becomes hidden.
+       * FIX-9 (bench finding): the visibility handler requires every managed
+       * component to expose pause()/resume(); the HUD previously violated that
+       * contract, so Runtime.init threw in the shipped bundle and the extension
+       * never initialized. Controller-driven driving pauses via the Driver
+       * itself; this only guards the HUD's local fallback loop.
+       */
+      pause() {
+        this.visibilityPaused = true;
+        if (this.autoSolveTimeout) {
+          clearTimeout(this.autoSolveTimeout);
+          this.autoSolveTimeout = null;
+        }
+      }
+    
+      /**
+       * Allow HUD timers again when the page becomes visible. Restarts the
+       * HUD-local fallback auto-solve loop only if it was actually running.
+       */
+      resume() {
+        this.visibilityPaused = false;
+        if (this.isAutoSolving && !this.autoSolveTimeout && !this.controller) {
+          this.autoSolveTimeout = setTimeout(() => {
+            this.autoSolveLoop();
+          }, 0);
+        }
       }
     
       /**

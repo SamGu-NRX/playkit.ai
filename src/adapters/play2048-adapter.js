@@ -47,10 +47,22 @@ export class Play2048Adapter extends Adapter {
    */
   readBoard() {
     try {
+      // FIX-7 (bench finding, vanish scenario): an absent board structure is
+      // an UNOBSERVABLE board, not an empty one. Returning a fabricated
+      // all-zero board made every downstream consumer (naive solver, WASM,
+      // driver) act on fiction. Contract: return null when the board cannot
+      // actually be observed.
+      const tileContainer = document.querySelector(".tile-container");
+      const gameContainer = document.querySelector(".game-container");
+      if (!tileContainer && !gameContainer) {
+        return null;
+      }
+
       const board = BoardUtils.createEmptyBoard();
 
       // Get all tiles with position classes
       const tiles = document.querySelectorAll(".tile");
+      let parsed = 0;
 
       for (const tile of tiles) {
         const position = this._extractTilePosition(tile);
@@ -61,14 +73,35 @@ export class Play2048Adapter extends Adapter {
           if (row >= 0 && row < 4 && col >= 0 && col < 4) {
             // Use the highest value if multiple tiles occupy same position
             board[row][col] = Math.max(board[row][col], value);
+            parsed++;
           }
         }
+      }
+
+      // Tiles exist but none could be mapped onto the grid: the DOM layout
+      // is not representable by this adapter — report it as unobservable
+      // instead of fabricating an empty board.
+      if (tiles.length > 0 && parsed === 0) {
+        return null;
       }
 
       return board;
     } catch (error) {
       console.warn("Play2048Adapter: Failed to read board:", error);
       return null;
+    }
+  }
+
+  /**
+   * Check the DOM for the game-over overlay (play2048.co shows
+   * .game-message inside a .game-container that gains a .game-over class).
+   * @returns {boolean} True if the game-over overlay is visible
+   */
+  isGameOver() {
+    try {
+      return !!document.querySelector(".game-container.game-over");
+    } catch (error) {
+      return false;
     }
   }
 

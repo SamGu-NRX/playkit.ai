@@ -133,16 +133,27 @@ export class GenericAdapter extends Adapter {
   _detectGameBoard() {
     const now = Date.now();
 
-    // Return cached result if recent
+    // Return cached result if recent — but only while the cached elements
+    // are still connected. FIX-7 (bench finding): a cached hit whose board
+    // was removed or replaced from the DOM is a stale observation and must
+    // not be served as a live board.
     if (
       this._cachedBoardElements &&
       now - this._lastScanTime < this._scanCacheMs
     ) {
-      return {
-        found: true,
-        elements: this._cachedBoardElements,
-        container: this._cachedGameContainer,
-      };
+      if (
+        this._cachedGameContainer &&
+        this._cachedGameContainer.isConnected === false
+      ) {
+        this._cachedBoardElements = null;
+        this._cachedGameContainer = null;
+      } else {
+        return {
+          found: true,
+          elements: this._cachedBoardElements,
+          container: this._cachedGameContainer,
+        };
+      }
     }
 
     // Look for 4x4 grid patterns

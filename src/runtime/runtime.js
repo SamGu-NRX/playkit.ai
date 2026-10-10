@@ -204,7 +204,7 @@ export class Runtime {
     this.isRunning = true;
 
     if (this.hud) {
-      this.hud.updateRunState(true);
+      this.hud.applyWitness(this.getStats());
     }
 
     console.log("Runtime started");
@@ -225,7 +225,7 @@ export class Runtime {
 
     this.isRunning = false;
     if (this.hud) {
-      this.hud.updateRunState(false);
+      this.hud.applyWitness(this.getStats());
     }
     console.log("Runtime stopped");
   }
@@ -239,7 +239,7 @@ export class Runtime {
       this.isRunning = false;
       console.log("Runtime paused");
       if (this.hud) {
-        this.hud.updateRunState(false);
+        this.hud.applyWitness(this.getStats());
       }
     }
   }
@@ -253,7 +253,7 @@ export class Runtime {
       this.isRunning = true;
       console.log("Runtime resumed");
       if (this.hud) {
-        this.hud.updateRunState(true);
+        this.hud.applyWitness(this.getStats());
       }
     }
   }
@@ -304,6 +304,7 @@ export class Runtime {
     // Show message if HUD is available
     if (this.hud) {
       this.hud.showMessage("Game Over!");
+      this.hud.applyWitness(this.getStats());
     }
   }
 
@@ -315,9 +316,12 @@ export class Runtime {
   handleError(error) {
     console.error("Runtime error:", error);
 
-    // Show error message if HUD is available
+    // Show error message if HUD is available. The witness push matters here:
+    // driver self-stops (no-progress, failed reads) surface as onError, and
+    // the HUD must learn the driver's true state — not the stale flag.
     if (this.hud) {
       this.hud.showMessage(`Error: ${error.message}`);
+      this.hud.applyWitness(this.getStats());
     }
 
     this._notifySolverStatus();
@@ -334,7 +338,10 @@ export class Runtime {
       start: () => this.start(),
       stop: () => this.stop(),
       step: () => this.step(),
+      pause: () => this.pause(),
+      resume: () => this.resume(),
       isRunning: () => this.isRunning,
+      getStats: () => this.getStats(),
       getCurrentAdapter: () => this.currentAdapter,
       getSolverStatus: () =>
         this.solverManager ? this.solverManager.getStatus() : null,

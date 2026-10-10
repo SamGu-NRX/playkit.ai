@@ -55,7 +55,9 @@ export class HUDView {
       documentMouseUp: this.handleDocumentMouseUp.bind(this),
       detectClick: this.forwardCallback("onDetect"),
       autoSolveClick: this.forwardCallback("onAutoSolve"),
+      pauseToggleClick: this.forwardCallback("onPauseToggle"),
       stepClick: this.forwardCallback("onStep"),
+      retryClick: this.forwardCallback("onRetry"),
       collapseClick: this.handleCollapseClick.bind(this),
       directionChange: this.handleDirectionChange.bind(this),
       solverControlChange: this.handleSolverControlChange.bind(this),
@@ -443,6 +445,67 @@ export class HUDView {
     if (this.elements.autoSolveBtn) {
       this.elements.autoSolveBtn.textContent = isRunning ? "⏸️ Pause" : "▶️ Auto-solve";
     }
+  }
+
+  /**
+   * Render the action row from the resolved control state. The state model
+   * decides labels and availability; this only paints.
+   * @param {{autoSolveLabel:string, autoSolveEnabled:boolean, autoSolveRunning:boolean,
+   *          pauseLabel:string, pauseEnabled:boolean, stepEnabled:boolean,
+   *          retryVisible:boolean, retryLabel:string, retryEnabled:boolean}} controls
+   */
+  setRunControls(controls) {
+    if (!controls) {
+      return;
+    }
+
+    if (this.elements.autoSolveBtn) {
+      this.elements.autoSolveBtn.textContent = controls.autoSolveLabel;
+      this.elements.autoSolveBtn.disabled = !controls.autoSolveEnabled;
+    }
+
+    if (this.elements.pauseResumeBtn) {
+      this.elements.pauseResumeBtn.textContent = controls.pauseLabel;
+      this.elements.pauseResumeBtn.disabled = !controls.pauseEnabled;
+    }
+
+    if (this.elements.stepBtn) {
+      this.elements.stepBtn.disabled = !controls.stepEnabled;
+    }
+
+    if (this.elements.retryBtn) {
+      this.elements.retryBtn.hidden = !controls.retryVisible;
+      this.elements.retryBtn.textContent = controls.retryLabel;
+      this.elements.retryBtn.disabled = !controls.retryEnabled;
+    }
+
+    if (this.panel) {
+      this.panel.classList.toggle("auto-solving", Boolean(controls.autoSolveRunning));
+    }
+  }
+
+  /**
+   * Show or clear the persistent stop-feedback line. The reason text is the
+   * model's verbatim reason — never paraphrased here.
+   * @param {{label:string, text:string, color:string}|null} problem
+   */
+  setProblem(problem) {
+    if (!this.elements.problemItem) {
+      return;
+    }
+
+    if (!problem) {
+      this.elements.problemItem.hidden = true;
+      this.elements.problemStatus.textContent = "";
+      return;
+    }
+
+    this.elements.problemItem.hidden = false;
+    if (this.elements.problemLabel) {
+      this.elements.problemLabel.textContent = problem.label;
+    }
+    this.elements.problemStatus.textContent = problem.text;
+    this.elements.problemStatus.style.color = problem.color;
   }
 
   /**

@@ -258,6 +258,10 @@ export function getHUDHTML() {
               <span class="status-label">Solver:</span>
               <span class="status-value" id="solver-status">Initializing…</span>
             </div>
+            <div class="status-item" id="problem-item" hidden>
+              <span class="status-label" id="problem-label">Stop:</span>
+              <span class="status-value" id="problem-status"></span>
+            </div>
           </div>
 
           <div class="hud-actions">
@@ -267,8 +271,14 @@ export function getHUDHTML() {
             <button class="hud-btn hud-btn-success" id="auto-solve-btn" disabled>
               ▶️ Auto-solve
             </button>
+            <button class="hud-btn hud-btn-secondary" id="pause-resume-btn" disabled>
+              ⏸ Pause
+            </button>
             <button class="hud-btn hud-btn-secondary" id="step-btn" disabled>
               ⏭️ Step
+            </button>
+            <button class="hud-btn hud-btn-secondary" id="retry-btn" hidden>
+              ↻ Retry
             </button>
           </div>
 

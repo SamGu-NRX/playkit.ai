@@ -85,3 +85,22 @@ it, so `detectGame()` threw `ReferenceError` outside the bundler.
 Upstream reach-rate claims are not measurements of this extension; the
 reach counts in `bench/results/*.json` are the only numbers this repo
 produces about itself.
+
+## Post-fix run (2026-10-10)
+
+All five findings have fixes on this branch, verified by the same harness:
+
+| Baseline finding | Fix | Verification |
+|---|---|---|
+| Bundle init crash | HUD now implements `pause()`/`resume()` (visibility-handler contract) | `bundle-play2048`, `bundle-wasm-mock-play2048` pass |
+| Vanish/zero-board read | `Play2048Adapter.readBoard` reports `null` when board structure is unobservable; generic-adapter DOM cache entries invalidated when their container detaches | `vanish-play2048` parity ✓; `test/board-observation.test.mjs` |
+| Dead-board driving | Driver counts consecutive no-progress ticks (`maxNoProgressTicks`, default 20) and stops with a reason + one `onError`; failed board reads stop after `maxRetries`; empty solver order is game over, not "press all four" | `gameover-generic` pass; `test/driver-bounds.test.mjs`, unskipped FIX-2/FIX-5/FIX-5b contracts in `test/driver.test.mjs` |
+
+Node suite after the fixes: **69 pass, 0 fail, 4 skips** — the skips are the
+real-WASM solver-stack tests (`solver.wasm` is gitignored and `emcc` is
+unavailable here; fallback and mock-WASM paths are covered).
+
+Browser run after the fixes: **16/16 scenarios pass** — evidence in
+`bench/evidence/postfix-run.json` (same 16-scenario harness as the baseline;
+bundle scenarios run the built `src/extension/content.js`).
+

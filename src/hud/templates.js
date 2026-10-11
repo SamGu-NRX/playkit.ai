@@ -113,7 +113,7 @@ export function getHUDCSS() {
       }
 
       .hud-btn-success {
-        background: rgba(34, 197, 94, 0.8);
+        background: rgba(21, 128, 61, 0.9);
         border-color: rgba(34, 197, 94, 1);
       }
 
@@ -231,6 +231,8 @@ export function getHUDCSS() {
 
       .hud-panel {
         max-width: calc(100vw - 16px);
+        max-height: calc(100vh - 16px);
+        overflow-y: auto;
       }
 
       @media (prefers-reduced-motion: reduce) {

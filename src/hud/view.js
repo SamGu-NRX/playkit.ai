@@ -597,12 +597,9 @@ export class HUDView {
     }
 
     if (!this.isCollapsed) {
-      this.setCollapsed(true);
-
-      if (typeof this.callbacks.onCollapse === "function") {
-        this.callbacks.onCollapse(true);
-      }
-
+      // Return focus BEFORE collapsing: collapsing hides the focused HUD
+      // element, and once the browser parks focus on the shadow host from
+      // that invalid state it may refuse further programmatic focus moves.
       const host = this.lastHostFocus;
       if (host && typeof host.focus === "function") {
         try {
@@ -610,6 +607,36 @@ export class HUDView {
         } catch {
           // Focus return is best-effort; some host elements are not focusable.
         }
+      }
+      this.setCollapsed(true);
+
+      if (typeof this.callbacks.onCollapse === "function") {
+        this.callbacks.onCollapse(true);
+      }
+
+      // Safety net for the collapse transition: if the browser's fix-up for
+      // the just-hidden element re-parks focus on the shadow host, re-assert
+      // the host-page target after the 0.3s transition settles.
+      setTimeout(() => {
+        const retry = this.lastHostFocus;
+        if (
+          retry &&
+          typeof retry.focus === "function" &&
+          this.shadowHost &&
+          document.activeElement === this.shadowHost
+        ) {
+          try {
+            retry.focus();
+          } catch {
+            // Best-effort, as above.
+          }
+        }
+      }, 350);
+
+      // The HUD consumed this Escape; keep it from also reaching host-page
+      // listeners (e.g. a game dialog) while the user is interacting here.
+      if (typeof event.stopPropagation === "function") {
+        event.stopPropagation();
       }
     }
   }
@@ -648,8 +675,14 @@ export class HUDView {
         handled = false;
     }
 
-    if (handled && typeof event.preventDefault === "function") {
-      event.preventDefault();
+    if (handled) {
+      if (typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+      // Handled panel-movement keys must not also drive the host game.
+      if (typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
     }
   }
 
@@ -678,8 +711,17 @@ export class HUDView {
       return;
     }
 
+    // Focus events that originate inside the shadow tree are retargeted at
+    // the shadow boundary: at document level their target is the shadow host
+    // itself, so contains() never matches them. composedPath() is the only
+    // reliable containment test for retargeted events.
+    const path =
+      typeof event.composedPath === "function" ? event.composedPath() : [];
     const insideHUD =
-      this.shadowRoot && typeof this.shadowRoot.contains === "function" && this.shadowRoot.contains(target);
+      path.includes(this.shadowRoot) ||
+      (this.shadowRoot &&
+        typeof this.shadowRoot.contains === "function" &&
+        this.shadowRoot.contains(target));
 
     if (!insideHUD) {
       this.lastHostFocus = target;

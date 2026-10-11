@@ -80,6 +80,18 @@ describe("HUD templates: reduced-motion and narrow-viewport CSS", () => {
     assert.match(css, /max-width: calc\(100vw - 16px\)/);
   });
 
+  test("success button green composites to AA contrast with white text", () => {
+    // White on rgba(34,197,94,0.8) over the dark panel measured ~2.1:1
+    // (axe color-contrast, serious). Green-700 at 0.9 composites to ~5.9:1.
+    assert.match(css, /\.hud-btn-success \{\s*background: rgba\(21, 128, 61, 0\.9\)/);
+    assert.doesNotMatch(css, /background: rgba\(34, 197, 94, 0\.8\)/);
+  });
+
+  test("panel height is capped with internal scroll for short viewports", () => {
+    assert.match(css, /max-height: calc\(100vh - 16px\)/);
+    assert.match(css, /overflow-y: auto/);
+  });
+
   test("focus-visible outlines exist for buttons, fields, and header", () => {
     assert.match(css, /\.hud-btn:focus-visible/);
     assert.match(css, /\.setting-select:focus-visible/);
@@ -182,7 +194,7 @@ describe("HUD view keyboard and focus behaviour", () => {
     assert.equal(view.currentPos.y, 100);
   });
 
-  test("Escape collapses the panel, notifies, syncs ARIA, and returns focus", () => {
+  test("Escape collapses the panel, notifies, syncs ARIA, and returns focus", async () => {
     const view = makeView();
     view.position(100, 100);
     const host = { focused: false, focus() { this.focused = true; } };
@@ -196,7 +208,16 @@ describe("HUD view keyboard and focus behaviour", () => {
     assert.equal(view.elements.collapseBtn.attributes["aria-expanded"], "false");
     assert.equal(view.elements.collapseBtn.attributes["aria-label"], "Expand panel");
     assert.equal(view.elements.collapseIcon.textContent, "+");
-    assert.equal(host.focused, true, "focus must return to the last host-page element");
+
+    // The synchronous return happens before the collapse, so the browser's
+    // focus fix-up for the just-hidden HUD element never parks focus on the
+    // shadow host; the view re-asserts after the transition as a safety net.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(
+      host.focused,
+      true,
+      "focus must return to the last host-page element",
+    );
   });
 
   test("Escape is a no-op while already collapsed", () => {
@@ -229,6 +250,77 @@ describe("HUD view keyboard and focus behaviour", () => {
     view.handleDocumentFocusIn({ target: hudEl });
 
     assert.equal(view.lastHostFocus, hostEl, "HUD-internal focus must not displace the host target");
+  });
+
+  test("retargeted focus from inside the shadow tree never displaces the host target", () => {
+    const view = makeView();
+    const hostEl = { id: "host-button" };
+    // Retargeted events report the shadow host as their document-level
+    // target, so contains() always returns false for them.
+    const shadowRoot = { contains: () => false };
+    view.shadowRoot = shadowRoot;
+
+    view.handleDocumentFocusIn({ target: hostEl });
+
+    const shadowHost = { id: "ai-2048-solver-hud" };
+    view.handleDocumentFocusIn({
+      target: shadowHost,
+      composedPath: () => [shadowHost, shadowRoot],
+    });
+
+    assert.equal(
+      view.lastHostFocus,
+      hostEl,
+      "retargeted shadow-internal focus must not displace the host target",
+    );
+  });
+
+  test("handled HUD keys do not leak to the host page", () => {
+    const view = makeView();
+    view.position(100, 100);
+
+    const headerEvent = {
+      key: "ArrowLeft",
+      shiftKey: false,
+      preventDefault: () => {},
+      stopPropagationCalls: 0,
+      stopPropagation() {
+        this.stopPropagationCalls += 1;
+      },
+    };
+    view.handleHeaderKeyDown(headerEvent);
+    assert.equal(headerEvent.stopPropagationCalls, 1, "handled panel-move keys must stop propagation");
+
+    const tabEvent = {
+      key: "Tab",
+      preventDefault: () => {},
+      stopPropagationCalls: 0,
+      stopPropagation() {
+        this.stopPropagationCalls += 1;
+      },
+    };
+    view.handleHeaderKeyDown(tabEvent);
+    assert.equal(tabEvent.stopPropagationCalls, 0, "unhandled keys must pass through");
+
+    const escapeEvent = {
+      key: "Escape",
+      stopPropagationCalls: 0,
+      stopPropagation() {
+        this.stopPropagationCalls += 1;
+      },
+    };
+    view.handleShadowKeyDown(escapeEvent);
+    assert.equal(escapeEvent.stopPropagationCalls, 1, "consumed Escape must stop propagation");
+
+    const collapsedEscape = {
+      key: "Escape",
+      stopPropagationCalls: 0,
+      stopPropagation() {
+        this.stopPropagationCalls += 1;
+      },
+    };
+    view.handleShadowKeyDown(collapsedEscape);
+    assert.equal(collapsedEscape.stopPropagationCalls, 0, "Escape on an already-collapsed HUD must pass through");
   });
 
   test("re-expanding restores the collapse affordance's ARIA", () => {

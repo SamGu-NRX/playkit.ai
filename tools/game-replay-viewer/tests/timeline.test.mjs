@@ -2,7 +2,7 @@
  * Timeline tests — frame states against the committed synthetic fixtures,
  * using the repo's reference API read-only.
  */
-import { deepStrictEqual, strictEqual, throws } from "node:assert";
+import assert, { deepStrictEqual, strictEqual, throws } from "node:assert";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
@@ -100,6 +100,97 @@ test("an unrecorded spawn makes the reference chain incomplete from that frame o
     ["ok", "reference-incomplete", "reference-incomplete"],
   );
   strictEqual(timeline.frames[2].compare, null, "no verdict when the reference is known-incomplete");
+});
+
+// ---------------------------------------- invalid recorded spawns (timeline-level)
+
+/**
+ * Reader-level-consistent logs whose recorded spawn the TRANSITION
+ * contradicts. Isolated regressions for each invalid-spawn defect, each
+ * with and without an after board (both code paths).
+ */
+
+test("a spawn on an occupied reference cell is corrupt, not silently ignored — with after boards", () => {
+  const before = [[2, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+  const slid = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [2, 0, 0, 0]]; // Down moved the 2 to (3,0)
+  const log = readReplayLog(
+    {
+      format: "playkit-replay-log/1",
+      moves: [
+        // The spawn claims (3,0) — the very cell the slide just filled. The
+        // observed after matches the slide, so the fix-less timeline noted
+        // "not overwritten" and reported ok on a record that never happened.
+        { id: "m0001", dir: 2, before, after: slid, spawn: { r: 3, c: 0, value: 2 } },
+        { id: "m0002", dir: 1, before: slid, after: [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 2, 2]], spawn: { r: 3, c: 2, value: 2 } },
+      ],
+    },
+    { fileName: "occupied-after.json" },
+  );
+  strictEqual(log.counts.corrupt, 0, "isolated: the reader alone cannot catch this — both events read clean");
+  const timeline = buildTimeline(log);
+  deepStrictEqual(timeline.frames.map((f) => f.state), ["corrupt", "unverifiable"]);
+  strictEqual(timeline.frames[0].referenceAfter, null, "nothing is applied to the reference chain");
+  assert.match(timeline.frames[0].notes.join(" "), /occupied/);
+});
+
+test("a spawn on an occupied reference cell is corrupt — without an after board too", () => {
+  const before = [[2, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+  const log = readReplayLog(
+    {
+      format: "playkit-replay-log/1",
+      moves: [
+        { id: "m0001", dir: 2, before, after: null, spawn: { r: 3, c: 0, value: 2 } },
+        { id: "m0002", dir: 1, before: null, after: null, spawn: null },
+      ],
+    },
+    { fileName: "occupied-no-after.json" },
+  );
+  strictEqual(log.counts.corrupt, 0, "isolated: reader-level state is missing, not corrupt");
+  const timeline = buildTimeline(log);
+  deepStrictEqual(timeline.frames.map((f) => f.state), ["corrupt", "unverifiable"]);
+  strictEqual(timeline.frames[0].referenceAfter, null);
+  assert.match(timeline.frames[0].notes.join(" "), /occupied/);
+});
+
+test("a spawn after a no-op move is corrupt, not applied-and-reported-ok — with after boards", () => {
+  const before = [[2, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+  const log = readReplayLog(
+    {
+      format: "playkit-replay-log/1",
+      moves: [
+        // Up changes nothing here, yet the log records a spawn at (1,0) and
+        // an after board carrying it: the fix-less timeline applied the
+        // spawn to the reference and reported ok on an impossible history.
+        { id: "m0001", dir: 0, before, after: [[2, 0, 0, 0], [2, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], spawn: { r: 1, c: 0, value: 2 } },
+        { id: "m0002", dir: 0, before: [[2, 0, 0, 0], [2, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], after: [[4, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 2]], spawn: { r: 3, c: 3, value: 2 } },
+      ],
+    },
+    { fileName: "noop-after.json" },
+  );
+  strictEqual(log.counts.corrupt, 0, "isolated: the reader alone cannot catch this — both events read clean");
+  const timeline = buildTimeline(log);
+  deepStrictEqual(timeline.frames.map((f) => f.state), ["corrupt", "unverifiable"]);
+  strictEqual(timeline.frames[0].referenceAfter, null, "the phantom spawn is never applied");
+  assert.match(timeline.frames[0].notes.join(" "), /no-op/);
+});
+
+test("a spawn after a no-op move is corrupt — without an after board too", () => {
+  const before = [[2, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+  const log = readReplayLog(
+    {
+      format: "playkit-replay-log/1",
+      moves: [
+        { id: "m0001", dir: 0, before, after: null, spawn: { r: 1, c: 0, value: 2 } },
+        { id: "m0002", dir: 1, before: null, after: null, spawn: null },
+      ],
+    },
+    { fileName: "noop-no-after.json" },
+  );
+  strictEqual(log.counts.corrupt, 0, "isolated: reader-level state is missing, not corrupt");
+  const timeline = buildTimeline(log);
+  deepStrictEqual(timeline.frames.map((f) => f.state), ["corrupt", "unverifiable"]);
+  strictEqual(timeline.frames[0].referenceAfter, null);
+  assert.match(timeline.frames[0].notes.join(" "), /no-op/);
 });
 
 test("legacy moveLog (the bench shape: id-less entries, spawn recorded) loads and compares", () => {

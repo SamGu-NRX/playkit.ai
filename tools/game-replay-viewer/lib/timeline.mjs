@@ -13,8 +13,11 @@
  * - missing-observation:  this frame cannot be compared because a needed
  *                         board was not recorded (the reference chain still
  *                         advances via the recorded schedule)
- * - corrupt:              the event has reader problems; its invalid parts
- *                         are shown as-is and nothing is reconstructed
+ * - corrupt:              the event has reader problems or an invalid
+ *                         recorded spawn (a spawn after a no-op move, or a
+ *                         spawn whose reference cell is occupied after the
+ *                         slide); its invalid parts are shown as-is and
+ *                         nothing is reconstructed
  * - diverged:             observed post-move board ≠ reference board (both
  *                         are shown; the reference chain keeps reference
  *                         state — it is never re-seeded from observed data)
@@ -26,7 +29,7 @@
  *                         silently repaired
  */
 
-import { cloneBoard, simulateMove } from "../../../test/helpers/reference-2048.mjs";
+import { boardsEqual, cloneBoard, simulateMove } from "../../../test/helpers/reference-2048.mjs";
 
 export const FRAME_STATES = Object.freeze([
   "ok",
@@ -107,14 +110,35 @@ export function buildTimeline(log) {
     const refBefore = cloneBoard(refBoard);
     frame.referenceBefore = refBefore;
     const refAfter = simulateMove(refBefore, event.dir);
+
+    // An invalid recorded spawn is invalid history: the real game never
+    // spawns after a no-op move (the move changed nothing), and a spawn
+    // whose reference cell is occupied after the slide contradicts the
+    // transition. Refuse both: not applied, not silently ignored — the
+    // frame is marked corrupt and the reference chain stops here (later
+    // frames unverifiable), exactly as for a reader-corrupt event.
+    if (event.spawn && boardsEqual(refAfter, refBefore)) {
+      frame.state = "corrupt";
+      frame.notes.push(
+        `invalid spawn record: the move changed nothing (no-op), so no spawn can follow; spawn (r=${event.spawn.r}, c=${event.spawn.c}) is shown as recorded and nothing is applied`,
+      );
+      chainBroken = true;
+      refBoard = null;
+      frames.push(frame);
+      continue;
+    }
+    if (event.spawn && refAfter[event.spawn.r][event.spawn.c] !== 0) {
+      frame.state = "corrupt";
+      frame.notes.push(
+        `invalid spawn record: cell (r=${event.spawn.r}, c=${event.spawn.c}) is occupied on the reference board after the slide; the spawn is shown as recorded and nothing is applied`,
+      );
+      chainBroken = true;
+      refBoard = null;
+      frames.push(frame);
+      continue;
+    }
     if (event.spawn) {
-      if (refAfter[event.spawn.r][event.spawn.c] === 0) {
-        refAfter[event.spawn.r][event.spawn.c] = event.spawn.value;
-      } else {
-        frame.notes.push(
-          `recorded spawn cell (r=${event.spawn.r}, c=${event.spawn.c}) is occupied on the reference board; not overwritten`,
-        );
-      }
+      refAfter[event.spawn.r][event.spawn.c] = event.spawn.value;
     }
     frame.referenceAfter = refAfter;
 

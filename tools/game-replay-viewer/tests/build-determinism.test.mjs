@@ -61,3 +61,23 @@ test("the frame/ID agreement check passes and counts stay as documented", () => 
   deepStrictEqual(classification.summary.refused, 3);
   strictEqual(classification.format, "playkit-replay-log/1");
 });
+
+test("a fresh build matches the committed evidence byte-for-byte (build outputs only)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "replay-build-committed-"));
+  runBuild(dir);
+  const committed = join(root, "tools", "game-replay-viewer", "evidence");
+  // Iterate the FRESH build's file set: it is exactly the build's outputs
+  // (classification, agreement, timeline/*). The committed directory also
+  // holds browser-walk evidence and screenshots, which are walk artifacts,
+  // not build outputs — they are not compared here.
+  const buildOutputs = listFiles(dir);
+  strictEqual(buildOutputs.includes("replay-classification.json"), true);
+  strictEqual(buildOutputs.includes("frame-id-agreement.json"), true);
+  for (const rel of buildOutputs) {
+    deepStrictEqual(
+      readFileSync(join(dir, rel)),
+      readFileSync(join(committed, rel)),
+      `${rel} must be byte-identical to the committed evidence`,
+    );
+  }
+});

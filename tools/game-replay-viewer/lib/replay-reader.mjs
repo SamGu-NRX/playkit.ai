@@ -118,17 +118,26 @@ function readDir(entry) {
 function readSpawn(entry, beforeBoard, afterBoard) {
   const spawn = "spawn" in entry ? entry.spawn : null;
   if (spawn === null || spawn === undefined) return { spawn: null, problem: null };
+  // Coordinates must be integers BEFORE any board indexing: a fractional,
+  // NaN, or infinite coordinate would index undefined (crash) or read a
+  // wrong cell. They are classified SPAWN_MISMATCH instead — the event is
+  // marked and later events are still classified (no abort).
   if (
     typeof spawn !== "object" ||
     Array.isArray(spawn) ||
     typeof spawn.r !== "number" ||
     typeof spawn.c !== "number" ||
+    !Number.isInteger(spawn.r) ||
+    !Number.isInteger(spawn.c) ||
     !isTileValue(spawn.value) ||
     spawn.value === 0
   ) {
     return {
       spawn,
-      problem: { code: "SPAWN_MISMATCH", message: `spawn: malformed spawn record ${JSON.stringify(spawn)}` },
+      problem: {
+        code: "SPAWN_MISMATCH",
+        message: `spawn: malformed spawn record ${JSON.stringify(spawn)} — r and c must be integers in [0, ${BOARD_SIZE}) and value a nonzero power of two`,
+      },
     };
   }
   const { r, c, value } = spawn;

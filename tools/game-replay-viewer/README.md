@@ -80,7 +80,10 @@ Two log shapes are read:
   (malformed or out-of-range spawn record, or a spawn value the `after`
   board contradicts — whether the cell was empty pre-move is NOT checked,
   because the slide can vacate an occupied cell for the spawn; full
-  transition consistency is the timeline's reference comparison job),
+  transition consistency is the timeline's reference comparison job).
+  Spawn coordinates are validated as integers **before any board is
+  indexed** — a fractional, NaN, or infinite coordinate is
+  `SPAWN_MISMATCH`, never a crash, and later events are still classified.
   `ID_DUPLICATE`.
 - **Observation states** per event: `ok` (all recorded, no problems),
   `missing` (no problems, at least one of before/after absent), `corrupt`
@@ -93,13 +96,23 @@ The timeline uses the repo's stable transition/reference API
 (`test/helpers/reference-2048.mjs` — `simulateMove`, `cloneBoard`) **read
 only** to compute what each move *should* produce from the reference chain
 (replay of the recorded dir + spawn schedule; no solver, no heuristics). Frame
-states: `ok`, `missing-observation`, `corrupt`, `diverged`,
+states: `ok`, `missing-observation`, `corrupt` (reader problems, or a
+recorded spawn the transition contradicts — see below), `diverged`,
 `reference-incomplete` (a spawn was not recorded, so the expected board is
 known to be incomplete — this includes fully unrecorded events whose spawn is
 lost with them; no divergence verdicts run from there on, because the
 missing tile would surface as a false divergence), and `unverifiable` (after
 a corrupt event the reference chain is unrecoverable — later frames are
 marked, never re-seeded from observed data).
+
+A recorded spawn that the transition itself contradicts — a spawn **after a
+no-op move**, or a spawn whose **reference cell is occupied after the
+slide** — is invalid history: the frame is marked `corrupt`, the spawn is
+neither applied nor silently ignored, and the reference chain stops there
+(later frames `unverifiable`), exactly as for a reader-corrupt event. The
+fix-less behavior (apply the phantom spawn and report `ok`, or note "not
+overwritten" and report `ok`) was a correctness defect, fixed with isolated
+regressions for each case, with and without an after board.
 
 Divergence is per-frame truth: it is marked at the first frame where the
 observed board leaves the reference chain, and it can legitimately heal later
@@ -170,10 +183,13 @@ node --test tools/game-replay-viewer/tests/*.test.mjs
 ```
 
 The committed fixtures classify as **6 accepted / 3 refused**; the suite
-asserts those counts. Current suite: **29 tests** (19 reader, 8 timeline,
-2 determinism), all passing.
+asserts those counts. Current suite: **36 tests** (21 reader, 12 timeline,
+3 determinism), all passing.
 
 The committed evidence directory (`evidence/`) is itself asserted: the
-suite's determinism tests rebuild it to temp dirs and compare byte-for-byte,
-and re-check the acceptance counts, so a stale or drifted `evidence/` cannot
-hide.
+determinism tests rebuild to temp dirs and compare byte-for-byte across
+runs, one test compares a fresh build **byte-for-byte against the committed
+build outputs** (`replay-classification.json`, `frame-id-agreement.json`,
+`timeline/*` — the browser-walk record and screenshots are walk evidence,
+not build outputs), and the acceptance counts are re-checked, so a stale or
+drifted `evidence/` cannot hide.

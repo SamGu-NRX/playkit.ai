@@ -227,6 +227,29 @@ test("a spawn on a cell the slide vacated is legal — the reader does not false
   assert.equal(result.counts.corrupt, 0, "reference-generated histories must read clean");
 });
 
+// ---------------------------------------- spawn coordinate validation
+
+test("fractional spawn coordinates are SPAWN_MISMATCH with an after board — no crash, later events still classified", () => {
+  const moves = syntheticMoves(13, 3);
+  moves[1].spawn = { r: 1.5, c: 2, value: 2 };
+  const result = readReplayLog(envelope(moves)); // must not throw (after[1.5] is undefined — never indexed)
+  assert.equal(result.status, "accepted", "a per-event problem never refuses the whole log");
+  assert.equal(result.events[1].state, "corrupt");
+  assert.equal(result.events[1].problems[0].code, PROBLEM_CODES.SPAWN_MISMATCH);
+  assert.match(result.events[1].problems[0].message, /integer/);
+  assert.equal(result.events[2].state, "ok", "later events are still classified, not aborted");
+});
+
+test("non-integer spawn coordinates are SPAWN_MISMATCH without an after board too", () => {
+  for (const [r, c] of [[1.5, 2], [2, 3.25], [NaN, 0], [0, Infinity], [-0.5, -0.5]]) {
+    const moves = syntheticMoves(13, 2);
+    moves[1] = { ...moves[1], after: null, spawn: { r, c, value: 2 } };
+    const result = readReplayLog(envelope(moves)); // must not throw
+    assert.equal(result.events[1].state, "corrupt", `r=${String(r)}, c=${String(c)} must be corrupt`);
+    assert.equal(result.events[1].problems[0].code, PROBLEM_CODES.SPAWN_MISMATCH);
+  }
+});
+
 test("duplicate move ids are reported", () => {
   const moves = syntheticMoves(13, 2);
   moves[1].id = moves[0].id;

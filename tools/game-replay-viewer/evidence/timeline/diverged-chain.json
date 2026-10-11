@@ -1,0 +1,631 @@
+{
+  "file": "diverged-chain.json",
+  "frames": [
+    {
+      "compare": [],
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0001",
+      "frameId": "f0",
+      "index": 0,
+      "notes": [
+        "reference chain starts at the first recorded pre-move board"
+      ],
+      "observedAfter": [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          2
+        ]
+      ],
+      "observedBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "problems": [],
+      "referenceAfter": [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          2
+        ]
+      ],
+      "referenceBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "c": 1,
+        "r": 0,
+        "value": 2
+      },
+      "state": "ok"
+    },
+    {
+      "compare": [],
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0002",
+      "frameId": "f1",
+      "index": 1,
+      "notes": [],
+      "observedAfter": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          2,
+          2
+        ]
+      ],
+      "observedBefore": [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          2
+        ]
+      ],
+      "problems": [],
+      "referenceAfter": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          2,
+          2
+        ]
+      ],
+      "referenceBefore": [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          2
+        ]
+      ],
+      "spawn": {
+        "c": 3,
+        "r": 0,
+        "value": 2
+      },
+      "state": "ok"
+    },
+    {
+      "compare": [
+        {
+          "c": 0,
+          "observed": 2,
+          "r": 0,
+          "reference": 0
+        }
+      ],
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0003",
+      "frameId": "f2",
+      "index": 2,
+      "notes": [
+        "observed board diverges from the reference replay in 1 cell(s); the reference chain keeps reference state"
+      ],
+      "observedAfter": [
+        [
+          2,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "observedBefore": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          2,
+          2
+        ]
+      ],
+      "problems": [],
+      "referenceAfter": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "referenceBefore": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          2,
+          2
+        ]
+      ],
+      "spawn": {
+        "c": 3,
+        "r": 0,
+        "value": 2
+      },
+      "state": "diverged"
+    },
+    {
+      "compare": [],
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0004",
+      "frameId": "f3",
+      "index": 3,
+      "notes": [],
+      "observedAfter": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "observedBefore": [
+        [
+          2,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "problems": [],
+      "referenceAfter": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "referenceBefore": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "c": 1,
+        "r": 2,
+        "value": 2
+      },
+      "state": "ok"
+    },
+    {
+      "compare": [],
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0005",
+      "frameId": "f4",
+      "index": 4,
+      "notes": [],
+      "observedAfter": [
+        [
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          4,
+          2,
+          4
+        ]
+      ],
+      "observedBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "problems": [],
+      "referenceAfter": [
+        [
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          4,
+          2,
+          4
+        ]
+      ],
+      "referenceBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "c": 2,
+        "r": 0,
+        "value": 2
+      },
+      "state": "ok"
+    }
+  ],
+  "source": {
+    "identityState": "recorded",
+    "name": "synthetic replay: observed history diverges from the reference replay",
+    "recordedBy": "bench/fixtures/game-engine.js moveLog shape (xorshift32 in the real fixture; mulberry32 here)",
+    "scenario": "normal",
+    "seed": 17
+  },
+  "timelineStates": {
+    "corrupt": 0,
+    "diverged": 1,
+    "missing-observation": 0,
+    "ok": 4,
+    "reference-incomplete": 0,
+    "unverifiable": 0
+  }
+}

@@ -1,0 +1,626 @@
+{
+  "file": "corrupt-events.json",
+  "frames": [
+    {
+      "compare": [],
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0001",
+      "frameId": "f0",
+      "index": 0,
+      "notes": [
+        "reference chain starts at the first recorded pre-move board"
+      ],
+      "observedAfter": [
+        [
+          2,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4,
+          0,
+          0
+        ]
+      ],
+      "observedBefore": [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "problems": [],
+      "referenceAfter": [
+        [
+          2,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4,
+          0,
+          0
+        ]
+      ],
+      "referenceBefore": [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "c": 0,
+        "r": 0,
+        "value": 2
+      },
+      "state": "ok"
+    },
+    {
+      "compare": null,
+      "dir": 7,
+      "dirState": "unknown",
+      "eventId": "m0002",
+      "frameId": "f1",
+      "index": 1,
+      "notes": [
+        "corrupt event: invalid parts are shown as recorded, nothing is reconstructed"
+      ],
+      "observedAfter": [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          4,
+          0,
+          0
+        ]
+      ],
+      "observedBefore": [
+        [
+          2,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4,
+          0,
+          0
+        ]
+      ],
+      "problems": [
+        {
+          "code": "DIR_UNKNOWN",
+          "message": "dir: 7 is not a direction (0=Up, 1=Right, 2=Down, 3=Left)"
+        }
+      ],
+      "referenceAfter": null,
+      "referenceBefore": null,
+      "spawn": {
+        "c": 1,
+        "r": 0,
+        "value": 2
+      },
+      "state": "corrupt"
+    },
+    {
+      "compare": null,
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0003",
+      "frameId": "f2",
+      "index": 2,
+      "notes": [
+        "corrupt event: invalid parts are shown as recorded, nothing is reconstructed"
+      ],
+      "observedAfter": null,
+      "observedBefore": [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          4,
+          0,
+          0
+        ]
+      ],
+      "problems": [
+        {
+          "code": "BOARD_SHAPE",
+          "message": "after[2]: expected a 4x4 array, got array of length 3"
+        }
+      ],
+      "referenceAfter": null,
+      "referenceBefore": null,
+      "spawn": {
+        "c": 3,
+        "r": 1,
+        "value": 2
+      },
+      "state": "corrupt"
+    },
+    {
+      "compare": null,
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0004",
+      "frameId": "f3",
+      "index": 3,
+      "notes": [
+        "corrupt event: invalid parts are shown as recorded, nothing is reconstructed"
+      ],
+      "observedAfter": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          4,
+          0,
+          2
+        ]
+      ],
+      "observedBefore": null,
+      "problems": [
+        {
+          "code": "BOARD_VALUE",
+          "message": "before[3]: invalid tile at row 0, col 0: 1 — value 1 is ambiguous under values encoding (it encodes to exponent 0 = empty); tile values start at 2"
+        }
+      ],
+      "referenceAfter": null,
+      "referenceBefore": null,
+      "spawn": {
+        "c": 3,
+        "r": 1,
+        "value": 2
+      },
+      "state": "corrupt"
+    },
+    {
+      "compare": null,
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0005",
+      "frameId": "f4",
+      "index": 4,
+      "notes": [
+        "corrupt event: invalid parts are shown as recorded, nothing is reconstructed"
+      ],
+      "observedAfter": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          4,
+          0,
+          4
+        ]
+      ],
+      "observedBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          4,
+          0,
+          2
+        ]
+      ],
+      "problems": [
+        {
+          "code": "CHAIN_BREAK",
+          "message": "before[4] does not continue after[3]: the recorded history has a gap or an edit"
+        }
+      ],
+      "referenceAfter": null,
+      "referenceBefore": null,
+      "spawn": {
+        "c": 3,
+        "r": 0,
+        "value": 2
+      },
+      "state": "corrupt"
+    },
+    {
+      "compare": null,
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0006",
+      "frameId": "f5",
+      "index": 5,
+      "notes": [
+        "corrupt event: invalid parts are shown as recorded, nothing is reconstructed"
+      ],
+      "observedAfter": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          2,
+          4,
+          0,
+          4
+        ]
+      ],
+      "observedBefore": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          4,
+          0,
+          4
+        ]
+      ],
+      "problems": [
+        {
+          "code": "SPAWN_MISMATCH",
+          "message": "spawn: after holds 2 at (r=2, c=1), recorded spawn value is 4"
+        }
+      ],
+      "referenceAfter": null,
+      "referenceBefore": null,
+      "spawn": {
+        "c": 1,
+        "r": 2,
+        "value": 4
+      },
+      "state": "corrupt"
+    },
+    {
+      "compare": null,
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0006",
+      "frameId": "f6",
+      "index": 6,
+      "notes": [
+        "corrupt event: invalid parts are shown as recorded, nothing is reconstructed"
+      ],
+      "observedAfter": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          4
+        ]
+      ],
+      "observedBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          2,
+          4,
+          0,
+          4
+        ]
+      ],
+      "problems": [
+        {
+          "code": "ID_DUPLICATE",
+          "message": "id \"m0006\" was already used by an earlier move"
+        }
+      ],
+      "referenceAfter": null,
+      "referenceBefore": null,
+      "spawn": {
+        "c": 1,
+        "r": 1,
+        "value": 2
+      },
+      "state": "corrupt"
+    },
+    {
+      "compare": null,
+      "dir": 2,
+      "dirState": "ok",
+      "eventId": "m0008",
+      "frameId": "f7",
+      "index": 7,
+      "notes": [
+        "reference chain unrecoverable after an earlier corrupt event; this frame is marked, never re-seeded from observed data"
+      ],
+      "observedAfter": [
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4,
+          0,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          4
+        ]
+      ],
+      "observedBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          4
+        ]
+      ],
+      "problems": [],
+      "referenceAfter": null,
+      "referenceBefore": null,
+      "spawn": {
+        "c": 1,
+        "r": 0,
+        "value": 2
+      },
+      "state": "unverifiable"
+    }
+  ],
+  "source": {
+    "identityState": "recorded",
+    "name": "synthetic replay: six injected corruptions",
+    "recordedBy": "bench/fixtures/game-engine.js moveLog shape (xorshift32 in the real fixture; mulberry32 here)",
+    "scenario": "normal",
+    "seed": 13
+  },
+  "timelineStates": {
+    "corrupt": 6,
+    "diverged": 0,
+    "missing-observation": 0,
+    "ok": 1,
+    "reference-incomplete": 0,
+    "unverifiable": 1
+  }
+}

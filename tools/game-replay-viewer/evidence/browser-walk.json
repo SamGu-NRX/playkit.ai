@@ -1,0 +1,70 @@
+{
+  "generatedBy": "keyboard-first browser walk with agent-browser (Chromium), milestone 3 evidence",
+  "page": "tools/game-replay-viewer/page/replay-viewer.html",
+  "server": "python3 -m http.server over the repository root (local loopback)",
+  "screenshots": [
+    "screenshots/tc-1-wide-valid.png",
+    "screenshots/tc-2-narrow-valid.png",
+    "screenshots/tc-3-diverged-diff.png",
+    "screenshots/tc-4-refused-banner.png",
+    "screenshots/tc-5-hostile-inert.png",
+    "screenshots/tc-6-reduced-motion.png",
+    "screenshots/tc-7-dark-mode.png"
+  ],
+  "axe": {
+    "engine": "axe-core 4.10.2 (loaded from CDN at scan time, not vendored)",
+    "wide": { "viewport": "1280x800", "log": "valid-seed7.json", "violations": [], "passes": 45 },
+    "narrow": { "viewport": "390x844", "log": "valid-seed7.json", "violations": [], "passes": 45 }
+  },
+  "checks": [
+    {
+      "id": "keyboard-arrows",
+      "result": "pass",
+      "detail": "ArrowRight steps the timeline: Frame 1 of 8 -> Frame 3 of 8 after two presses (valid-seed7.json); re-verified after the dl/corner DOM fixes (Frame 2 of 8 after one press)."
+    },
+    {
+      "id": "keyboard-ends",
+      "result": "pass",
+      "detail": "End jumps to Frame 8 of 8; Home returns to Frame 1 of 8."
+    },
+    {
+      "id": "jump-field",
+      "result": "pass",
+      "detail": "Typing 5 into the labeled jump field and pressing Enter lands on Frame 5 of 8; the field mirrors the cursor."
+    },
+    {
+      "id": "diverged-frame-diff",
+      "result": "pass",
+      "detail": "diverged-chain.json frame 3: banner reads 'State: diverged - 1 cell(s) differ'; compare list reads '(r0, c0): observed 2 / reference 0'; the reference board marks the cell with a visible outline and tooltip."
+    },
+    {
+      "id": "refused-log-banner",
+      "result": "pass",
+      "detail": "refused-not-object.json: alert banner 'Log refused - nothing rendered.' with the refusal codes; timeline panel stays hidden; zero board tables in the DOM."
+    },
+    {
+      "id": "hostile-labels-inert",
+      "result": "pass",
+      "detail": "hostile-labels.json: window.__replayPwned stays undefined (the fixture's injected onerror never ran), zero script/svg/img nodes injected, the hostile source name is present as plain text, and the page's inertness marker is true."
+    },
+    {
+      "id": "reduced-motion",
+      "result": "pass",
+      "detail": "With prefers-reduced-motion: reduce emulated, matchMedia reports true and board cells compute transition-duration 0s (captured on valid-seed7.json at the last frame); the stylesheet also hard-disables animation/transition under the reduce query."
+    },
+    {
+      "id": "responsive-narrow",
+      "result": "pass",
+      "detail": "At 390x844 the board grid collapses to a single column track and controls take full width; at 1280x800 the boards sit side by side."
+    },
+    {
+      "id": "dark-mode",
+      "result": "pass",
+      "detail": "With prefers-color-scheme: dark emulated, the page renders the dark token palette; keyboard stepping still works (Frame 2 of 8)."
+    }
+  ],
+  "deferred": [
+    "Screen-reader output was not recorded (no AT in the sandbox); semantic structure (landmarks, captions, scopes, aria-current, role=status/alert) is asserted by the axe scans instead.",
+    "Tab-order focus walk was not captured as a screenshot; focus-visible styling is defined in CSS and buttons/links are native focusable elements."
+  ]
+}

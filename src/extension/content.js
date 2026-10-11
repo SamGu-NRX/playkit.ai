@@ -3991,6 +3991,33 @@
             transition: none;
             cursor: grabbing;
           }
+    
+          .hud-btn:focus-visible,
+          .setting-select:focus-visible,
+          .setting-input:focus-visible,
+          .hud-header:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+          }
+    
+          .hud-panel {
+            max-width: calc(100vw - 16px);
+          }
+    
+          @media (prefers-reduced-motion: reduce) {
+            .hud-panel,
+            .hud-btn {
+              transition: none !important;
+            }
+    
+            .hud-btn:hover {
+              transform: none;
+            }
+    
+            .hud-panel.auto-solving .hud-btn-success {
+              animation: none !important;
+            }
+          }
         `;
     }
     
@@ -4004,19 +4031,19 @@
             ${getHUDCSS()}
           </style>
           <div class="hud-panel" data-collapsed="false">
-            <div class="hud-header">
+            <div class="hud-header" tabindex="0" role="group" aria-label="2048 AI Solver panel. Press arrow keys to move the panel, Home to reset its position, Escape to collapse.">
               <div class="hud-title">
                 <span class="hud-icon">🎯</span>
                 <span class="hud-text">2048 AI Solver</span>
               </div>
               <div class="hud-controls">
-                <button class="hud-btn hud-btn-collapse" title="Collapse/Expand">
+                <button class="hud-btn hud-btn-collapse" title="Collapse/Expand" aria-expanded="true" aria-controls="hud-content-region" aria-label="Collapse panel">
                   <span class="collapse-icon">−</span>
                 </button>
               </div>
             </div>
-            <div class="hud-content">
-              <div class="hud-status">
+            <div class="hud-content" id="hud-content-region">
+              <div class="hud-status" role="status" aria-live="polite">
                 <div class="status-item">
                   <span class="status-label">Game:</span>
                   <span class="status-value" id="game-status">Not detected</span>
@@ -4055,7 +4082,7 @@
     
               <div class="hud-settings">
                 <div class="setting-group">
-                  <label class="setting-label">Direction Priority:</label>
+                  <label class="setting-label" for="direction-priority">Direction Priority:</label>
                   <select class="setting-select" id="direction-priority">
                     <option value="0,2,1,3">Up → Down → Right → Left</option>
                     <option value="3,2,1,0" selected>Left → Down → Right → Up</option>
@@ -4064,14 +4091,14 @@
                   </select>
                 </div>
                 <div class="setting-group">
-                  <label class="setting-label">Solver Strategy:</label>
+                  <label class="setting-label" for="solver-strategy">Solver Strategy:</label>
                   <select class="setting-select" id="solver-strategy">
                     <option value="expectimax-depth" selected>Expectimax (Depth)</option>
                     <option value="expectimax-probability">Expectimax (Probability)</option>
                   </select>
                 </div>
                 <div class="setting-group">
-                  <label class="setting-label">Heuristic:</label>
+                  <label class="setting-label" for="solver-heuristic">Heuristic:</label>
                   <select class="setting-select" id="solver-heuristic">
                     <option value="corner" selected>Corner Bias</option>
                     <option value="monotonicity">Monotonicity</option>
@@ -4133,9 +4160,16 @@
           scoreStatus: null,
           detectBtn: null,
           autoSolveBtn: null,
+          pauseResumeBtn: null,
           stepBtn: null,
+          retryBtn: null,
+          problemItem: null,
+          problemLabel: null,
+          problemStatus: null,
           collapseBtn: null,
           collapseIcon: null,
+          header: null,
+          hudContent: null,
           directionSelect: null,
           solverStrategy: null,
           solverHeuristic: null,
@@ -4147,11 +4181,17 @@
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
         this._suppressSolverEvents = false;
+        this.currentPos = { x: 0, y: 0 };
+        this.lastHostFocus = null;
     
         this.boundHandlers = {
           headerMouseDown: this.handleHeaderMouseDown.bind(this),
           documentMouseMove: this.handleDocumentMouseMove.bind(this),
           documentMouseUp: this.handleDocumentMouseUp.bind(this),
+          headerKeyDown: this.handleHeaderKeyDown.bind(this),
+          shadowKeyDown: this.handleShadowKeyDown.bind(this),
+          windowResize: this.handleWindowResize.bind(this),
+          documentFocusIn: this.handleDocumentFocusIn.bind(this),
           detectClick: this.forwardCallback("onDetect"),
           autoSolveClick: this.forwardCallback("onAutoSolve"),
           pauseToggleClick: this.forwardCallback("onPauseToggle"),
@@ -4219,9 +4259,16 @@
           scoreStatus: this.shadowRoot.getElementById("score-status"),
           detectBtn: this.shadowRoot.getElementById("detect-btn"),
           autoSolveBtn: this.shadowRoot.getElementById("auto-solve-btn"),
+          pauseResumeBtn: this.shadowRoot.getElementById("pause-resume-btn"),
           stepBtn: this.shadowRoot.getElementById("step-btn"),
+          retryBtn: this.shadowRoot.getElementById("retry-btn"),
+          problemItem: this.shadowRoot.getElementById("problem-item"),
+          problemLabel: this.shadowRoot.getElementById("problem-label"),
+          problemStatus: this.shadowRoot.getElementById("problem-status"),
           collapseBtn: this.shadowRoot.querySelector(".hud-btn-collapse"),
           collapseIcon: this.shadowRoot.querySelector(".collapse-icon"),
+          header: this.shadowRoot.querySelector(".hud-header"),
+          hudContent: this.shadowRoot.querySelector(".hud-content"),
           directionSelect: this.shadowRoot.getElementById("direction-priority"),
           solverStrategy: this.shadowRoot.getElementById("solver-strategy"),
           solverHeuristic: this.shadowRoot.getElementById("solver-heuristic"),
@@ -4249,12 +4296,25 @@
           "click",
           this.boundHandlers.autoSolveClick,
         );
+        this.elements.pauseResumeBtn?.addEventListener(
+          "click",
+          this.boundHandlers.pauseToggleClick,
+        );
         this.elements.stepBtn?.addEventListener("click", this.boundHandlers.stepClick);
+        this.elements.retryBtn?.addEventListener("click", this.boundHandlers.retryClick);
         this.elements.collapseBtn?.addEventListener("click", this.boundHandlers.collapseClick);
         this.elements.directionSelect?.addEventListener(
           "change",
           this.boundHandlers.directionChange,
         );
+    
+        this.elements.header?.addEventListener(
+          "keydown",
+          this.boundHandlers.headerKeyDown,
+        );
+        this.shadowRoot.addEventListener("keydown", this.boundHandlers.shadowKeyDown);
+        window.addEventListener("resize", this.boundHandlers.windowResize);
+        document.addEventListener("focusin", this.boundHandlers.documentFocusIn);
     
         const solverControls = [
           this.elements.solverStrategy,
@@ -4287,7 +4347,12 @@
           "click",
           this.boundHandlers.autoSolveClick,
         );
+        this.elements.pauseResumeBtn?.removeEventListener(
+          "click",
+          this.boundHandlers.pauseToggleClick,
+        );
         this.elements.stepBtn?.removeEventListener("click", this.boundHandlers.stepClick);
+        this.elements.retryBtn?.removeEventListener("click", this.boundHandlers.retryClick);
         this.elements.collapseBtn?.removeEventListener(
           "click",
           this.boundHandlers.collapseClick,
@@ -4296,6 +4361,14 @@
           "change",
           this.boundHandlers.directionChange,
         );
+    
+        this.elements.header?.removeEventListener(
+          "keydown",
+          this.boundHandlers.headerKeyDown,
+        );
+        this.shadowRoot.removeEventListener("keydown", this.boundHandlers.shadowKeyDown);
+        window.removeEventListener("resize", this.boundHandlers.windowResize);
+        document.removeEventListener("focusin", this.boundHandlers.documentFocusIn);
     
         const solverControls = [
           this.elements.solverStrategy,
@@ -4375,21 +4448,37 @@
       }
     
       /**
-       * Toggle collapse/expand state while updating the icon.
+       * Toggle collapse/expand state while updating the icon and ARIA state.
        * @private
        */
       handleCollapseClick() {
-        this.isCollapsed = !this.isCollapsed;
-        this.panel?.setAttribute("data-collapsed", String(this.isCollapsed));
+        this.setCollapsed(!this.isCollapsed);
+    
+        if (typeof this.callbacks.onCollapse === "function") {
+          this.callbacks.onCollapse(this.isCollapsed);
+        }
+      }
+    
+      /**
+       * Apply a collapse state to the panel and keep the toggle's ARIA in sync.
+       * @param {boolean} collapsed
+       */
+      setCollapsed(collapsed) {
+        this.isCollapsed = collapsed;
+        this.panel?.setAttribute("data-collapsed", String(collapsed));
     
         if (this.elements.collapseIcon) {
-          this.elements.collapseIcon.textContent = this.isCollapsed
+          this.elements.collapseIcon.textContent = collapsed
             ? COLLAPSE_ICON.COLLAPSED
             : COLLAPSE_ICON.EXPANDED;
         }
     
-        if (typeof this.callbacks.onCollapse === "function") {
-          this.callbacks.onCollapse(this.isCollapsed);
+        if (this.elements.collapseBtn) {
+          this.elements.collapseBtn.setAttribute("aria-expanded", String(!collapsed));
+          this.elements.collapseBtn.setAttribute(
+            "aria-label",
+            collapsed ? "Expand panel" : "Collapse panel",
+          );
         }
       }
     
@@ -4621,6 +4710,109 @@
       }
     
       /**
+       * Handle keydown anywhere inside the HUD shadow root. Escape collapses the
+       * panel and returns focus to the last focused host-page element. This
+       * listener never captures host-page keys: it only sees events whose focus
+       * is already inside the HUD.
+       * @param {KeyboardEvent} event
+       * @private
+       */
+      handleShadowKeyDown(event) {
+        if (!event || event.key !== "Escape" || !this.panel) {
+          return;
+        }
+    
+        if (!this.isCollapsed) {
+          this.setCollapsed(true);
+    
+          if (typeof this.callbacks.onCollapse === "function") {
+            this.callbacks.onCollapse(true);
+          }
+    
+          const host = this.lastHostFocus;
+          if (host && typeof host.focus === "function") {
+            try {
+              host.focus();
+            } catch {
+              // Focus return is best-effort; some host elements are not focusable.
+            }
+          }
+        }
+      }
+    
+      /**
+       * Move the panel with the keyboard while the header has focus. Arrow keys
+       * nudge by 16px (64px with Shift); Home resets to the mount position.
+       * @param {KeyboardEvent} event
+       * @private
+       */
+      handleHeaderKeyDown(event) {
+        if (!event || !this.panel) {
+          return;
+        }
+    
+        const step = event.shiftKey ? 64 : 16;
+        let handled = true;
+    
+        switch (event.key) {
+          case "ArrowLeft":
+            this.position(this.currentPos.x - step, this.currentPos.y);
+            break;
+          case "ArrowRight":
+            this.position(this.currentPos.x + step, this.currentPos.y);
+            break;
+          case "ArrowUp":
+            this.position(this.currentPos.x, this.currentPos.y - step);
+            break;
+          case "ArrowDown":
+            this.position(this.currentPos.x, this.currentPos.y + step);
+            break;
+          case "Home":
+            this.position(window.innerWidth - 320, 20);
+            break;
+          default:
+            handled = false;
+        }
+    
+        if (handled && typeof event.preventDefault === "function") {
+          event.preventDefault();
+        }
+      }
+    
+      /**
+       * Re-clamp the panel into the viewport after a resize (e.g. rotating a
+       * device or shrinking a narrow window).
+       * @private
+       */
+      handleWindowResize() {
+        if (!this.panel) {
+          return;
+        }
+    
+        this.position(this.currentPos.x, this.currentPos.y);
+      }
+    
+      /**
+       * Track the last focused host-page element (outside the HUD) so Escape can
+       * return focus there. Passive observation only — nothing is captured.
+       * @param {FocusEvent} event
+       * @private
+       */
+      handleDocumentFocusIn(event) {
+        const target = event?.target;
+        if (!target) {
+          return;
+        }
+    
+        const insideHUD =
+          this.shadowRoot && typeof this.shadowRoot.contains === "function" && this.shadowRoot.contains(target);
+    
+        if (!insideHUD) {
+          this.lastHostFocus = target;
+        }
+      }
+    
+      /**
        * Position the HUD within the viewport, clamped to visible area.
        * @param {number} x
        * @param {number} y
@@ -4639,6 +4831,7 @@
     
         this.panel.style.left = `${clampedX}px`;
         this.panel.style.top = `${clampedY}px`;
+        this.currentPos = { x: clampedX, y: clampedY };
       }
     
       /**

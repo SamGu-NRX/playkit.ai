@@ -90,13 +90,21 @@ Two log shapes are read:
 ## Reference comparison (`lib/timeline.mjs`, milestone 2)
 
 The timeline uses the repo's stable transition/reference API
-(`test/helpers/reference-2048.mjs` — `simulateMove`, `boardsEqual`) **read
+(`test/helpers/reference-2048.mjs` — `simulateMove`, `cloneBoard`) **read
 only** to compute what each move *should* produce from the reference chain
 (replay of the recorded dir + spawn schedule; no solver, no heuristics). Frame
 states: `ok`, `missing-observation`, `corrupt`, `diverged`,
-`reference-incomplete` (spawn unrecorded, so the expected board is known to be
-incomplete), and `unverifiable` (after a corrupt event the reference chain is
-unrecoverable — later frames are marked, never re-seeded from observed data).
+`reference-incomplete` (a spawn was not recorded, so the expected board is
+known to be incomplete — this includes fully unrecorded events whose spawn is
+lost with them; no divergence verdicts run from there on, because the
+missing tile would surface as a false divergence), and `unverifiable` (after
+a corrupt event the reference chain is unrecoverable — later frames are
+marked, never re-seeded from observed data).
+
+Divergence is per-frame truth: it is marked at the first frame where the
+observed board leaves the reference chain, and it can legitimately heal later
+(if an injected extra tile happens to coincide with a reference spawn cell).
+Healing is reported as `ok`, not hidden and not claimed as a defect.
 
 ## Build / evidence
 
@@ -104,7 +112,21 @@ unrecoverable — later frames are marked, never re-seeded from observed data).
 
 Classifies every `*.json` fixture, writes deterministic (sorted-keys,
 byte-stable) exports plus a frame/ID agreement check. Run twice — outputs are
-byte-identical.
+byte-identical (tested). Exit 0 only when the agreement check passes.
+
+Exports:
+
+- `replay-classification.json` — per-log status, shape, source identity,
+  refusals, reader counts, and timeline state counts; aggregate summary.
+- `timeline/<fixture>.json` — the full frame list (observed/reference boards,
+  compare cells, problems, notes) for accepted logs.
+- `frame-id-agreement.json` — re-reads every fixture from disk and verifies
+  the written frames agree with the source event IDs (`f<i>` / `e<i>`
+  alignment) via a round-trip through the files.
+
+The committed `evidence/` directory was produced by exactly the command above
+(36 frames checked, agreement ok). `page/manifest.json` (the viewer's log
+list) is written by `fixtures/generate.mjs` alongside the fixtures.
 
 ## Viewer page (milestone 2)
 
@@ -122,4 +144,10 @@ node --test tools/game-replay-viewer/tests/*.test.mjs
 ```
 
 The committed fixtures classify as **6 accepted / 3 refused**; the suite
-asserts those counts.
+asserts those counts. Current suite: **29 tests** (19 reader, 8 timeline,
+2 determinism), all passing.
+
+The committed evidence directory (`evidence/`) is itself asserted: the
+suite's determinism tests rebuild it to temp dirs and compare byte-for-byte,
+and re-check the acceptance counts, so a stale or drifted `evidence/` cannot
+hide.

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Playkit replay viewer — synthetic move-log inspection</title>
+  <meta name="description" content="Local, read-only inspection of 2048 replay logs: step, jump, and compare observed against reference boards. Missing and corrupt events are shown explicitly; nothing is repaired." />
+  <link rel="stylesheet" href="./viewer.css" />
+</head>
+<body>
+  <a class="skip-link" href="#boards">Skip to boards</a>
+
+  <header class="site-header">
+    <h1>Replay viewer</h1>
+    <p class="tagline">Local inspection of synthetic move logs — read-only: it repairs nothing and controls no live page.</p>
+  </header>
+
+  <nav id="log-nav" aria-label="Synthetic fixture logs">
+    <h2 class="nav-heading">Logs</h2>
+    <p id="nav-status" class="muted">Loading log list…</p>
+    <ul id="log-list" class="log-list"></ul>
+  </nav>
+
+  <main id="main">
+    <p id="load-status" role="status" aria-live="polite"></p>
+
+    <section id="source-card" aria-labelledby="source-heading" class="card hidden">
+      <h2 id="source-heading">Source identity</h2>
+      <dl id="source-facts" class="fact-list"></dl>
+    </section>
+
+    <div id="refused-panel" role="alert" class="banner banner-refused hidden"></div>
+
+    <section id="frame-panel" aria-labelledby="timeline-heading" class="card hidden">
+      <h2 id="timeline-heading">Timeline</h2>
+
+      <p id="frame-status" role="status" aria-live="polite" class="frame-status"></p>
+
+      <div id="state-banner" class="banner" role="status"></div>
+
+      <div id="controls" role="toolbar" aria-label="Timeline controls" class="controls">
+        <button id="btn-first" type="button">⇤ First</button>
+        <button id="btn-prev" type="button">← Step back</button>
+        <button id="btn-next" type="button">Step forward →</button>
+        <button id="btn-last" type="button">Last ⇥</button>
+        <form id="jump-form" class="jump">
+          <label for="jump-input">Jump to frame</label>
+          <input id="jump-input" name="jump" type="number" min="1" step="1" inputmode="numeric" />
+          <button id="btn-jump" type="submit">Go</button>
+        </form>
+      </div>
+
+      <ul id="frame-list" class="frame-list" aria-label="Frames"></ul>
+
+      <div id="boards" class="boards">
+        <div class="board-card">
+          <h3 id="observed-heading">Observed board</h3>
+          <div id="observed-board" class="board-holder"></div>
+        </div>
+        <div class="board-card">
+          <h3 id="reference-heading">Reference board</h3>
+          <div id="reference-board" class="board-holder"></div>
+        </div>
+      </div>
+
+      <div id="move-facts" class="fact-list"></div>
+      <div id="problems-block">
+        <h3>Problems in this frame</h3>
+        <ul id="problems-list" class="problem-list"></ul>
+      </div>
+      <div id="compare-block" class="hidden">
+        <h3>Observed vs reference differences</h3>
+        <ul id="compare-list" class="compare-list"></ul>
+      </div>
+      <div id="notes-block">
+        <h3>Notes</h3>
+        <ul id="notes-list" class="note-list"></ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="legend-heading" class="card">
+      <h2 id="legend-heading">Frame states</h2>
+      <dl class="legend">
+        <dt>ok</dt><dd>observed post-move board matches the reference replay exactly.</dd>
+        <dt>missing-observation</dt><dd>a needed board was not recorded; the reference chain still advances via the recorded schedule.</dd>
+        <dt>corrupt</dt><dd>the event has structural problems; invalid parts are shown as recorded, nothing is reconstructed.</dd>
+        <dt>diverged</dt><dd>the observed board differs from the reference replay; both are shown and the reference chain keeps reference state.</dd>
+        <dt>reference-incomplete</dt><dd>a spawn was not recorded, so the reference chain is known to be incomplete; no divergence verdicts from there on.</dd>
+        <dt>unverifiable</dt><dd>the reference chain is unrecoverable after a corrupt event; later frames are marked, never re-seeded from observed data.</dd>
+      </dl>
+    </section>
+  </main>
+
+  <script type="module" src="./viewer.mjs"></script>
+</body>
+</html>

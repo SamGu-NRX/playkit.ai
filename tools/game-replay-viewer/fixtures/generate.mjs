@@ -12,7 +12,7 @@
  * live page, no personal data. Corruptions are injected deliberately so the
  * reader and viewer have honest cases to classify.
  */
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -76,7 +76,9 @@ const SOURCE_BASE = {
   recordedBy: "bench/fixtures/game-engine.js moveLog shape (xorshift32 in the real fixture; mulberry32 here)",
 };
 
+const writtenJson = [];
 function write(name, value) {
+  writtenJson.push(name);
   writeFileSync(join(here, name), `${JSON.stringify(value, null, 2)}\n`);
 }
 
@@ -105,7 +107,7 @@ function write(name, value) {
 
 // --- 3. corrupt-events.json — accepted, six corrupt events, one per code ---
 {
-  const moves = syntheticMoves(13, 7);
+  const moves = syntheticMoves(13, 8);
 
   moves[1].dir = 7; // DIR_UNKNOWN
 
@@ -149,6 +151,10 @@ function write(name, value) {
     envelope({ ...SOURCE_BASE, name: "synthetic replay: six injected corruptions", seed: 13 }, moves),
   );
 }
+
+// --- 3b. the corrupt log ends with a clean event (moves[7]) so the timeline
+//     can demonstrate the explicit `unverifiable` state: after a corrupt
+//     event the reference chain is unrecoverable and is never re-seeded.
 
 // --- 4. diverged-chain.json — accepted, internally consistent, but the ------
 //     observed board at move 3 carries an extra tile the reference replay
@@ -210,5 +216,11 @@ write("refused-moves-not-array.json", {
   source: { name: "moves field is not an array", seed: 3 },
   moves: "eight moves",
 });
+
+// Viewer-page manifest: the list of fixture files for the page's log nav.
+writeFileSync(
+  join(here, "..", "page", "manifest.json"),
+  `${JSON.stringify({ files: [...writtenJson].sort() }, null, 2)}\n`,
+);
 
 console.log("fixtures regenerated (deterministic; seeds 7/9/13/17/21/11)");

@@ -292,7 +292,7 @@ test("fixture expectations: per-log counts stay as documented", () => {
   assert.deepEqual(missing.counts, { events: 6, ok: 3, missing: 3, corrupt: 0 });
 
   const corrupt = load("corrupt-events.json");
-  assert.deepEqual(corrupt.counts, { events: 7, ok: 1, missing: 0, corrupt: 6 });
+  assert.deepEqual(corrupt.counts, { events: 8, ok: 2, missing: 0, corrupt: 6 });
   const codes = new Set(corrupt.events.flatMap((e) => e.problems.map((p) => p.code)));
   assert.deepEqual(
     [...codes].sort(),

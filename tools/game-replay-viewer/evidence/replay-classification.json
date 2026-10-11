@@ -1,0 +1,260 @@
+{
+  "format": "playkit-replay-log/1",
+  "generatedBy": "tools/game-replay-viewer/build.mjs",
+  "logs": [
+    {
+      "counts": {
+        "corrupt": 6,
+        "events": 8,
+        "missing": 0,
+        "ok": 2
+      },
+      "file": "corrupt-events.json",
+      "shape": "envelope",
+      "source": {
+        "identityState": "recorded",
+        "name": "synthetic replay: six injected corruptions",
+        "recordedBy": "bench/fixtures/game-engine.js moveLog shape (xorshift32 in the real fixture; mulberry32 here)",
+        "scenario": "normal",
+        "seed": 13
+      },
+      "status": "accepted",
+      "synthetic": true,
+      "timelineStates": {
+        "corrupt": 6,
+        "diverged": 0,
+        "missing-observation": 0,
+        "ok": 1,
+        "reference-incomplete": 0,
+        "unverifiable": 1
+      }
+    },
+    {
+      "counts": {
+        "corrupt": 0,
+        "events": 5,
+        "missing": 0,
+        "ok": 5
+      },
+      "file": "diverged-chain.json",
+      "shape": "envelope",
+      "source": {
+        "identityState": "recorded",
+        "name": "synthetic replay: observed history diverges from the reference replay",
+        "recordedBy": "bench/fixtures/game-engine.js moveLog shape (xorshift32 in the real fixture; mulberry32 here)",
+        "scenario": "normal",
+        "seed": 17
+      },
+      "status": "accepted",
+      "synthetic": true,
+      "timelineStates": {
+        "corrupt": 0,
+        "diverged": 1,
+        "missing-observation": 0,
+        "ok": 4,
+        "reference-incomplete": 0,
+        "unverifiable": 0
+      }
+    },
+    {
+      "counts": {
+        "corrupt": 0,
+        "events": 4,
+        "missing": 0,
+        "ok": 4
+      },
+      "file": "hostile-labels.json",
+      "shape": "envelope",
+      "source": {
+        "identityState": "recorded",
+        "name": "<img src=x onerror=\"window.__replayPwned=1\">",
+        "recordedBy": "javascript:alert(1)",
+        "scenario": "\"><script>alert(1)</script>",
+        "seed": 11
+      },
+      "status": "accepted",
+      "synthetic": true,
+      "timelineStates": {
+        "corrupt": 0,
+        "diverged": 0,
+        "missing-observation": 0,
+        "ok": 4,
+        "reference-incomplete": 0,
+        "unverifiable": 0
+      }
+    },
+    {
+      "counts": {
+        "corrupt": 0,
+        "events": 5,
+        "missing": 0,
+        "ok": 5
+      },
+      "file": "legacy-moveLog.json",
+      "shape": "legacy-moveLog",
+      "source": {
+        "identityState": "unknown",
+        "name": null,
+        "recordedBy": null,
+        "scenario": null,
+        "seed": null
+      },
+      "status": "accepted",
+      "synthetic": false,
+      "timelineStates": {
+        "corrupt": 0,
+        "diverged": 0,
+        "missing-observation": 0,
+        "ok": 5,
+        "reference-incomplete": 0,
+        "unverifiable": 0
+      }
+    },
+    {
+      "counts": {
+        "corrupt": 0,
+        "events": 6,
+        "missing": 3,
+        "ok": 3
+      },
+      "file": "missing-observations.json",
+      "shape": "envelope",
+      "source": {
+        "identityState": "recorded",
+        "name": "synthetic replay: gaps in board observation",
+        "recordedBy": "bench/fixtures/game-engine.js moveLog shape (xorshift32 in the real fixture; mulberry32 here)",
+        "scenario": "normal",
+        "seed": 9
+      },
+      "status": "accepted",
+      "synthetic": true,
+      "timelineStates": {
+        "corrupt": 0,
+        "diverged": 0,
+        "missing-observation": 2,
+        "ok": 3,
+        "reference-incomplete": 1,
+        "unverifiable": 0
+      }
+    },
+    {
+      "counts": {
+        "corrupt": 0,
+        "events": 0,
+        "missing": 0,
+        "ok": 0
+      },
+      "file": "refused-format-unknown.json",
+      "refusals": [
+        {
+          "code": "FORMAT_UNKNOWN",
+          "message": "format \"other-tool/9\" is not supported (expected \"playkit-replay-log/1\")"
+        }
+      ],
+      "shape": null,
+      "source": {
+        "identityState": "unknown",
+        "name": null,
+        "recordedBy": null,
+        "scenario": null,
+        "seed": null
+      },
+      "status": "refused",
+      "synthetic": false,
+      "timelineStates": null
+    },
+    {
+      "counts": {
+        "corrupt": 0,
+        "events": 0,
+        "missing": 0,
+        "ok": 0
+      },
+      "file": "refused-moves-not-array.json",
+      "refusals": [
+        {
+          "code": "MOVES_NOT_ARRAY",
+          "message": "moves: expected an array, got string"
+        }
+      ],
+      "shape": null,
+      "source": {
+        "identityState": "unknown",
+        "name": null,
+        "recordedBy": null,
+        "scenario": null,
+        "seed": null
+      },
+      "status": "refused",
+      "synthetic": false,
+      "timelineStates": null
+    },
+    {
+      "counts": {
+        "corrupt": 0,
+        "events": 0,
+        "missing": 0,
+        "ok": 0
+      },
+      "file": "refused-not-object.json",
+      "refusals": [
+        {
+          "code": "NOT_AN_OBJECT",
+          "message": "expected a log object or bare move array, got string"
+        }
+      ],
+      "shape": null,
+      "source": {
+        "identityState": "unknown",
+        "name": null,
+        "recordedBy": null,
+        "scenario": null,
+        "seed": null
+      },
+      "status": "refused",
+      "synthetic": false,
+      "timelineStates": null
+    },
+    {
+      "counts": {
+        "corrupt": 0,
+        "events": 8,
+        "missing": 0,
+        "ok": 8
+      },
+      "file": "valid-seed7.json",
+      "shape": "envelope",
+      "source": {
+        "identityState": "recorded",
+        "name": "synthetic replay: valid run, seed 7",
+        "recordedBy": "bench/fixtures/game-engine.js moveLog shape (xorshift32 in the real fixture; mulberry32 here)",
+        "scenario": "normal",
+        "seed": 7
+      },
+      "status": "accepted",
+      "synthetic": true,
+      "timelineStates": {
+        "corrupt": 0,
+        "diverged": 0,
+        "missing-observation": 0,
+        "ok": 8,
+        "reference-incomplete": 0,
+        "unverifiable": 0
+      }
+    }
+  ],
+  "note": "all fixtures are synthetic; deterministic export (sorted keys, no timestamps)",
+  "summary": {
+    "accepted": 6,
+    "files": 9,
+    "frameStates": {
+      "corrupt": 6,
+      "diverged": 1,
+      "missing-observation": 2,
+      "ok": 25,
+      "reference-incomplete": 1,
+      "unverifiable": 1
+    },
+    "refused": 3
+  }
+}

@@ -93,8 +93,9 @@ function renderBoard(holder, heading, board, options) {
   table.append(cap);
 
   const headRow = document.createElement("tr");
-  const corner = document.createElement("th");
-  corner.scope = "col";
+  const corner = document.createElement("td");
+  corner.className = "corner";
+  corner.setAttribute("aria-hidden", "true");
   corner.textContent = "";
   headRow.append(corner);
   for (let c = 0; c < 4; c += 1) {

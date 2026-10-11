@@ -137,6 +137,32 @@ Observed and reference boards render side by side with cell-level diff
 highlighting; missing/corrupt/diverged states show as explicit banners. All
 log-supplied strings are rendered as text only — hostile labels are inert.
 
+To walk it locally:
+
+```bash
+python3 -m http.server 8899 --directory .
+# then open
+# http://localhost:8899/tools/game-replay-viewer/page/replay-viewer.html?log=valid-seed7.json
+```
+
+## Browser walk (milestone 3)
+
+`evidence/browser-walk.json` records the committed browser walk (Chromium via
+agent-browser, served over local loopback): keyboard step/jump navigation,
+the diverged frame's diff highlight, the refusal banner, hostile-label
+inertness (`window.__replayPwned` stays undefined; zero injected
+script/svg/img nodes), reduced-motion emulation (computed transition 0s),
+narrow/wide responsive behavior, and dark mode. Screenshots live in
+`evidence/screenshots/`.
+
+Accessibility: axe-core 4.10.2 scans (loaded from CDN at scan time, not
+vendored) report **zero violations at both 1280x800 and 390x844** (45 passes
+each). An earlier scan caught two real findings — `dlitem` (a div acting as a
+description list) and `empty-table-header` (a corner `th` with no text) —
+both fixed before the final scans. Screen-reader output and a captured
+tab-order walk are the deferred host-specific checks (no AT in the sandbox);
+semantic structure is asserted by the axe scans instead.
+
 ## Tests
 
 ```bash

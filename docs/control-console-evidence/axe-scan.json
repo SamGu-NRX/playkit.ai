@@ -1,0 +1,19 @@
+{
+  "tool": "axe-core 4.10.2 (bench/helpers/axe-local.min.js, uncommitted local helper)",
+  "ruleSet": "wcag2a, wcag2aa, wcag21a, wcag21aa",
+  "date": "2026-10-11",
+  "withHUD": {
+    "url": "/bench/fixtures/play2048-style.html?layer=bundle&hud=1&autoStart=1&wasm=missing&seed=7",
+    "violations": [
+      { "id": "color-contrast", "impact": "serious", "targets": [".bench-banner", "#fixture-script-info", ".score", ".tile-inner", ".tile-inner"] }
+    ]
+  },
+  "withoutHUD": {
+    "url": "/bench/fixtures/play2048-style.html?layer=bundle&hud=0&autoStart=1&wasm=missing&seed=7",
+    "violations": [
+      { "id": "color-contrast", "impact": "serious", "targets": [".bench-banner", "#fixture-script-info", ".score", ".tile-inner", ".tile-inner"] }
+    ]
+  },
+  "interpretation": "The violation sets are identical with and without the HUD. Every remaining finding is the fixture page's own 2048-game chrome (muted bench banner text, game score, tile palette) and exists independent of the HUD. The HUD's one real violation found mid-walk (white text on rgba(34,197,94,0.8) success-button green, ~2.1:1, serious) was fixed in src/hud/templates.js (green-700 at 0.9 alpha, ~5.9:1 composite) and disappeared from the rescan. The HUD contributes zero axe violations of its own.",
+  "note": "Fixture chrome findings are intentional (the bench mimics play2048.co) and are not HUD deliverables."
+}

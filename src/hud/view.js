@@ -34,9 +34,16 @@ export class HUDView {
       scoreStatus: null,
       detectBtn: null,
       autoSolveBtn: null,
+      pauseResumeBtn: null,
       stepBtn: null,
+      retryBtn: null,
+      problemItem: null,
+      problemLabel: null,
+      problemStatus: null,
       collapseBtn: null,
       collapseIcon: null,
+      header: null,
+      hudContent: null,
       directionSelect: null,
       solverStrategy: null,
       solverHeuristic: null,
@@ -48,14 +55,22 @@ export class HUDView {
     this.isDragging = false;
     this.dragOffset = { x: 0, y: 0 };
     this._suppressSolverEvents = false;
+    this.currentPos = { x: 0, y: 0 };
+    this.lastHostFocus = null;
 
     this.boundHandlers = {
       headerMouseDown: this.handleHeaderMouseDown.bind(this),
       documentMouseMove: this.handleDocumentMouseMove.bind(this),
       documentMouseUp: this.handleDocumentMouseUp.bind(this),
+      headerKeyDown: this.handleHeaderKeyDown.bind(this),
+      shadowKeyDown: this.handleShadowKeyDown.bind(this),
+      windowResize: this.handleWindowResize.bind(this),
+      documentFocusIn: this.handleDocumentFocusIn.bind(this),
       detectClick: this.forwardCallback("onDetect"),
       autoSolveClick: this.forwardCallback("onAutoSolve"),
+      pauseToggleClick: this.forwardCallback("onPauseToggle"),
       stepClick: this.forwardCallback("onStep"),
+      retryClick: this.forwardCallback("onRetry"),
       collapseClick: this.handleCollapseClick.bind(this),
       directionChange: this.handleDirectionChange.bind(this),
       solverControlChange: this.handleSolverControlChange.bind(this),
@@ -118,9 +133,16 @@ export class HUDView {
       scoreStatus: this.shadowRoot.getElementById("score-status"),
       detectBtn: this.shadowRoot.getElementById("detect-btn"),
       autoSolveBtn: this.shadowRoot.getElementById("auto-solve-btn"),
+      pauseResumeBtn: this.shadowRoot.getElementById("pause-resume-btn"),
       stepBtn: this.shadowRoot.getElementById("step-btn"),
+      retryBtn: this.shadowRoot.getElementById("retry-btn"),
+      problemItem: this.shadowRoot.getElementById("problem-item"),
+      problemLabel: this.shadowRoot.getElementById("problem-label"),
+      problemStatus: this.shadowRoot.getElementById("problem-status"),
       collapseBtn: this.shadowRoot.querySelector(".hud-btn-collapse"),
       collapseIcon: this.shadowRoot.querySelector(".collapse-icon"),
+      header: this.shadowRoot.querySelector(".hud-header"),
+      hudContent: this.shadowRoot.querySelector(".hud-content"),
       directionSelect: this.shadowRoot.getElementById("direction-priority"),
       solverStrategy: this.shadowRoot.getElementById("solver-strategy"),
       solverHeuristic: this.shadowRoot.getElementById("solver-heuristic"),
@@ -148,12 +170,25 @@ export class HUDView {
       "click",
       this.boundHandlers.autoSolveClick,
     );
+    this.elements.pauseResumeBtn?.addEventListener(
+      "click",
+      this.boundHandlers.pauseToggleClick,
+    );
     this.elements.stepBtn?.addEventListener("click", this.boundHandlers.stepClick);
+    this.elements.retryBtn?.addEventListener("click", this.boundHandlers.retryClick);
     this.elements.collapseBtn?.addEventListener("click", this.boundHandlers.collapseClick);
     this.elements.directionSelect?.addEventListener(
       "change",
       this.boundHandlers.directionChange,
     );
+
+    this.elements.header?.addEventListener(
+      "keydown",
+      this.boundHandlers.headerKeyDown,
+    );
+    this.shadowRoot.addEventListener("keydown", this.boundHandlers.shadowKeyDown);
+    window.addEventListener("resize", this.boundHandlers.windowResize);
+    document.addEventListener("focusin", this.boundHandlers.documentFocusIn);
 
     const solverControls = [
       this.elements.solverStrategy,
@@ -186,7 +221,12 @@ export class HUDView {
       "click",
       this.boundHandlers.autoSolveClick,
     );
+    this.elements.pauseResumeBtn?.removeEventListener(
+      "click",
+      this.boundHandlers.pauseToggleClick,
+    );
     this.elements.stepBtn?.removeEventListener("click", this.boundHandlers.stepClick);
+    this.elements.retryBtn?.removeEventListener("click", this.boundHandlers.retryClick);
     this.elements.collapseBtn?.removeEventListener(
       "click",
       this.boundHandlers.collapseClick,
@@ -195,6 +235,14 @@ export class HUDView {
       "change",
       this.boundHandlers.directionChange,
     );
+
+    this.elements.header?.removeEventListener(
+      "keydown",
+      this.boundHandlers.headerKeyDown,
+    );
+    this.shadowRoot.removeEventListener("keydown", this.boundHandlers.shadowKeyDown);
+    window.removeEventListener("resize", this.boundHandlers.windowResize);
+    document.removeEventListener("focusin", this.boundHandlers.documentFocusIn);
 
     const solverControls = [
       this.elements.solverStrategy,
@@ -274,21 +322,37 @@ export class HUDView {
   }
 
   /**
-   * Toggle collapse/expand state while updating the icon.
+   * Toggle collapse/expand state while updating the icon and ARIA state.
    * @private
    */
   handleCollapseClick() {
-    this.isCollapsed = !this.isCollapsed;
-    this.panel?.setAttribute("data-collapsed", String(this.isCollapsed));
+    this.setCollapsed(!this.isCollapsed);
+
+    if (typeof this.callbacks.onCollapse === "function") {
+      this.callbacks.onCollapse(this.isCollapsed);
+    }
+  }
+
+  /**
+   * Apply a collapse state to the panel and keep the toggle's ARIA in sync.
+   * @param {boolean} collapsed
+   */
+  setCollapsed(collapsed) {
+    this.isCollapsed = collapsed;
+    this.panel?.setAttribute("data-collapsed", String(collapsed));
 
     if (this.elements.collapseIcon) {
-      this.elements.collapseIcon.textContent = this.isCollapsed
+      this.elements.collapseIcon.textContent = collapsed
         ? COLLAPSE_ICON.COLLAPSED
         : COLLAPSE_ICON.EXPANDED;
     }
 
-    if (typeof this.callbacks.onCollapse === "function") {
-      this.callbacks.onCollapse(this.isCollapsed);
+    if (this.elements.collapseBtn) {
+      this.elements.collapseBtn.setAttribute("aria-expanded", String(!collapsed));
+      this.elements.collapseBtn.setAttribute(
+        "aria-label",
+        collapsed ? "Expand panel" : "Collapse panel",
+      );
     }
   }
 
@@ -446,6 +510,67 @@ export class HUDView {
   }
 
   /**
+   * Render the action row from the resolved control state. The state model
+   * decides labels and availability; this only paints.
+   * @param {{autoSolveLabel:string, autoSolveEnabled:boolean, autoSolveRunning:boolean,
+   *          pauseLabel:string, pauseEnabled:boolean, stepEnabled:boolean,
+   *          retryVisible:boolean, retryLabel:string, retryEnabled:boolean}} controls
+   */
+  setRunControls(controls) {
+    if (!controls) {
+      return;
+    }
+
+    if (this.elements.autoSolveBtn) {
+      this.elements.autoSolveBtn.textContent = controls.autoSolveLabel;
+      this.elements.autoSolveBtn.disabled = !controls.autoSolveEnabled;
+    }
+
+    if (this.elements.pauseResumeBtn) {
+      this.elements.pauseResumeBtn.textContent = controls.pauseLabel;
+      this.elements.pauseResumeBtn.disabled = !controls.pauseEnabled;
+    }
+
+    if (this.elements.stepBtn) {
+      this.elements.stepBtn.disabled = !controls.stepEnabled;
+    }
+
+    if (this.elements.retryBtn) {
+      this.elements.retryBtn.hidden = !controls.retryVisible;
+      this.elements.retryBtn.textContent = controls.retryLabel;
+      this.elements.retryBtn.disabled = !controls.retryEnabled;
+    }
+
+    if (this.panel) {
+      this.panel.classList.toggle("auto-solving", Boolean(controls.autoSolveRunning));
+    }
+  }
+
+  /**
+   * Show or clear the persistent stop-feedback line. The reason text is the
+   * model's verbatim reason — never paraphrased here.
+   * @param {{label:string, text:string, color:string}|null} problem
+   */
+  setProblem(problem) {
+    if (!this.elements.problemItem) {
+      return;
+    }
+
+    if (!problem) {
+      this.elements.problemItem.hidden = true;
+      this.elements.problemStatus.textContent = "";
+      return;
+    }
+
+    this.elements.problemItem.hidden = false;
+    if (this.elements.problemLabel) {
+      this.elements.problemLabel.textContent = problem.label;
+    }
+    this.elements.problemStatus.textContent = problem.text;
+    this.elements.problemStatus.style.color = problem.color;
+  }
+
+  /**
    * Update the selected direction priority option.
    * @param {number[]} priorities
    */
@@ -456,6 +581,151 @@ export class HUDView {
 
     const value = priorities.join(",");
     this.elements.directionSelect.value = value;
+  }
+
+  /**
+   * Handle keydown anywhere inside the HUD shadow root. Escape collapses the
+   * panel and returns focus to the last focused host-page element. This
+   * listener never captures host-page keys: it only sees events whose focus
+   * is already inside the HUD.
+   * @param {KeyboardEvent} event
+   * @private
+   */
+  handleShadowKeyDown(event) {
+    if (!event || event.key !== "Escape" || !this.panel) {
+      return;
+    }
+
+    if (!this.isCollapsed) {
+      // Return focus BEFORE collapsing: collapsing hides the focused HUD
+      // element, and once the browser parks focus on the shadow host from
+      // that invalid state it may refuse further programmatic focus moves.
+      const host = this.lastHostFocus;
+      if (host && typeof host.focus === "function") {
+        try {
+          host.focus();
+        } catch {
+          // Focus return is best-effort; some host elements are not focusable.
+        }
+      }
+      this.setCollapsed(true);
+
+      if (typeof this.callbacks.onCollapse === "function") {
+        this.callbacks.onCollapse(true);
+      }
+
+      // Safety net for the collapse transition: if the browser's fix-up for
+      // the just-hidden element re-parks focus on the shadow host, re-assert
+      // the host-page target after the 0.3s transition settles.
+      setTimeout(() => {
+        const retry = this.lastHostFocus;
+        if (
+          retry &&
+          typeof retry.focus === "function" &&
+          this.shadowHost &&
+          document.activeElement === this.shadowHost
+        ) {
+          try {
+            retry.focus();
+          } catch {
+            // Best-effort, as above.
+          }
+        }
+      }, 350);
+
+      // The HUD consumed this Escape; keep it from also reaching host-page
+      // listeners (e.g. a game dialog) while the user is interacting here.
+      if (typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
+    }
+  }
+
+  /**
+   * Move the panel with the keyboard while the header has focus. Arrow keys
+   * nudge by 16px (64px with Shift); Home resets to the mount position.
+   * @param {KeyboardEvent} event
+   * @private
+   */
+  handleHeaderKeyDown(event) {
+    if (!event || !this.panel) {
+      return;
+    }
+
+    const step = event.shiftKey ? 64 : 16;
+    let handled = true;
+
+    switch (event.key) {
+      case "ArrowLeft":
+        this.position(this.currentPos.x - step, this.currentPos.y);
+        break;
+      case "ArrowRight":
+        this.position(this.currentPos.x + step, this.currentPos.y);
+        break;
+      case "ArrowUp":
+        this.position(this.currentPos.x, this.currentPos.y - step);
+        break;
+      case "ArrowDown":
+        this.position(this.currentPos.x, this.currentPos.y + step);
+        break;
+      case "Home":
+        this.position(window.innerWidth - 320, 20);
+        break;
+      default:
+        handled = false;
+    }
+
+    if (handled) {
+      if (typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+      // Handled panel-movement keys must not also drive the host game.
+      if (typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
+    }
+  }
+
+  /**
+   * Re-clamp the panel into the viewport after a resize (e.g. rotating a
+   * device or shrinking a narrow window).
+   * @private
+   */
+  handleWindowResize() {
+    if (!this.panel) {
+      return;
+    }
+
+    this.position(this.currentPos.x, this.currentPos.y);
+  }
+
+  /**
+   * Track the last focused host-page element (outside the HUD) so Escape can
+   * return focus there. Passive observation only — nothing is captured.
+   * @param {FocusEvent} event
+   * @private
+   */
+  handleDocumentFocusIn(event) {
+    const target = event?.target;
+    if (!target) {
+      return;
+    }
+
+    // Focus events that originate inside the shadow tree are retargeted at
+    // the shadow boundary: at document level their target is the shadow host
+    // itself, so contains() never matches them. composedPath() is the only
+    // reliable containment test for retargeted events.
+    const path =
+      typeof event.composedPath === "function" ? event.composedPath() : [];
+    const insideHUD =
+      path.includes(this.shadowRoot) ||
+      (this.shadowRoot &&
+        typeof this.shadowRoot.contains === "function" &&
+        this.shadowRoot.contains(target));
+
+    if (!insideHUD) {
+      this.lastHostFocus = target;
+    }
   }
 
   /**
@@ -477,6 +747,7 @@ export class HUDView {
 
     this.panel.style.left = `${clampedX}px`;
     this.panel.style.top = `${clampedY}px`;
+    this.currentPos = { x: clampedX, y: clampedY };
   }
 
   /**

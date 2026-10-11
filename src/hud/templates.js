@@ -113,7 +113,7 @@ export function getHUDCSS() {
       }
 
       .hud-btn-success {
-        background: rgba(34, 197, 94, 0.8);
+        background: rgba(21, 128, 61, 0.9);
         border-color: rgba(34, 197, 94, 1);
       }
 
@@ -220,6 +220,35 @@ export function getHUDCSS() {
         transition: none;
         cursor: grabbing;
       }
+
+      .hud-btn:focus-visible,
+      .setting-select:focus-visible,
+      .setting-input:focus-visible,
+      .hud-header:focus-visible {
+        outline: 2px solid #93c5fd;
+        outline-offset: 2px;
+      }
+
+      .hud-panel {
+        max-width: calc(100vw - 16px);
+        max-height: calc(100vh - 16px);
+        overflow-y: auto;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hud-panel,
+        .hud-btn {
+          transition: none !important;
+        }
+
+        .hud-btn:hover {
+          transform: none;
+        }
+
+        .hud-panel.auto-solving .hud-btn-success {
+          animation: none !important;
+        }
+      }
     `;
 }
 
@@ -233,19 +262,19 @@ export function getHUDHTML() {
         ${getHUDCSS()}
       </style>
       <div class="hud-panel" data-collapsed="false">
-        <div class="hud-header">
+        <div class="hud-header" tabindex="0" role="group" aria-label="2048 AI Solver panel. Press arrow keys to move the panel, Home to reset its position, Escape to collapse.">
           <div class="hud-title">
             <span class="hud-icon">🎯</span>
             <span class="hud-text">2048 AI Solver</span>
           </div>
           <div class="hud-controls">
-            <button class="hud-btn hud-btn-collapse" title="Collapse/Expand">
+            <button class="hud-btn hud-btn-collapse" title="Collapse/Expand" aria-expanded="true" aria-controls="hud-content-region" aria-label="Collapse panel">
               <span class="collapse-icon">−</span>
             </button>
           </div>
         </div>
-        <div class="hud-content">
-          <div class="hud-status">
+        <div class="hud-content" id="hud-content-region">
+          <div class="hud-status" role="status" aria-live="polite">
             <div class="status-item">
               <span class="status-label">Game:</span>
               <span class="status-value" id="game-status">Not detected</span>
@@ -258,6 +287,10 @@ export function getHUDHTML() {
               <span class="status-label">Solver:</span>
               <span class="status-value" id="solver-status">Initializing…</span>
             </div>
+            <div class="status-item" id="problem-item" hidden>
+              <span class="status-label" id="problem-label">Stop:</span>
+              <span class="status-value" id="problem-status"></span>
+            </div>
           </div>
 
           <div class="hud-actions">
@@ -267,14 +300,20 @@ export function getHUDHTML() {
             <button class="hud-btn hud-btn-success" id="auto-solve-btn" disabled>
               ▶️ Auto-solve
             </button>
+            <button class="hud-btn hud-btn-secondary" id="pause-resume-btn" disabled>
+              ⏸ Pause
+            </button>
             <button class="hud-btn hud-btn-secondary" id="step-btn" disabled>
               ⏭️ Step
+            </button>
+            <button class="hud-btn hud-btn-secondary" id="retry-btn" hidden>
+              ↻ Retry
             </button>
           </div>
 
           <div class="hud-settings">
             <div class="setting-group">
-              <label class="setting-label">Direction Priority:</label>
+              <label class="setting-label" for="direction-priority">Direction Priority:</label>
               <select class="setting-select" id="direction-priority">
                 <option value="0,2,1,3">Up → Down → Right → Left</option>
                 <option value="3,2,1,0" selected>Left → Down → Right → Up</option>
@@ -283,14 +322,14 @@ export function getHUDHTML() {
               </select>
             </div>
             <div class="setting-group">
-              <label class="setting-label">Solver Strategy:</label>
+              <label class="setting-label" for="solver-strategy">Solver Strategy:</label>
               <select class="setting-select" id="solver-strategy">
                 <option value="expectimax-depth" selected>Expectimax (Depth)</option>
                 <option value="expectimax-probability">Expectimax (Probability)</option>
               </select>
             </div>
             <div class="setting-group">
-              <label class="setting-label">Heuristic:</label>
+              <label class="setting-label" for="solver-heuristic">Heuristic:</label>
               <select class="setting-select" id="solver-heuristic">
                 <option value="corner" selected>Corner Bias</option>
                 <option value="monotonicity">Monotonicity</option>

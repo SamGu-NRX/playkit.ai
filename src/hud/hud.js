@@ -1,6 +1,12 @@
 /**
  * @fileoverview Shadow DOM HUD overlay for 2048 solver
  * Breaks the HUD into controller and view layers for maintainability.
+ *
+ * The controller no longer derives UI state from click intent: every render
+ * is driven by `control-state.js` reductions of runtime witnesses (real
+ * `Runtime.getStats()` snapshots, command results, board changes). Driver
+ * facts outrank stale runtime flags, stop reasons stay verbatim, and
+ * pause/resume/retry controls are consequence-aware.
  */
 
 import { detectGame } from "../adapters/index.js";
@@ -9,7 +15,43 @@ import {
   DEFAULT_SOLVER_CONFIG,
   clampSolverConfig,
 } from "./config.js";
+import {
+  createInitialControlState,
+  reduceControlState,
+  deriveSolverState,
+  describeSolver,
+  PHASE,
+  SOLVER_STATE,
+} from "./control-state.js";
 import { HUDView } from "./view.js";
+
+const SOLVER_COLORS = {
+  [SOLVER_STATE.WASM]: "#34d399",
+  [SOLVER_STATE.FALLBACK]: "#facc15",
+  [SOLVER_STATE.LOADING]: "#fbbf24",
+  [SOLVER_STATE.ERROR]: "#f87171",
+  [SOLVER_STATE.UNKNOWN]: "#f87171",
+};
+
+const PROBLEM_LABELS = {
+  "board-lost": "Board lost:",
+  stalled: "Stalled:",
+  "game-over": "Game over:",
+  "solver-unavailable": "Solver:",
+  "init-failed": "Init failed:",
+  "retry-exhausted": "Retries exhausted:",
+  unknown: "Stopped:",
+};
+
+const PROBLEM_COLORS = {
+  "board-lost": "#fb923c",
+  stalled: "#facc15",
+  "game-over": "#f87171",
+  "solver-unavailable": "#facc15",
+  "init-failed": "#f87171",
+  "retry-exhausted": "#f87171",
+  unknown: "#f87171",
+};
 
 /**
  * HUD overlay controller coordinates the runtime interactions while delegating
@@ -21,6 +63,8 @@ export class HUD {
       onDetect: this.handleDetectClick.bind(this),
       onAutoSolve: this.handleAutoSolveClick.bind(this),
       onStep: this.handleStepClick.bind(this),
+      onPauseToggle: this.handlePauseToggleClick.bind(this),
+      onRetry: this.handleRetryClick.bind(this),
       onCollapse: this.handleCollapseToggle.bind(this),
       onDirectionPriorityChange: this.handleDirectionPriorityChange.bind(this),
       onSolverControlChange: this.handleSolverControlChange.bind(this),
@@ -31,6 +75,9 @@ export class HUD {
     this.controller = null;
     this.isAutoSolving = false;
     this.autoSolveTimeout = null;
+
+    /** Witness-driven UI state; the single source of truth for rendering. */
+    this.controlState = createInitialControlState();
 
     this.directionPriority = [...DEFAULT_DIRECTION_PRIORITY];
     this.solverConfig = { ...DEFAULT_SOLVER_CONFIG };
@@ -97,45 +144,22 @@ export class HUD {
   }
 
   /**
-   * Apply solver status indicator and synchronize controls
+   * Apply solver status indicator and synchronize controls.
+   *
+   * The display is derived by the shared model (`deriveSolverState`), so a
+   * WASM-ready status can never be overwritten by a stale fallback error and
+   * fallback reasons stay verbatim.
    * @param {Object|null} status Solver status from runtime
    */
   updateSolverStatus(status) {
-    const state = {
-      text: "Initializing…",
-      color: "#fbbf24",
-      title: "Solver is starting",
-    };
+    const derived = deriveSolverState(status);
+    const described = describeSolver(derived);
 
-    if (status) {
-      if (status.status === "ready" && status.mode === "wasm") {
-        state.text = "WASM ready";
-        state.color = "#34d399";
-        state.title = "Native solver active";
-      } else if (status.status === "ready" || status.mode === "fallback") {
-        state.text = "Fallback";
-        state.color = "#facc15";
-        state.title = "Using JS fallback solver";
-      } else if (status.status === "fallback") {
-        state.text = "Fallback";
-        state.color = "#facc15";
-        state.title = "Using JS fallback solver";
-      } else if (status.status === "error") {
-        state.text = "Error";
-        state.color = "#f87171";
-        state.title = status.lastError ? String(status.lastError) : "Solver error";
-      } else if (status.status === "idle" || status.status === "loading") {
-        state.text = "Loading…";
-        state.color = "#fbbf24";
-        state.title = "Loading solver";
-      }
-
-      if (status.lastError) {
-        state.title = `Fallback: ${status.lastError}`;
-      }
-    }
-
-    this.view.setSolverStatus(state);
+    this.view.setSolverStatus({
+      text: described.label,
+      color: SOLVER_COLORS[derived.state] || "#f87171",
+      title: described.title,
+    });
 
     if (status && status.strategy) {
       const clamped = clampSolverConfig(status.strategy);
@@ -152,7 +176,8 @@ export class HUD {
   }
 
   /**
-   * Update HUD labels based on adapter availability
+   * Update HUD labels based on adapter availability, then re-render run
+   * controls from the freshest witness available.
    */
   updateStatus() {
     if (this.controller && this.controller.getCurrentAdapter) {
@@ -170,11 +195,9 @@ export class HUD {
 
       const score = this.currentAdapter.getScore();
       this.view.setScore(score !== null ? score.toLocaleString() : "-");
-      this.view.setControlsEnabled({ autoSolve: true, step: true });
     } else {
       this.view.setGameStatus({ text: "Not detected", color: "#f87171" });
       this.view.setScore("-");
-      this.view.setControlsEnabled({ autoSolve: false, step: false });
     }
 
     if (this.controller && this.controller.getSolverStatus) {
@@ -185,6 +208,106 @@ export class HUD {
         console.warn("HUD: Failed to refresh solver status", error);
       }
     }
+
+    // Push the freshest full witness; renderState() paints from it.
+    if (this.controller && this.controller.getStats) {
+      try {
+        this.applyWitness(this.controller.getStats());
+        return;
+      } catch (error) {
+        console.warn("HUD: Failed to read runtime stats", error);
+      }
+    }
+
+    // Legacy/no-controller path: keep the old enabled-by-adapter behavior.
+    this.view.setControlsEnabled({
+      autoSolve: Boolean(this.currentAdapter),
+      step: Boolean(this.currentAdapter),
+    });
+  }
+
+  /**
+   * Feed a runtime witness (a real `Runtime.getStats()` snapshot) into the
+   * state model and re-render. This is the ONLY run-state render path when a
+   * controller is connected — driver facts outrank stale runtime flags.
+   * @param {Object} stats Snapshot from Runtime.getStats()
+   */
+  applyWitness(stats) {
+    if (!stats) {
+      return;
+    }
+
+    this.controlState = reduceControlState(this.controlState, {
+      type: "snapshot",
+      stats,
+    });
+    this.renderState();
+  }
+
+  /**
+   * Feed a command outcome into the state model and re-render.
+   * @param {string} command One of the COMMAND keys (start/stop/pause/resume/retry/detect)
+   * @param {boolean} ok Whether the command succeeded
+   * @param {string|null} error Error message on failure
+   */
+  applyCommandResult(command, ok, error = null) {
+    this.controlState = reduceControlState(this.controlState, {
+      type: "command-result",
+      command,
+      ok,
+      error: error ? String(error) : null,
+      stats: null,
+    });
+    this.renderState();
+  }
+
+  /**
+   * Paint the action row, problem line, and solver line from the model.
+   * @private
+   */
+  renderState() {
+    const state = this.controlState;
+    const phase = state.phase;
+    const hasBoard = phase !== PHASE.NO_BOARD;
+    const running = phase === PHASE.PLAYING || phase === PHASE.PAUSED;
+
+    const nextAction = state.problem ? state.problem.nextAction : null;
+    const retryKind = nextAction ? nextAction.kind : null;
+    // Only detect/retry are actionable inside the HUD; new-game and reload
+    // are user steps outside it (the problem text explains them).
+    const retryVisible = retryKind === "detect" || retryKind === "retry";
+
+    this.view.setRunControls({
+      autoSolveLabel: running ? "⏹ Stop" : "▶️ Auto-solve",
+      autoSolveEnabled: hasBoard,
+      autoSolveRunning: phase === PHASE.PLAYING,
+      pauseLabel: phase === PHASE.PAUSED ? "▶ Resume" : "⏸ Pause",
+      pauseEnabled: phase === PHASE.PLAYING || phase === PHASE.PAUSED,
+      stepEnabled: hasBoard,
+      retryVisible,
+      retryLabel: retryKind === "detect" ? "🔍 Re-detect" : "↻ Retry",
+      retryEnabled: retryKind === "detect" ? true : state.retry.available,
+    });
+
+    if (state.problem) {
+      const kind = state.problem.kind;
+      this.view.setProblem({
+        label: PROBLEM_LABELS[kind] || PROBLEM_LABELS.unknown,
+        text: state.run.reason || state.problem.message || "",
+        color: PROBLEM_COLORS[kind] || "#f87171",
+      });
+    } else {
+      this.view.setProblem(null);
+    }
+
+    const described = describeSolver(state.solver);
+    this.view.setSolverStatus({
+      text: described.label,
+      color: SOLVER_COLORS[state.solver.state] || "#f87171",
+      title: described.title,
+    });
+
+    this.isAutoSolving = running;
   }
 
   /**
@@ -235,10 +358,14 @@ export class HUD {
         this.updateStatus();
         if (!detected && !this.currentAdapter) {
           this.showMessage("No game detected.");
+          this.applyCommandResult("detect", false, "No game detected");
+        } else {
+          this.applyCommandResult("detect", true, null);
         }
       } catch (error) {
         console.warn("HUD: Controller-driven detect failed", error);
         this.showMessage("Detect failed. Check console.");
+        this.applyCommandResult("detect", false, error?.message);
       }
       return;
     }
@@ -252,7 +379,8 @@ export class HUD {
   }
 
   /**
-   * Handle auto-solve button click
+   * Handle auto-solve button click — start/stop only. The run/pause truth
+   * comes from the model (driver-first), never from click intent.
    * @private
    */
   async handleAutoSolveClick() {
@@ -265,26 +393,41 @@ export class HUD {
     }
 
     if (this.controller) {
-      try {
-        const isRunning = this.controller.isRunning?.bind(this.controller);
-        const currentlyRunning = isRunning ? !!isRunning() : this.isAutoSolving;
+      const phase = this.controlState.phase;
+      const modelRunning = phase === PHASE.PLAYING || phase === PHASE.PAUSED;
 
-        if (currentlyRunning) {
-          const stopFn = this.controller.stop?.bind(this.controller);
-          if (stopFn) {
-            await Promise.resolve(stopFn());
-          }
-          this.updateRunState(false);
-        } else {
-          const startFn = this.controller.start?.bind(this.controller);
-          if (startFn) {
-            await Promise.resolve(startFn());
-          }
-          this.updateRunState(true);
+      let currentlyRunning = modelRunning;
+      if (!this.controlState.run.started && this.controller.isRunning) {
+        // No witness has landed yet; fall back to the controller's flag.
+        try {
+          currentlyRunning = !!(await Promise.resolve(
+            this.controller.isRunning()
+          ));
+        } catch {
+          /* keep the model's answer */
+        }
+      }
+
+      const command = currentlyRunning ? "stop" : "start";
+      try {
+        const fn = currentlyRunning
+          ? this.controller.stop?.bind(this.controller)
+          : this.controller.start?.bind(this.controller);
+        if (fn) {
+          await Promise.resolve(fn());
+        }
+        this.applyCommandResult(command, true, null);
+        if (this.controller.getStats) {
+          this.applyWitness(this.controller.getStats());
         }
       } catch (error) {
-        console.warn("HUD: Failed to toggle auto-solve via controller", error);
-        this.showMessage("Auto-solve toggle failed. Check console.");
+        console.warn(`HUD: Auto-solve ${command} failed via controller`, error);
+        this.showMessage(
+          currentlyRunning
+            ? "Stop failed. Check console."
+            : "Auto-solve failed. Check console.",
+        );
+        this.applyCommandResult(command, false, error?.message);
       }
       return;
     }
@@ -293,6 +436,79 @@ export class HUD {
       this.stopAutoSolve();
     } else {
       this.startAutoSolve();
+    }
+  }
+
+  /**
+   * Handle pause/resume button click. The action follows the model's phase:
+   * PLAYING → pause, PAUSED → resume; anything else is inert.
+   * @private
+   */
+  async handlePauseToggleClick() {
+    if (!this.controller) {
+      this.showMessage("Pause is available only with a connected controller.");
+      return;
+    }
+
+    const phase = this.controlState.phase;
+    if (phase !== PHASE.PLAYING && phase !== PHASE.PAUSED) {
+      return;
+    }
+
+    const command = phase === PHASE.PLAYING ? "pause" : "resume";
+    try {
+      const fn =
+        command === "pause"
+          ? this.controller.pause?.bind(this.controller)
+          : this.controller.resume?.bind(this.controller);
+      if (!fn) {
+        throw new Error("Controller does not support pause/resume");
+      }
+      await Promise.resolve(fn());
+      this.applyCommandResult(command, true, null);
+      if (this.controller.getStats) {
+        this.applyWitness(this.controller.getStats());
+      }
+    } catch (error) {
+      console.warn("HUD: Pause/resume failed via controller", error);
+      this.showMessage("Pause/resume failed. Check console.");
+      this.applyCommandResult(command, false, error?.message);
+    }
+  }
+
+  /**
+   * Handle retry/re-detect click, following the model's prescribed action.
+   * Retry re-starts the runtime (which re-detects the board itself);
+   * re-detect only re-runs detection. Failures count against the model's
+   * bounded retry budget.
+   * @private
+   */
+  async handleRetryClick() {
+    const nextAction = this.controlState.problem?.nextAction;
+    const kind = nextAction ? nextAction.kind : null;
+
+    if (kind === "detect") {
+      await this.handleDetectClick();
+      return;
+    }
+
+    if (kind !== "retry" || !this.controller) {
+      return;
+    }
+
+    try {
+      const startFn = this.controller.start?.bind(this.controller);
+      if (startFn) {
+        await Promise.resolve(startFn());
+      }
+      this.applyCommandResult("retry", true, null);
+      if (this.controller.getStats) {
+        this.applyWitness(this.controller.getStats());
+      }
+    } catch (error) {
+      console.warn("HUD: Retry failed via controller", error);
+      this.showMessage("Retry failed. Check console.");
+      this.applyCommandResult("retry", false, error?.message);
     }
   }
 
@@ -327,10 +543,24 @@ export class HUD {
   }
 
   /**
-   * Update run state UI to reflect automation status
+   * Update run state UI to reflect automation status.
+   *
+   * Compatibility wrapper: with a connected controller this reads the REAL
+   * runtime witness instead of trusting the pushed boolean — the driver may
+   * have stopped itself since. Without a controller the legacy boolean path
+   * is preserved for the HUD-local fallback loop.
    * @param {boolean} isRunning Whether automation is active
    */
   updateRunState(isRunning) {
+    if (this.controller && this.controller.getStats) {
+      try {
+        this.applyWitness(this.controller.getStats());
+        return;
+      } catch (error) {
+        console.warn("HUD: Failed to read runtime stats", error);
+      }
+    }
+
     this.isAutoSolving = !!isRunning;
     this.view.setAutoSolveRunning(this.isAutoSolving);
   }
@@ -346,16 +576,20 @@ export class HUD {
         if (startFn) {
           await Promise.resolve(startFn());
         }
-        const running = this.controller.isRunning?.bind(this.controller);
-        this.updateRunState(running ? !!running() : true);
+        this.applyCommandResult("start", true, null);
+        if (this.controller.getStats) {
+          this.applyWitness(this.controller.getStats());
+        }
       } catch (error) {
         console.warn("HUD: startAutoSolve controller invocation failed", error);
         this.showMessage("Auto-solve failed. Check console.");
+        this.applyCommandResult("start", false, error?.message);
       }
       return;
     }
 
-    this.updateRunState(true);
+    this.isAutoSolving = true;
+    this.view.setAutoSolveRunning(true);
     this.autoSolveLoop();
   }
 
@@ -399,10 +633,14 @@ export class HUD {
         if (stopFn) {
           await Promise.resolve(stopFn());
         }
+        this.applyCommandResult("stop", true, null);
+        if (this.controller.getStats) {
+          this.applyWitness(this.controller.getStats());
+        }
       } catch (error) {
         console.warn("HUD: stopAutoSolve controller invocation failed", error);
+        this.applyCommandResult("stop", false, error?.message);
       }
-      this.updateRunState(false);
       return;
     }
 
@@ -411,7 +649,8 @@ export class HUD {
       this.autoSolveTimeout = null;
     }
 
-    this.updateRunState(false);
+    this.isAutoSolving = false;
+    this.view.setAutoSolveRunning(false);
   }
 
   /**
@@ -486,7 +725,13 @@ export class HUD {
       }
     }
 
-    if (this.controller && this.controller.isRunning) {
+    if (this.controller && this.controller.getStats) {
+      try {
+        this.applyWitness(this.controller.getStats());
+      } catch (error) {
+        console.warn("HUD: Failed to read controller stats", error);
+      }
+    } else if (this.controller && this.controller.isRunning) {
       try {
         this.updateRunState(!!this.controller.isRunning());
       } catch (error) {
@@ -535,6 +780,7 @@ export class HUD {
 
     this.currentAdapter = null;
     this.controller = null;
+    this.controlState = createInitialControlState();
     this.isInitialized = false;
   }
 }

@@ -2193,15 +2193,795 @@
     exports.DEFAULT_SOLVER_CONFIG = DEFAULT_SOLVER_CONFIG;
     exports.SOLVER_LIMITS = SOLVER_LIMITS;
   },
+  "./src/hud/control-state.js": function (exports, module, require) {
+    /**
+     * @fileoverview Explicit UI state model for the HUD control layer.
+     *
+     * The HUD renders only what this model derives, and this model changes only
+     * when a *witness* — a fact observed from the tested runtime — arrives.
+     * Button clicks are intents, never facts: no state transition may be inferred
+     * from a click alone. Every witness maps 1:1 onto the real runtime surface:
+     *
+     * | Witness           | Emitted from the runtime surface                              |
+     * |-------------------|---------------------------------------------------------------|
+     * | `snapshot`        | `Runtime.getStats()` (incl. `driverStats`, `solver`)          |
+     * | `run-state`       | `HUD.updateRunState(bool)` pushed by start/stop/pause/resume  |
+     * | `command-result`  | result of a controller command (detect/start/pause/resume/    |
+     * |                   | stop/step/retry), with the post-command `getStats()` snapshot |
+     * | `runtime-error`   | `driver.onError` forwarded by `Runtime.handleError`           |
+     * | `game-over`       | `driver.onGameOver` forwarded by `Runtime.handleGameOver`     |
+     * | `solver-status`   | `SolverManager.getStatus()` via `_notifySolverStatus`         |
+     * | `init-failed`     | `Runtime.init` failure reported to the HUD                    |
+     * | `reset`           | HUD destroy / re-initialization                               |
+     *
+     * Where witnesses contradict each other, precedence is fixed and pinned by
+     * tests:
+     *
+     *   1. driver stats (`driverStats.*`) — what the driver is actually doing
+     *   2. runtime flags (`isRunning`, `isInitialized`) — what the runtime believes
+     *   3. command results — what a completed command returned
+     *   4. click intent — never present as a witness at all
+     *
+     * Honesty rules enforced here:
+     *   - A stop reason is always the driver's own verbatim `stopReason` string,
+     *     or a known runtime error message. The UI never invents rationale.
+     *   - Solver rationale is only ever `solverStatus.lastError`, verbatim.
+     *   - Move counts come from `driverStats.moveCount`; absent means `null`.
+     *   - Score is NOT modeled here; it is read live from the adapter and may be
+     *     `null` (unavailable), which the view must show as "-" rather than a
+     *     fabricated number.
+     *   - The problem banner is written only at transition moments (a run stops,
+     *     a command fails, initialization fails, retries exhaust) and cleared
+     *     only when its cause actually resolves. It is never re-derived from
+     *     stale run history, so a successful re-detect clears a board-lost
+     *     banner instead of resurrecting it.
+     *
+     * The four headline signals the control surface answers:
+     *   found a board / is playing / has fallen back / has stopped — see
+     *   `headlineSignals()`.
+     *
+     * This module is pure: no DOM, no imports, safe under `node --test`.
+     */
+    
+    /** Control phases. */
+    const PHASE = {
+      NO_BOARD: "no-board",
+      READY: "ready",
+      PLAYING: "playing",
+      PAUSED: "paused",
+      STOPPED: "stopped",
+    };
+    
+    /** Solver channel states (derived strictly from `SolverManager.getStatus()`). */
+    const SOLVER_STATE = {
+      UNKNOWN: "unknown",
+      LOADING: "loading",
+      WASM: "wasm",
+      FALLBACK: "fallback",
+      ERROR: "error",
+    };
+    
+    /** Commands the HUD can dispatch through the controller. */
+    const COMMAND = {
+      DETECT: "detect",
+      START: "start",
+      PAUSE: "pause",
+      RESUME: "resume",
+      STOP: "stop",
+      STEP: "step",
+      RETRY: "retry",
+    };
+    
+    /** Consecutive failed retries allowed before retry is exhausted. */
+    const RETRY_LIMIT = 2;
+    
+    /**
+     * Runtime error strings the model may match — verbatim products of the
+     * runtime's own thrown errors (`Runtime.start`, `Runtime.step`), never
+     * invented.
+     */
+    const RUNTIME_ERROR_PATTERNS = {
+      noBoard: /no game detected/i,
+      notInitialized: /not initialized/i,
+    };
+    
+    /**
+     * Create the initial control state (nothing observed yet).
+     * @returns {object}
+     */
+    function createInitialControlState() {
+      return {
+        phase: PHASE.NO_BOARD,
+        board: { name: null },
+        run: {
+          started: false,
+          endedBy: null, // 'user' | 'driver' | 'game-over' | 'runtime' | null
+          reason: null, // verbatim driver stopReason, when the driver supplied one
+          moveCount: null, // real measured move count from driverStats, or null
+        },
+        solver: {
+          state: SOLVER_STATE.UNKNOWN,
+          reason: null, // verbatim solverStatus.lastError or null
+          attemptedWasm: false, // a WASM engine exists (so fallback is a real fallback)
+          advisory: null, // {kind:'wasm-unavailable', message, nextAction} | null
+        },
+        problem: null, // {kind, message, nextAction:{kind, label}} | null
+        retry: { used: 0, limit: RETRY_LIMIT, exhausted: false, available: false },
+        init: { failed: false, reason: null },
+      };
+    }
+    
+    /**
+     * Derive the solver channel strictly from a `SolverManager.getStatus()`
+     * snapshot. `reason` is only ever the manager's own `lastError` string.
+     * @param {object|null|undefined} status
+     * @returns {{state:string, reason:string|null, attemptedWasm:boolean, advisory:object|null}}
+     */
+    function deriveSolverState(status) {
+      if (!status) {
+        return {
+          state: SOLVER_STATE.UNKNOWN,
+          reason: null,
+          attemptedWasm: false,
+          advisory: null,
+        };
+      }
+    
+      const attemptedWasm = status.wasm !== null && status.wasm !== undefined;
+      const reason =
+        status.lastError !== undefined && status.lastError !== null
+          ? String(status.lastError)
+          : null;
+    
+      let state = SOLVER_STATE.UNKNOWN;
+      if (status.status === "ready" && status.mode === "wasm") {
+        state = SOLVER_STATE.WASM;
+      } else if (status.status === "ready" || status.status === "fallback") {
+        state = SOLVER_STATE.FALLBACK;
+      } else if (status.status === "error") {
+        state = SOLVER_STATE.ERROR;
+      } else if (status.status === "idle" || status.status === "loading") {
+        state = SOLVER_STATE.LOADING;
+      }
+    
+      // The WASM-unavailable advisory exists only when a WASM engine was actually
+      // attempted and the manager ended up on the fallback. No engine (WASM
+      // disabled by configuration) is a configuration fact, not a failure.
+      const advisory =
+        state === SOLVER_STATE.FALLBACK && attemptedWasm
+          ? {
+              kind: "wasm-unavailable",
+              message: reason
+                ? `WASM unavailable — playing on the JS fallback solver. Reason: ${reason}`
+                : "WASM unavailable — playing on the JS fallback solver (slower). Reload the page to retry loading WASM.",
+              nextAction: { kind: "reload", label: "Reload page to retry WASM" },
+            }
+          : null;
+    
+      return { state, reason, attemptedWasm, advisory };
+    }
+    
+    /**
+     * Derive the primary problem + specific next action from the facts that
+     * produce it, using only verbatim reasons.
+     * @param {object} run
+     * @param {object|null} init
+     * @param {object} retry
+     * @returns {object|null}
+     */
+    function deriveProblem(run, init, retry) {
+      if (init && init.failed) {
+        return {
+          kind: "init-failed",
+          message: init.reason
+            ? `Initialization failed: ${init.reason}`
+            : "Initialization failed.",
+          nextAction: { kind: "reload", label: "Reload page to retry" },
+        };
+      }
+    
+      if (retry.exhausted) {
+        return {
+          kind: "retry-exhausted",
+          message: `Automatic retries were exhausted after ${retry.used} attempt${retry.used === 1 ? "" : "s"}.`,
+          nextAction: {
+            kind: "reload",
+            label: "Reload the page, then Detect Game",
+          },
+        };
+      }
+    
+      if (!run.endedBy) {
+        return null;
+      }
+    
+      const reason = run.reason || "";
+    
+      if (run.endedBy === "game-over" || /game over/i.test(reason)) {
+        return {
+          kind: "game-over",
+          message: reason
+            ? `The game is over (${reason}). Start a new game, then press Start.`
+            : "The game is over. Start a new game, then press Start.",
+          nextAction: { kind: "new-game", label: null },
+        };
+      }
+    
+      if (/failed board reads/i.test(reason)) {
+        return {
+          kind: "board-lost",
+          message: reason
+            ? `The board disappeared while driving (${reason}). Re-detect it, or reload the page.`
+            : "The board disappeared while driving. Re-detect it, or reload the page.",
+          nextAction: { kind: "detect", label: "Detect the board again" },
+        };
+      }
+    
+      if (/no board progress/i.test(reason)) {
+        return {
+          kind: "stalled",
+          message: reason
+            ? `Driving stopped (${reason}). Retry driving; if the game is actually over, start a new game first.`
+            : "Driving stopped after making no board progress. Retry driving.",
+          nextAction: { kind: "retry", label: "Retry driving" },
+        };
+      }
+    
+      if (run.endedBy === "driver") {
+        return {
+          kind: "driver-stopped",
+          message: reason
+            ? `Driving stopped on its own (${reason}).`
+            : "Driving stopped on its own.",
+          nextAction: { kind: "retry", label: "Retry driving" },
+        };
+      }
+    
+      // User- or runtime-initiated clean stops are not problems.
+      return null;
+    }
+    
+    /**
+     * Whether retry may be offered for the current stop.
+     * Retry re-arms the driver on a freshly detected adapter and restarts
+     * driving. It is pointless after a game over (a dead board stays dead).
+     * @param {object} state
+     * @returns {boolean}
+     */
+    function deriveRetryAvailable(state) {
+      if (state.retry.exhausted) return false;
+      if (state.init.failed) return false;
+      return (
+        state.phase === PHASE.STOPPED &&
+        (state.run.endedBy === "driver" || state.run.endedBy === "user") &&
+        state.board.name !== null
+      );
+    }
+    
+    /** Recompute the derived retry availability on a state about to be returned. */
+    function withDerivedRetry(next) {
+      return {
+        ...next,
+        retry: { ...next.retry, available: deriveRetryAvailable(next) },
+      };
+    }
+    
+    /**
+     * Extract the facts a snapshot contributes, resolving driver-vs-runtime
+     * contradictions with driver stats winning.
+     * @param {object|null} stats A `Runtime.getStats()` shape
+     * @param {object} prev Previous state (fallback for fields stats omits)
+     */
+    function snapshotFacts(stats, prev) {
+      const d = stats && stats.driverStats ? stats.driverStats : null;
+    
+      const adapterName =
+        stats && stats.adapterName ? stats.adapterName : prev.board.name;
+    
+      // Precedence 1: the driver's own running/paused flags. The runtime flag is
+      // only consulted when no driver stats exist (e.g. before the first start).
+      const driverRunning = d ? d.isRunning === true : stats.isRunning === true;
+      const driverPaused = d ? d.isPaused === true : false;
+      const stopReason =
+        d && d.stopReason !== undefined && d.stopReason !== null
+          ? String(d.stopReason)
+          : null;
+    
+      return {
+        adapterName,
+        driverRunning,
+        driverPaused,
+        stopReason,
+        moveCount: d && typeof d.moveCount === "number" ? d.moveCount : null,
+        solverStatus: stats && stats.solver ? stats.solver : null,
+      };
+    }
+    
+    /**
+     * Reduce a `snapshot` witness into the state. The problem banner is written
+     * only when this snapshot introduces a stop, and cleared when a run becomes
+     * active; otherwise it is carried through untouched.
+     */
+    function applySnapshot(prev, stats) {
+      const facts = snapshotFacts(stats, prev);
+      const solver = facts.solverStatus
+        ? deriveSolverState(facts.solverStatus)
+        : prev.solver; // a snapshot without a solver field does not clobber it
+      const hadRun = prev.run.started || prev.run.endedBy !== null;
+    
+      let phase;
+      let endedBy = prev.run.endedBy;
+      let reason = facts.stopReason;
+    
+      if (facts.driverRunning && !facts.driverPaused) {
+        phase = PHASE.PLAYING;
+      } else if (facts.driverRunning && facts.driverPaused) {
+        phase = PHASE.PAUSED;
+      } else if (hadRun || facts.stopReason) {
+        phase = PHASE.STOPPED;
+      } else {
+        phase = facts.adapterName ? PHASE.READY : PHASE.NO_BOARD;
+      }
+    
+      // Attribute the end of the run — driver facts win over the runtime flag.
+      if (phase === PHASE.STOPPED && facts.stopReason) {
+        endedBy = /game over/i.test(facts.stopReason) ? "game-over" : "driver";
+      }
+      // else: preserve an existing endedBy (a user stop already recorded).
+    
+      // A running run has no end record; a fresh run clears the previous one.
+      if (phase === PHASE.PLAYING || phase === PHASE.PAUSED) {
+        endedBy = null;
+        reason = null;
+      }
+    
+      const run = {
+        started:
+          prev.run.started || phase === PHASE.PLAYING || phase === PHASE.PAUSED,
+        endedBy,
+        reason: phase === PHASE.STOPPED ? reason ?? prev.run.reason : null,
+        moveCount: facts.moveCount !== null ? facts.moveCount : prev.run.moveCount,
+      };
+    
+      let next = { ...prev, phase, board: { name: facts.adapterName }, run, solver };
+    
+      const stopIntroduced =
+        phase === PHASE.STOPPED &&
+        facts.stopReason !== null &&
+        facts.stopReason !== prev.run.reason;
+      if (stopIntroduced) {
+        next.problem = deriveProblem(run, next.init, next.retry);
+      } else if (phase === PHASE.PLAYING || phase === PHASE.PAUSED) {
+        next.problem = null;
+      }
+    
+      return withDerivedRetry(next);
+    }
+    
+    /**
+     * Reduce a `run-state` witness (the runtime flag channel pushed by
+     * start/stop/pause/resume). Without driver stats this channel cannot
+     * distinguish pause from stop, so `false` records a runtime-attributed stop
+     * that the next snapshot or command result refines.
+     */
+    function applyRunState(prev, isRunning) {
+      if (isRunning) {
+        if (prev.phase === PHASE.PLAYING) return prev;
+        // A run-state(true) flag is a fact that a run is active. The board name
+        // may not have been witnessed yet (no snapshot has arrived); it stays
+        // unknown rather than being overclaimed as absent, and the next snapshot
+        // or command result names it.
+        const next = {
+          ...prev,
+          phase: PHASE.PLAYING,
+          run: {
+            started: true,
+            endedBy: null,
+            reason: null,
+            moveCount: prev.run.moveCount,
+          },
+          problem: null,
+        };
+        return withDerivedRetry(next);
+      }
+    
+      if (prev.phase !== PHASE.PLAYING && prev.phase !== PHASE.PAUSED) {
+        return prev;
+      }
+    
+      const run = {
+        ...prev.run,
+        started: true,
+        endedBy: prev.run.endedBy ?? "runtime",
+      };
+      const next = { ...prev, phase: PHASE.STOPPED, run };
+      next.problem = deriveProblem(run, next.init, next.retry) || prev.problem;
+      return withDerivedRetry(next);
+    }
+    
+    /**
+     * Reduce a `command-result` witness. Command results never outrank facts: a
+     * post-command snapshot (when available) is applied first, and only then does
+     * the command's own semantics refine attribution (e.g. marking a clean stop
+     * as user-initiated).
+     */
+    function applyCommandResult(prev, witness) {
+      const { command, ok, error, stats } = witness;
+      let next = stats ? applySnapshot(prev, stats) : prev;
+    
+      if (command === COMMAND.RETRY) {
+        next = applyRetryOutcome(next, ok);
+        return withDerivedRetry(next);
+      }
+    
+      if (!ok) {
+        return withDerivedRetry(applyCommandFailure(next, command, error));
+      }
+    
+      switch (command) {
+        case COMMAND.START:
+          // The runtime throws on failure, so ok=true means the driver started.
+          // A snapshot that already recorded a driver-attributed stop (the run
+          // ended the instant it started) outranks the command.
+          if (next.phase !== PHASE.STOPPED || next.run.endedBy === "user") {
+            next = {
+              ...next,
+              phase: PHASE.PLAYING,
+              run: {
+                started: true,
+                endedBy: null,
+                reason: null,
+                moveCount: next.run.moveCount,
+              },
+              problem: null,
+            };
+          }
+          break;
+    
+        case COMMAND.PAUSE:
+          if (next.phase !== PHASE.STOPPED) {
+            next = { ...next, phase: PHASE.PAUSED };
+          }
+          break;
+    
+        case COMMAND.RESUME:
+          if (next.phase === PHASE.PAUSED || next.phase === PHASE.READY) {
+            next = {
+              ...next,
+              phase: PHASE.PLAYING,
+              run: { ...next.run, started: true, endedBy: null, reason: null },
+              problem: null,
+            };
+          }
+          break;
+    
+        case COMMAND.STOP:
+          // A driver-supplied stopReason (already in next.run) outranks the
+          // command attribution; a clean stop is user-initiated.
+          if (!next.run.reason) {
+            next = {
+              ...next,
+              phase: PHASE.STOPPED,
+              run: {
+                ...next.run,
+                started: true,
+                endedBy: next.run.endedBy ?? "user",
+              },
+            };
+          }
+          break;
+    
+        case COMMAND.DETECT:
+          // The snapshot already applied the facts. A successful re-detect that
+          // found a board clears the current problem — its cause (a missing or
+          // undetectable board) just resolved. A game-over problem survives
+          // re-detection: finding a dead board does not make it playable.
+          if (next.board.name !== null && next.problem?.kind !== "game-over") {
+            next = { ...next, problem: null };
+          }
+          break;
+    
+        case COMMAND.STEP:
+          // A single step neither starts nor stops the loop.
+          break;
+    
+        default:
+          break;
+      }
+    
+      return withDerivedRetry(next);
+    }
+    
+    /**
+     * Retry outcomes update the consecutive-failure counter. Success resets it
+     * (and clears the problem: the cause was just re-armed); failure increments
+     * it and exhausts retry at the limit.
+     */
+    function applyRetryOutcome(prev, ok) {
+      if (ok) {
+        return {
+          ...prev,
+          retry: { ...prev.retry, used: 0, exhausted: false },
+          problem: null,
+        };
+      }
+    
+      const used = prev.retry.used + 1;
+      const exhausted = used >= prev.retry.limit;
+      const next = { ...prev, retry: { ...prev.retry, used, exhausted } };
+      if (exhausted) {
+        next.problem = deriveProblem(next.run, next.init, next.retry);
+      }
+      return next;
+    }
+    
+    /**
+     * Map a failed command onto a problem with a specific next action, matching
+     * only the runtime's own pinned error strings.
+     */
+    function applyCommandFailure(prev, command, error) {
+      const message = error ? String(error.message || error) : "command failed";
+    
+      if (
+        command === COMMAND.START ||
+        command === COMMAND.RESUME ||
+        command === COMMAND.STEP
+      ) {
+        if (RUNTIME_ERROR_PATTERNS.noBoard.test(message)) {
+          return {
+            ...prev,
+            phase: PHASE.NO_BOARD,
+            board: { name: null },
+            problem: {
+              kind: "no-board-at-start",
+              message: "No game board was found, so automation cannot start.",
+              nextAction: { kind: "detect", label: "Detect the board again" },
+            },
+          };
+        }
+    
+        if (RUNTIME_ERROR_PATTERNS.notInitialized.test(message)) {
+          return {
+            ...prev,
+            init: { failed: true, reason: message },
+            phase: PHASE.NO_BOARD,
+            problem: deriveProblem(
+              prev.run,
+              { failed: true, reason: message },
+              prev.retry
+            ),
+          };
+        }
+    
+        return {
+          ...prev,
+          problem: {
+            kind: "start-failed",
+            message: `Starting automation failed: ${message}`,
+            nextAction: { kind: "retry", label: "Retry" },
+          },
+        };
+      }
+    
+      if (command === COMMAND.DETECT) {
+        // A failed detect means detection found nothing. While a run is actually
+        // in flight the phase stays what the driver says it is (the runtime nulls
+        // its adapter; the next snapshot reconciles the board fact) — the banner
+        // reports the failed detection without overclaiming "no board".
+        const running =
+          prev.phase === PHASE.PLAYING || prev.phase === PHASE.PAUSED;
+        const next = running
+          ? prev
+          : { ...prev, phase: PHASE.NO_BOARD, board: { name: null } };
+        if (!next.problem) {
+          next = {
+            ...next,
+            problem: {
+              kind: "detect-failed",
+              message: "No game board was detected.",
+              nextAction: { kind: "detect", label: "Try Detect again" },
+            },
+          };
+        }
+        return next;
+      }
+    
+      // pause/stop failures are transient; a toast reports them without making
+      // them a control state.
+      return prev;
+    }
+    
+    /**
+     * Reduce the current state against a witness. Always returns a new object;
+     * the input is never mutated.
+     *
+     * @param {object} state Current control state
+     * @param {object} witness One of the documented witness shapes
+     * @returns {object} New control state
+     */
+    function reduceControlState(state, witness) {
+      if (!state) {
+        state = createInitialControlState();
+      }
+    
+      switch (witness.type) {
+        case "snapshot":
+          return applySnapshot(state, witness.stats);
+    
+        case "run-state":
+          return applyRunState(state, witness.isRunning === true);
+    
+        case "command-result":
+          return applyCommandResult(state, witness);
+    
+        case "runtime-error":
+          // Errors carry no facts by themselves; the accompanying snapshot (and
+          // the driver's own stopReason) carries the state. Errors that arrive
+          // while the driver keeps running (e.g. a solver hiccup the driver fell
+          // back from) must not stop the UI.
+          return state;
+    
+        case "game-over": {
+          const statsApplied = witness.stats
+            ? applySnapshot(state, witness.stats)
+            : state;
+          const run = {
+            ...statsApplied.run,
+            started: true,
+            endedBy: "game-over",
+            reason:
+              statsApplied.run.reason ??
+              (witness.reason ? String(witness.reason) : null),
+          };
+          const next = {
+            ...statsApplied,
+            phase: PHASE.STOPPED,
+            run,
+            problem: deriveProblem(run, statsApplied.init, statsApplied.retry),
+          };
+          return withDerivedRetry(next);
+        }
+    
+        case "solver-status": {
+          const solver = deriveSolverState(witness.status);
+          return { ...state, solver };
+        }
+    
+        case "init-failed": {
+          const init = {
+            failed: true,
+            reason: witness.message ? String(witness.message) : null,
+          };
+          const next = {
+            ...state,
+            phase: PHASE.NO_BOARD,
+            board: { name: null },
+            init,
+          };
+          next.problem = deriveProblem(next.run, init, next.retry);
+          return withDerivedRetry(next);
+        }
+    
+        case "reset":
+          return createInitialControlState();
+    
+        default:
+          return state;
+      }
+    }
+    
+    /** The four headline signals, answered from state alone. */
+    function headlineSignals(state) {
+      return {
+        foundBoard: state.board.name !== null,
+        playing: state.phase === PHASE.PLAYING,
+        fallenBack: state.solver.state === SOLVER_STATE.FALLBACK,
+        stopped: state.phase === PHASE.STOPPED,
+      };
+    }
+    
+    /** Human label for a phase. */
+    function describePhase(phase) {
+      switch (phase) {
+        case PHASE.NO_BOARD:
+          return "No board found";
+        case PHASE.READY:
+          return "Board found";
+        case PHASE.PLAYING:
+          return "Playing";
+        case PHASE.PAUSED:
+          return "Paused";
+        case PHASE.STOPPED:
+          return "Stopped";
+        default:
+          return "Unknown";
+      }
+    }
+    
+    /**
+     * Solver status line content. The reason (when present) is verbatim from the
+     * solver manager; nothing here invents rationale.
+     */
+    function describeSolver(solver) {
+      switch (solver.state) {
+        case SOLVER_STATE.WASM:
+          return { label: "WASM", title: "Native WASM solver active" };
+        case SOLVER_STATE.FALLBACK:
+          return {
+            label: "Fallback",
+            title: solver.reason
+              ? `JS fallback solver active (reason: ${solver.reason})`
+              : "JS fallback solver active",
+          };
+        case SOLVER_STATE.ERROR:
+          return {
+            label: "Error",
+            title: solver.reason ? `Solver error: ${solver.reason}` : "Solver error",
+          };
+        case SOLVER_STATE.LOADING:
+          return { label: "Loading…", title: "Solver is loading" };
+        default:
+          return { label: "—", title: "No solver status reported yet" };
+      }
+    }
+    
+    exports.createInitialControlState = createInitialControlState;
+    exports.deriveSolverState = deriveSolverState;
+    exports.deriveProblem = deriveProblem;
+    exports.deriveRetryAvailable = deriveRetryAvailable;
+    exports.reduceControlState = reduceControlState;
+    exports.headlineSignals = headlineSignals;
+    exports.describePhase = describePhase;
+    exports.describeSolver = describeSolver;
+    exports.PHASE = PHASE;
+    exports.SOLVER_STATE = SOLVER_STATE;
+    exports.COMMAND = COMMAND;
+    exports.RETRY_LIMIT = RETRY_LIMIT;
+  },
   "./src/hud/hud.js": function (exports, module, require) {
     /**
      * @fileoverview Shadow DOM HUD overlay for 2048 solver
      * Breaks the HUD into controller and view layers for maintainability.
+     *
+     * The controller no longer derives UI state from click intent: every render
+     * is driven by `control-state.js` reductions of runtime witnesses (real
+     * `Runtime.getStats()` snapshots, command results, board changes). Driver
+     * facts outrank stale runtime flags, stop reasons stay verbatim, and
+     * pause/resume/retry controls are consequence-aware.
      */
     
     const { detectGame } = require("./src/adapters/index.js");
     const { DEFAULT_DIRECTION_PRIORITY, DEFAULT_SOLVER_CONFIG, clampSolverConfig } = require("./src/hud/config.js");
+    const { createInitialControlState, reduceControlState, deriveSolverState, describeSolver, PHASE, SOLVER_STATE } = require("./src/hud/control-state.js");
     const { HUDView } = require("./src/hud/view.js");
+    
+    const SOLVER_COLORS = {
+      [SOLVER_STATE.WASM]: "#34d399",
+      [SOLVER_STATE.FALLBACK]: "#facc15",
+      [SOLVER_STATE.LOADING]: "#fbbf24",
+      [SOLVER_STATE.ERROR]: "#f87171",
+      [SOLVER_STATE.UNKNOWN]: "#f87171",
+    };
+    
+    const PROBLEM_LABELS = {
+      "board-lost": "Board lost:",
+      stalled: "Stalled:",
+      "game-over": "Game over:",
+      "solver-unavailable": "Solver:",
+      "init-failed": "Init failed:",
+      "retry-exhausted": "Retries exhausted:",
+      unknown: "Stopped:",
+    };
+    
+    const PROBLEM_COLORS = {
+      "board-lost": "#fb923c",
+      stalled: "#facc15",
+      "game-over": "#f87171",
+      "solver-unavailable": "#facc15",
+      "init-failed": "#f87171",
+      "retry-exhausted": "#f87171",
+      unknown: "#f87171",
+    };
     
     /**
      * HUD overlay controller coordinates the runtime interactions while delegating
@@ -2213,6 +2993,8 @@
           onDetect: this.handleDetectClick.bind(this),
           onAutoSolve: this.handleAutoSolveClick.bind(this),
           onStep: this.handleStepClick.bind(this),
+          onPauseToggle: this.handlePauseToggleClick.bind(this),
+          onRetry: this.handleRetryClick.bind(this),
           onCollapse: this.handleCollapseToggle.bind(this),
           onDirectionPriorityChange: this.handleDirectionPriorityChange.bind(this),
           onSolverControlChange: this.handleSolverControlChange.bind(this),
@@ -2223,6 +3005,9 @@
         this.controller = null;
         this.isAutoSolving = false;
         this.autoSolveTimeout = null;
+    
+        /** Witness-driven UI state; the single source of truth for rendering. */
+        this.controlState = createInitialControlState();
     
         this.directionPriority = [...DEFAULT_DIRECTION_PRIORITY];
         this.solverConfig = { ...DEFAULT_SOLVER_CONFIG };
@@ -2289,45 +3074,22 @@
       }
     
       /**
-       * Apply solver status indicator and synchronize controls
+       * Apply solver status indicator and synchronize controls.
+       *
+       * The display is derived by the shared model (`deriveSolverState`), so a
+       * WASM-ready status can never be overwritten by a stale fallback error and
+       * fallback reasons stay verbatim.
        * @param {Object|null} status Solver status from runtime
        */
       updateSolverStatus(status) {
-        const state = {
-          text: "Initializing…",
-          color: "#fbbf24",
-          title: "Solver is starting",
-        };
+        const derived = deriveSolverState(status);
+        const described = describeSolver(derived);
     
-        if (status) {
-          if (status.status === "ready" && status.mode === "wasm") {
-            state.text = "WASM ready";
-            state.color = "#34d399";
-            state.title = "Native solver active";
-          } else if (status.status === "ready" || status.mode === "fallback") {
-            state.text = "Fallback";
-            state.color = "#facc15";
-            state.title = "Using JS fallback solver";
-          } else if (status.status === "fallback") {
-            state.text = "Fallback";
-            state.color = "#facc15";
-            state.title = "Using JS fallback solver";
-          } else if (status.status === "error") {
-            state.text = "Error";
-            state.color = "#f87171";
-            state.title = status.lastError ? String(status.lastError) : "Solver error";
-          } else if (status.status === "idle" || status.status === "loading") {
-            state.text = "Loading…";
-            state.color = "#fbbf24";
-            state.title = "Loading solver";
-          }
-    
-          if (status.lastError) {
-            state.title = `Fallback: ${status.lastError}`;
-          }
-        }
-    
-        this.view.setSolverStatus(state);
+        this.view.setSolverStatus({
+          text: described.label,
+          color: SOLVER_COLORS[derived.state] || "#f87171",
+          title: described.title,
+        });
     
         if (status && status.strategy) {
           const clamped = clampSolverConfig(status.strategy);
@@ -2344,7 +3106,8 @@
       }
     
       /**
-       * Update HUD labels based on adapter availability
+       * Update HUD labels based on adapter availability, then re-render run
+       * controls from the freshest witness available.
        */
       updateStatus() {
         if (this.controller && this.controller.getCurrentAdapter) {
@@ -2362,11 +3125,9 @@
     
           const score = this.currentAdapter.getScore();
           this.view.setScore(score !== null ? score.toLocaleString() : "-");
-          this.view.setControlsEnabled({ autoSolve: true, step: true });
         } else {
           this.view.setGameStatus({ text: "Not detected", color: "#f87171" });
           this.view.setScore("-");
-          this.view.setControlsEnabled({ autoSolve: false, step: false });
         }
     
         if (this.controller && this.controller.getSolverStatus) {
@@ -2377,6 +3138,106 @@
             console.warn("HUD: Failed to refresh solver status", error);
           }
         }
+    
+        // Push the freshest full witness; renderState() paints from it.
+        if (this.controller && this.controller.getStats) {
+          try {
+            this.applyWitness(this.controller.getStats());
+            return;
+          } catch (error) {
+            console.warn("HUD: Failed to read runtime stats", error);
+          }
+        }
+    
+        // Legacy/no-controller path: keep the old enabled-by-adapter behavior.
+        this.view.setControlsEnabled({
+          autoSolve: Boolean(this.currentAdapter),
+          step: Boolean(this.currentAdapter),
+        });
+      }
+    
+      /**
+       * Feed a runtime witness (a real `Runtime.getStats()` snapshot) into the
+       * state model and re-render. This is the ONLY run-state render path when a
+       * controller is connected — driver facts outrank stale runtime flags.
+       * @param {Object} stats Snapshot from Runtime.getStats()
+       */
+      applyWitness(stats) {
+        if (!stats) {
+          return;
+        }
+    
+        this.controlState = reduceControlState(this.controlState, {
+          type: "snapshot",
+          stats,
+        });
+        this.renderState();
+      }
+    
+      /**
+       * Feed a command outcome into the state model and re-render.
+       * @param {string} command One of the COMMAND keys (start/stop/pause/resume/retry/detect)
+       * @param {boolean} ok Whether the command succeeded
+       * @param {string|null} error Error message on failure
+       */
+      applyCommandResult(command, ok, error = null) {
+        this.controlState = reduceControlState(this.controlState, {
+          type: "command-result",
+          command,
+          ok,
+          error: error ? String(error) : null,
+          stats: null,
+        });
+        this.renderState();
+      }
+    
+      /**
+       * Paint the action row, problem line, and solver line from the model.
+       * @private
+       */
+      renderState() {
+        const state = this.controlState;
+        const phase = state.phase;
+        const hasBoard = phase !== PHASE.NO_BOARD;
+        const running = phase === PHASE.PLAYING || phase === PHASE.PAUSED;
+    
+        const nextAction = state.problem ? state.problem.nextAction : null;
+        const retryKind = nextAction ? nextAction.kind : null;
+        // Only detect/retry are actionable inside the HUD; new-game and reload
+        // are user steps outside it (the problem text explains them).
+        const retryVisible = retryKind === "detect" || retryKind === "retry";
+    
+        this.view.setRunControls({
+          autoSolveLabel: running ? "⏹ Stop" : "▶️ Auto-solve",
+          autoSolveEnabled: hasBoard,
+          autoSolveRunning: phase === PHASE.PLAYING,
+          pauseLabel: phase === PHASE.PAUSED ? "▶ Resume" : "⏸ Pause",
+          pauseEnabled: phase === PHASE.PLAYING || phase === PHASE.PAUSED,
+          stepEnabled: hasBoard,
+          retryVisible,
+          retryLabel: retryKind === "detect" ? "🔍 Re-detect" : "↻ Retry",
+          retryEnabled: retryKind === "detect" ? true : state.retry.available,
+        });
+    
+        if (state.problem) {
+          const kind = state.problem.kind;
+          this.view.setProblem({
+            label: PROBLEM_LABELS[kind] || PROBLEM_LABELS.unknown,
+            text: state.run.reason || state.problem.message || "",
+            color: PROBLEM_COLORS[kind] || "#f87171",
+          });
+        } else {
+          this.view.setProblem(null);
+        }
+    
+        const described = describeSolver(state.solver);
+        this.view.setSolverStatus({
+          text: described.label,
+          color: SOLVER_COLORS[state.solver.state] || "#f87171",
+          title: described.title,
+        });
+    
+        this.isAutoSolving = running;
       }
     
       /**
@@ -2427,10 +3288,14 @@
             this.updateStatus();
             if (!detected && !this.currentAdapter) {
               this.showMessage("No game detected.");
+              this.applyCommandResult("detect", false, "No game detected");
+            } else {
+              this.applyCommandResult("detect", true, null);
             }
           } catch (error) {
             console.warn("HUD: Controller-driven detect failed", error);
             this.showMessage("Detect failed. Check console.");
+            this.applyCommandResult("detect", false, error?.message);
           }
           return;
         }
@@ -2444,7 +3309,8 @@
       }
     
       /**
-       * Handle auto-solve button click
+       * Handle auto-solve button click — start/stop only. The run/pause truth
+       * comes from the model (driver-first), never from click intent.
        * @private
        */
       async handleAutoSolveClick() {
@@ -2457,26 +3323,41 @@
         }
     
         if (this.controller) {
-          try {
-            const isRunning = this.controller.isRunning?.bind(this.controller);
-            const currentlyRunning = isRunning ? !!isRunning() : this.isAutoSolving;
+          const phase = this.controlState.phase;
+          const modelRunning = phase === PHASE.PLAYING || phase === PHASE.PAUSED;
     
-            if (currentlyRunning) {
-              const stopFn = this.controller.stop?.bind(this.controller);
-              if (stopFn) {
-                await Promise.resolve(stopFn());
-              }
-              this.updateRunState(false);
-            } else {
-              const startFn = this.controller.start?.bind(this.controller);
-              if (startFn) {
-                await Promise.resolve(startFn());
-              }
-              this.updateRunState(true);
+          let currentlyRunning = modelRunning;
+          if (!this.controlState.run.started && this.controller.isRunning) {
+            // No witness has landed yet; fall back to the controller's flag.
+            try {
+              currentlyRunning = !!(await Promise.resolve(
+                this.controller.isRunning()
+              ));
+            } catch {
+              /* keep the model's answer */
+            }
+          }
+    
+          const command = currentlyRunning ? "stop" : "start";
+          try {
+            const fn = currentlyRunning
+              ? this.controller.stop?.bind(this.controller)
+              : this.controller.start?.bind(this.controller);
+            if (fn) {
+              await Promise.resolve(fn());
+            }
+            this.applyCommandResult(command, true, null);
+            if (this.controller.getStats) {
+              this.applyWitness(this.controller.getStats());
             }
           } catch (error) {
-            console.warn("HUD: Failed to toggle auto-solve via controller", error);
-            this.showMessage("Auto-solve toggle failed. Check console.");
+            console.warn(`HUD: Auto-solve ${command} failed via controller`, error);
+            this.showMessage(
+              currentlyRunning
+                ? "Stop failed. Check console."
+                : "Auto-solve failed. Check console.",
+            );
+            this.applyCommandResult(command, false, error?.message);
           }
           return;
         }
@@ -2485,6 +3366,79 @@
           this.stopAutoSolve();
         } else {
           this.startAutoSolve();
+        }
+      }
+    
+      /**
+       * Handle pause/resume button click. The action follows the model's phase:
+       * PLAYING → pause, PAUSED → resume; anything else is inert.
+       * @private
+       */
+      async handlePauseToggleClick() {
+        if (!this.controller) {
+          this.showMessage("Pause is available only with a connected controller.");
+          return;
+        }
+    
+        const phase = this.controlState.phase;
+        if (phase !== PHASE.PLAYING && phase !== PHASE.PAUSED) {
+          return;
+        }
+    
+        const command = phase === PHASE.PLAYING ? "pause" : "resume";
+        try {
+          const fn =
+            command === "pause"
+              ? this.controller.pause?.bind(this.controller)
+              : this.controller.resume?.bind(this.controller);
+          if (!fn) {
+            throw new Error("Controller does not support pause/resume");
+          }
+          await Promise.resolve(fn());
+          this.applyCommandResult(command, true, null);
+          if (this.controller.getStats) {
+            this.applyWitness(this.controller.getStats());
+          }
+        } catch (error) {
+          console.warn("HUD: Pause/resume failed via controller", error);
+          this.showMessage("Pause/resume failed. Check console.");
+          this.applyCommandResult(command, false, error?.message);
+        }
+      }
+    
+      /**
+       * Handle retry/re-detect click, following the model's prescribed action.
+       * Retry re-starts the runtime (which re-detects the board itself);
+       * re-detect only re-runs detection. Failures count against the model's
+       * bounded retry budget.
+       * @private
+       */
+      async handleRetryClick() {
+        const nextAction = this.controlState.problem?.nextAction;
+        const kind = nextAction ? nextAction.kind : null;
+    
+        if (kind === "detect") {
+          await this.handleDetectClick();
+          return;
+        }
+    
+        if (kind !== "retry" || !this.controller) {
+          return;
+        }
+    
+        try {
+          const startFn = this.controller.start?.bind(this.controller);
+          if (startFn) {
+            await Promise.resolve(startFn());
+          }
+          this.applyCommandResult("retry", true, null);
+          if (this.controller.getStats) {
+            this.applyWitness(this.controller.getStats());
+          }
+        } catch (error) {
+          console.warn("HUD: Retry failed via controller", error);
+          this.showMessage("Retry failed. Check console.");
+          this.applyCommandResult("retry", false, error?.message);
         }
       }
     
@@ -2519,10 +3473,24 @@
       }
     
       /**
-       * Update run state UI to reflect automation status
+       * Update run state UI to reflect automation status.
+       *
+       * Compatibility wrapper: with a connected controller this reads the REAL
+       * runtime witness instead of trusting the pushed boolean — the driver may
+       * have stopped itself since. Without a controller the legacy boolean path
+       * is preserved for the HUD-local fallback loop.
        * @param {boolean} isRunning Whether automation is active
        */
       updateRunState(isRunning) {
+        if (this.controller && this.controller.getStats) {
+          try {
+            this.applyWitness(this.controller.getStats());
+            return;
+          } catch (error) {
+            console.warn("HUD: Failed to read runtime stats", error);
+          }
+        }
+    
         this.isAutoSolving = !!isRunning;
         this.view.setAutoSolveRunning(this.isAutoSolving);
       }
@@ -2538,16 +3506,20 @@
             if (startFn) {
               await Promise.resolve(startFn());
             }
-            const running = this.controller.isRunning?.bind(this.controller);
-            this.updateRunState(running ? !!running() : true);
+            this.applyCommandResult("start", true, null);
+            if (this.controller.getStats) {
+              this.applyWitness(this.controller.getStats());
+            }
           } catch (error) {
             console.warn("HUD: startAutoSolve controller invocation failed", error);
             this.showMessage("Auto-solve failed. Check console.");
+            this.applyCommandResult("start", false, error?.message);
           }
           return;
         }
     
-        this.updateRunState(true);
+        this.isAutoSolving = true;
+        this.view.setAutoSolveRunning(true);
         this.autoSolveLoop();
       }
     
@@ -2591,10 +3563,14 @@
             if (stopFn) {
               await Promise.resolve(stopFn());
             }
+            this.applyCommandResult("stop", true, null);
+            if (this.controller.getStats) {
+              this.applyWitness(this.controller.getStats());
+            }
           } catch (error) {
             console.warn("HUD: stopAutoSolve controller invocation failed", error);
+            this.applyCommandResult("stop", false, error?.message);
           }
-          this.updateRunState(false);
           return;
         }
     
@@ -2603,7 +3579,8 @@
           this.autoSolveTimeout = null;
         }
     
-        this.updateRunState(false);
+        this.isAutoSolving = false;
+        this.view.setAutoSolveRunning(false);
       }
     
       /**
@@ -2678,7 +3655,13 @@
           }
         }
     
-        if (this.controller && this.controller.isRunning) {
+        if (this.controller && this.controller.getStats) {
+          try {
+            this.applyWitness(this.controller.getStats());
+          } catch (error) {
+            console.warn("HUD: Failed to read controller stats", error);
+          }
+        } else if (this.controller && this.controller.isRunning) {
           try {
             this.updateRunState(!!this.controller.isRunning());
           } catch (error) {
@@ -2727,6 +3710,7 @@
     
         this.currentAdapter = null;
         this.controller = null;
+        this.controlState = createInitialControlState();
         this.isInitialized = false;
       }
     }
@@ -2900,7 +3884,7 @@
           }
     
           .hud-btn-success {
-            background: rgba(34, 197, 94, 0.8);
+            background: rgba(21, 128, 61, 0.9);
             border-color: rgba(34, 197, 94, 1);
           }
     
@@ -3007,6 +3991,35 @@
             transition: none;
             cursor: grabbing;
           }
+    
+          .hud-btn:focus-visible,
+          .setting-select:focus-visible,
+          .setting-input:focus-visible,
+          .hud-header:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+          }
+    
+          .hud-panel {
+            max-width: calc(100vw - 16px);
+            max-height: calc(100vh - 16px);
+            overflow-y: auto;
+          }
+    
+          @media (prefers-reduced-motion: reduce) {
+            .hud-panel,
+            .hud-btn {
+              transition: none !important;
+            }
+    
+            .hud-btn:hover {
+              transform: none;
+            }
+    
+            .hud-panel.auto-solving .hud-btn-success {
+              animation: none !important;
+            }
+          }
         `;
     }
     
@@ -3020,19 +4033,19 @@
             ${getHUDCSS()}
           </style>
           <div class="hud-panel" data-collapsed="false">
-            <div class="hud-header">
+            <div class="hud-header" tabindex="0" role="group" aria-label="2048 AI Solver panel. Press arrow keys to move the panel, Home to reset its position, Escape to collapse.">
               <div class="hud-title">
                 <span class="hud-icon">🎯</span>
                 <span class="hud-text">2048 AI Solver</span>
               </div>
               <div class="hud-controls">
-                <button class="hud-btn hud-btn-collapse" title="Collapse/Expand">
+                <button class="hud-btn hud-btn-collapse" title="Collapse/Expand" aria-expanded="true" aria-controls="hud-content-region" aria-label="Collapse panel">
                   <span class="collapse-icon">−</span>
                 </button>
               </div>
             </div>
-            <div class="hud-content">
-              <div class="hud-status">
+            <div class="hud-content" id="hud-content-region">
+              <div class="hud-status" role="status" aria-live="polite">
                 <div class="status-item">
                   <span class="status-label">Game:</span>
                   <span class="status-value" id="game-status">Not detected</span>
@@ -3045,6 +4058,10 @@
                   <span class="status-label">Solver:</span>
                   <span class="status-value" id="solver-status">Initializing…</span>
                 </div>
+                <div class="status-item" id="problem-item" hidden>
+                  <span class="status-label" id="problem-label">Stop:</span>
+                  <span class="status-value" id="problem-status"></span>
+                </div>
               </div>
     
               <div class="hud-actions">
@@ -3054,14 +4071,20 @@
                 <button class="hud-btn hud-btn-success" id="auto-solve-btn" disabled>
                   ▶️ Auto-solve
                 </button>
+                <button class="hud-btn hud-btn-secondary" id="pause-resume-btn" disabled>
+                  ⏸ Pause
+                </button>
                 <button class="hud-btn hud-btn-secondary" id="step-btn" disabled>
                   ⏭️ Step
+                </button>
+                <button class="hud-btn hud-btn-secondary" id="retry-btn" hidden>
+                  ↻ Retry
                 </button>
               </div>
     
               <div class="hud-settings">
                 <div class="setting-group">
-                  <label class="setting-label">Direction Priority:</label>
+                  <label class="setting-label" for="direction-priority">Direction Priority:</label>
                   <select class="setting-select" id="direction-priority">
                     <option value="0,2,1,3">Up → Down → Right → Left</option>
                     <option value="3,2,1,0" selected>Left → Down → Right → Up</option>
@@ -3070,14 +4093,14 @@
                   </select>
                 </div>
                 <div class="setting-group">
-                  <label class="setting-label">Solver Strategy:</label>
+                  <label class="setting-label" for="solver-strategy">Solver Strategy:</label>
                   <select class="setting-select" id="solver-strategy">
                     <option value="expectimax-depth" selected>Expectimax (Depth)</option>
                     <option value="expectimax-probability">Expectimax (Probability)</option>
                   </select>
                 </div>
                 <div class="setting-group">
-                  <label class="setting-label">Heuristic:</label>
+                  <label class="setting-label" for="solver-heuristic">Heuristic:</label>
                   <select class="setting-select" id="solver-heuristic">
                     <option value="corner" selected>Corner Bias</option>
                     <option value="monotonicity">Monotonicity</option>
@@ -3139,9 +4162,16 @@
           scoreStatus: null,
           detectBtn: null,
           autoSolveBtn: null,
+          pauseResumeBtn: null,
           stepBtn: null,
+          retryBtn: null,
+          problemItem: null,
+          problemLabel: null,
+          problemStatus: null,
           collapseBtn: null,
           collapseIcon: null,
+          header: null,
+          hudContent: null,
           directionSelect: null,
           solverStrategy: null,
           solverHeuristic: null,
@@ -3153,14 +4183,22 @@
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
         this._suppressSolverEvents = false;
+        this.currentPos = { x: 0, y: 0 };
+        this.lastHostFocus = null;
     
         this.boundHandlers = {
           headerMouseDown: this.handleHeaderMouseDown.bind(this),
           documentMouseMove: this.handleDocumentMouseMove.bind(this),
           documentMouseUp: this.handleDocumentMouseUp.bind(this),
+          headerKeyDown: this.handleHeaderKeyDown.bind(this),
+          shadowKeyDown: this.handleShadowKeyDown.bind(this),
+          windowResize: this.handleWindowResize.bind(this),
+          documentFocusIn: this.handleDocumentFocusIn.bind(this),
           detectClick: this.forwardCallback("onDetect"),
           autoSolveClick: this.forwardCallback("onAutoSolve"),
+          pauseToggleClick: this.forwardCallback("onPauseToggle"),
           stepClick: this.forwardCallback("onStep"),
+          retryClick: this.forwardCallback("onRetry"),
           collapseClick: this.handleCollapseClick.bind(this),
           directionChange: this.handleDirectionChange.bind(this),
           solverControlChange: this.handleSolverControlChange.bind(this),
@@ -3223,9 +4261,16 @@
           scoreStatus: this.shadowRoot.getElementById("score-status"),
           detectBtn: this.shadowRoot.getElementById("detect-btn"),
           autoSolveBtn: this.shadowRoot.getElementById("auto-solve-btn"),
+          pauseResumeBtn: this.shadowRoot.getElementById("pause-resume-btn"),
           stepBtn: this.shadowRoot.getElementById("step-btn"),
+          retryBtn: this.shadowRoot.getElementById("retry-btn"),
+          problemItem: this.shadowRoot.getElementById("problem-item"),
+          problemLabel: this.shadowRoot.getElementById("problem-label"),
+          problemStatus: this.shadowRoot.getElementById("problem-status"),
           collapseBtn: this.shadowRoot.querySelector(".hud-btn-collapse"),
           collapseIcon: this.shadowRoot.querySelector(".collapse-icon"),
+          header: this.shadowRoot.querySelector(".hud-header"),
+          hudContent: this.shadowRoot.querySelector(".hud-content"),
           directionSelect: this.shadowRoot.getElementById("direction-priority"),
           solverStrategy: this.shadowRoot.getElementById("solver-strategy"),
           solverHeuristic: this.shadowRoot.getElementById("solver-heuristic"),
@@ -3253,12 +4298,25 @@
           "click",
           this.boundHandlers.autoSolveClick,
         );
+        this.elements.pauseResumeBtn?.addEventListener(
+          "click",
+          this.boundHandlers.pauseToggleClick,
+        );
         this.elements.stepBtn?.addEventListener("click", this.boundHandlers.stepClick);
+        this.elements.retryBtn?.addEventListener("click", this.boundHandlers.retryClick);
         this.elements.collapseBtn?.addEventListener("click", this.boundHandlers.collapseClick);
         this.elements.directionSelect?.addEventListener(
           "change",
           this.boundHandlers.directionChange,
         );
+    
+        this.elements.header?.addEventListener(
+          "keydown",
+          this.boundHandlers.headerKeyDown,
+        );
+        this.shadowRoot.addEventListener("keydown", this.boundHandlers.shadowKeyDown);
+        window.addEventListener("resize", this.boundHandlers.windowResize);
+        document.addEventListener("focusin", this.boundHandlers.documentFocusIn);
     
         const solverControls = [
           this.elements.solverStrategy,
@@ -3291,7 +4349,12 @@
           "click",
           this.boundHandlers.autoSolveClick,
         );
+        this.elements.pauseResumeBtn?.removeEventListener(
+          "click",
+          this.boundHandlers.pauseToggleClick,
+        );
         this.elements.stepBtn?.removeEventListener("click", this.boundHandlers.stepClick);
+        this.elements.retryBtn?.removeEventListener("click", this.boundHandlers.retryClick);
         this.elements.collapseBtn?.removeEventListener(
           "click",
           this.boundHandlers.collapseClick,
@@ -3300,6 +4363,14 @@
           "change",
           this.boundHandlers.directionChange,
         );
+    
+        this.elements.header?.removeEventListener(
+          "keydown",
+          this.boundHandlers.headerKeyDown,
+        );
+        this.shadowRoot.removeEventListener("keydown", this.boundHandlers.shadowKeyDown);
+        window.removeEventListener("resize", this.boundHandlers.windowResize);
+        document.removeEventListener("focusin", this.boundHandlers.documentFocusIn);
     
         const solverControls = [
           this.elements.solverStrategy,
@@ -3379,21 +4450,37 @@
       }
     
       /**
-       * Toggle collapse/expand state while updating the icon.
+       * Toggle collapse/expand state while updating the icon and ARIA state.
        * @private
        */
       handleCollapseClick() {
-        this.isCollapsed = !this.isCollapsed;
-        this.panel?.setAttribute("data-collapsed", String(this.isCollapsed));
+        this.setCollapsed(!this.isCollapsed);
+    
+        if (typeof this.callbacks.onCollapse === "function") {
+          this.callbacks.onCollapse(this.isCollapsed);
+        }
+      }
+    
+      /**
+       * Apply a collapse state to the panel and keep the toggle's ARIA in sync.
+       * @param {boolean} collapsed
+       */
+      setCollapsed(collapsed) {
+        this.isCollapsed = collapsed;
+        this.panel?.setAttribute("data-collapsed", String(collapsed));
     
         if (this.elements.collapseIcon) {
-          this.elements.collapseIcon.textContent = this.isCollapsed
+          this.elements.collapseIcon.textContent = collapsed
             ? COLLAPSE_ICON.COLLAPSED
             : COLLAPSE_ICON.EXPANDED;
         }
     
-        if (typeof this.callbacks.onCollapse === "function") {
-          this.callbacks.onCollapse(this.isCollapsed);
+        if (this.elements.collapseBtn) {
+          this.elements.collapseBtn.setAttribute("aria-expanded", String(!collapsed));
+          this.elements.collapseBtn.setAttribute(
+            "aria-label",
+            collapsed ? "Expand panel" : "Collapse panel",
+          );
         }
       }
     
@@ -3551,6 +4638,67 @@
       }
     
       /**
+       * Render the action row from the resolved control state. The state model
+       * decides labels and availability; this only paints.
+       * @param {{autoSolveLabel:string, autoSolveEnabled:boolean, autoSolveRunning:boolean,
+       *          pauseLabel:string, pauseEnabled:boolean, stepEnabled:boolean,
+       *          retryVisible:boolean, retryLabel:string, retryEnabled:boolean}} controls
+       */
+      setRunControls(controls) {
+        if (!controls) {
+          return;
+        }
+    
+        if (this.elements.autoSolveBtn) {
+          this.elements.autoSolveBtn.textContent = controls.autoSolveLabel;
+          this.elements.autoSolveBtn.disabled = !controls.autoSolveEnabled;
+        }
+    
+        if (this.elements.pauseResumeBtn) {
+          this.elements.pauseResumeBtn.textContent = controls.pauseLabel;
+          this.elements.pauseResumeBtn.disabled = !controls.pauseEnabled;
+        }
+    
+        if (this.elements.stepBtn) {
+          this.elements.stepBtn.disabled = !controls.stepEnabled;
+        }
+    
+        if (this.elements.retryBtn) {
+          this.elements.retryBtn.hidden = !controls.retryVisible;
+          this.elements.retryBtn.textContent = controls.retryLabel;
+          this.elements.retryBtn.disabled = !controls.retryEnabled;
+        }
+    
+        if (this.panel) {
+          this.panel.classList.toggle("auto-solving", Boolean(controls.autoSolveRunning));
+        }
+      }
+    
+      /**
+       * Show or clear the persistent stop-feedback line. The reason text is the
+       * model's verbatim reason — never paraphrased here.
+       * @param {{label:string, text:string, color:string}|null} problem
+       */
+      setProblem(problem) {
+        if (!this.elements.problemItem) {
+          return;
+        }
+    
+        if (!problem) {
+          this.elements.problemItem.hidden = true;
+          this.elements.problemStatus.textContent = "";
+          return;
+        }
+    
+        this.elements.problemItem.hidden = false;
+        if (this.elements.problemLabel) {
+          this.elements.problemLabel.textContent = problem.label;
+        }
+        this.elements.problemStatus.textContent = problem.text;
+        this.elements.problemStatus.style.color = problem.color;
+      }
+    
+      /**
        * Update the selected direction priority option.
        * @param {number[]} priorities
        */
@@ -3561,6 +4709,151 @@
     
         const value = priorities.join(",");
         this.elements.directionSelect.value = value;
+      }
+    
+      /**
+       * Handle keydown anywhere inside the HUD shadow root. Escape collapses the
+       * panel and returns focus to the last focused host-page element. This
+       * listener never captures host-page keys: it only sees events whose focus
+       * is already inside the HUD.
+       * @param {KeyboardEvent} event
+       * @private
+       */
+      handleShadowKeyDown(event) {
+        if (!event || event.key !== "Escape" || !this.panel) {
+          return;
+        }
+    
+        if (!this.isCollapsed) {
+          // Return focus BEFORE collapsing: collapsing hides the focused HUD
+          // element, and once the browser parks focus on the shadow host from
+          // that invalid state it may refuse further programmatic focus moves.
+          const host = this.lastHostFocus;
+          if (host && typeof host.focus === "function") {
+            try {
+              host.focus();
+            } catch {
+              // Focus return is best-effort; some host elements are not focusable.
+            }
+          }
+          this.setCollapsed(true);
+    
+          if (typeof this.callbacks.onCollapse === "function") {
+            this.callbacks.onCollapse(true);
+          }
+    
+          // Safety net for the collapse transition: if the browser's fix-up for
+          // the just-hidden element re-parks focus on the shadow host, re-assert
+          // the host-page target after the 0.3s transition settles.
+          setTimeout(() => {
+            const retry = this.lastHostFocus;
+            if (
+              retry &&
+              typeof retry.focus === "function" &&
+              this.shadowHost &&
+              document.activeElement === this.shadowHost
+            ) {
+              try {
+                retry.focus();
+              } catch {
+                // Best-effort, as above.
+              }
+            }
+          }, 350);
+    
+          // The HUD consumed this Escape; keep it from also reaching host-page
+          // listeners (e.g. a game dialog) while the user is interacting here.
+          if (typeof event.stopPropagation === "function") {
+            event.stopPropagation();
+          }
+        }
+      }
+    
+      /**
+       * Move the panel with the keyboard while the header has focus. Arrow keys
+       * nudge by 16px (64px with Shift); Home resets to the mount position.
+       * @param {KeyboardEvent} event
+       * @private
+       */
+      handleHeaderKeyDown(event) {
+        if (!event || !this.panel) {
+          return;
+        }
+    
+        const step = event.shiftKey ? 64 : 16;
+        let handled = true;
+    
+        switch (event.key) {
+          case "ArrowLeft":
+            this.position(this.currentPos.x - step, this.currentPos.y);
+            break;
+          case "ArrowRight":
+            this.position(this.currentPos.x + step, this.currentPos.y);
+            break;
+          case "ArrowUp":
+            this.position(this.currentPos.x, this.currentPos.y - step);
+            break;
+          case "ArrowDown":
+            this.position(this.currentPos.x, this.currentPos.y + step);
+            break;
+          case "Home":
+            this.position(window.innerWidth - 320, 20);
+            break;
+          default:
+            handled = false;
+        }
+    
+        if (handled) {
+          if (typeof event.preventDefault === "function") {
+            event.preventDefault();
+          }
+          // Handled panel-movement keys must not also drive the host game.
+          if (typeof event.stopPropagation === "function") {
+            event.stopPropagation();
+          }
+        }
+      }
+    
+      /**
+       * Re-clamp the panel into the viewport after a resize (e.g. rotating a
+       * device or shrinking a narrow window).
+       * @private
+       */
+      handleWindowResize() {
+        if (!this.panel) {
+          return;
+        }
+    
+        this.position(this.currentPos.x, this.currentPos.y);
+      }
+    
+      /**
+       * Track the last focused host-page element (outside the HUD) so Escape can
+       * return focus there. Passive observation only — nothing is captured.
+       * @param {FocusEvent} event
+       * @private
+       */
+      handleDocumentFocusIn(event) {
+        const target = event?.target;
+        if (!target) {
+          return;
+        }
+    
+        // Focus events that originate inside the shadow tree are retargeted at
+        // the shadow boundary: at document level their target is the shadow host
+        // itself, so contains() never matches them. composedPath() is the only
+        // reliable containment test for retargeted events.
+        const path =
+          typeof event.composedPath === "function" ? event.composedPath() : [];
+        const insideHUD =
+          path.includes(this.shadowRoot) ||
+          (this.shadowRoot &&
+            typeof this.shadowRoot.contains === "function" &&
+            this.shadowRoot.contains(target));
+    
+        if (!insideHUD) {
+          this.lastHostFocus = target;
+        }
       }
     
       /**
@@ -3582,6 +4875,7 @@
     
         this.panel.style.left = `${clampedX}px`;
         this.panel.style.top = `${clampedY}px`;
+        this.currentPos = { x: clampedX, y: clampedY };
       }
     
       /**
@@ -4646,7 +5940,7 @@
         this.isRunning = true;
     
         if (this.hud) {
-          this.hud.updateRunState(true);
+          this.hud.applyWitness(this.getStats());
         }
     
         console.log("Runtime started");
@@ -4667,7 +5961,7 @@
     
         this.isRunning = false;
         if (this.hud) {
-          this.hud.updateRunState(false);
+          this.hud.applyWitness(this.getStats());
         }
         console.log("Runtime stopped");
       }
@@ -4681,7 +5975,7 @@
           this.isRunning = false;
           console.log("Runtime paused");
           if (this.hud) {
-            this.hud.updateRunState(false);
+            this.hud.applyWitness(this.getStats());
           }
         }
       }
@@ -4695,7 +5989,7 @@
           this.isRunning = true;
           console.log("Runtime resumed");
           if (this.hud) {
-            this.hud.updateRunState(true);
+            this.hud.applyWitness(this.getStats());
           }
         }
       }
@@ -4746,6 +6040,7 @@
         // Show message if HUD is available
         if (this.hud) {
           this.hud.showMessage("Game Over!");
+          this.hud.applyWitness(this.getStats());
         }
       }
     
@@ -4757,9 +6052,12 @@
       handleError(error) {
         console.error("Runtime error:", error);
     
-        // Show error message if HUD is available
+        // Show error message if HUD is available. The witness push matters here:
+        // driver self-stops (no-progress, failed reads) surface as onError, and
+        // the HUD must learn the driver's true state — not the stale flag.
         if (this.hud) {
           this.hud.showMessage(`Error: ${error.message}`);
+          this.hud.applyWitness(this.getStats());
         }
     
         this._notifySolverStatus();
@@ -4776,7 +6074,10 @@
           start: () => this.start(),
           stop: () => this.stop(),
           step: () => this.step(),
+          pause: () => this.pause(),
+          resume: () => this.resume(),
           isRunning: () => this.isRunning,
+          getStats: () => this.getStats(),
           getCurrentAdapter: () => this.currentAdapter,
           getSolverStatus: () =>
             this.solverManager ? this.solverManager.getStatus() : null,

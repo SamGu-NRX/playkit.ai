@@ -104,3 +104,10 @@ Browser run after the fixes: **16/16 scenarios pass** — evidence in
 `bench/evidence/postfix-run.json` (same 16-scenario harness as the baseline;
 bundle scenarios run the built `src/extension/content.js`).
 
+
+## Contract-bundle run (2026-10-11, encoding-contract commit d73a4e9)
+
+Re-run after the FIX-1 contract landed (`bench/evidence/encoding-contract-run.json`):
+16/16 scenarios pass in a real headless browser against the rebuilt
+`src/extension/content.js` bundle. The contract made no valid-board behavior
+change — only previously ambiguous/invalid inputs now fail fast.

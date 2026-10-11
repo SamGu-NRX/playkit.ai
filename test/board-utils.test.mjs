@@ -5,7 +5,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BoardEncoder } from "../src/solver/board-utils.js";
+import { BoardEncoder, BoardEncodingError } from "../src/solver/board-utils.js";
 import { mulberry32 } from "./helpers/reference-2048.mjs";
 
 /** 4x4 values board from a row-major flat array (16 entries). */
@@ -19,7 +19,7 @@ const fromFlat = (...flat) => [
 const EMPTY = fromFlat(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 test("toBitboard: empty board encodes to 0n", () => {
-  assert.equal(BoardEncoder.toBitboard(EMPTY), 0n);
+  assert.equal(BoardEncoder.toBitboard(EMPTY, { encoding: "values" }), 0n);
   assert.deepEqual(BoardEncoder.fromBitboard(0n), EMPTY);
 });
 
@@ -27,27 +27,27 @@ test("toBitboard: single 2 at each cell -> exponent nibble at its row-major inde
   for (let i = 0; i < 16; i++) {
     const flat = Array(16).fill(0);
     flat[i] = 2; // exponent 1
-    assert.equal(BoardEncoder.toBitboard(fromFlat(...flat)), 1n << BigInt(4 * i), `cell ${i}`);
+    assert.equal(BoardEncoder.toBitboard(fromFlat(...flat), { encoding: "values" }), 1n << BigInt(4 * i), `cell ${i}`);
   }
 });
 
 test("toBitboard: full board of 2s packs one nibble per cell", () => {
   const full = fromFlat(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2);
-  assert.equal(BoardEncoder.toBitboard(full), 0x1111111111111111n);
+  assert.equal(BoardEncoder.toBitboard(full, { encoding: "values" }), 0x1111111111111111n);
 });
 
 test("toBitboard: 2048+ tiles encode as their log2 exponent nibble", () => {
   // 2048 = 2^11 -> nibble 0xB; 16384 = 2^14 -> 0xE; 32768 = 2^15 -> 0xF.
   assert.equal(
-    BoardEncoder.toBitboard(fromFlat(2048, 16384, 32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)),
+    BoardEncoder.toBitboard(fromFlat(2048, 16384, 32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), { encoding: "values" }),
     0xfebn,
   );
 });
 
 test("toBitboard is deterministic: same input twice, identical bitboard", () => {
   const board = fromFlat(2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 0);
-  assert.equal(BoardEncoder.toBitboard(board), BoardEncoder.toBitboard(board));
-  assert.deepEqual(BoardEncoder.toExponentArray(board), BoardEncoder.toExponentArray(board));
+  assert.equal(BoardEncoder.toBitboard(board, { encoding: "values" }), BoardEncoder.toBitboard(board, { encoding: "values" }));
+  assert.deepEqual(BoardEncoder.toExponentArray(board, { encoding: "values" }), BoardEncoder.toExponentArray(board, { encoding: "values" }));
 });
 
 test("fromBitboard(toBitboard(board)) round-trips values boards (fuzz, tiles <= 2^15)", () => {
@@ -56,7 +56,7 @@ test("fromBitboard(toBitboard(board)) round-trips values boards (fuzz, tiles <= 
   for (let iter = 0; iter < 500; iter++) {
     const flat = Array.from({ length: 16 }, () => tiles[Math.floor(rng() * tiles.length)]);
     const board = fromFlat(...flat);
-    assert.deepEqual(BoardEncoder.fromBitboard(BoardEncoder.toBitboard(board)), board, `iter ${iter}`);
+    assert.deepEqual(BoardEncoder.fromBitboard(BoardEncoder.toBitboard(board, { encoding: "values" })), board, `iter ${iter}`);
   }
 });
 
@@ -71,45 +71,100 @@ test("fromBitboard: non-bigint input throws (pinned)", () => {
   assert.throws(() => BoardEncoder.fromBitboard("0"), /expected bigint/);
 });
 
-test("CURRENT behavior: 65536 (2^16) truncates to exponent 15 and decodes as 32768 (lossy nibble cap)", () => {
-  // tileToExponent clamps at MAX_EXPONENT = 15; the 4-bit nibble cannot hold
-  // 2^16. Pinned so a future encoder contract change shows up as a diff here.
+test("values encoding: 65536 (2^16) exceeds the 4-bit nibble cap and fails with INVALID_VALUE (pinned)", () => {
+  // The 4-bit nibble cannot hold 2^16. The old encoder silently truncated
+  // (65536 decoded back as 32768); the validated contract rejects it.
   const board = fromFlat(65536, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-  assert.deepEqual(
-    BoardEncoder.fromBitboard(BoardEncoder.toBitboard(board)),
-    fromFlat(32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  assert.throws(
+    () => BoardEncoder.toBitboard(board, { encoding: "values" }),
+    (error) => error instanceof BoardEncodingError && error.code === "INVALID_VALUE",
   );
 });
 
 test("toExponentArray: values boards map to log2 exponents, row-major flat (16 entries)", () => {
   const board = fromFlat(0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 0, 0);
-  assert.deepEqual(BoardEncoder.toExponentArray(board), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 0]);
+  assert.deepEqual(BoardEncoder.toExponentArray(board, { encoding: "values" }), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 0]);
 });
 
-test("CURRENT behavior: content-based guessing misreads exponent-looking values boards (the FIX-1 ambiguity)", () => {
-  // detectExponentBoard() is content-based: a board of tiles 2 and 1 (both
-  // powers of two) takes the values path, and tile 1 encodes as exponent 0 —
-  // indistinguishable from an EMPTY cell. Pinned as-is; see the FIX-1 skip
-  // below for the contract that replaces it.
-  assert.deepEqual(
-    BoardEncoder.toExponentArray(fromFlat(2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)),
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// Superseded: the "CURRENT behavior: content-based guessing misreads" pin
+// (board [2,1,...] silently encoded as [1,0,0...]) is gone — that guessing
+// path was removed. The FIX-1 tests above pin its replacement: AMBIGUOUS_VALUE.
+// FIX-1 regression, enabled: the encoding is an explicit validated contract.
+// The old content-based guessing (detectExponentBoard) flipped the WHOLE board
+// into "exponent mode" when one tile looked impossible — tile 2 came out as
+// exponent 2 (value 4). There is no guessing path anymore: callers declare the
+// encoding, and ambiguous or impossible cells fail with a specific
+// BoardEncodingError instead of being reinterpreted.
+test("toExponentArray (FIX-1): values encoding never guesses — impossible cells fail with a specific error", () => {
+  // An impossible tile (3) no longer flips the board into exponent mode —
+  // it fails, naming the cell and the value, with code INVALID_VALUE.
+  assert.throws(
+    () => BoardEncoder.toExponentArray(fromFlat(2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), { encoding: "values" }),
+    (error) => error instanceof BoardEncodingError && error.code === "INVALID_VALUE" && /flat index 1/.test(error.message),
   );
+  assert.throws(
+    () => BoardEncoder.toExponentArray(fromFlat(3, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), { encoding: "values" }),
+    (error) => error instanceof BoardEncodingError && error.code === "INVALID_VALUE",
+  );
+  // The ambiguity case that motivated the contract: tile 1 encodes to
+  // exponent 0, identical to empty — rejected as AMBIGUOUS_VALUE, not read
+  // as an empty cell and not guessed away.
+  assert.throws(
+    () => BoardEncoder.toExponentArray(fromFlat(2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), { encoding: "values" }),
+    (error) => error instanceof BoardEncodingError && error.code === "AMBIGUOUS_VALUE",
+  );
+  // Non-integers, negatives, and nibble-cap overflow are invalid too.
+  for (const bad of [2.5, -4, 65536, NaN, undefined, "2", null]) {
+    assert.throws(
+      () => BoardEncoder.toExponentArray(fromFlat(bad, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), { encoding: "values" }),
+      (error) => error instanceof BoardEncodingError && error.code === "INVALID_VALUE",
+      `cell value ${String(bad)} must fail INVALID_VALUE`,
+    );
+  }
 });
 
-// TODO(FIX-1): after the encoder contract changes to values-only, un-skip and assert toExponentArray treats input as tile VALUES with no content-based guessing; impossible values (not powers of 2) clamp via round(log2) with min 1.
-test.skip("toExponentArray (post FIX-1): values-only contract, no content-based guessing", () => {
-  // No guessing: tile 2 keeps exponent 1 even when an impossible tile (3)
-  // sits elsewhere. TODAY the 3 flips the whole board into "exponent mode"
-  // and tile 2 comes out as exponent 2 (value 4) — the misinterpretation.
-  assert.deepEqual(
-    BoardEncoder.toExponentArray(fromFlat(2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)),
-    [1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+test("toExponentArray (FIX-1): exponents encoding validates nibbles, encodes them verbatim", () => {
+  const board = fromFlat(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+  assert.deepEqual(BoardEncoder.toExponentArray(board, { encoding: "exponents" }), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+  // Tile values (powers of two) are INVALID under the exponents contract
+  // when they exceed the nibble range: 16 at flat index 0 is not a nibble.
+  assert.throws(
+    () => BoardEncoder.toExponentArray(fromFlat(16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), { encoding: "exponents" }),
+    (error) => error instanceof BoardEncodingError && error.code === "INVALID_EXPONENT",
   );
-  // Impossible values clamp via round(log2): log2(3)~1.58 -> 2, log2(6)~2.58 -> 3.
-  assert.deepEqual(
-    BoardEncoder.toExponentArray(fromFlat(3, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)),
-    [2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  for (const bad of [16, -1, 2.5, NaN, "2", undefined]) {
+    assert.throws(
+      () => BoardEncoder.toExponentArray(fromFlat(bad, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), { encoding: "exponents" }),
+      (error) => error instanceof BoardEncodingError && error.code === "INVALID_EXPONENT",
+      `exponent ${String(bad)} must fail INVALID_EXPONENT`,
+    );
+  }
+});
+
+test("toExponentArray (FIX-1): encoding parameter is required and unknown encodings fail — no guessing, no default", () => {
+  const board = fromFlat(2, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+  // A board whose contents COULD be either encoding must not silently pick
+  // one: omitting the encoding is itself an error (ENCODING_REQUIRED).
+  assert.throws(
+    () => BoardEncoder.toExponentArray(board),
+    (error) => error instanceof BoardEncodingError && error.code === "ENCODING_REQUIRED",
+  );
+  assert.throws(
+    () => BoardEncoder.toExponentArray(board, {}),
+    (error) => error instanceof BoardEncodingError && error.code === "ENCODING_REQUIRED",
+  );
+  assert.throws(
+    () => BoardEncoder.toExponentArray(board, { encoding: "tile-values-please" }),
+    (error) => error instanceof BoardEncodingError && error.code === "ENCODING_UNKNOWN",
+  );
+  assert.throws(
+    () => BoardEncoder.toBitboard(board),
+    (error) => error instanceof BoardEncodingError && error.code === "ENCODING_REQUIRED",
+  );
+  // Malformed shape is INVALID_SHAPE, reported before any cell validation.
+  assert.throws(
+    () => BoardEncoder.toExponentArray([[2, 2], [2, 2]], { encoding: "values" }),
+    (error) => error instanceof BoardEncodingError && error.code === "INVALID_SHAPE",
   );
 });
 

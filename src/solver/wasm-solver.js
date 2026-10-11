@@ -155,7 +155,7 @@ export class WASMSolverEngine {
       throw new Error("WASM solver not initialized");
     }
 
-    const exponents = BoardEncoder.toExponentArray(board);
+    const exponents = BoardEncoder.toExponentArray(board, { encoding: "values" });
     const boardValue = this.module.boardFromArray(exponents);
 
     let preferred = 0;
@@ -204,7 +204,7 @@ export class WASMSolverEngine {
     }
 
     try {
-      const exponents = BoardEncoder.toExponentArray(board);
+      const exponents = BoardEncoder.toExponentArray(board, { encoding: "values" });
       const boardValue = this.module.boardFromArray(exponents);
       return {
         score: this.module.getScore(boardValue),

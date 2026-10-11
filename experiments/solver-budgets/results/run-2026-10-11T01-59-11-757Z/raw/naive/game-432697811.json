@@ -1,0 +1,4513 @@
+{
+ "seed": 432697811,
+ "arm": "naive",
+ "initialSpawns": [
+  {
+   "r": 1,
+   "c": 1,
+   "value": 2
+  },
+  {
+   "r": 1,
+   "c": 2,
+   "value": 4
+  }
+ ],
+ "moves": [
+  {
+   "n": 0,
+   "rawOrder": [
+    0,
+    1,
+    3,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.021,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 0,
+   "maxTileAfter": 4,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 1,
+   "rawOrder": [
+    0,
+    1,
+    3,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.057,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 0,
+   "maxTileAfter": 4,
+   "spawn": {
+    "r": 0,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 2,
+   "rawOrder": [
+    1,
+    3,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 1,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 12,
+   "scoreAfter": 12,
+   "maxTileAfter": 8,
+   "spawn": {
+    "r": 0,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 3,
+   "rawOrder": [
+    3,
+    2,
+    0,
+    1
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 12,
+   "maxTileAfter": 8,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 4,
+   "rawOrder": [
+    0,
+    1,
+    3,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.014,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 12,
+   "maxTileAfter": 8,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 5,
+   "rawOrder": [
+    0,
+    1,
+    3,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 12,
+   "maxTileAfter": 8,
+   "spawn": {
+    "r": 2,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 6,
+   "rawOrder": [
+    0,
+    1,
+    3,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 16,
+   "maxTileAfter": 8,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 7,
+   "rawOrder": [
+    0,
+    1,
+    3,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 12,
+   "scoreAfter": 28,
+   "maxTileAfter": 8,
+   "spawn": {
+    "r": 2,
+    "c": 0,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 8,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 28,
+   "maxTileAfter": 8,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 9,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 28,
+   "maxTileAfter": 8,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 10,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 28,
+   "maxTileAfter": 8,
+   "spawn": {
+    "r": 2,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 11,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 20,
+   "scoreAfter": 48,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 12,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 52,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 2,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 13,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 60,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 14,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.015,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 60,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 15,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 60,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 16,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 64,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 17,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 64,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 18,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 68,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 19,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 76,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 1,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 20,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 84,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 2,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 21,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.016,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 92,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 22,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.014,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 108,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 23,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 112,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 24,
+   "rawOrder": [
+    1,
+    2,
+    0,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 1,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 112,
+   "maxTileAfter": 16,
+   "spawn": {
+    "r": 2,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 25,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 36,
+   "scoreAfter": 148,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 26,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 148,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 2,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 27,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 148,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 28,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 152,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 29,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 160,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 1,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 30,
+   "rawOrder": [
+    3,
+    2,
+    0,
+    1
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 160,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 31,
+   "rawOrder": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 176,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 32,
+   "rawOrder": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 184,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 33,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 200,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 34,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 208,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 2,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 35,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 212,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 36,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 20,
+   "scoreAfter": 232,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 2,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 37,
+   "rawOrder": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 240,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 38,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 240,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 39,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 244,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 40,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 248,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 41,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.021,
+   "timeout": false,
+   "mergedGain": 24,
+   "scoreAfter": 272,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 1,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 42,
+   "rawOrder": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 32,
+   "scoreAfter": 304,
+   "maxTileAfter": 32,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 43,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 68,
+   "scoreAfter": 372,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 44,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 380,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 45,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.049,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 384,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 46,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.015,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 384,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 1,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 47,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 388,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 48,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 396,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 49,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 396,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 50,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 20,
+   "scoreAfter": 416,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 51,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 416,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 52,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 416,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 53,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 420,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 54,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 428,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 55,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 428,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 56,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.031,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 432,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 57,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.014,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 440,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 58,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 440,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 59,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 440,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 60,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 64,
+   "scoreAfter": 504,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 61,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 504,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 62,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 504,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 63,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 508,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 64,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 12,
+   "scoreAfter": 520,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 65,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 520,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 66,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 520,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 67,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 524,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 68,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 532,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 69,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 536,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 70,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 24,
+   "scoreAfter": 560,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 71,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 48,
+   "scoreAfter": 608,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 72,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 612,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 73,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 616,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 1,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 74,
+   "rawOrder": [
+    1,
+    2,
+    0,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 1,
+   "fallback": null,
+   "latencyMs": 0.016,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 616,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 75,
+   "rawOrder": [
+    3,
+    2,
+    0,
+    1
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 616,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 76,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.022,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 620,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 77,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 628,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 1,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 78,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 20,
+   "scoreAfter": 648,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 79,
+   "rawOrder": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 12,
+   "scoreAfter": 660,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 80,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.047,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 660,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 81,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 660,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 82,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 664,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 83,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 668,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 84,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 676,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 85,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 12,
+   "scoreAfter": 688,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 86,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 24,
+   "scoreAfter": 712,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 87,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 712,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 88,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 712,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 89,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 716,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 90,
+   "rawOrder": [
+    1,
+    2,
+    0,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 1,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 716,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 91,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.011,
+   "timeout": false,
+   "mergedGain": 36,
+   "scoreAfter": 752,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 92,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 64,
+   "scoreAfter": 816,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 93,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 820,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 94,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 828,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 2,
+    "c": 1,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 95,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 844,
+   "maxTileAfter": 64,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 96,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 168,
+   "scoreAfter": 1012,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 97,
+   "rawOrder": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.016,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1016,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 98,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.014,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1024,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 99,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 1040,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 100,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1040,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 101,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1040,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 102,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1044,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 103,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1048,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 104,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.015,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1056,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 105,
+   "rawOrder": [
+    1,
+    2,
+    0,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 1,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1056,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 106,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1064,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 107,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 12,
+   "scoreAfter": 1076,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 108,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1076,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 109,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1080,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 110,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1080,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 111,
+   "rawOrder": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1088,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 112,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 1104,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 113,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.016,
+   "timeout": false,
+   "mergedGain": 32,
+   "scoreAfter": 1136,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 114,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1140,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 115,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 12,
+   "scoreAfter": 1152,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 116,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 1168,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 117,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 76,
+   "scoreAfter": 1244,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 118,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1248,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 119,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1248,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 120,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1252,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 0,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 121,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1260,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 122,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1260,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 1,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 123,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1268,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 124,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1268,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 125,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.014,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1272,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 126,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1276,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 127,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 24,
+   "scoreAfter": 1300,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 128,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1300,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 129,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.015,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1304,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 130,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1308,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 131,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.011,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1316,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 132,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.016,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1316,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 133,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1320,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 134,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1324,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 135,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1332,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 136,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 1348,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 137,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1352,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 138,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 40,
+   "scoreAfter": 1392,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 139,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 20,
+   "scoreAfter": 1412,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 140,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 32,
+   "scoreAfter": 1444,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 141,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1444,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 142,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1448,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 143,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 12,
+   "scoreAfter": 1460,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 144,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1460,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 145,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1464,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 146,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1464,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 147,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1468,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 148,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1476,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 149,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.049,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 1492,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 150,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.014,
+   "timeout": false,
+   "mergedGain": 76,
+   "scoreAfter": 1568,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 151,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 1584,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 152,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1588,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 153,
+   "rawOrder": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 12,
+   "scoreAfter": 1600,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 154,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1604,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 155,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1604,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 156,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1608,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 157,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.011,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1616,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 158,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1616,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 159,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1620,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 160,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1628,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 161,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 36,
+   "scoreAfter": 1664,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 162,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1664,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 163,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1668,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 164,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 40,
+   "scoreAfter": 1708,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 165,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1708,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 166,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1712,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 167,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1720,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 168,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1720,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 169,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1724,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 170,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1728,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 171,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1732,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 172,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1740,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 173,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 32,
+   "scoreAfter": 1772,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 174,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1772,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 4
+   },
+   "meta": {}
+  },
+  {
+   "n": 175,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.016,
+   "timeout": false,
+   "mergedGain": 16,
+   "scoreAfter": 1788,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 176,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.014,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1792,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 177,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 32,
+   "scoreAfter": 1824,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 178,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.011,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1824,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 179,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.011,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1828,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 2,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 180,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1836,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 181,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1840,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 182,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1840,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 183,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1844,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 184,
+   "rawOrder": [
+    0,
+    3,
+    1,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1852,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 185,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1856,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 2,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 186,
+   "rawOrder": [
+    1,
+    2,
+    0,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 1,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1856,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 187,
+   "rawOrder": [
+    0,
+    2,
+    1,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 0,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 28,
+   "scoreAfter": 1884,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 188,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.014,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1888,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 1,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 189,
+   "rawOrder": [
+    1,
+    2,
+    0,
+    3
+   ],
+   "rejections": [],
+   "dirApplied": 1,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1888,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 0,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 190,
+   "rawOrder": [
+    3,
+    1,
+    2,
+    0
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.013,
+   "timeout": false,
+   "mergedGain": 0,
+   "scoreAfter": 1888,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 191,
+   "rawOrder": [
+    3,
+    1,
+    0,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.012,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1892,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 192,
+   "rawOrder": [
+    3,
+    1,
+    0,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.016,
+   "timeout": false,
+   "mergedGain": 8,
+   "scoreAfter": 1900,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  },
+  {
+   "n": 193,
+   "rawOrder": [
+    3,
+    1,
+    0,
+    2
+   ],
+   "rejections": [],
+   "dirApplied": 3,
+   "fallback": null,
+   "latencyMs": 0.014,
+   "timeout": false,
+   "mergedGain": 4,
+   "scoreAfter": 1904,
+   "maxTileAfter": 128,
+   "spawn": {
+    "r": 3,
+    "c": 3,
+    "value": 2
+   },
+   "meta": {}
+  }
+ ],
+ "moveCount": 194,
+ "truncated": false,
+ "spawnExhausted": false,
+ "gameOver": true,
+ "finalBoard": [
+  [
+   128,
+   64,
+   32,
+   16
+  ],
+  [
+   64,
+   32,
+   16,
+   8
+  ],
+  [
+   32,
+   16,
+   8,
+   4
+  ],
+  [
+   2,
+   8,
+   4,
+   2
+  ]
+ ],
+ "finalScore": 1904,
+ "maxTileReached": 128,
+ "overBudgetMoves": 0
+}

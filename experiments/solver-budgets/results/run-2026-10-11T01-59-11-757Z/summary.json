@@ -1,0 +1,717 @@
+{
+ "manifest": "experiments/solver-budgets/manifest-adapter.json",
+ "runStartedAt": "2026-10-11T01-59-11-757Z",
+ "budgets": {
+  "timeBudgetMsPerMove": 200,
+  "maxMovesPerGame": 5000
+ },
+ "armsDeclared": [
+  "naive",
+  "native-cpp",
+  "wasm",
+  "adapter"
+ ],
+ "armsRun": [
+  "naive",
+  "native-cpp",
+  "wasm",
+  "adapter"
+ ],
+ "armsNotRun": [],
+ "controls": {
+  "naive": {
+   "games": 20,
+   "moves": 4217,
+   "timeouts": 0,
+   "fallbacks": 0,
+   "rejectedIllegal": 0,
+   "rejectedNoop": 0,
+   "truncatedGames": 0,
+   "spawnExhaustedGames": 0,
+   "gameOverGames": 20
+  },
+  "native-cpp": {
+   "games": 20,
+   "moves": 50683,
+   "timeouts": 0,
+   "fallbacks": 0,
+   "rejectedIllegal": 0,
+   "rejectedNoop": 0,
+   "truncatedGames": 0,
+   "spawnExhaustedGames": 0,
+   "gameOverGames": 20
+  },
+  "wasm": {
+   "games": 20,
+   "moves": 50683,
+   "timeouts": 0,
+   "fallbacks": 0,
+   "rejectedIllegal": 0,
+   "rejectedNoop": 0,
+   "truncatedGames": 0,
+   "spawnExhaustedGames": 0,
+   "gameOverGames": 20
+  },
+  "adapter": {
+   "games": 20,
+   "moves": 4217,
+   "timeouts": 0,
+   "fallbacks": 0,
+   "rejectedIllegal": 0,
+   "rejectedNoop": 0,
+   "truncatedGames": 0,
+   "spawnExhaustedGames": 0,
+   "gameOverGames": 20
+  }
+ },
+ "perArmOutcomes": {
+  "naive": [
+   {
+    "seed": 102390421,
+    "finalScore": 3608,
+    "maxTileReached": 256,
+    "moveCount": 305,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 748250013,
+    "finalScore": 3376,
+    "maxTileReached": 256,
+    "moveCount": 290,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2184029351,
+    "finalScore": 1516,
+    "maxTileReached": 128,
+    "moveCount": 158,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1405507563,
+    "finalScore": 1468,
+    "maxTileReached": 128,
+    "moveCount": 151,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 920410571,
+    "finalScore": 1416,
+    "maxTileReached": 128,
+    "moveCount": 147,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3049172549,
+    "finalScore": 1656,
+    "maxTileReached": 128,
+    "moveCount": 166,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 558014027,
+    "finalScore": 1612,
+    "maxTileReached": 128,
+    "moveCount": 169,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1817759143,
+    "finalScore": 2016,
+    "maxTileReached": 128,
+    "moveCount": 210,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2641089319,
+    "finalScore": 1768,
+    "maxTileReached": 128,
+    "moveCount": 176,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 432697811,
+    "finalScore": 1904,
+    "maxTileReached": 128,
+    "moveCount": 194,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3319042651,
+    "finalScore": 3356,
+    "maxTileReached": 256,
+    "moveCount": 285,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 712205321,
+    "finalScore": 2932,
+    "maxTileReached": 256,
+    "moveCount": 244,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2095813883,
+    "finalScore": 3240,
+    "maxTileReached": 256,
+    "moveCount": 273,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1645901357,
+    "finalScore": 6448,
+    "maxTileReached": 512,
+    "moveCount": 458,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3802694791,
+    "finalScore": 2400,
+    "maxTileReached": 256,
+    "moveCount": 199,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 843329821,
+    "finalScore": 808,
+    "maxTileReached": 64,
+    "moveCount": 103,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2957014493,
+    "finalScore": 1536,
+    "maxTileReached": 128,
+    "moveCount": 162,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1192047301,
+    "finalScore": 1212,
+    "maxTileReached": 128,
+    "moveCount": 130,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2675890139,
+    "finalScore": 2560,
+    "maxTileReached": 256,
+    "moveCount": 226,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 615494003,
+    "finalScore": 1620,
+    "maxTileReached": 128,
+    "moveCount": 171,
+    "gameOver": true,
+    "truncated": false
+   }
+  ],
+  "native-cpp": [
+   {
+    "seed": 102390421,
+    "finalScore": 36420,
+    "maxTileReached": 2048,
+    "moveCount": 1911,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 748250013,
+    "finalScore": 72396,
+    "maxTileReached": 4096,
+    "moveCount": 3330,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2184029351,
+    "finalScore": 70380,
+    "maxTileReached": 4096,
+    "moveCount": 3190,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1405507563,
+    "finalScore": 70140,
+    "maxTileReached": 4096,
+    "moveCount": 3197,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 920410571,
+    "finalScore": 69860,
+    "maxTileReached": 4096,
+    "moveCount": 3177,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3049172549,
+    "finalScore": 36288,
+    "maxTileReached": 2048,
+    "moveCount": 1887,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 558014027,
+    "finalScore": 31544,
+    "maxTileReached": 2048,
+    "moveCount": 1592,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1817759143,
+    "finalScore": 39816,
+    "maxTileReached": 2048,
+    "moveCount": 2066,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2641089319,
+    "finalScore": 36604,
+    "maxTileReached": 2048,
+    "moveCount": 1912,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 432697811,
+    "finalScore": 61892,
+    "maxTileReached": 4096,
+    "moveCount": 2897,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3319042651,
+    "finalScore": 71588,
+    "maxTileReached": 4096,
+    "moveCount": 3283,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 712205321,
+    "finalScore": 36276,
+    "maxTileReached": 2048,
+    "moveCount": 1891,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2095813883,
+    "finalScore": 60540,
+    "maxTileReached": 4096,
+    "moveCount": 2825,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1645901357,
+    "finalScore": 32648,
+    "maxTileReached": 2048,
+    "moveCount": 1660,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3802694791,
+    "finalScore": 71820,
+    "maxTileReached": 4096,
+    "moveCount": 3294,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 843329821,
+    "finalScore": 80340,
+    "maxTileReached": 4096,
+    "moveCount": 3739,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2957014493,
+    "finalScore": 56068,
+    "maxTileReached": 4096,
+    "moveCount": 2544,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1192047301,
+    "finalScore": 79200,
+    "maxTileReached": 4096,
+    "moveCount": 3666,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2675890139,
+    "finalScore": 32072,
+    "maxTileReached": 2048,
+    "moveCount": 1644,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 615494003,
+    "finalScore": 16412,
+    "maxTileReached": 1024,
+    "moveCount": 978,
+    "gameOver": true,
+    "truncated": false
+   }
+  ],
+  "wasm": [
+   {
+    "seed": 102390421,
+    "finalScore": 36420,
+    "maxTileReached": 2048,
+    "moveCount": 1911,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 748250013,
+    "finalScore": 72396,
+    "maxTileReached": 4096,
+    "moveCount": 3330,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2184029351,
+    "finalScore": 70380,
+    "maxTileReached": 4096,
+    "moveCount": 3190,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1405507563,
+    "finalScore": 70140,
+    "maxTileReached": 4096,
+    "moveCount": 3197,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 920410571,
+    "finalScore": 69860,
+    "maxTileReached": 4096,
+    "moveCount": 3177,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3049172549,
+    "finalScore": 36288,
+    "maxTileReached": 2048,
+    "moveCount": 1887,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 558014027,
+    "finalScore": 31544,
+    "maxTileReached": 2048,
+    "moveCount": 1592,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1817759143,
+    "finalScore": 39816,
+    "maxTileReached": 2048,
+    "moveCount": 2066,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2641089319,
+    "finalScore": 36604,
+    "maxTileReached": 2048,
+    "moveCount": 1912,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 432697811,
+    "finalScore": 61892,
+    "maxTileReached": 4096,
+    "moveCount": 2897,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3319042651,
+    "finalScore": 71588,
+    "maxTileReached": 4096,
+    "moveCount": 3283,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 712205321,
+    "finalScore": 36276,
+    "maxTileReached": 2048,
+    "moveCount": 1891,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2095813883,
+    "finalScore": 60540,
+    "maxTileReached": 4096,
+    "moveCount": 2825,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1645901357,
+    "finalScore": 32648,
+    "maxTileReached": 2048,
+    "moveCount": 1660,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3802694791,
+    "finalScore": 71820,
+    "maxTileReached": 4096,
+    "moveCount": 3294,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 843329821,
+    "finalScore": 80340,
+    "maxTileReached": 4096,
+    "moveCount": 3739,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2957014493,
+    "finalScore": 56068,
+    "maxTileReached": 4096,
+    "moveCount": 2544,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1192047301,
+    "finalScore": 79200,
+    "maxTileReached": 4096,
+    "moveCount": 3666,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2675890139,
+    "finalScore": 32072,
+    "maxTileReached": 2048,
+    "moveCount": 1644,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 615494003,
+    "finalScore": 16412,
+    "maxTileReached": 1024,
+    "moveCount": 978,
+    "gameOver": true,
+    "truncated": false
+   }
+  ],
+  "adapter": [
+   {
+    "seed": 102390421,
+    "finalScore": 3608,
+    "maxTileReached": 256,
+    "moveCount": 305,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 748250013,
+    "finalScore": 3376,
+    "maxTileReached": 256,
+    "moveCount": 290,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2184029351,
+    "finalScore": 1516,
+    "maxTileReached": 128,
+    "moveCount": 158,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1405507563,
+    "finalScore": 1468,
+    "maxTileReached": 128,
+    "moveCount": 151,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 920410571,
+    "finalScore": 1416,
+    "maxTileReached": 128,
+    "moveCount": 147,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3049172549,
+    "finalScore": 1656,
+    "maxTileReached": 128,
+    "moveCount": 166,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 558014027,
+    "finalScore": 1612,
+    "maxTileReached": 128,
+    "moveCount": 169,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1817759143,
+    "finalScore": 2016,
+    "maxTileReached": 128,
+    "moveCount": 210,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2641089319,
+    "finalScore": 1768,
+    "maxTileReached": 128,
+    "moveCount": 176,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 432697811,
+    "finalScore": 1904,
+    "maxTileReached": 128,
+    "moveCount": 194,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3319042651,
+    "finalScore": 3356,
+    "maxTileReached": 256,
+    "moveCount": 285,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 712205321,
+    "finalScore": 2932,
+    "maxTileReached": 256,
+    "moveCount": 244,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2095813883,
+    "finalScore": 3240,
+    "maxTileReached": 256,
+    "moveCount": 273,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1645901357,
+    "finalScore": 6448,
+    "maxTileReached": 512,
+    "moveCount": 458,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 3802694791,
+    "finalScore": 2400,
+    "maxTileReached": 256,
+    "moveCount": 199,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 843329821,
+    "finalScore": 808,
+    "maxTileReached": 64,
+    "moveCount": 103,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2957014493,
+    "finalScore": 1536,
+    "maxTileReached": 128,
+    "moveCount": 162,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 1192047301,
+    "finalScore": 1212,
+    "maxTileReached": 128,
+    "moveCount": 130,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 2675890139,
+    "finalScore": 2560,
+    "maxTileReached": 256,
+    "moveCount": 226,
+    "gameOver": true,
+    "truncated": false
+   },
+   {
+    "seed": 615494003,
+    "finalScore": 1620,
+    "maxTileReached": 128,
+    "moveCount": 171,
+    "gameOver": true,
+    "truncated": false
+   }
+  ]
+ }
+}

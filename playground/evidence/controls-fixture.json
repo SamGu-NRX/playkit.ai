@@ -1,0 +1,48 @@
+{
+  "comment": "Hand-scored transition fixtures for the practice board. Scoring counts MERGED TILE VALUES, not tile mass: [2,2,4,4] left merges 2+2->4 and 4+4->8 and earns 4+8=12. Spawning earns 0. No-op moves earn 0 and never spawn. Shared by the on-page control (playground/js/app.mjs) and the Node tests (playground/test/engine.test.mjs). Direction convention: 0=Up, 1=Right, 2=Down, 3=Left.",
+  "fixtures": [
+    {
+      "name": "[2,2,4,4] left earns 12 (merged tile values, not mass)",
+      "board": [[2, 2, 4, 4], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "direction": 3,
+      "expectBoard": [[4, 8, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "expectScoreGain": 12,
+      "expectMoved": true
+    },
+    {
+      "name": "[2,2,2,2] left earns 8 (two disjoint pairs)",
+      "board": [[2, 2, 2, 2], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "direction": 3,
+      "expectBoard": [[4, 4, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "expectScoreGain": 8,
+      "expectMoved": true
+    },
+    {
+      "name": "[2,2,4,0] left earns 4 (merge then carry)",
+      "board": [[2, 2, 4, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "direction": 3,
+      "expectBoard": [[4, 4, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "expectScoreGain": 4,
+      "expectMoved": true
+    },
+    {
+      "name": "[2,4,2,0] left is a no-op (earns 0, never spawns, log untouched)",
+      "board": [[2, 4, 2, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "direction": 3,
+      "expectBoard": [[2, 4, 2, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "expectScoreGain": 0,
+      "expectMoved": false
+    },
+    {
+      "name": "[4,4,8,8] left earns 24 (8 + 16)",
+      "board": [[4, 4, 8, 8], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "direction": 3,
+      "expectBoard": [[8, 16, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+      "expectScoreGain": 24,
+      "expectMoved": true
+    }
+  ],
+  "spawnEarnsZero": {
+    "comment": "After any legal move the recorded spawn contributes 0 to the score; only merged tile values accrue."
+  }
+}

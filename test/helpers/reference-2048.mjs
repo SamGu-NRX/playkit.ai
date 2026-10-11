@@ -97,6 +97,34 @@ export function boardsEqual(a, b) {
   return a.length === 4 && JSON.stringify(a) === JSON.stringify(b);
 }
 
+/**
+ * Points earned by moving `board` in `dir` under standard 2048 scoring: each
+ * merge of two tiles a,a -> 2a earns 2a points, summed over all merges the
+ * move performs. Spawning never earns points. This is the scoring arbiter —
+ * deliberately independent of every solver's internal score.
+ */
+export function moveGain(board, dir) {
+  const point = LINE_POINTS[dir];
+  if (!point) {
+    throw new Error(`unknown direction: ${dir}`);
+  }
+  let gain = 0;
+  for (let line = 0; line < 4; line += 1) {
+    const tiles = [];
+    for (let k = 0; k < 4; k += 1) {
+      const [r, c] = point(line, k);
+      if (board[r][c] !== 0) tiles.push(board[r][c]);
+    }
+    for (let i = 0; i + 1 < tiles.length; i += 1) {
+      if (tiles[i] === tiles[i + 1]) {
+        gain += tiles[i] * 2;
+        i += 1; // the merged neighbour is consumed, matching collapse()
+      }
+    }
+  }
+  return gain;
+}
+
 export function isValidMove(board, dir) {
   if (dir < 0 || dir > 3) return false;
   return !boardsEqual(simulateMove(board, dir), board);

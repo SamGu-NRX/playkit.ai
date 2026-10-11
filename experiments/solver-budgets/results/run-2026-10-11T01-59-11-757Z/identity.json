@@ -1,0 +1,39 @@
+{
+ "recordedAt": "2026-10-11T02:02:31.093Z",
+ "machine": {
+  "hostname": "e2b.local",
+  "platform": "linux",
+  "release": "6.1.158+",
+  "arch": "x64",
+  "cpuModel": "Intel(R) Xeon(R) Processor @ 2.60GHz",
+  "cpuCount": 8,
+  "totalMemoryBytes": 8342290432,
+  "nodeVersion": "v20.20.2",
+  "note": "measurements are machine-specific; no universal latency claim is made"
+ },
+ "git": {
+  "head": "83f7f7c66a4660af035030c78b2a1d151eecc353",
+  "branch": "obv/products-l2-solver-budgets-20261010",
+  "submodules": "-3b228b01faaeba1c24ba5bab8eec07d8698ee3dc frontend\n 2c1d25f990b460e5e406096e486921af9eba4664 solver (heads/main)",
+  "dirty": true
+ },
+ "manifestSha256": "867c9b0fd8f69815eb01684a948762c00ee025a573e955cbad4e8570b4c37007",
+ "sources": {
+  "naiveSolver": "a3a59bb4eac002f17ff52581ad8460c616a28c3bf71f79376321d6c76df3be6a",
+  "wasmSolverEngine": "89ace4e701d544d509525c32feeb816c640be56aeb852555634368724d9135b1",
+  "exportSolverCpp": "817b9aa2c67c28a38f3f18c51717604ba6bdaa280e1ef3343edb351178460028",
+  "referenceModel": "5a0ca0c26668a8374862730562df5275f3ebb20541c7d1397df33d789b390e61",
+  "spawnHistory": "bbc1ca150b526e5c4d6c26738435c6c4e31c9c10b1b79ce373e522a922ddfcb6",
+  "nativeShim": "72ed3fd58cb13be45d56594e5239861d5cf1271f236d654eff1d2654ac4fe24b"
+ },
+ "binaries": {
+  "native-solver": {
+   "sha256": "416b8f4845e6bf8a9658d3bc7cee9a726d10df3ad742696de72e6fd29fef0e68",
+   "bytes": 629592
+  },
+  "wasm-solver": {
+   "sha256": "7880354fa720083f9783a3bee18b453e3a73b4d18f3e97abb59b35eda2aae9b7",
+   "bytes": 60845
+  }
+ }
+}

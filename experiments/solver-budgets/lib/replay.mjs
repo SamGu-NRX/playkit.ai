@@ -11,14 +11,9 @@ import {
   boardsEqual,
   isGameOver,
   maxTile,
+  moveGain,
 } from "../../../test/helpers/reference-2048.mjs";
 import { SpawnCursor } from "./spawn-history.mjs";
-
-function boardScore(board) {
-  let sum = 0;
-  for (const row of board) for (const v of row) sum += v;
-  return sum;
-}
 
 /**
  * Replay one game record.
@@ -46,31 +41,34 @@ export function replayGame(record, spawnPairs) {
 
   let firstDivergence = initialAgrees ? null : { move: -1, kind: "initial-spawns" };
   let checkedMoves = 0;
+  let cumulativeScore = 0;
 
   for (const move of record.moves) {
     const moved = simulateMove(board, move.dirApplied);
-    const mergedGain = boardScore(moved) - boardScore(board);
+    // Independent scoring expectation: the merge points the reference model
+    // says this move earns; the following spawn earns nothing.
+    const gain = moveGain(board, move.dirApplied);
+    cumulativeScore += gain;
     const spawn = cursor.nextSpawn(moved);
     board.length = 0;
     board.push(...moved);
 
-    const scoreAfter = boardScore(board);
+    const scoreAfter = cumulativeScore;
     const tileAfter = maxTile(board);
     checkedMoves += 1;
 
     const agrees =
-      mergedGain === move.mergedGain &&
+      gain === move.mergedGain &&
       scoreAfter === move.scoreAfter &&
       tileAfter === move.maxTileAfter &&
       JSON.stringify(spawn ? { r: spawn.r, c: spawn.c, value: spawn.value } : null) ===
         JSON.stringify(move.spawn);
     if (!agrees && !firstDivergence) {
-      firstDivergence = { move: move.n, kind: "progression", scoreAfter, tileAfter, mergedGain };
+      firstDivergence = { move: move.n, kind: "progression", scoreAfter, tileAfter, mergedGain: gain };
     }
   }
 
-  const finalAgrees =
-    boardsEqual(board, record.finalBoard) && boardScore(board) === record.finalScore;
+  const finalAgrees = boardsEqual(board, record.finalBoard) && cumulativeScore === record.finalScore;
   if (!finalAgrees && !firstDivergence) {
     firstDivergence = { move: record.moveCount, kind: "final-board" };
   }

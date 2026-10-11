@@ -154,7 +154,8 @@ test("two arms sharing a seed see identical spawn streams", async () => {
   const b = await makeRecord("arm-b", [0, 1, 3, 2]);
   assert.deepEqual(a.initialSpawns, b.initialSpawns);
   assert.deepEqual(a.moves.map((m) => m.spawn), b.moves.map((m) => m.spawn));
-  assert.equal(a.moves[0].scoreAfter, b.moves[0].scoreAfter);
+  // Under cumulative merged-tile scoring, different first moves legitimately
+  // earn different points — spawn-stream identity is what this test pins.
 });
 
 test("spawn exhaustion is declared, not improvised", async () => {

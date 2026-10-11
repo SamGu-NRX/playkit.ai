@@ -23,6 +23,7 @@ import { mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { NaiveBinding, NativeCppBinding, WasmBinding } from "./lib/engines.mjs";
+import { AdapterBinding } from "./lib/adapter-binding.mjs";
 import { playGame, controlCounts } from "./lib/runner.mjs";
 import { replayRun } from "./lib/replay.mjs";
 import { pairedIntervals } from "./lib/stats.mjs";
@@ -83,6 +84,16 @@ export async function createBindings(manifest) {
         await binding.start();
       } catch (error) {
         notRun.push({ arm: arm.id, reason: `wasm binding failed to start: ${error.message}` });
+        continue;
+      }
+      binding.id = arm.id;
+      bindings.set(arm.id, binding);
+    } else if (arm.engine === "adapter") {
+      const binding = new AdapterBinding(arm.strategy);
+      try {
+        await binding.start();
+      } catch (error) {
+        notRun.push({ arm: arm.id, reason: `adapter failed to start: ${error.message}` });
         continue;
       }
       binding.id = arm.id;
@@ -224,7 +235,30 @@ function replayResults(resultsDir) {
 
 function analyzeResults(resultsDir) {
   const records = loadRecords(resultsDir);
-  const intervals = pairedIntervals(records, { baseline: "naive" });
+
+  // Budget enforcement at analysis time: an arm with any over-budget move is
+  // failed/unavailable — it never enters a paired comparison.
+  const overBudgetArms = new Set(
+    records.filter((r) => (r.overBudgetMoves ?? 0) > 0).map((r) => r.arm),
+  );
+  for (const arm of overBudgetArms) {
+    process.stdout.write(
+      `arm ${arm}: OVER BUDGET — marked failed/unavailable, excluded from paired comparisons\n`,
+    );
+  }
+  if (overBudgetArms.has("naive")) {
+    const intervals = {
+      error: "baseline arm (naive) exceeded its time budget — no valid comparison possible for this run",
+      excludedArms: [...overBudgetArms],
+    };
+    writeFileSync(path.join(resultsDir, "paired-intervals.json"), JSON.stringify(intervals, null, 1));
+    process.exitCode = 1;
+    return;
+  }
+  const usableRecords = records.filter((r) => !overBudgetArms.has(r.arm));
+
+  const intervals = pairedIntervals(usableRecords, { baseline: "naive" });
+  intervals.budgetExcludedArms = [...overBudgetArms];
   writeFileSync(path.join(resultsDir, "paired-intervals.json"), JSON.stringify(intervals, null, 1));
   process.stdout.write(`paired intervals written: ${path.join(resultsDir, "paired-intervals.json")}\n`);
   for (const [pair, data] of Object.entries(intervals.pairs ?? {})) {

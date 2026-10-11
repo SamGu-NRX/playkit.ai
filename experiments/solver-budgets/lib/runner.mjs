@@ -14,8 +14,18 @@
  *     error, or an order with no legal entry, the naive fallback arm (or the
  *     canonical Up,Right,Down,Left order if naive itself is unavailable)
  *     supplies the applied move. Raw engine output is still committed.
+ *   - Scoring: standard 2048 scoring via the reference model's `moveGain` —
+ *     each merge of two tiles a,a -> 2a earns 2a points, accumulated across
+ *     the game (`finalScore` = cumulative merged-tile points). Spawning
+ *     earns no points. Tile sums are never used as score.
  *   - Raw per-move records: raw order, rejections, applied dir, fallback,
- *     latency, timeout flag, score/max tile after the move.
+ *     latency, timeout flag, merge gain, cumulative score/max tile after the
+ *     move.
+ *   - Budget enforcement: a move whose engine call exceeds
+ *     timeBudgetMsPerMove falls back AND increments the arm's
+ *     over-budget count; an arm with any over-budget move is marked
+ *     failed/unavailable by the run summary and is excluded from paired
+ *     comparisons by --analyze.
  */
 
 import { performance } from "node:perf_hooks";
@@ -25,16 +35,11 @@ import {
   isValidMove,
   isGameOver,
   maxTile,
+  moveGain,
 } from "../../../test/helpers/reference-2048.mjs";
 import { SpawnCursor } from "./spawn-history.mjs";
 
 const CANONICAL_ORDER = [0, 1, 2, 3];
-
-function boardScore(board) {
-  let sum = 0;
-  for (const row of board) for (const v of row) sum += v;
-  return sum;
-}
 
 /**
  * Classify why a candidate direction from an engine order was rejected.
@@ -76,6 +81,8 @@ export async function playGame({ binding, fallbackBinding, seed, spawnPairs, tim
   const moves = [];
   let truncated = false;
   let spawnExhausted = false;
+  let cumulativeScore = 0;
+  let overBudgetMoves = 0;
   let peakTile = maxTile(board);
 
   while (!isGameOver(board)) {
@@ -98,6 +105,7 @@ export async function playGame({ binding, fallbackBinding, seed, spawnPairs, tim
     }
 
     const timeout = Number.isFinite(result.latencyMs) && result.latencyMs > timeBudgetMs;
+    if (timeout) overBudgetMoves += 1;
     const rejections = [];
     let appliedDir = null;
 
@@ -146,13 +154,16 @@ export async function playGame({ binding, fallbackBinding, seed, spawnPairs, tim
       fallback = { reason, source: fallbackBinding ? "naive" : "canonical-order" };
     }
 
-    const preSum = boardScore(board);
+    // Scoring: cumulative merged-tile points. The move's gain is measured by
+    // the reference model BEFORE state advances; the spawn that follows earns
+    // nothing (a spawn places a tile, it never merges).
+    const gain = moveGain(board, appliedDir);
     const preTile = maxTile(board);
     const moved = simulateMove(board, appliedDir);
     if (boardsEqual(moved, board)) {
       throw new Error(`applied move was a no-op (seed ${seed}, move ${n}) — runner bug`);
     }
-    const mergedGain = boardScore(moved) - preSum;
+    cumulativeScore += gain;
     const spawn = cursor.nextSpawn(moved);
     board.length = 0;
     board.push(...moved);
@@ -168,8 +179,8 @@ export async function playGame({ binding, fallbackBinding, seed, spawnPairs, tim
       fallback,
       latencyMs: Number.isFinite(result.latencyMs) ? Math.round(result.latencyMs * 1000) / 1000 : null,
       timeout,
-      mergedGain,
-      scoreAfter: boardScore(board),
+      mergedGain: gain,
+      scoreAfter: cumulativeScore,
       maxTileAfter: tileAfter,
       spawn: spawn ? { r: spawn.r, c: spawn.c, value: spawn.value } : null,
       meta: result.meta,
@@ -186,8 +197,9 @@ export async function playGame({ binding, fallbackBinding, seed, spawnPairs, tim
     spawnExhausted,
     gameOver: !truncated && !spawnExhausted,
     finalBoard: board.map((row) => [...row]),
-    finalScore: boardScore(board),
+    finalScore: cumulativeScore,
     maxTileReached: peakTile,
+    overBudgetMoves,
   };
 }
 

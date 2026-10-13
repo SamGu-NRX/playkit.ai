@@ -88,7 +88,9 @@ function moveDown(board) {
   return rotateBoardCounterClockwise(moved);
 }
 
-const MOVE_SIMULATORS = {
+// Exported for testability: tests cross-check these simulators against an
+// independent reference implementation (test/helpers/reference-2048.mjs).
+export const MOVE_SIMULATORS = {
   [Direction.LEFT]: moveLeft,
   [Direction.RIGHT]: moveRight,
   [Direction.UP]: moveUp,

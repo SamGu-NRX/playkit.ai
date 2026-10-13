@@ -24,6 +24,7 @@ export class Driver {
       pauseWhenHidden: options.pauseWhenHidden !== false,
       maxRetries: options.maxRetries || 3,
       stuckThreshold: options.stuckThreshold || 5,
+      maxNoProgressTicks: options.maxNoProgressTicks || 20,
     };
 
     // State tracking
@@ -102,11 +103,15 @@ export class Driver {
 
   /**
    * Stop the automated driving loop
+   * @param {string|null} [reason] Why the driver stopped (for diagnostics)
    */
-  stop() {
+  stop(reason = null) {
     this.isRunning = false;
     this.isPaused = false;
-    console.log("Driver stopped");
+    if (reason) {
+      this.stopReason = reason;
+    }
+    console.log(reason ? `Driver stopped: ${reason}` : "Driver stopped");
   }
 
   /**
@@ -149,6 +154,9 @@ export class Driver {
     this.lastBoardHash = "";
     this.moveCount = 0;
     this.stuckCount = 0;
+    this.failedReads = 0;
+    this.noProgressCount = 0;
+    this.stopReason = null;
   }
 
   /**
@@ -173,7 +181,7 @@ export class Driver {
     try {
       // Check if game is over
       if (this.adapter.isGameOver && this.adapter.isGameOver()) {
-        this.stop();
+        this.stop("game over");
         if (this.onGameOver) {
           this.onGameOver();
         }
@@ -184,15 +192,50 @@ export class Driver {
       const moveSuccessful = await this.executeMove();
 
       if (!moveSuccessful) {
+        // FIX-5: failed reads take precedence over the stuck/no-progress
+        // machinery — an unobservable board must never be pressed.
+        if (this.failedReads >= this.config.maxRetries) {
+          this.stop(
+            `abandoned after ${this.failedReads} consecutive failed board reads`,
+          );
+          if (this.onError) {
+            this.onError(
+              new Error(
+                `Driver stopped: ${this.failedReads} consecutive failed board reads`,
+              ),
+            );
+          }
+          return;
+        }
+
         this.stuckCount++;
+        this.noProgressCount++;
 
         // If stuck too many times, try random moves
         if (this.stuckCount >= this.config.stuckThreshold) {
           await this.executeRandomMove();
           this.stuckCount = 0;
         }
+
+        // Bench finding (gameover scenario): the loop must be bounded. After
+        // maxNoProgressTicks consecutive ticks without a board change, give
+        // up instead of pressing forever.
+        if (this.noProgressCount >= this.config.maxNoProgressTicks) {
+          this.stop(
+            `no board progress for ${this.noProgressCount} consecutive ticks`,
+          );
+          if (this.onError) {
+            this.onError(
+              new Error(
+                `Driver stopped: no board progress after ${this.noProgressCount} consecutive ticks`,
+              ),
+            );
+          }
+          return;
+        }
       } else {
         this.stuckCount = 0;
+        this.noProgressCount = 0;
       }
 
       // Continue loop with throttling
@@ -201,6 +244,16 @@ export class Driver {
       console.error("Driver tick error:", error);
       if (this.onError) {
         this.onError(error);
+      }
+
+      // Errors also count as no progress: a persistently throwing adapter
+      // must not loop forever either.
+      this.noProgressCount++;
+      if (this.noProgressCount >= this.config.maxNoProgressTicks) {
+        this.stop(
+          `no board progress for ${this.noProgressCount} consecutive ticks (last: tick error)`,
+        );
+        return;
       }
 
       // Continue loop even after error
@@ -216,11 +269,26 @@ export class Driver {
   async executeMove() {
     const boardBefore = this.adapter.readBoard();
     if (!boardBefore) {
+      // FIX-5: count consecutive failed reads; tick stops once maxRetries is
+      // exhausted. Reset on any successful observation.
+      this.failedReads++;
       return false;
     }
+    this.failedReads = 0;
 
     const hashBefore = BoardUtils.hashBoard(boardBefore);
     const movePriority = await this.getMovePriority(boardBefore);
+
+    // FIX-2: null means the solver found no valid moves on the observed
+    // board — the game is over. Stop and notify; never fall back to pressing
+    // all four directions on a dead game.
+    if (movePriority === null) {
+      this.stop("game over (solver found no valid moves)");
+      if (this.onGameOver) {
+        this.onGameOver();
+      }
+      return false;
+    }
 
     for (const direction of movePriority) {
       const success = await this.tryMove(direction, hashBefore);
@@ -291,6 +359,14 @@ export class Driver {
 
     try {
       const nextDirections = await this.solverEngine.getMoveOrder(board);
+
+      // FIX-2: an exactly-empty solver order means the solver found no valid
+      // moves on the observed board. Return null (game-over signal) instead
+      // of letting normalizeMovePriority pad it back to all four directions.
+      if (Array.isArray(nextDirections) && nextDirections.length === 0) {
+        return null;
+      }
+
       return normalizeMovePriority(nextDirections, fallback);
     } catch (error) {
       console.warn("Driver: solver getMoveOrder failed", error);
@@ -359,6 +435,9 @@ export class Driver {
       isPaused: this.isPaused,
       moveCount: this.moveCount,
       stuckCount: this.stuckCount,
+      noProgressCount: this.noProgressCount,
+      failedReads: this.failedReads,
+      stopReason: this.stopReason,
       lastBoardHash: this.lastBoardHash,
       adapterName: this.adapter ? this.adapter.getName() : null,
     };

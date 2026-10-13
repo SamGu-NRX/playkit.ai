@@ -450,16 +450,27 @@
       _detectGameBoard() {
         const now = Date.now();
     
-        // Return cached result if recent
+        // Return cached result if recent — but only while the cached elements
+        // are still connected. FIX-7 (bench finding): a cached hit whose board
+        // was removed or replaced from the DOM is a stale observation and must
+        // not be served as a live board.
         if (
           this._cachedBoardElements &&
           now - this._lastScanTime < this._scanCacheMs
         ) {
-          return {
-            found: true,
-            elements: this._cachedBoardElements,
-            container: this._cachedGameContainer,
-          };
+          if (
+            this._cachedGameContainer &&
+            this._cachedGameContainer.isConnected === false
+          ) {
+            this._cachedBoardElements = null;
+            this._cachedGameContainer = null;
+          } else {
+            return {
+              found: true,
+              elements: this._cachedBoardElements,
+              container: this._cachedGameContainer,
+            };
+          }
         }
     
         // Look for 4x4 grid patterns
@@ -1194,10 +1205,14 @@
     const __reExport3 = require("./src/adapters/getmit-adapter.js");
     exports.GetMITAdapter = __reExport3.GetMITAdapter;
     
-    // Registry system
-    const __reExport4 = require("./src/adapters/adapter-registry.js");
-    exports.AdapterRegistry = __reExport4.AdapterRegistry;
-    exports.globalAdapterRegistry = __reExport4.globalAdapterRegistry;
+    // Registry system.
+    // FIX-8 (bench finding): index.js previously only re-exported
+    // globalAdapterRegistry; detectGame()/getDetectionInfo() below referenced the
+    // bare identifier, which is undefined in module scope outside the bundler
+    // (ReferenceError in every direct ESM consumer, e.g. Runtime.init).
+    const { AdapterRegistry, globalAdapterRegistry } = require("./src/adapters/adapter-registry.js");
+    exports.AdapterRegistry = AdapterRegistry;
+    exports.globalAdapterRegistry = globalAdapterRegistry;
     
     /**
      * Convenience function to detect and get the best adapter for current page
@@ -1278,10 +1293,22 @@
        */
       readBoard() {
         try {
+          // FIX-7 (bench finding, vanish scenario): an absent board structure is
+          // an UNOBSERVABLE board, not an empty one. Returning a fabricated
+          // all-zero board made every downstream consumer (naive solver, WASM,
+          // driver) act on fiction. Contract: return null when the board cannot
+          // actually be observed.
+          const tileContainer = document.querySelector(".tile-container");
+          const gameContainer = document.querySelector(".game-container");
+          if (!tileContainer && !gameContainer) {
+            return null;
+          }
+    
           const board = BoardUtils.createEmptyBoard();
     
           // Get all tiles with position classes
           const tiles = document.querySelectorAll(".tile");
+          let parsed = 0;
     
           for (const tile of tiles) {
             const position = this._extractTilePosition(tile);
@@ -1292,14 +1319,35 @@
               if (row >= 0 && row < 4 && col >= 0 && col < 4) {
                 // Use the highest value if multiple tiles occupy same position
                 board[row][col] = Math.max(board[row][col], value);
+                parsed++;
               }
             }
+          }
+    
+          // Tiles exist but none could be mapped onto the grid: the DOM layout
+          // is not representable by this adapter — report it as unobservable
+          // instead of fabricating an empty board.
+          if (tiles.length > 0 && parsed === 0) {
+            return null;
           }
     
           return board;
         } catch (error) {
           console.warn("Play2048Adapter: Failed to read board:", error);
           return null;
+        }
+      }
+    
+      /**
+       * Check the DOM for the game-over overlay (play2048.co shows
+       * .game-message inside a .game-container that gains a .game-over class).
+       * @returns {boolean} True if the game-over overlay is visible
+       */
+      isGameOver() {
+        try {
+          return !!document.querySelector(".game-container.game-over");
+        } catch (error) {
+          return false;
         }
       }
     
@@ -1571,6 +1619,7 @@
           pauseWhenHidden: options.pauseWhenHidden !== false,
           maxRetries: options.maxRetries || 3,
           stuckThreshold: options.stuckThreshold || 5,
+          maxNoProgressTicks: options.maxNoProgressTicks || 20,
         };
     
         // State tracking
@@ -1649,11 +1698,15 @@
     
       /**
        * Stop the automated driving loop
+       * @param {string|null} [reason] Why the driver stopped (for diagnostics)
        */
-      stop() {
+      stop(reason = null) {
         this.isRunning = false;
         this.isPaused = false;
-        console.log("Driver stopped");
+        if (reason) {
+          this.stopReason = reason;
+        }
+        console.log(reason ? `Driver stopped: ${reason}` : "Driver stopped");
       }
     
       /**
@@ -1696,6 +1749,9 @@
         this.lastBoardHash = "";
         this.moveCount = 0;
         this.stuckCount = 0;
+        this.failedReads = 0;
+        this.noProgressCount = 0;
+        this.stopReason = null;
       }
     
       /**
@@ -1720,7 +1776,7 @@
         try {
           // Check if game is over
           if (this.adapter.isGameOver && this.adapter.isGameOver()) {
-            this.stop();
+            this.stop("game over");
             if (this.onGameOver) {
               this.onGameOver();
             }
@@ -1731,15 +1787,50 @@
           const moveSuccessful = await this.executeMove();
     
           if (!moveSuccessful) {
+            // FIX-5: failed reads take precedence over the stuck/no-progress
+            // machinery — an unobservable board must never be pressed.
+            if (this.failedReads >= this.config.maxRetries) {
+              this.stop(
+                `abandoned after ${this.failedReads} consecutive failed board reads`,
+              );
+              if (this.onError) {
+                this.onError(
+                  new Error(
+                    `Driver stopped: ${this.failedReads} consecutive failed board reads`,
+                  ),
+                );
+              }
+              return;
+            }
+    
             this.stuckCount++;
+            this.noProgressCount++;
     
             // If stuck too many times, try random moves
             if (this.stuckCount >= this.config.stuckThreshold) {
               await this.executeRandomMove();
               this.stuckCount = 0;
             }
+    
+            // Bench finding (gameover scenario): the loop must be bounded. After
+            // maxNoProgressTicks consecutive ticks without a board change, give
+            // up instead of pressing forever.
+            if (this.noProgressCount >= this.config.maxNoProgressTicks) {
+              this.stop(
+                `no board progress for ${this.noProgressCount} consecutive ticks`,
+              );
+              if (this.onError) {
+                this.onError(
+                  new Error(
+                    `Driver stopped: no board progress after ${this.noProgressCount} consecutive ticks`,
+                  ),
+                );
+              }
+              return;
+            }
           } else {
             this.stuckCount = 0;
+            this.noProgressCount = 0;
           }
     
           // Continue loop with throttling
@@ -1748,6 +1839,16 @@
           console.error("Driver tick error:", error);
           if (this.onError) {
             this.onError(error);
+          }
+    
+          // Errors also count as no progress: a persistently throwing adapter
+          // must not loop forever either.
+          this.noProgressCount++;
+          if (this.noProgressCount >= this.config.maxNoProgressTicks) {
+            this.stop(
+              `no board progress for ${this.noProgressCount} consecutive ticks (last: tick error)`,
+            );
+            return;
           }
     
           // Continue loop even after error
@@ -1763,11 +1864,26 @@
       async executeMove() {
         const boardBefore = this.adapter.readBoard();
         if (!boardBefore) {
+          // FIX-5: count consecutive failed reads; tick stops once maxRetries is
+          // exhausted. Reset on any successful observation.
+          this.failedReads++;
           return false;
         }
+        this.failedReads = 0;
     
         const hashBefore = BoardUtils.hashBoard(boardBefore);
         const movePriority = await this.getMovePriority(boardBefore);
+    
+        // FIX-2: null means the solver found no valid moves on the observed
+        // board — the game is over. Stop and notify; never fall back to pressing
+        // all four directions on a dead game.
+        if (movePriority === null) {
+          this.stop("game over (solver found no valid moves)");
+          if (this.onGameOver) {
+            this.onGameOver();
+          }
+          return false;
+        }
     
         for (const direction of movePriority) {
           const success = await this.tryMove(direction, hashBefore);
@@ -1838,6 +1954,14 @@
     
         try {
           const nextDirections = await this.solverEngine.getMoveOrder(board);
+    
+          // FIX-2: an exactly-empty solver order means the solver found no valid
+          // moves on the observed board. Return null (game-over signal) instead
+          // of letting normalizeMovePriority pad it back to all four directions.
+          if (Array.isArray(nextDirections) && nextDirections.length === 0) {
+            return null;
+          }
+    
           return normalizeMovePriority(nextDirections, fallback);
         } catch (error) {
           console.warn("Driver: solver getMoveOrder failed", error);
@@ -1906,6 +2030,9 @@
           isPaused: this.isPaused,
           moveCount: this.moveCount,
           stuckCount: this.stuckCount,
+          noProgressCount: this.noProgressCount,
+          failedReads: this.failedReads,
+          stopReason: this.stopReason,
           lastBoardHash: this.lastBoardHash,
           adapterName: this.adapter ? this.adapter.getName() : null,
         };
@@ -2422,6 +2549,35 @@
     
         this.updateRunState(true);
         this.autoSolveLoop();
+      }
+    
+      /**
+       * Suspend HUD-side timers when the page becomes hidden.
+       * FIX-9 (bench finding): the visibility handler requires every managed
+       * component to expose pause()/resume(); the HUD previously violated that
+       * contract, so Runtime.init threw in the shipped bundle and the extension
+       * never initialized. Controller-driven driving pauses via the Driver
+       * itself; this only guards the HUD's local fallback loop.
+       */
+      pause() {
+        this.visibilityPaused = true;
+        if (this.autoSolveTimeout) {
+          clearTimeout(this.autoSolveTimeout);
+          this.autoSolveTimeout = null;
+        }
+      }
+    
+      /**
+       * Allow HUD timers again when the page becomes visible. Restarts the
+       * HUD-local fallback auto-solve loop only if it was actually running.
+       */
+      resume() {
+        this.visibilityPaused = false;
+        if (this.isAutoSolving && !this.autoSolveTimeout && !this.controller) {
+          this.autoSolveTimeout = setTimeout(() => {
+            this.autoSolveLoop();
+          }, 0);
+        }
       }
     
       /**
@@ -4815,33 +4971,93 @@
       return value > 0 && (value & (value - 1)) === 0;
     }
     
-    function detectExponentBoard(flatTiles) {
-      return flatTiles.some((value) => value > 0 && !isPowerOfTwo(value));
+    /**
+     * Explicit, validated board-encoding contract (FIX-1).
+     *
+     * A board's CONTENTS cannot identify its encoding: the tile-value board
+     * [[2, 4]] and the exponent board [[2, 4]] are byte-identical but mean
+     * different games. Content-based guessing (the removed detectExponentBoard
+     * path) therefore mislabeled whole boards. Every encode call now declares
+     * its encoding and every cell is validated against it; ambiguous or invalid
+     * input fails with a BoardEncodingError instead of being reinterpreted.
+     */
+    class BoardEncodingError extends Error {
+      /**
+       * @param {string} code machine-readable failure code:
+       *   ENCODING_REQUIRED | ENCODING_UNKNOWN | INVALID_SHAPE |
+       *   INVALID_VALUE | AMBIGUOUS_VALUE | INVALID_EXPONENT
+       * @param {string} message human-readable detail (names the offending cell)
+       */
+      constructor(code, message) {
+        super(message);
+        this.name = "BoardEncodingError";
+        this.code = code;
+      }
     }
     
-    function tileToExponent(value, treatAsExponent) {
-      if (!Number.isFinite(value) || value <= 0) {
+    const ENCODINGS = ["values", "exponents"];
+    
+    function resolveEncoding(options) {
+      if (!options || options.encoding === undefined) {
+        throw new BoardEncodingError(
+          "ENCODING_REQUIRED",
+          'BoardEncoder: explicit encoding required — pass { encoding: "values" } (tile values like 2, 4, 1024) or { encoding: "exponents" } (nibbles 0..15). Content-based guessing was removed (FIX-1): a board\'s contents cannot identify its encoding.',
+        );
+      }
+      if (!ENCODINGS.includes(options.encoding)) {
+        throw new BoardEncodingError(
+          "ENCODING_UNKNOWN",
+          `BoardEncoder: unknown encoding ${JSON.stringify(options.encoding)} — expected "values" or "exponents"`,
+        );
+      }
+      return options.encoding;
+    }
+    
+    function cellLabel(index) {
+      return `row ${Math.floor(index / 4)}, col ${index % 4} (flat index ${index})`;
+    }
+    
+    /** Validate + encode one cell under the "values" (tile values) contract. */
+    function encodeValueCell(value, index) {
+      if (typeof value !== "number" || !Number.isFinite(value) || !Number.isInteger(value)) {
+        throw new BoardEncodingError(
+          "INVALID_VALUE",
+          `BoardEncoder: values encoding requires an integer tile value at ${cellLabel(index)}, got ${JSON.stringify(value)}`,
+        );
+      }
+      if (value === 0) {
         return 0;
       }
-    
-      const clamped = Math.min(Math.floor(value), 1 << MAX_EXPONENT);
-      if (treatAsExponent) {
-        return Math.min(clamped, MAX_EXPONENT);
+      if (value === 1) {
+        throw new BoardEncodingError(
+          "AMBIGUOUS_VALUE",
+          `BoardEncoder: value 1 at ${cellLabel(index)} is ambiguous under values encoding — it encodes to exponent 0, which decodes as an EMPTY cell. Tile values start at 2; pass { encoding: "exponents" } if 1 means the exponent nibble.`,
+        );
       }
-    
-      let exponent = 0;
-      let current = clamped;
-      while (current > 1 && (current & 1) === 0 && exponent < MAX_EXPONENT) {
-        current >>= 1;
-        exponent += 1;
+      if (!isPowerOfTwo(value) || value > 1 << MAX_EXPONENT) {
+        throw new BoardEncodingError(
+          "INVALID_VALUE",
+          `BoardEncoder: value ${value} at ${cellLabel(index)} is not a valid tile value under values encoding — expected 0 or a power of two in [2, ${1 << MAX_EXPONENT}] (4-bit nibble cap)`,
+        );
       }
+      return Math.round(Math.log2(value));
+    }
     
-      if (current !== 1) {
-        const approx = Math.round(Math.log2(clamped));
-        return Math.max(0, Math.min(approx, MAX_EXPONENT));
+    /** Validate + encode one cell under the "exponents" (nibble) contract. */
+    function encodeExponentCell(value, index) {
+      if (typeof value !== "number" || !Number.isFinite(value) || !Number.isInteger(value)) {
+        throw new BoardEncodingError(
+          "INVALID_EXPONENT",
+          `BoardEncoder: exponents encoding requires an integer nibble at ${cellLabel(index)}, got ${JSON.stringify(value)}`,
+        );
       }
-    
-      return exponent;
+      if (value < 0 || value > MAX_EXPONENT) {
+        throw new BoardEncodingError(
+          "INVALID_EXPONENT",
+          `BoardEncoder: exponent ${value} at ${cellLabel(index)} is out of range under exponents encoding — expected an integer in [0, ${MAX_EXPONENT}]`,
+        );
+      }
+      return value;
     }
     
     function exponentToValue(exponent) {
@@ -4862,16 +5078,38 @@
         return board.map((row) => row.map((value) => (Number.isFinite(value) ? value : 0)));
       },
     
-      toExponentArray(board) {
-        const normalized = this.ensureBoard(board);
-        const flatTiles = flattenBoard(normalized);
-        const treatAsExponent = detectExponentBoard(flatTiles);
+      /**
+       * Encode a 4x4 board to a row-major array of 4-bit exponents.
+       *
+       * FIX-1 contract: the encoding is explicit and validated. `options.encoding`
+       * is required — "values" (board holds tile values, validated: integer 0 or
+       * power of two in [2, 2^15]; value 1 is rejected as ambiguous) or
+       * "exponents" (board holds nibbles, validated: integer 0..15). Any
+       * ambiguous or invalid cell throws BoardEncodingError with a code naming
+       * the failure; nothing is guessed from tile contents and nothing clamps
+       * silently.
+       *
+       * @param {number[][]} board 4x4 matrix
+       * @param {{encoding: "values"|"exponents"}} options declared encoding
+       * @returns {number[]} 16 exponents, row-major
+       */
+      toExponentArray(board, options) {
+        if (!BoardUtils.isValidBoard(board)) {
+          throw new BoardEncodingError("INVALID_SHAPE", "BoardEncoder: expected a 4x4 matrix");
+        }
+        const encoding = resolveEncoding(options);
+        const flatTiles = flattenBoard(board);
+        const encodeCell = encoding === "values" ? encodeValueCell : encodeExponentCell;
     
-        return flatTiles.map((value) => tileToExponent(value, treatAsExponent));
+        return flatTiles.map((value, index) => encodeCell(value, index));
       },
     
-      toBitboard(board) {
-        const exponents = this.toExponentArray(board);
+      /**
+       * Encode a 4x4 board to a bigint bitboard (4 bits per cell, row-major).
+       * Same explicit-encoding contract as toExponentArray.
+       */
+      toBitboard(board, options) {
+        const exponents = this.toExponentArray(board, options);
         return exponents.reduce((acc, value, index) => {
           const exponent = BigInt(value & 0xF);
           const shift = BigInt(index * 4);
@@ -4932,6 +5170,7 @@
     };
     
     
+    exports.BoardEncodingError = BoardEncodingError;
     exports.BoardEncoder = BoardEncoder;
   },
   "./src/solver/index.js": function (exports, module, require) {
@@ -4941,6 +5180,7 @@
     
     const __reExport0 = require("./src/solver/board-utils.js");
     exports.BoardEncoder = __reExport0.BoardEncoder;
+    exports.BoardEncodingError = __reExport0.BoardEncodingError;
     const __reExport1 = require("./src/solver/naive-solver.js");
     exports.NaiveSolverEngine = __reExport1.NaiveSolverEngine;
     const __reExport2 = require("./src/solver/wasm-solver.js");
@@ -5042,6 +5282,8 @@
       return rotateBoardCounterClockwise(moved);
     }
     
+    // Exported for testability: tests cross-check these simulators against an
+    // independent reference implementation (test/helpers/reference-2048.mjs).
     const MOVE_SIMULATORS = {
       [Direction.LEFT]: moveLeft,
       [Direction.RIGHT]: moveRight,
@@ -5147,6 +5389,7 @@
     
     
     exports.NaiveSolverEngine = NaiveSolverEngine;
+    exports.MOVE_SIMULATORS = MOVE_SIMULATORS;
   },
   "./src/solver/solver-manager.js": function (exports, module, require) {
     /**
@@ -5447,7 +5690,7 @@
           throw new Error("WASM solver not initialized");
         }
     
-        const exponents = BoardEncoder.toExponentArray(board);
+        const exponents = BoardEncoder.toExponentArray(board, { encoding: "values" });
         const boardValue = this.module.boardFromArray(exponents);
     
         let preferred = 0;
@@ -5496,7 +5739,7 @@
         }
     
         try {
-          const exponents = BoardEncoder.toExponentArray(board);
+          const exponents = BoardEncoder.toExponentArray(board, { encoding: "values" });
           const boardValue = this.module.boardFromArray(exponents);
           return {
             score: this.module.getScore(boardValue),

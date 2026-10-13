@@ -360,6 +360,35 @@ export class HUD {
   }
 
   /**
+   * Suspend HUD-side timers when the page becomes hidden.
+   * FIX-9 (bench finding): the visibility handler requires every managed
+   * component to expose pause()/resume(); the HUD previously violated that
+   * contract, so Runtime.init threw in the shipped bundle and the extension
+   * never initialized. Controller-driven driving pauses via the Driver
+   * itself; this only guards the HUD's local fallback loop.
+   */
+  pause() {
+    this.visibilityPaused = true;
+    if (this.autoSolveTimeout) {
+      clearTimeout(this.autoSolveTimeout);
+      this.autoSolveTimeout = null;
+    }
+  }
+
+  /**
+   * Allow HUD timers again when the page becomes visible. Restarts the
+   * HUD-local fallback auto-solve loop only if it was actually running.
+   */
+  resume() {
+    this.visibilityPaused = false;
+    if (this.isAutoSolving && !this.autoSolveTimeout && !this.controller) {
+      this.autoSolveTimeout = setTimeout(() => {
+        this.autoSolveLoop();
+      }, 0);
+    }
+  }
+
+  /**
    * Stop auto-solving
    * @private
    */

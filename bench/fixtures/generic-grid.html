@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>bench fixture — generic grid</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f4f4f8; color: #333; margin: 0; padding: 16px; }
+  .bench-banner { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
+  #game-board { display: grid; grid-template-columns: repeat(4, 100px); grid-gap: 10px; width: max-content; background: #666; padding: 10px; border-radius: 8px; }
+  .board-cell { width: 100px; height: 100px; background: #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; }
+  #score { margin-top: 10px; font-size: 18px; }
+  .game-message { display: none; margin-top: 10px; font-size: 28px; font-weight: bold; }
+  #game-board.game-over ~ .game-message { display: block; }
+</style>
+</head>
+<body>
+  <div class="bench-banner">playkit bench fixture — generic 16-cell grid (no site-specific tile classes)</div>
+  <div id="game-board" class="game-board" data-game-input></div>
+  <div id="score">0</div>
+  <div class="game-message">Game over!</div>
+
+  <script>
+    window.__createFixtureGame = async function ({ seed, scenario }) {
+      const { FixtureGame } = await import("./game-engine.js");
+      const boardEl = document.getElementById("game-board");
+      const scoreEl = document.getElementById("score");
+      const cells = [];
+      for (let i = 0; i < 16; i++) {
+        const cell = document.createElement("div");
+        cell.className = "board-cell";
+        boardEl.appendChild(cell);
+        cells.push(cell);
+      }
+
+      const game = new FixtureGame({
+        seed,
+        scenario,
+        onRender(state) {
+          for (let i = 0; i < 16; i++) {
+            const r = Math.floor(i / 4);
+            const c = i % 4;
+            const v = state.board[r][c];
+            cells[i].textContent = v ? String(v) : "";
+          }
+          scoreEl.textContent = String(state.score);
+          boardEl.classList.toggle("game-over", state.gameOver);
+        },
+      });
+      game.onVanish = () => boardEl.remove();
+      return game;
+    };
+  </script>
+  <script type="module" src="./bootstrap.js"></script>
+</body>
+</html>

@@ -29,6 +29,57 @@ import { createEngineBaselineAgent } from './baselines.js';
 /** @import { Agent, Game, Observation, Outcome, ParseResult, TierSpec } from '../../core/types.js' */
 /** @import { FastChess } from './engine.js' */
 
+// ---------------------------------------------------------------------------
+// Per-state memoization. States are plain JSON and treated as immutable
+// (step() must not mutate its input), so the replayed position and the
+// repetition-occurrence map for a state can be cached in WeakMaps keyed by
+// the state object. Every game-API call that used to replay the full move
+// history from scratch now shares one replay per state: without this, a
+// conformance playthrough costs O(plies^2) replays (every ply re-parses and
+// re-replays the whole history for each legal action).
+
+/** @type {WeakMap<object, Chess>} */
+const POSITION_CACHE = new WeakMap();
+
+/** @type {WeakMap<object, Map<string, number>>} */
+const OCCURRENCE_CACHE = new WeakMap();
+
+/**
+ * The chess.js position for a state, replayed once per state and reused.
+ * Callers may make/undo on it but must leave it restored (the engine and
+ * parser contracts already promise this); nothing hands the cached instance
+ * to a caller that mutates it permanently.
+ *
+ * @param {ChessState} state
+ * @returns {Chess}
+ */
+function cachedChess(state) {
+  let chessApi = POSITION_CACHE.get(state);
+  if (!chessApi) {
+    chessApi = stateToChess(state);
+    POSITION_CACHE.set(state, chessApi);
+  }
+  return chessApi;
+}
+
+/**
+ * The repetition-occurrence map for a state, computed once per state. The
+ * child map built in step() inherits the parent map and bumps one key, so a
+ * whole episode costs O(plies) occurrence bumps instead of O(plies^2) full
+ * history replays.
+ *
+ * @param {ChessState} state
+ * @returns {Map<string, number>}
+ */
+function cachedOccurrences(state) {
+  let counts = OCCURRENCE_CACHE.get(state);
+  if (!counts) {
+    counts = positionOccurrences(state.startFen, state.moves);
+    OCCURRENCE_CACHE.set(state, counts);
+  }
+  return counts;
+}
+
 /** Perft positions from chessprogramming.org/Perft_Results. */
 export const PERFT_FENS = {
   start: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -125,9 +176,11 @@ export function positionOccurrences(startFen, moves) {
  * @param {Chess} chess Position after the moves.
  * @param {string} startFen
  * @param {readonly string[]} moves
+ * @param {Map<string, number>} [occurrences] Precomputed repetition map (the
+ *   incremental path in step()); computed from the history when omitted.
  * @returns {Termination | null}
  */
-export function terminationOf(chess, startFen, moves) {
+export function terminationOf(chess, startFen, moves, occurrences) {
   const fast = /** @type {FastChess} */ (/** @type {unknown} */ (chess));
   if (fast._moves({ legal: true }).length === 0) {
     if (chess.isCheck()) {
@@ -137,7 +190,10 @@ export function terminationOf(chess, startFen, moves) {
     return { type: 'stalemate', winner: null };
   }
   const key = chess.fen().split(' ').slice(0, 4).join(' ');
-  if ((positionOccurrences(startFen, moves).get(key) ?? 0) >= 3) {
+  // occurrences is the precomputed repetition map when the caller has one
+  // (the incremental path in step()); otherwise it is computed here.
+  const counts = occurrences ?? positionOccurrences(startFen, moves);
+  if ((counts.get(key) ?? 0) >= 3) {
     return { type: 'threefold', winner: null };
   }
   if (fast._halfMoves >= 100) {
@@ -217,7 +273,7 @@ function outcomeOfTermination(termination) {
 export const chess = {
   spec: {
     id: 'chess',
-    version: '1.0.0',
+    version: '1.1.0',
     title: 'Chess',
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {import('../../core/types.js').InformationMode} */ ('perfect'),
@@ -309,7 +365,7 @@ export const chess = {
    */
   toAct(state) {
     if (state.termination) return null;
-    return seatOfTurn(stateToChess(state));
+    return seatOfTurn(cachedChess(state));
   },
 
   /**
@@ -321,7 +377,7 @@ export const chess = {
    * @returns {Observation}
    */
   observe(state, seat) {
-    const chessApi = stateToChess(state);
+    const chessApi = cachedChess(state);
     const legal = this.legalActions(state, seat);
     return {
       text: renderText(chessApi, state, seat, legal),
@@ -339,8 +395,8 @@ export const chess = {
    */
   legalActions(state, seat) {
     if (state.termination) return [];
-    if (seat !== seatOfTurn(stateToChess(state))) return [];
-    return legalUcis(stateToChess(state));
+    if (seat !== seatOfTurn(cachedChess(state))) return [];
+    return legalUcis(cachedChess(state));
   },
 
   /**
@@ -355,7 +411,7 @@ export const chess = {
     if (state.termination) {
       return { ok: false, error: 'the game is over' };
     }
-    const chessApi = stateToChess(state);
+    const chessApi = cachedChess(state);
     if (seat !== seatOfTurn(chessApi)) {
       return { ok: false, error: `it is not seat ${seat}'s turn` };
     }
@@ -393,15 +449,22 @@ export const chess = {
     const sanText = fast._moveToSan(internal, fast._moves({ legal: true }));
     fast._makeMove(internal);
     const moves = [...state.moves, action];
-    return {
+    // Inherit the parent's repetition map and bump the child position, so
+    // occurrence counting is incremental across an episode.
+    const childKey = chessApi.fen().split(' ').slice(0, 4).join(' ');
+    const childOccurrences = new Map(cachedOccurrences(state));
+    childOccurrences.set(childKey, (childOccurrences.get(childKey) ?? 0) + 1);
+    const child = {
       startFen: state.startFen,
       moves,
       san: [...state.san, sanText],
       fen: chessApi.fen(),
       openingPlies: state.openingPlies,
       openingName: state.openingName,
-      termination: terminationOf(chessApi, state.startFen, moves),
+      termination: terminationOf(chessApi, state.startFen, moves, childOccurrences),
     };
+    OCCURRENCE_CACHE.set(child, childOccurrences);
+    return child;
   },
 
   /**
@@ -414,7 +477,7 @@ export const chess = {
     const termination = state.termination;
     if (!termination) return null;
     if (termination.type === 'truncation') {
-      return adjudicateTruncation(stateToChess(state));
+      return adjudicateTruncation(cachedChess(state));
     }
     return outcomeOfTermination(termination);
   },
@@ -431,7 +494,7 @@ export const chess = {
     if (state.termination && state.termination.type !== 'truncation') {
       return /** @type {Outcome} */ (this.outcome(state));
     }
-    return adjudicateTruncation(stateToChess(state));
+    return adjudicateTruncation(cachedChess(state));
   },
 
   /**

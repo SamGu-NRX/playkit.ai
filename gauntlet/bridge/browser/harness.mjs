@@ -162,20 +162,33 @@ export async function runBrowserSession(setup) {
   const timeoutMs = setup.timeoutMs ?? 300000;
 
   const context = await newSessionContext(browser, { seed: setup.seed });
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let sessionTimer;
   try {
     const page = await context.newPage();
 
     /** The result channel back to Node. */
     /** @type {(value: BrowserSessionReport) => void} */
     let resolveReport;
-    const reportPromise = new Promise((resolvePromise, rejectPromise) => {
+    const reported = new Promise((resolvePromise) => {
       resolveReport = resolvePromise;
-      const timer = setTimeout(
-        () => rejectPromise(new Error(`bridge session timed out after ${timeoutMs}ms`)),
+    });
+    // Greptile P2 #4285440537: the timeout used to reject a promise that
+    // nothing consumed until after `page.evaluate()` finished, so a stalled
+    // session surfaced as an unhandled rejection instead of reaching the
+    // cleanup block, and the timer outlived successful runs. Race the page
+    // work against the timeout immediately and clear the timer in `finally`.
+    const timeout = new Promise((_, rejectTimeout) => {
+      sessionTimer = setTimeout(
+        () => rejectTimeout(new Error(`bridge session timed out after ${timeoutMs}ms`)),
         timeoutMs,
       );
-      if (typeof timer.unref === 'function') timer.unref();
+      if (typeof sessionTimer.unref === 'function') sessionTimer.unref();
     });
+    const reportPromise = Promise.race([reported, timeout]);
+    // Consume a timeout rejection eagerly, so it can never be unhandled while
+    // the page work is still pending; `await reportPromise` below re-raises it.
+    reportPromise.catch(() => {});
 
     await page.exposeFunction('__bridgeReport', (value) => resolveReport(value));
 
@@ -277,6 +290,7 @@ export async function runBrowserSession(setup) {
     const report = await reportPromise;
     return { ...report, preMoves: attachInfo.preMoves, adapterName: attachInfo.adapterName };
   } finally {
+    if (sessionTimer !== undefined) clearTimeout(sessionTimer);
     await context.close();
   }
 }

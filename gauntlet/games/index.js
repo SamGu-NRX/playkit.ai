@@ -9,6 +9,7 @@ import tictactoe from './tictactoe/index.js';
 import chess from './chess/index.js';
 import sliding from './sliding/index.js';
 import sokoban from './sokoban/index.js';
+import connect4 from './connect4/index.js';
 
 /** @import { Game } from '../core/types.js' */
 
@@ -18,6 +19,7 @@ export const GAMES = {
   chess,
   sliding,
   sokoban,
+  connect4,
 };
 
 /**

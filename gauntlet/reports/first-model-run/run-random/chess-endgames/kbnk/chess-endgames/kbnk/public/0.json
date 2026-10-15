@@ -1,0 +1,137 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-endgames",
+    "version": "1.0.0"
+  },
+  "tier": "kbnk",
+  "seed": "chess-endgames/kbnk/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "tablebase-perfect"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "0cfeb9cfdd6aeec6",
+      "reply": {
+        "text": "h8g6"
+      },
+      "action": "h8g6",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "d84c00757b09e47a",
+      "reply": {
+        "text": "c1d2"
+      },
+      "action": "c1d2",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "641348f630d0fb60",
+      "reply": {
+        "text": "a7g1"
+      },
+      "action": "a7g1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "9a7bcc3be72f842e",
+      "reply": {
+        "text": "d2e2"
+      },
+      "action": "d2e2",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bd14f6707d78006e",
+      "reply": {
+        "text": "e8f8"
+      },
+      "action": "e8f8",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "d0b23d2cbe90ba9b",
+      "reply": {
+        "text": "e2f1"
+      },
+      "action": "e2f1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e26fe2193654355f",
+      "reply": {
+        "text": "g6h4"
+      },
+      "action": "g6h4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "e5f270ac4e1159b8",
+      "reply": {
+        "text": "f1g1"
+      },
+      "action": "f1g1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0,
+        1
+      ],
+      "raw": [
+        "loss",
+        "win"
+      ],
+      "reason": "conversion failed: the defender captured a piece and the material left is not enough to mate"
+    },
+    "agentActions": 4,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-15T21:09:04.743Z",
+  "finishedAt": "2026-10-15T21:09:04.770Z"
+}

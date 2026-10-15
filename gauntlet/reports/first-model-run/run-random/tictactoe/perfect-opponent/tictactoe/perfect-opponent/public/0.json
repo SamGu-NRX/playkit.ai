@@ -1,0 +1,113 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "tictactoe",
+    "version": "1.0.0"
+  },
+  "tier": "perfect-opponent",
+  "seed": "tictactoe/perfect-opponent/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "minimax-perfect"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b4a9ccbd9d9ac6da",
+      "reply": {
+        "text": "a3"
+      },
+      "action": "a3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "328a09fd2cf16a34",
+      "reply": {
+        "text": "b2"
+      },
+      "action": "b2",
+      "invalid": false,
+      "usage": null,
+      "ms": 25
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "133f605f96626a5e",
+      "reply": {
+        "text": "a2"
+      },
+      "action": "a2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "a5ad350cd8ab1bcf",
+      "reply": {
+        "text": "a1"
+      },
+      "action": "a1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "79010958e5dce865",
+      "reply": {
+        "text": "c1"
+      },
+      "action": "c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "128f2d971e7955cd",
+      "reply": {
+        "text": "c3"
+      },
+      "action": "c3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0,
+        1
+      ],
+      "raw": [
+        "loss",
+        "win"
+      ],
+      "reason": "seat 1 (O) won with three in a row"
+    },
+    "agentActions": 3,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-15T21:08:50.895Z",
+  "finishedAt": "2026-10-15T21:08:50.924Z"
+}

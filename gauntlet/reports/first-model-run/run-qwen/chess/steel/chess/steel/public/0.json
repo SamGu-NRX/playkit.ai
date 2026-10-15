@@ -1,0 +1,121 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess",
+    "version": "1.0.0"
+  },
+  "tier": "steel",
+  "seed": "chess/steel/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "chess-engine-steel"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7630e80b95d16c99",
+      "reply": {
+        "text": "g1e2",
+        "usage": {
+          "inputTokens": 678,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-wxLiqMvdYTebuGtsbZYiAwMnTkHSygbq",
+          "reasoningChars": 0
+        }
+      },
+      "action": "g1e2",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 678,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 2925
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7630e80b95d16c99",
+      "reply": {
+        "text": "e7e5",
+        "usage": {
+          "inputTokens": 699,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-kaJECTVnVs1wFYHRJM2jiL5rPNxyjUGs",
+          "reasoningChars": 0
+        }
+      },
+      "action": "e7e5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 699,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 2960
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7630e80b95d16c99",
+      "reply": {
+        "text": "e7e5",
+        "usage": {
+          "inputTokens": 699,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-EzvDaXYk7QAR4SuaxDBpdCwCeAOjcXMM",
+          "reasoningChars": 0
+        }
+      },
+      "action": "e7e5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 699,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 3060
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0,
+        1
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3
+  },
+  "startedAt": "2026-10-15T20:18:40.017Z",
+  "finishedAt": "2026-10-15T20:18:48.978Z"
+}

@@ -14,6 +14,7 @@ import {
   takeoverRuntime,
 } from './harness.mjs';
 import { startFixtureServer } from './server.mjs';
+import { runBrowserModelSession, modelSessionSummary } from './model-session.mjs';
 import { verifyBridgeLog } from '../session-log.js';
 import { maxTile } from '../../games/2048/rules.js';
 
@@ -263,3 +264,127 @@ test('a copy of the vendored game that merges a tile twice in one move is flagge
     `the tamper should surface within a bounded session, got move ${summary.offendingMove}`,
   );
 });
+
+// ---------------------------------------------------------------------------
+// Model sessions: a language model chooses every move on the live page.
+//
+// The model call runs in Node (`page.exposeFunction`), never in the page: the
+// page-side agent is a proxy over the Node-side official-track agent
+// (`harness/model-agent.js`, provider "openai-chat"), so the page needs no
+// CORS access to the model server and every call is logged with its usage.
+// See model-session.mjs.
+
+/** Recorded real-model session log: the offline fixture (committed). */
+const MODEL_LOG_FIXTURE = new URL('./fixtures/model-session-2048.json', import.meta.url);
+
+test('a recorded real-model bridge session log replays through verifyBridgeLog (offline fixture, no network)', async () => {
+  const fixture = JSON.parse(await readFile(MODEL_LOG_FIXTURE, 'utf8'));
+  assert.equal(fixture.format, 'playkit-gauntlet-bridge-log/1');
+  // The fixture is a real recorded run of the model agent on the page, not a
+  // synthetic log: the agent id names the provider/model that played it, and
+  // it has substance (a bounded live run, not one or two moves).
+  assert.match(fixture.agent.id, /^openai-chat\//, 'the fixture must be a model-agent session');
+  assert.match(fixture.agent.track, /^official$/);
+  assert.ok(fixture.steps.length >= 20, `the fixture must be a real session, got ${fixture.steps.length} steps`);
+  assert.ok(fixture.ended, 'the fixture must be a finished session');
+  assert.equal(
+    fixture.ended.turn,
+    fixture.steps.length,
+    'the recorded ending turn agrees with the recorded steps',
+  );
+
+  // Replay verification re-derives every transition from the rules (the same
+  // check every live session report goes through).
+  const verified = verifyBridgeLog(fixture);
+  assert.equal(
+    verified.ok,
+    true,
+    verified.ok ? '' : `fixture replay failed at step ${verified.index}: ${verified.reason}`,
+  );
+  if (verified.ok) {
+    assert.deepEqual(verified.finalBoard, fixture.steps[fixture.steps.length - 1].boardAfter);
+  }
+});
+
+const CHAT_URL_ENV = 'GAUNTLET_LOCAL_CHAT_URL';
+const CHAT_MODEL_ENV = 'GAUNTLET_LOCAL_CHAT_MODEL';
+const liveBaseUrl = process.env[CHAT_URL_ENV];
+const liveModel = process.env[CHAT_MODEL_ENV];
+const liveOptIn =
+  typeof liveBaseUrl === 'string' &&
+  liveBaseUrl.length > 0 &&
+  typeof liveModel === 'string' &&
+  liveModel.length > 0;
+const liveSkipReason =
+  `opt-in: set ${CHAT_URL_ENV} and ${CHAT_MODEL_ENV} to run a real local ` +
+  'OpenAI-compatible chat server through the live page (see harness/PROVIDERS.md)';
+
+if (liveOptIn) {
+  test('a local model chooses every move for the overlay driver on the clean page; every transition is refereed and the log verifies', { timeout: 1200000 }, async () => {
+    const report = await runBrowserModelSession({
+      browser,
+      port,
+      baseUrl: liveBaseUrl,
+      model: liveModel,
+      maxMoves: 150,
+    });
+    assert.equal(report.adapterName, 'Play2048Adapter');
+    assert.equal(report.moves, report.log.steps.length);
+    assert.ok(
+      report.endedWhy === 'move-cap' || report.endedWhy === 'game-over',
+      `unexpected ending: ${report.endedWhy}`,
+    );
+    for (const step of report.log.steps) {
+      assert.equal(step.verdict.ok, true, `referee rejected move ${step.turn}: ${step.verdict.reason}`);
+    }
+    const verified = verifyBridgeLog(report.log);
+    assert.equal(
+      verified.ok,
+      true,
+      verified.ok ? '' : `log replay failed at step ${verified.index}: ${verified.reason}`,
+    );
+    // The model must actually be making the calls: at least one per move.
+    assert.ok(
+      report.modelTurns.length >= report.moves,
+      `expected at least ${report.moves} model calls, got ${report.modelTurns.length}`,
+    );
+    // Fallbacks (moves the driver played that the model did not choose) are
+    // the honest failure mode of a small model; report them loudly and bound
+    // them so the test stays meaningful.
+    assert.ok(
+      report.fallbacks <= 10,
+      `too many fallback moves (${report.fallbacks}/${report.moves}); see the summary`,
+    );
+    console.log('[bridge-browser] model session summary:', JSON.stringify(modelSessionSummary(report)));
+  });
+
+  test('a local model on the tampered copy is flagged by the referee on its first offending move, like the baselines', { timeout: 1200000 }, async () => {
+    const report = await runBrowserModelSession({
+      browser,
+      port,
+      baseUrl: liveBaseUrl,
+      model: liveModel,
+      maxMoves: 150,
+      urlPath: '/2048-faulty/',
+    });
+    assert.match(report.endedWhy, /^referee: /, `session must stop at the referee, got: ${report.endedWhy}`);
+    const offending = report.log.steps[report.log.steps.length - 1];
+    assert.equal(offending.verdict.ok, false, 'the last recorded move is the first offending one');
+    for (const step of report.log.steps.slice(0, -1)) {
+      assert.equal(step.verdict.ok, true, 'every move before the offending one must have passed the referee');
+    }
+    const verified = verifyBridgeLog(report.log);
+    assert.equal(verified.ok, false, 'the tampered log must fail replay verification');
+    if (!verified.ok) {
+      assert.equal(verified.index, report.log.steps.length - 1, 'replay fails exactly at the offending move');
+    }
+    console.log(
+      '[bridge-browser] model fault-check summary:',
+      JSON.stringify({ ...modelSessionSummary(report), refereeReason: offending.verdict.reason }),
+    );
+  });
+} else {
+  test('live model sessions on the page (opt-in)', { skip: liveSkipReason }, async () => {
+    assert.fail('unreachable: the test only runs when opted in');
+  });
+}

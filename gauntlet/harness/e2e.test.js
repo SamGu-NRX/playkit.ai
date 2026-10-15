@@ -25,7 +25,7 @@ const SEED = 'tictactoe/perfect-opponent/public/0';
  * of the observation text in the user message and answers with the first
  * legal cell. Records every request it saw.
  *
- * @param {'anthropic' | 'openai'} provider
+ * @param {'anthropic' | 'openai' | 'openai-chat'} provider
  * @returns {Promise<{ url: string, requests: *, close: () => Promise<void> }>}
  */
 async function playingStub(provider) {
@@ -33,10 +33,12 @@ async function playingStub(provider) {
   const requests = [];
   const { url, close } = await startStubServer((req, res, body) => {
     requests.push(body);
+    // Anthropic has one message; chat-completions has system + user. The
+    // user message is the last one on both wire formats.
     const text =
-      provider === 'anthropic'
-        ? /** @type {string} */ (body?.messages?.[0]?.content)
-        : /** @type {string} */ (body?.input);
+      provider === 'openai'
+        ? /** @type {string} */ (body?.input)
+        : /** @type {string} */ (body?.messages?.[body?.messages?.length - 1]?.content);
     const match = /Legal actions \(\d+, at most 64 so all are listed\): ([a-z0-9, ]+)/.exec(
       String(text)
     );
@@ -56,7 +58,7 @@ async function playingStub(provider) {
         stop_reason: 'end_turn',
         usage: { input_tokens: 100 + requests.length, output_tokens: 5 },
       });
-    } else {
+    } else if (provider === 'openai') {
       sendJson(res, 200, {
         id: `resp_${requests.length}`,
         object: 'response',
@@ -71,6 +73,20 @@ async function playingStub(provider) {
         ],
         usage: { input_tokens: 50 + requests.length, output_tokens: 4 },
       });
+    } else {
+      sendJson(res, 200, {
+        id: `chatcmpl_${requests.length}`,
+        object: 'chat.completion',
+        model: 'stub-model',
+        choices: [
+          {
+            index: 0,
+            message: { role: 'assistant', content: action },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: { prompt_tokens: 80 + requests.length, completion_tokens: 5 },
+      });
     }
   });
   return { url, requests, close };
@@ -83,7 +99,7 @@ async function playingStub(provider) {
  */
 function agentOptions(provider, url) {
   return {
-    provider: /** @type {'anthropic' | 'openai'} */ (provider),
+    provider: /** @type {'anthropic' | 'openai' | 'openai-chat'} */ (provider),
     model: 'stub-model',
     baseUrl: url,
     apiKeyEnv: 'GAUNTLET_TEST_KEY',
@@ -145,6 +161,36 @@ test('end to end: model agent (openai stub) plays a full episode that verifies',
   } finally {
     await stub.close();
     delete process.env[key];
+  }
+});
+
+test('end to end: model agent (openai-chat stub, no API key) plays a full episode that verifies', async () => {
+  const unsetKey = 'GAUNTLET_TEST_DEFINITELY_UNSET_CHAT_KEY';
+  delete process.env[unsetKey];
+  const stub = await playingStub('openai-chat');
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: unsetKey,
+    });
+    assert.equal(agent.provider, 'openai-chat');
+    const trajectory = await runEpisode({
+      game: tictactoe,
+      tierId: TIER,
+      seed: SEED,
+      agent,
+    });
+    assert.equal(trajectory.agent.provider, 'openai-chat');
+    assert.equal(trajectory.end.reason, 'terminal');
+    for (const step of trajectory.steps.filter((s) => s.by === 'agent')) {
+      assert.equal(step.reply.meta?.reasoningChars, 0);
+    }
+    const verdict = await verifyTrajectory(tictactoe, trajectory);
+    assert.deepEqual(verdict, { ok: true });
+  } finally {
+    await stub.close();
   }
 });
 

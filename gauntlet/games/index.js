@@ -6,12 +6,14 @@
  */
 
 import tictactoe from './tictactoe/index.js';
+import cube from './cube/index.js';
 
 /** @import { Game } from '../core/types.js' */
 
 /** @type {Record<string, Game<*>>} */
 export const GAMES = {
   tictactoe,
+  cube,
 };
 
 /**

@@ -6,6 +6,7 @@
 import { Play2048Adapter } from "./play2048-adapter.js";
 import { GenericAdapter } from "./generic-adapter.js";
 import { GetMITAdapter } from "./getmit-adapter.js";
+import { FifteenPuzzleAdapter } from "./fifteen-puzzle-adapter.js";
 
 /**
  * Registry for managing and selecting appropriate adapters
@@ -28,6 +29,7 @@ export class AdapterRegistry {
   _registerDefaultAdapters() {
     // Register adapters in priority order (most specific first)
     this.registerAdapter(GetMITAdapter, 100); // Highest priority for target site
+    this.registerAdapter(FifteenPuzzleAdapter, 90); // 15-puzzle page pattern
     this.registerAdapter(Play2048Adapter, 80); // High priority for common pattern
     this.registerAdapter(GenericAdapter, 10); // Lowest priority fallback
   }

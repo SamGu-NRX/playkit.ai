@@ -10,6 +10,7 @@ export { Adapter, Direction, BoardUtils } from "./adapter.js";
 export { Play2048Adapter } from "./play2048-adapter.js";
 export { GenericAdapter } from "./generic-adapter.js";
 export { GetMITAdapter } from "./getmit-adapter.js";
+export { FifteenPuzzleAdapter } from "./fifteen-puzzle-adapter.js";
 
 // Registry system
 export { AdapterRegistry, globalAdapterRegistry } from "./adapter-registry.js";

@@ -5,10 +5,15 @@
  *   baseline:<game>:<greedy|engine> — that game's bundled baseline, scoped to
  *                                     its own game's episodes in a suite run.
  *   model:<provider>/<model>        — an official-track model agent through
- *                                     harness/model-agent.js; pair with
- *                                     --prices for cost accounting, or with
- *                                     --dry-run and --script <file> to
- *                                     rehearse offline.
+ *                                     harness/model-agent.js (provider
+ *                                     anthropic, openai or openai-chat;
+ *                                     openai-chat speaks any OpenAI-compatible
+ *                                     chat-completions server and requires
+ *                                     --base-url <url>; every provider reads
+ *                                     its key from the env var named by
+ *                                     --api-key-env <VAR>). Pair with --prices
+ *                                     for cost accounting, or with --dry-run
+ *                                     and --script <file> to rehearse offline.
  *
  * Node-only. The packet modules do the work; this file only resolves specs
  * into per-episode Agent instances.
@@ -48,6 +53,12 @@ import { pathToFileURL } from 'node:url';
  * @property {boolean} [dryRun] --dry-run: rehearse a model spec offline.
  * @property {string} [prices] --prices: path to a price file (PriceFile JSON).
  * @property {string} [script] --script: reply script for --dry-run runs.
+ * @property {string} [baseUrl] --base-url: API root. Required for
+ *   `openai-chat` (any OpenAI-compatible chat-completions server); optional
+ *   for `anthropic`/`openai`, where it overrides the provider's public API.
+ * @property {string} [apiKeyEnv] --api-key-env: the environment variable that
+ *   holds the provider API key. The key itself is read from the environment
+ *   at call time and never appears in the spec, the trajectory, or logs.
  */
 
 /**
@@ -185,9 +196,14 @@ export async function parseAgentSpec(text, options = {}) {
   if (modelMatch) {
     const provider = modelMatch[1];
     const model = modelMatch[2];
-    if (provider !== 'anthropic' && provider !== 'openai') {
+    if (provider !== 'anthropic' && provider !== 'openai' && provider !== 'openai-chat') {
       throw new Error(
-        `agent spec "${text}": provider must be "anthropic" or "openai", got "${provider}"`
+        `agent spec "${text}": provider must be "anthropic", "openai" or "openai-chat", got "${provider}"`
+      );
+    }
+    if (provider === 'openai-chat' && !options.baseUrl) {
+      throw new Error(
+        `agent spec "${text}": the openai-chat provider talks to any OpenAI-compatible chat-completions server, so it requires --base-url <url> (the request goes to <base-url>/v1/chat/completions)`
       );
     }
     if (options.dryRun && !options.script) {
@@ -234,9 +250,11 @@ export async function parseAgentSpec(text, options = {}) {
           built = true;
           shared = /** @type {Agent} */ (
             createModelAgent({
-              provider: /** @type {'anthropic' | 'openai'} */ (provider),
+              provider: /** @type {'anthropic' | 'openai' | 'openai-chat'} */ (provider),
               model,
               ...(priceFile ? { prices: priceFile } : {}),
+              ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
+              ...(options.apiKeyEnv ? { apiKeyEnv: options.apiKeyEnv } : {}),
               id: text,
             })
           );

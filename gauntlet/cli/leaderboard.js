@@ -6,17 +6,20 @@
  * @module
  */
 
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { leaderboard } from '../scoring/leaderboard.js';
 import { listGames } from '../games/index.js';
 import { readSuiteFile } from './suite.js';
+import { collectJsonFiles } from './verify.js';
 
 /** @import { Trajectory } from '../core/types.js' */
 
 /**
- * Load every trajectory file (`*.json`, skipping `_run.json` summaries) from
- * the given directories, in order.
+ * Load every trajectory file from the given directories, in order. Traversal
+ * is recursive — both the legacy flat layout and the engine-written bundle
+ * layout (`<game>/<tier>/<seed>.json`) work — and skips bundle metadata
+ * (`run.json`, `suite.json`) and `_`-prefixed run summaries.
  *
  * @param {string[]} dirs
  * @returns {Trajectory[]}
@@ -25,16 +28,18 @@ function loadTrajectories(dirs) {
   /** @type {Trajectory[]} */
   const trajectories = [];
   for (const dir of dirs) {
-    const names = readdirSync(dir)
-      .filter((name) => name.endsWith('.json') && !name.startsWith('_'))
-      .sort();
-    if (names.length === 0) {
-      throw new Error(`"${dir}" holds no trajectory files (*.json, excluding _run.json)`);
+    /** @type {string[]} */
+    const paths = [];
+    collectJsonFiles(dir, paths);
+    if (paths.length === 0) {
+      throw new Error(
+        `"${dir}" holds no trajectory files (*.json, excluding run.json/suite.json and _-prefixed summaries)`
+      );
     }
-    for (const name of names) {
-      const parsed = /** @type {*} */ (JSON.parse(readFileSync(join(dir, name), 'utf8')));
+    for (const path of paths) {
+      const parsed = /** @type {*} */ (JSON.parse(readFileSync(path, 'utf8')));
       if (!parsed || !parsed.game || typeof parsed.game.id !== 'string' || !Array.isArray(parsed.steps)) {
-        throw new Error(`${join(dir, name)} is not a gauntlet trajectory`);
+        throw new Error(`${path} is not a gauntlet trajectory`);
       }
       trajectories.push(/** @type {Trajectory} */ (parsed));
     }

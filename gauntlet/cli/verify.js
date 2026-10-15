@@ -1,17 +1,48 @@
 /**
  * `gauntlet verify`: replay-verify one trajectory file or every trajectory in
- * a directory (`*.json` that is not a `_run.json` summary). Exit code 1 when
- * anything fails. Node-only.
+ * a directory — recursively, so both the legacy flat layout and the
+ * engine-written bundle layout (`<game>/<tier>/<seed>.json`) work. Bundle
+ * metadata (`run.json`, `suite.json`, `_`-prefixed summaries) is skipped.
+ * Exit code 1 when anything fails. Node-only.
  *
  * @module
  */
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { verifyTrajectory } from '../core/trajectory.js';
 import { getGame } from '../games/index.js';
 
 /** @import { Trajectory } from '../core/types.js' */
+
+/** The bundle metadata files a run directory holds besides its trajectories. */
+const METADATA_NAMES = new Set(['run.json', 'suite.json']);
+
+/**
+ * Collect trajectory files under a path: `*.json` files that are not bundle
+ * metadata or `_`-prefixed summaries, recursing into subdirectories.
+ * Exported for cli/leaderboard.js, which reads the same directories.
+ *
+ * @param {string} root
+ * @param {string[]} out Accumulator.
+ * @returns {void}
+ */
+export function collectJsonFiles(root, out) {
+  const stats = statSync(root);
+  if (!stats.isDirectory()) {
+    out.push(root);
+    return;
+  }
+  for (const name of readdirSync(root).sort()) {
+    const path = join(root, name);
+    if (statSync(path).isDirectory()) {
+      collectJsonFiles(path, out);
+      continue;
+    }
+    if (!name.endsWith('.json') || name.startsWith('_') || METADATA_NAMES.has(name)) continue;
+    out.push(path);
+  }
+}
 
 /**
  * @param {string} raw
@@ -41,20 +72,20 @@ function readTrajectory(raw) {
 export async function verifyPath(target) {
   let isDir = false;
   try {
-    isDir = readdirSync(target).length >= 0;
+    isDir = statSync(target).isDirectory();
   } catch {
     isDir = false;
   }
 
   /** @type {string[]} */
-  const paths = isDir
-    ? readdirSync(target)
-        .filter((name) => name.endsWith('.json') && !name.startsWith('_'))
-        .sort()
-        .map((name) => join(target, name))
-    : [target];
+  const paths = [];
+  if (isDir) {
+    collectJsonFiles(target, paths);
+  } else {
+    paths.push(target);
+  }
   if (paths.length === 0) {
-    throw new Error(`"${target}" holds no trajectory files (*.json, excluding _run.json)`);
+    throw new Error(`"${target}" holds no trajectory files (*.json, excluding run.json/suite.json and _-prefixed summaries)`);
   }
 
   /** @type {VerifyReport} */

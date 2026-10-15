@@ -21,8 +21,8 @@ Thank you for helping build the Playkit.ai platform! Whether you are polishing a
    git checkout -b feature/<short-description>
    ```
 3. **Install Tooling**
-   - Node.js 20+
-   - pnpm 9+ (`corepack enable pnpm`)
+   - Node.js 20+ (npm included — the root test suite uses npm; see `package.json` and `package-lock.json`)
+   - pnpm 9+ (`corepack enable pnpm`) — only needed for the `frontend/` site
    - CMake & a C++20 toolchain (for solver changes)
    - wasm-opt (Binaryen) when working on WebAssembly output optimisation
 
@@ -63,6 +63,7 @@ Thank you for helping build the Playkit.ai platform! Whether you are polishing a
 ## Testing & Validation
 
 - **Runtime:** Manually exercise the HUD against `https://mitchgu.github.io/GetMIT/` after each change. Add console-based smoke tests to `src/test/` when useful.
+- **Test suite:** Run `npm test` from the repo root (Node's built-in runner over jsdom fixture pages; `npm install` first).
 - **Frontend:** Run `pnpm lint` and `pnpm build` before requesting review.
 - **Solver:** Provide benchmark output or statistical summaries when tuning heuristics. Store heavy data outside the repository unless explicitly needed.
 - Include screenshots or recordings in PR descriptions if UI behaviour changes.

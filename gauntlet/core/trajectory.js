@@ -10,6 +10,7 @@
 import { canonicalJson, hashObservation } from './canonical.js';
 import { GauntletRuleError } from './errors.js';
 import { forfeitOutcome, unsolvedOutcome } from './outcomes.js';
+import { judgeReply } from './runner.js';
 
 /** @import { Game, TierSpec, Trajectory } from './types.js' */
 
@@ -163,26 +164,53 @@ export async function verifyTrajectory(game, trajectory) {
       };
     }
     const legal = /** @type {string[]} */ (game.legalActions(state, seat));
-    if (step.invalid) {
-      if (typeof step.action === 'string' && legal.includes(step.action)) {
-        return {
-          ok: false,
-          step: i,
-          reason: `step ${i} is marked invalid but "${step.action}" is a legal action`,
-        };
-      }
-      if (step.by === 'agent') {
-        agentActions++;
-        invalidActions++;
-        consecutiveInvalid++;
-      }
-      continue;
-    }
-    if (typeof step.action !== 'string' || !legal.includes(step.action)) {
+    const replyText =
+      step.reply && typeof step.reply.text === 'string'
+        ? step.reply.text
+        : '';
+    // Re-derive the runner's own accept/reject decision from the recorded
+    // reply, so a trajectory can only verify if the runner could have
+    // produced it exactly.
+    const decision = judgeReply(game, state, seat, legal, replyText);
+    if (step.invalid && step.by === 'opponent') {
       return {
         ok: false,
         step: i,
-        reason: `step ${i} action ${JSON.stringify(step.action)} is not legal for seat ${seat}`,
+        reason: `step ${i} is an invalid opponent step, but the runner rejects invalid opponent replies outright and could not have recorded one`,
+      };
+    }
+    if (step.invalid) {
+      if (!decision.invalid) {
+        return {
+          ok: false,
+          step: i,
+          reason: `step ${i} is marked invalid, but its reply parses to the legal action ${JSON.stringify(decision.canonical)}; the runner would have accepted it and moved`,
+        };
+      }
+      if (step.action !== decision.attempted) {
+        return {
+          ok: false,
+          step: i,
+          reason: `step ${i} records action ${JSON.stringify(step.action)}, but the runner would extract ${JSON.stringify(decision.attempted)} from its reply`,
+        };
+      }
+      agentActions++;
+      invalidActions++;
+      consecutiveInvalid++;
+      continue;
+    }
+    if (decision.invalid) {
+      return {
+        ok: false,
+        step: i,
+        reason: `step ${i} records a valid action, but the runner would have rejected its reply: ${decision.reason}`,
+      };
+    }
+    if (step.action !== decision.canonical) {
+      return {
+        ok: false,
+        step: i,
+        reason: `step ${i} records action ${JSON.stringify(step.action)}, but its reply parses to ${JSON.stringify(decision.canonical)}`,
       };
     }
     try {

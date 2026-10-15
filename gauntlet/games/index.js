@@ -8,12 +8,16 @@
 import tictactoe from './tictactoe/index.js';
 import chess from './chess/index.js';
 
+import sliding from './sliding/index.js';
+
 /** @import { Game } from '../core/types.js' */
 
 /** @type {Record<string, Game<*>>} */
 export const GAMES = {
   tictactoe,
   chess,
+
+  sliding,
 };
 
 /**

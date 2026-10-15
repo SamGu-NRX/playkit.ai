@@ -1,0 +1,397 @@
+{
+  "format": "playkit-gauntlet-scoring-baseline/1",
+  "agent": "random",
+  "split": "public",
+  "note": "Random-baseline means for the chance-adjusted scoring profile, generated from the committed calibration tables by scoring/generate-baseline.js. Efficiency tiers are recorded but unused: random scores exactly 0 there.",
+  "sourceTables": [
+    {
+      "gameId": "2048",
+      "path": "calibration/tables/2048.json",
+      "sha256": "9dcea95b25dd4837a4fa58626142d4084ccaa8aac3a9b9f08d680c74acb644ef"
+    },
+    {
+      "gameId": "chess",
+      "path": "calibration/tables/chess.json",
+      "sha256": "ceb8f85ef8ad98e23aa789a582643125f3e1cbdbb83a010561e8eec20123f10d"
+    },
+    {
+      "gameId": "connect4",
+      "path": "calibration/tables/connect4.json",
+      "sha256": "9251a45e63ef5ac79734ac5db73cd1b7cfd233ebde670ff8475a19f84da11d4e"
+    },
+    {
+      "gameId": "holdem",
+      "path": "calibration/tables/holdem.json",
+      "sha256": "f1fc68bf94f21837c66ba3bbf4721c170d0a676175b53698f3b79f6585feb354"
+    },
+    {
+      "gameId": "mastermind",
+      "path": "calibration/tables/mastermind.json",
+      "sha256": "93561877c6ee891fffc91d213004c6ad1896b49b719ebcc2346adddb44302ddc"
+    },
+    {
+      "gameId": "minesweeper",
+      "path": "calibration/tables/minesweeper.json",
+      "sha256": "45a8f900dc35ffec8b27ad8e555b1aef17b062887c9486f60fdb5ddc7700ca84"
+    },
+    {
+      "gameId": "sliding",
+      "path": "calibration/tables/sliding.json",
+      "sha256": "b4a432aa893af10519cfff330e8c8a0443578e5fa75ae048645348ed3f87b9ab"
+    },
+    {
+      "gameId": "sokoban",
+      "path": "calibration/tables/sokoban.json",
+      "sha256": "c094f30bb543b9ad8d0be0c6b2f5702d791e44550b18674861cdf0bbf6685bf4"
+    },
+    {
+      "gameId": "tictactoe",
+      "path": "calibration/tables/tictactoe.json",
+      "sha256": "66142e303ef379e0874d0cbc8008b198ca87d3714dbfaa5458212b0c94ba319f"
+    }
+  ],
+  "games": {
+    "2048": {
+      "id": "2048",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "t256": {
+          "scoring": "outcome",
+          "mean": 0.384028,
+          "ci95": [
+            0.279861,
+            0.513229
+          ],
+          "episodes": 20
+        },
+        "t512": {
+          "scoring": "outcome",
+          "mean": 0.234184,
+          "ci95": [
+            0.209184,
+            0.261237
+          ],
+          "episodes": 20
+        },
+        "t1024": {
+          "scoring": "outcome",
+          "mean": 0.190625,
+          "ci95": [
+            0.170703,
+            0.211328
+          ],
+          "episodes": 20
+        },
+        "t2048": {
+          "scoring": "outcome",
+          "mean": 0.125,
+          "ci95": [
+            0.108951,
+            0.142284
+          ],
+          "episodes": 20
+        }
+      }
+    },
+    "chess": {
+      "id": "chess",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "paper": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 5
+        },
+        "wood": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 5
+        },
+        "steel": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 5
+        },
+        "granite": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 5
+        }
+      }
+    },
+    "connect4": {
+      "id": "connect4",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "ladder-1": {
+          "scoring": "outcome",
+          "mean": 0.416667,
+          "ci95": [
+            0.166667,
+            0.666667
+          ],
+          "episodes": 12
+        },
+        "ladder-2": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 12
+        },
+        "ladder-3": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 12
+        },
+        "ladder-4": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 12
+        },
+        "forced-win": {
+          "scoring": "outcome",
+          "mean": 0.041667,
+          "ci95": [
+            0,
+            0.125
+          ],
+          "episodes": 12
+        }
+      }
+    },
+    "holdem": {
+      "id": "holdem",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "station": {
+          "scoring": "outcome",
+          "mean": 0.019327,
+          "ci95": [
+            0.005349,
+            0.038189
+          ],
+          "episodes": 12
+        },
+        "rules": {
+          "scoring": "outcome",
+          "mean": 0.449807,
+          "ci95": [
+            0.340518,
+            0.565427
+          ],
+          "episodes": 12
+        },
+        "equity": {
+          "scoring": "outcome",
+          "mean": 0.010805,
+          "ci95": [
+            0.002767,
+            0.021347
+          ],
+          "episodes": 12
+        }
+      }
+    },
+    "mastermind": {
+      "id": "mastermind",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "classic": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 25
+        },
+        "wide": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 25
+        },
+        "deep": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 25
+        }
+      }
+    },
+    "minesweeper": {
+      "id": "minesweeper",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "beginner": {
+          "scoring": "outcome",
+          "mean": 0.662535,
+          "ci95": [
+            0.592113,
+            0.729577
+          ],
+          "episodes": 25
+        },
+        "intermediate": {
+          "scoring": "outcome",
+          "mean": 0.353519,
+          "ci95": [
+            0.292588,
+            0.414444
+          ],
+          "episodes": 25
+        },
+        "expert": {
+          "scoring": "outcome",
+          "mean": 0.135118,
+          "ci95": [
+            0.101837,
+            0.173438
+          ],
+          "episodes": 25
+        },
+        "torus": {
+          "scoring": "outcome",
+          "mean": 0.412222,
+          "ci95": [
+            0.355,
+            0.471301
+          ],
+          "episodes": 25
+        }
+      }
+    },
+    "sliding": {
+      "id": "sliding",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "p8": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 8
+        },
+        "p15-short": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 8
+        },
+        "p15-mid": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 8
+        },
+        "p15-long": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 8
+        }
+      }
+    },
+    "sokoban": {
+      "id": "sokoban",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "two-box": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 25
+        },
+        "three-box": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 25
+        },
+        "four-box": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 25
+        }
+      }
+    },
+    "tictactoe": {
+      "id": "tictactoe",
+      "version": "1.0.0",
+      "benchmark": false,
+      "tiers": {
+        "perfect-opponent": {
+          "scoring": "outcome",
+          "mean": 0.0625,
+          "ci95": [
+            0,
+            0.1875
+          ],
+          "episodes": 8
+        }
+      }
+    }
+  }
+}

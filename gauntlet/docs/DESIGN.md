@@ -1,6 +1,6 @@
 # PlayKit Gauntlet — design
 
-Status: draft, 2026-10-15. Companion code lives on `obv/burst5-playkit-gauntlet-core`; the environment contract below (section 3) summarizes `gauntlet/core/types.js` on that branch, and this doc defers to the code wherever the two disagree. At the time of writing, the core branch had no open PR yet, so section 3 reflects the agreed contract rather than a read of the file; the core PR body and this doc must be reconciled when that PR lands.
+Status: draft, 2026-10-15 (revised after independent review). Companion code lives on `obv/burst5-playkit-gauntlet-core`, open as PR #11 (head `122adc6`); section 3 summarizes `gauntlet/core/types.js` and `core/runner.js` at that head, and this doc defers to the code wherever the two disagree. Reconciliation against that head was done on 2026-10-15.
 
 **Load-bearing assumption.** Gauntlet's premise is that turn-based play of *known, popular* games with fixed rules — scored for both outcome and action efficiency — produces a benchmark signal that separates frontier agents from each other and from trivial baselines, and does not saturate quickly. No measured run exists yet, so this is unvalidated. It would be confirmed by model scores that sit clearly above the random/greedy baselines and clearly below engine ceilings, with spread across games. It would be broken by any of: scores clustering near a baseline (perception or formatting failures drowning out play quality), rapid saturation by a single frontier model, or seeds leaking into training data. Sections 7 and 8 are the mitigations; if a first measured run shows clustering, the fix is more smoke-testing of the official prompt, not a scoring change.
 
@@ -49,18 +49,20 @@ A game is a set of **pure functions over a JSON-serializable state**. No clocks,
 - `reset(tier, seed)` → the initial state for that tier and seed.
 - `toAct(state)` → the seat whose turn it is.
 - `observe(state, seat)` → that seat's observation: full state minus hidden information (other seats' cards, hidden mines). The official track shows the agent exactly this text.
-- `legalActions(state)` → canonical action strings (the agent must answer with one of these).
+- `legalActions(state, seat)` → sorted canonical action strings. Baseline and community agents receive them every turn; official-track agents receive `legalActions: null` and must derive legality from the rules text (observation.text still embeds the list when a position has 64 or fewer legal actions).
 - `parseAction(state, replyText)` → extracts the action from a model reply: the runner takes the action from the reply's **last line** and matches it against `legalActions`.
 - `step(state, action)` → the next state.
 - `outcome(state)` → per-seat results, each carrying a `normalized` score in [0, 1].
-- `truncate(state)` → true when the episode must end without a decisive outcome (budget or move cap reached); truncated episodes score 0 on outcome tiers and are unsolved on efficiency tiers.
+- `truncate(state)` → the game-supplied Outcome used when the agent's budget (`maxActions`) runs out; required whenever any tier scores by outcome. On outcome tiers the runner uses the returned Outcome verbatim, so truncated episodes may carry partial credit; on efficiency tiers the runner substitutes the unsolved outcome (all seats 0, `solved: false`). The action budget is the only truncation trigger.
 - `opponent(state)` → for two-seat games, the built-in opponent (engine) and its policy; one-seat games omit it.
 
 Tiers carry: a **rank** (difficulty weight, section 5), a **scoring kind** (`outcome` or `efficiency`), an **action budget** (`maxActions`), and — for efficiency tiers — a **par** and its `parKind` (`optimal` or `reference`).
 
-The runner enforces the interaction loop: one model call per action; **invalid attempts count toward the action budget** (an invalid action consumes the call, is logged, and the same state is re-presented); **three consecutive invalid actions forfeit the episode** (score 0).
+The runner enforces the interaction loop: one model call per action; invalid attempts count toward the action budget and consume the turn (the same state is re-presented with the parse error as the agent's feedback); three consecutive invalid actions (the runner default) forfeit the episode — the agent's seat scores 0, every other seat scores 1.
 
-Every episode produces a trajectory — the seeded initial state, every observation, every raw reply, every parsed action, and the final outcome — such that replaying the actions through the pure functions reproduces the outcome exactly; `verifyTrajectory(trajectory)` does this check and must pass for an entry to be ranked (section 5).
+Signatures above are simplified for review; the full contract in `gauntlet/core/types.js` is `parseAction(state, seat, text)`, `step(state, seat, action)`, `opponent(tier, seed, seat) => Agent` (required when the game has two seats), and `agentSeat(tier, seed)` for the evaluated seat, default 0. That file is normative.
+
+Every episode produces a trajectory (format `playkit-gauntlet-trajectory/1`) — the seeded initial state, a hash of every observation (`observationHash` per ply; observations are recomputed at replay, not stored verbatim), every raw reply, every parsed action, and the final outcome — such that replaying the actions through the pure functions reproduces the outcome exactly; `verifyTrajectory(trajectory)` does this check and must pass for an entry to be ranked (section 5).
 
 ## 4. Game roster
 
@@ -69,18 +71,22 @@ Legend: info = perfect / imperfect; seats = number of decision-making seats (the
 | Game | Info | Chance | Seats | Horizon | Reasoning | Tiers (rank) | Why it is hard for models |
 |---|---|---|---|---|---|---|---|
 | Tic-tac-toe | perfect | none | 2 | ≤ 9 | adversarial | outcome (1) — smoke test only, `benchmark: false` | It isn't; that is its job. Verifies plumbing: parsing, trajectory replay, forfeit rules. |
-| Chess vs built-in engine ladder | perfect | none | 2 | long | adversarial planning | three ladder rungs, outcome (1, 2, 4) | Long-horizon tactical calculation without search tools; models blunder pieces under the pinned prompt. |
-| Chess vs Stockfish by node budget | perfect | none | 2 | long | adversarial planning | three node budgets, outcome (1, 2, 4) — optional, ships only where the Stockfish binary is present | Same, with a principled opponent-strength dial (nodes) instead of hand-tuned depth. |
+| Chess vs built-in engine ladder | perfect | none | 2 | long | adversarial planning | three ladder rungs, outcome (1, 2, 3) | Long-horizon tactical calculation without search tools; models blunder pieces under the pinned prompt. |
+| Chess vs Stockfish by node budget | perfect | none | 2 | long | adversarial planning | three node budgets, outcome (1, 2, 3) — optional, ships only where the Stockfish binary is present | Same, with a principled opponent-strength dial (nodes) instead of hand-tuned depth. |
 | Lichess chess puzzles (rating bands) | perfect | none | 1 (agent plays the winning side) | ≤ 12 moves | tactical deduction | three rating bands, outcome (1, 2, 3) | Finding the only winning continuation, every move a forced sequence; public data, so memorization is the threat (section 7). |
 | Minesweeper (no-guess boards) | imperfect (hidden mines) | none at decision time (boards guaranteed solvable without guessing) | 1 | ≈ board cells | deductive constraint solving | 9×9 (1), 16×16 (2), 12×12 torus wraparound variant (3), outcome | Requiring no-guess boards makes it pure deduction; the torus variant breaks edge-of-board priors memorized from training data. |
 | 2048 | perfect | spawn randomness | 1 | hundreds | long-horizon planning under chance | outcome: tile ≥ 1024 (1); efficiency vs reference par (2) | Scoring is open-ended efficiency — survival moves vs the reference solver's move count — so there is no "win", only better play. |
-| Sliding 8- and 15-puzzle | perfect | none | 1 | ≤ 31 (8-puzzle worst case), larger for 15 | optimal planning | 8-puzzle (1), 15-puzzle (3), efficiency with optimal par | Optimal par punishes solvers that reach the goal slowly; the 15-puzzle horizon defeats unaided lookahead. |
-| Sokoban | perfect | none | 1 | tens | planning with deadlock avoidance | two level sets, efficiency with optimal par (1, 3) | Irreversible mistakes (deadlocks) end the episode; optimal par rewards planning over trial and error. |
-| Connect Four | perfect | none | 2 | ≤ 42 | adversarial + deduction | engine ladder (2); forced-win positions, efficiency with optimal par = winning-line length (3) | Forced-win positions isolate whether the agent can *prove* and *efficiently execute* a win it is told exists. |
-| Mastermind | imperfect (hidden code) | fixed hidden code per seed | 1 | ≤ 8 guesses | information-gain deduction | classic 4-peg/6-color, efficiency with reference-strategy par (2) | Each guess is an experiment; par is set by a reference information-theoretic strategy, so guessing patterns is measurable. |
-| Heads-up limit Texas hold'em | imperfect | card deal | 2 | tens of acts per hand | decision-making under uncertainty | duplicate matches, outcome (3) | Opponent modeling and variance control; duplicate deals (same cards both ways) cancel luck, isolating play quality. |
+| Sliding 8- and 15-puzzle | perfect | none | 1 | ≤ 31 (8-puzzle worst case), larger for 15 | optimal planning | 8-puzzle (1), 15-puzzle (2), efficiency with optimal par | Optimal par punishes solvers that reach the goal slowly; the 15-puzzle horizon defeats unaided lookahead. |
+| Sokoban | perfect | none | 1 | tens | planning with deadlock avoidance | two level sets, efficiency with optimal par (1, 2) | Irreversible mistakes (deadlocks) end the episode; optimal par rewards planning over trial and error. |
+| Connect Four | perfect | none | 2 | ≤ 42 | adversarial + deduction | engine ladder (1); forced-win positions, efficiency with optimal par = winning-line length (2) | Forced-win positions isolate whether the agent can *prove* and *efficiently execute* a win it is told exists. |
+| Mastermind | imperfect (hidden code) | fixed hidden code per seed | 1 | ≤ 8 guesses | information-gain deduction | classic 4-peg/6-color, efficiency with reference-strategy par (1) | Each guess is an experiment; par is set by a reference information-theoretic strategy, so guessing patterns is measurable. |
+| Heads-up limit Texas hold'em | imperfect | card deal | 2 | tens of acts per hand | decision-making under uncertainty | duplicate matches, outcome (1) | Opponent modeling and variance control; duplicate deals (same cards both ways) cancel luck, isolating play quality. |
 
 All games except tic-tac-toe have `spec.benchmark: true` and enter the benchmark score B. The Stockfish tiers are marked optional in the manifest: on a machine without the binary they are skipped, and an entry is ranked against the manifest *as shipped for that run* (the manifest records which optional tiers were included).
+
+Within each game, tier ranks are unique and consecutive from 1 — `conformance.js` on the core branch rejects specs that are not — so any weight shaping beyond monotone difficulty ordering cannot live in the rank column; deliberate shaping would have to live in tier `params` and the aggregation, which this design does not use. Consequence of the renumbering: with `G = Σ(rank·T)/Σrank`, the three chess-ladder rungs now weigh 1/6, 2/6, 3/6 rather than 1/7, 2/7, 4/7 — the ordering is unchanged, the spacing is flatter.
+
+Chess deliberately holds two roster slots, and therefore two of the ten benchmark-counting games: the ladder and the Stockfish gauntlets use different opponent families (deterministic calibrated rungs versus node-budget search), and keeping them separate lets the optional Stockfish tiers drop in and out without reshaping the ladder game's weights. The price is that chess carries double weight in B; the alternative — one six-tier chess game — would halve it.
 
 ## 5. Scoring
 
@@ -107,12 +113,12 @@ Three tracks, one leaderboard each, no mixing.
 
 - **Public seeds** live in the repo, per tier, for development and harness work. Public-seed scores are demonstration only and never ranked, mirroring ARC-AGI-3's treatment of its public set.
 - **Eval seeds** are drawn from a secret salt; the repo publishes a SHA-256 commitment to (salt, manifest version) — and, at release, the derived seed list's hash — so the split is auditable after the fact but unknowable before. Scores that count toward B come from eval seeds only.
-- **Lichess puzzles are public data and may be memorized.** The eval sample is therefore drawn at run time from the current CC0 database within the tier's rating band, and the puzzle IDs seen are recorded in the manifest. A model can train on every puzzle that exists today; the measured question is whether it solves *drawn-at-run-time* puzzles, which turns memorization into a distribution-level property rather than a seed-level leak.
+- **Lichess puzzles are public data and may be memorized.** The eval sample is therefore drawn at run time from the current CC0 database within the tier's rating band, and the puzzle IDs seen are recorded in the manifest. A model can train on every puzzle that exists today; the measured question is whether it solves *drawn-at-run-time* puzzles, which turns memorization into a distribution-level property rather than a seed-level leak. The price is comparability: for this tier alone, scores are comparable across releases at the distribution level, not per seed; the database snapshot and the drawn IDs are recorded in the manifest, and a snapshot bump is a manifest version change.
 - **Procedurally generated instances** (Minesweeper, 2048, sliding puzzle, Sokoban, Mastermind) cannot be memorized: a seed names an instance that did not exist until generated, so contamination can only affect *strategy*, which is exactly what the benchmark is allowed to reward.
 
 ## 8. Budgets and cost
 
-**Action budgets.** Where a par exists, `maxActions = 5 × par` — the same 5× allowance ARC-AGI-3 grants over the human median. Outcome tiers without a par get a manifest `maxActions`. Initial manifest values (proposals, tunable before the first measured run):
+**Action budgets.** Every tier carries a manifest `maxActions` (the conformance rules require it); where a par exists we set `maxActions = 5 × par` — the same 5× allowance ARC-AGI-3 grants over the human median. Initial manifest values (proposals, tunable before the first measured run):
 
 | Tier | maxActions | Basis |
 |---|---|---|

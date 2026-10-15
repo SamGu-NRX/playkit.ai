@@ -5,7 +5,14 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 
-import { ensureBookmarkletBundle, parseBookmarklet, runBrowserSession, latencyStats } from './harness.mjs';
+import {
+  ensureBookmarkletBundle,
+  parseBookmarklet,
+  runBrowserSession,
+  latencyStats,
+  newSessionContext,
+  takeoverRuntime,
+} from './harness.mjs';
 import { startFixtureServer } from './server.mjs';
 import { verifyBridgeLog } from '../session-log.js';
 import { maxTile } from '../../games/2048/rules.js';
@@ -97,6 +104,75 @@ test('expectimax engine baseline plays the vendored 2048 page in real Chromium t
   const { summary } = assertCleanSession(report);
   console.log('[bridge-browser] session summary:', JSON.stringify(summary));
   assert.ok(summary.moves >= 150, `expected a long session, stopped at ${summary.moves} (${summary.endedWhy})`);
+});
+
+test('takeover waits for an in-flight automatic move, so no unrecorded move plays beside the session', { timeout: 180000 }, async () => {
+  // Greptile P1 #4285440447: rt.stop() (the driver's stop()) only flips flags;
+  // a tick already inside await this.executeMove() keeps running, and its DOM
+  // write can land after takeover — an unrecorded move beside the first
+  // Gauntlet step, or a referee rejection of a clean page. Deterministic with
+  // a slow stub solver: the auto-play loop's next move stalls in flight, and
+  // takeover must not return until that move has settled and no further
+  // automatic move lands.
+  const context = await newSessionContext(browser, {});
+  try {
+    const page = await context.newPage();
+    await page.goto(`http://127.0.0.1:${port}/2048/`, { waitUntil: 'load' });
+    await page.waitForFunction(() => document.querySelectorAll('.tile').length >= 2, null, {
+      timeout: 15000,
+      polling: 100,
+    });
+    await page.evaluate(async () => {
+      const adapters = await import('/src/adapters/index.js');
+      window.globalAdapterRegistry = adapters.globalAdapterRegistry;
+    });
+    await page.evaluate(bookmarkletCode);
+    await page.waitForFunction(() => Boolean(window.ai2048Runtime), null, {
+      timeout: 20000,
+      polling: 100,
+    });
+
+    // Replace the auto-play move with a slow stub, then wait until it is
+    // mid-move — the takeover must happen with a move in flight. Like the
+    // real executeMove, the stub increments driver.moveCount on success:
+    // that counter is the observable state the takeover drains on.
+    await page.evaluate(() => {
+      const rt = /** @type {*} */ (window).ai2048Runtime;
+      const driver = rt.driver;
+      window.__moveProbe = { started: 0, finished: 0, inFlight: false, moveCount: driver.getStats().moveCount };
+      driver.executeMove = async () => {
+        const probe = window.__moveProbe;
+        probe.started += 1;
+        probe.inFlight = true;
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        probe.moveCount += 1;
+        driver.moveCount += 1;
+        probe.finished += 1;
+        probe.inFlight = false;
+        return true;
+      };
+    });
+    await page.waitForFunction(() => window.__moveProbe.inFlight === true, null, {
+      timeout: 15000,
+      polling: 25,
+    });
+
+    await takeoverRuntime(page);
+
+    const probe = await page.evaluate(() => window.__moveProbe);
+    assert.equal(
+      probe.inFlight,
+      false,
+      'takeover must return only after the in-flight automatic move settled',
+    );
+    assert.equal(probe.finished, probe.started, 'every started move must have finished');
+    const after = await page.evaluate(() => window.__moveProbe.moveCount);
+    await page.waitForTimeout(500);
+    const settled = await page.evaluate(() => window.__moveProbe.moveCount);
+    assert.equal(settled, after, 'no further automatic move may land after takeover');
+  } finally {
+    await context.close();
+  }
 });
 
 test('a session that never reports times out, reaches cleanup, and raises no unhandled rejection', { timeout: 120000 }, async () => {

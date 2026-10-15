@@ -22,6 +22,7 @@
 import { game } from '../games/2048/index.js';
 import { DIRECTIONS, observationForBoard, slide } from '../games/2048/rules.js';
 import { rngFromSeed } from '../core/rng.js';
+import { extractAction } from '../core/runner.js';
 
 /** @import { Agent, AgentReply, GameSpec, TierSpec, TurnContext } from '../core/types.js' */
 /** @import { Board, Direction } from '../games/2048/rules.js' */
@@ -47,22 +48,6 @@ const DIR = { UP: 0, RIGHT: 1, DOWN: 2, LEFT: 3 };
  * @type {Record<Direction, number>}
  */
 const TO_NUMBER = { up: DIR.UP, right: DIR.RIGHT, down: DIR.DOWN, left: DIR.LEFT };
-
-/**
- * The last non-empty line of an agent reply — where the runner reads the
- * action from (see `core/runner.js`).
- *
- * @param {string} text
- * @returns {string}
- */
-function lastNonEmptyLine(text) {
-  const lines = String(text).split('\n');
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i].trim();
-    if (line !== '') return line;
-  }
-  return '';
-}
 
 /**
  * @param {Board} board
@@ -147,15 +132,20 @@ export function toSolverEngine(agent, options = {}) {
 
       /** @type {AgentReply} */
       const reply = await agent.act(ctx);
-      const line = lastNonEmptyLine(reply.text ?? '');
-      if (line === '') {
-        lastError = 'the agent returned no action';
+      // Read the action exactly the way runEpisode() does (see
+      // core/runner.js): extractAction() takes the last non-empty line and
+      // strips wrapping quotes/backticks and a leading "action:" prefix, so a
+      // supported reply like "Action: right" parses here instead of being
+      // rejected and pushing the driver onto its fallback order.
+      const attempted = extractAction(typeof reply.text === 'string' ? reply.text : '');
+      if (attempted === null) {
+        lastError = 'no action found in the agent reply';
         return [];
       }
       const parsed = game.parseAction(
         { board: /** @type {Board} */ (lastBoard), score, rng: rngFromSeed('bridge-live'), status: 'playing', target: 2048 },
         0,
-        line,
+        attempted,
       );
       if (!parsed.ok) {
         lastError = `the agent's reply was rejected: ${parsed.error}`;

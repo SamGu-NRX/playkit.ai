@@ -239,11 +239,15 @@ export async function verifyTrajectory(game, trajectory) {
         reason: 'end reason is forfeit-invalid but the replayed game reached a natural end',
       };
     }
-    if (consecutiveInvalid < 1) {
+    const threshold =
+      typeof end.forfeitThreshold === 'number' && Number.isInteger(end.forfeitThreshold) && end.forfeitThreshold >= 1
+        ? end.forfeitThreshold
+        : 1;
+    if (consecutiveInvalid < threshold) {
       return {
         ok: false,
         step: trajectory.steps.length,
-        reason: 'end reason is forfeit-invalid but the last agent attempts were not consecutive invalid actions',
+        reason: `end reason is forfeit-invalid with only ${consecutiveInvalid} consecutive invalid attempts but the recorded threshold is ${threshold}`,
       };
     }
     const expected = forfeitOutcome(seats, agentSeat);

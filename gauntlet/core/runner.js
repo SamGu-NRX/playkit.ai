@@ -345,6 +345,7 @@ export async function runEpisode({
       outcome: end.outcome,
       agentActions,
       invalidActions,
+      forfeitThreshold: maxConsecutiveInvalid,
     },
     startedAt: new Date(startedAtMs).toISOString(),
     finishedAt: new Date(finishedAtMs).toISOString(),

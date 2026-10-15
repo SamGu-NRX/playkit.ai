@@ -108,3 +108,29 @@ function replayState(trajectory, upto) {
   }
   return state;
 }
+
+test('a forged forfeit threshold above the recorded consecutive invalids is rejected', async () => {
+  const trajectory = await runEpisode({
+    game,
+    tierId: 'perfect-opponent',
+    seed: 'forged-threshold',
+    agent: {
+      id: 'stubborn',
+      track: /** @type {'baseline'} */ ('baseline'),
+      async act() {
+        return { text: 'z9' };
+      },
+    },
+    maxConsecutiveInvalid: 2,
+  });
+  assert.equal(trajectory.end.reason, 'forfeit-invalid');
+  // The honest record carries the threshold the runner actually used...
+  assert.equal(trajectory.end.forfeitThreshold, 2);
+  assert.deepEqual(await verifyTrajectory(game, trajectory), { ok: true });
+  // ...and a record claiming a stricter threshold than its steps support does
+  // not verify: only 2 consecutive invalid attempts back this forfeit.
+  trajectory.end.forfeitThreshold = 5;
+  const result = await verifyTrajectory(game, trajectory);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.match(result.reason, /threshold/);
+});

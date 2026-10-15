@@ -99,6 +99,31 @@ test('expectimax engine baseline plays the vendored 2048 page in real Chromium t
   assert.ok(summary.moves >= 150, `expected a long session, stopped at ${summary.moves} (${summary.endedWhy})`);
 });
 
+test('a session that never reports times out, reaches cleanup, and raises no unhandled rejection', { timeout: 120000 }, async () => {
+  // Greptile P2 #4285440537: the timeout used to reject a promise that nothing
+  // consumed until the page work finished, so a session whose report never
+  // arrived produced an unhandled rejection (skipping cleanup) and the timer
+  // outlived successful runs. A tiny timeout against a healthy page forces the
+  // timeout path deterministically: the rejection must surface here as the
+  // session's own timeout error, the browser context must be closed, and no
+  // unhandled rejection may fire.
+  const unhandled = [];
+  const onUnhandled = (reason) => unhandled.push(String(reason));
+  process.on('unhandledRejection', onUnhandled);
+  try {
+    await assert.rejects(
+      runBrowserSession({ browser, port, agent: 'greedy', maxMoves: 1, timeoutMs: 250 }),
+      /timed out/,
+      'the timeout must reject the session promise itself',
+    );
+    assert.equal(browser.contexts().length, 0, 'the session context must be closed after the timeout');
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    assert.deepEqual(unhandled, [], 'the timeout must not surface as an unhandled rejection');
+  } finally {
+    process.off('unhandledRejection', onUnhandled);
+  }
+});
+
 test('a copy of the vendored game that merges a tile twice in one move is flagged on its first offending move and the session stops with that reason', { timeout: 420000 }, async () => {
   // Pinned page RNG: the tampered run is fully reproducible, so "first
   // offending move" is a fixed, observable transition.

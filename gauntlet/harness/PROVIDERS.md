@@ -50,19 +50,21 @@ Any OpenAI-compatible server works. The path that was actually run end to end
 for this repository: **llama.cpp's `llama-server`** with
 **Qwen2.5-1.5B-Instruct GGUF Q4_K_M** (Apache-2.0).
 
-Exact commands used (llama.cpp b7053, Debian 13, 8-core CPU):
+Exact commands used (llama.cpp `b11662`, version `0.6.0-dev (build 11662,
+commit c0cb53ac4)`, Debian 13, 8-core CPU):
 
 ```sh
 # 1. Get llama-server (prebuilt Ubuntu/x64 asset from the llama.cpp release)
-curl -LO https://github.com/ggml-org/llama.cpp/releases/download/b7053/llama-b7053-bin-ubuntu-x64.zip
-unzip llama-b7053-bin-ubuntu-x64.zip -d llama.cpp && cd llama.cpp
+curl -LO https://github.com/ggml-org/llama.cpp/releases/download/b11662/llama-b11662-bin-ubuntu-x64.tar.gz
+tar xzf llama-b11662-bin-ubuntu-x64.tar.gz
 
-# 2. Get the model (single ~987 MB file) and record its SHA-256
+# 2. Get the model (single 1,117,320,736-byte file) and record its SHA-256
 curl -LO https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf
 sha256sum qwen2.5-1.5b-instruct-q4_k_m.gguf
+# 6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e  qwen2.5-1.5b-instruct-q4_k_m.gguf
 
 # 3. Serve an OpenAI-compatible endpoint on 127.0.0.1:8080
-./llama-server -m qwen2.5-1.5b-instruct-q4_k_m.gguf \
+./llama-b11662/llama-server -m qwen2.5-1.5b-instruct-q4_k_m.gguf \
   --host 127.0.0.1 --port 8080 --ctx-size 4096
 ```
 
@@ -70,13 +72,14 @@ Then run the opt-in live test (one episode per tictactoe public seed):
 
 ```sh
 GAUNTLET_LOCAL_CHAT_URL=http://127.0.0.1:8080 \
-GAUNTLET_LOCAL_CHAT_MODEL=qwen2.5-1.5b-instruct \
-npm test -- live-local
+GAUNTLET_LOCAL_CHAT_MODEL=qwen2.5-1.5b-instruct-q4_k_m \
+node --test harness/live-local.test.js
 ```
 
-`llama-server` reports `"model": "qwen2.5-1.5b-instruct"` in the response, so
-that string is the `GAUNTLET_LOCAL_CHAT_MODEL` value. Every call stays on
-`127.0.0.1`; nothing is billed.
+`GAUNTLET_LOCAL_CHAT_MODEL` is the label Gauntlet sends and records; this
+llama-server build echoes the model file path back in the `model` response
+field and does not check the request's `model` value, so any stable label
+works. Every call stays on `127.0.0.1`; nothing is billed.
 
 Alternatives that work unchanged through the same provider:
 
@@ -104,7 +107,7 @@ explicit 0:
 
 ```json
 {
-  "openai-chat/qwen2.5-1.5b-instruct": {
+  "openai-chat/qwen2.5-1.5b-instruct-q4_k_m": {
     "inputPerMTok": 0,
     "outputPerMTok": 0,
     "source": "local llama.cpp server, no charge",

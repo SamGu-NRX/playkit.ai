@@ -1,0 +1,14 @@
+{
+  "name": "playkit-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered 2048 and 15-puzzle solver userscript",
+  "scripts": {
+    "test": "node --test tests/",
+    "build": "node scripts/build-phase0.js"
+  },
+  "type": "module",
+  "devDependencies": {
+    "jsdom": "^24.1.0"
+  }
+}

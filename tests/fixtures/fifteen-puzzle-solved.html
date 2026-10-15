@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Fifteen Puzzle Game</title>
+  <meta name="description" content="Fifteen Puzzle game (15 puzzle-game): move tiles in grid to order them from 1 to 15!">
+  <meta name="keywords" content="Fifteen puzzle, game, fifteen puzzle, game, tile">
+  <meta name="author" content="Lorenzo Cioni">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="Robots" content="All" />
+  <link rel="icon" href="img/favicon.ico" type="image/x-icon" />
+  <link rel="SHORTCUT ICON" href="img/favicon.ico" type="image/x-icon" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="http://lorecioni.github.io/fifteen-puzzle-game/" />
+  <meta property="og:title" content="Fifteen Puzzle Game" />
+  <meta property="og:description" content="Fifteen Puzzle game (15 puzzle-game): move tiles in grid to order them from 1 to 15!" />
+  <meta property="og:site_name" content="Fifteen Puzzle Game" />
+  <link rel="image_src" href="img/favicon.png" />
+  <link rel="stylesheet" href="css/style.css">
+</head>	
+<body>
+	<div id="fb-root"></div>
+	<div id="wrapper">
+  	<header>
+  	  <div id="info-box">
+  		<div id="menu">
+	    	<img src="img/action_settings.png" alt="settings">
+	    </div>
+	    <div id="score-point">
+	    	<span class="text">MOVES</span>
+	    	<span class="num">0</span>
+	    </div>
+	    <div id="timepoint">
+	    	<span class="text">TIME</span>
+	    	<span class="num">00:00</span>
+	    </div>
+        <div id="start-button">START</div>
+	    <div id="reset-button">RESET</div>
+	  </div>
+	  	<a href="">
+	  		<h1>Fifteen puzzle<br>game</h1>
+	  	</a>
+	</header>
+
+	<div id="play-box">
+		<div id="grid">
+         <div id="overlay">
+         	<div id="overlay-layer"></div>
+         	<div id="overlay-play">PLAY</div>
+           	<div id="overlay-paused">PAUSED</div>
+           	<div id="overlay-inner">
+           	<div id="overlay-message"></div>
+           	<div id="overlay-submessage"></div>
+           	<div id="overlay-buttons">
+               <div class="input-button" id="share-button">SHARE</div>
+               <div class="input-button" id="submit-button">SUBMIT</div>				
+           </div>
+           </div>
+         </div>
+		  <div id="tiles-container">
+				<div class="tile position-1-1" num="1" id="tile-1" style="left: 6px; top: 6px;">1</div>
+				<div class="tile position-1-2" num="2" id="tile-2" style="left: 106px; top: 6px;">2</div>
+				<div class="tile position-1-3" num="3" id="tile-3" style="left: 206px; top: 6px;">3</div>
+				<div class="tile position-1-4" num="4" id="tile-4" style="left: 306px; top: 6px;">4</div>
+				<div class="tile position-2-1" num="5" id="tile-5" style="left: 6px; top: 106px;">5</div>
+				<div class="tile position-2-2" num="6" id="tile-6" style="left: 106px; top: 106px;">6</div>
+				<div class="tile position-2-3" num="7" id="tile-7" style="left: 206px; top: 106px;">7</div>
+				<div class="tile position-2-4" num="8" id="tile-8" style="left: 306px; top: 106px;">8</div>
+				<div class="tile position-3-1" num="9" id="tile-9" style="left: 6px; top: 206px;">9</div>
+				<div class="tile position-3-2" num="10" id="tile-10" style="left: 106px; top: 206px;">10</div>
+				<div class="tile position-3-3" num="11" id="tile-11" style="left: 206px; top: 206px;">11</div>
+				<div class="tile position-3-4" num="12" id="tile-12" style="left: 306px; top: 206px;">12</div>
+				<div class="tile position-4-1" num="13" id="tile-13" style="left: 6px; top: 306px;">13</div>
+				<div class="tile position-4-2" num="14" id="tile-14" style="left: 106px; top: 306px;">14</div>
+				<div class="tile position-4-3" num="15" id="tile-15" style="left: 206px; top: 306px;">15</div>
+			</div>	
+		  <div id="cells-container">
+			<div id="row-1" class="row">
+				<div id="position-1-1" goal="1" class="grid-cell"></div>
+				<div id="position-1-2" goal="2" class="grid-cell"></div>
+				<div id="position-1-3" goal="3" class="grid-cell"></div>
+				<div id="position-1-4" goal="4" class="grid-cell"></div>
+			</div>
+			<div id="row-2" class="row">
+				<div id="position-2-1" goal="5" class="grid-cell"></div>
+				<div id="position-2-2" goal="6" class="grid-cell"></div>
+				<div id="position-2-3" goal="7" class="grid-cell"></div>
+				<div id="position-2-4" goal="8" class="grid-cell"></div>
+			</div>
+			<div id="row-3" class="row">
+				<div id="position-3-1" goal="9" class="grid-cell"></div>
+				<div id="position-3-2" goal="10" class="grid-cell"></div>
+				<div id="position-3-3" goal="11" class="grid-cell"></div>
+				<div id="position-3-4" goal="12" class="grid-cell"></div>
+			</div>
+			<div id="row-4" class="row">
+				<div id="position-4-1" goal="13" class="grid-cell"></div>
+				<div id="position-4-2" goal="14" class="grid-cell"></div>
+				<div id="position-4-3" goal="15" class="grid-cell"></div>
+				<div id="position-4-4" goal="0" class="grid-cell"></div>
+			</div>
+		  </div>  
+		</div>
+  	</div>
+  	<div id="instructions">
+  		<h3>INSTRUCTIONS</h3>
+  		Move tiles in grid to order them from <b>1 to 15</b>. To move a tile you can click on it or use your <b>arrow keys</b>. Press <b>ESC</b> to pause game.
+  	</div>
+  	<footer>
+		<div id="coming-soon">
+			<img src="img/15teenlogo.png">
+			15teen Puzzle Game
+		</div>
+  		<div id="sharing-box">
+  			<div class="fb-like" data-href="http://lorecioni.github.io/fifteen-puzzle-game/" data-layout="box_count" data-action="like" data-show-faces="true" data-share="false"></div>
+			<div id="twitter-share">
+				<a href="https://twitter.com/share" class="twitter-share-button" data-url="http://lorecioni.github.io/fifteen-puzzle-game/" data-counturl="http://lorecioni.github.io/fifteen-puzzle-game/" data-lang="en" data-count="vertical">Tweet</a>
+  			</div>
+  		</div>
+  		<span id="sign">
+  			Designed by <a href="https://github.com/lorecioni">Lorenzo Cioni</a>
+  		</span>
+  	</footer>
+  </div>        
+<!-- Solved-board variant of fifteen-puzzle-page.html (same assembly notes). -->
+
+<script>
+(function () {
+  var CELL = 100, GAP = 6;
+  function tiles() {
+    return Array.prototype.slice.call(document.querySelectorAll('#tiles-container .tile'));
+  }
+  function cellOf(tile) {
+    return {
+      row: (parseInt(tile.style.top, 10) - GAP) / CELL,
+      col: (parseInt(tile.style.left, 10) - GAP) / CELL
+    };
+  }
+  function moveToCell(tile, row, col) {
+    tile.style.left = GAP + col * CELL + 'px';
+    tile.style.top = GAP + row * CELL + 'px';
+  }
+  document.addEventListener('keydown', function (e) {
+    var occupied = {};
+    tiles().forEach(function (t) {
+      var p = cellOf(t);
+      occupied[p.row + '-' + p.col] = t;
+    });
+    var blank = null;
+    for (var r = 0; r < 4 && !blank; r++) {
+      for (var c = 0; c < 4 && !blank; c++) {
+        if (!occupied[r + '-' + c]) blank = { row: r, col: c };
+      }
+    }
+    if (!blank) return;
+    var mover = null;
+    if (e.key === 'ArrowLeft' && blank.col < 3) {
+      mover = occupied[blank.row + '-' + (blank.col + 1)];
+    } else if (e.key === 'ArrowUp' && blank.row < 3) {
+      mover = occupied[(blank.row + 1) + '-' + blank.col];
+    } else if (e.key === 'ArrowRight' && blank.col > 0) {
+      mover = occupied[blank.row + '-' + (blank.col - 1)];
+    } else if (e.key === 'ArrowDown' && blank.row > 0) {
+      mover = occupied[(blank.row - 1) + '-' + blank.col];
+    }
+    if (mover) {
+      moveToCell(mover, blank.row, blank.col);
+      e.preventDefault();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

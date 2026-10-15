@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>2048</title>
+</head>
+<body>
+<!-- Hand-modeled fixture of play2048.co's classic DOM structure (the
+     Play2048Adapter target pattern): .game-container > .tile-container >
+     .tile.tile-VALUE.tile-position-ROW-COL. -->
+<div class="container">
+  <div class="heading">
+    <div class="scores-container">
+      <div class="score-container">0</div>
+      <div class="best-container">0</div>
+    </div>
+  </div>
+  <div class="game-container">
+    <div class="tile-container">
+				<div class="tile tile-2 tile-position-1-1">2</div>
+				<div class="tile tile-4 tile-position-1-2">4</div>
+				<div class="tile tile-8 tile-position-2-1">8</div>
+				<div class="tile tile-16 tile-position-2-2">16</div>
+				<div class="tile tile-32 tile-position-3-1">32</div>
+				<div class="tile tile-64 tile-position-3-2">64</div>
+    </div>
+  </div>
+</div>
+<script>
+  // Minimal 2048-style game logic so the Play2048Adapter can be exercised:
+  // arrow keys merge tiles with row/col classes (the classic markup updates
+  // classes, not geometry).
+  (function () {
+    var grid = { "1-1": 2, "1-2": 4, "2-1": 8, "2-2": 16, "3-1": 32, "3-2": 64 };
+    function render() {
+      var container = document.querySelector(".tile-container");
+      container.innerHTML = "";
+      Object.keys(grid).forEach(function (key) {
+        var parts = key.split("-");
+        var div = document.createElement("div");
+        div.className = "tile tile-" + grid[key] + " tile-position-" + key;
+        div.textContent = grid[key];
+        container.appendChild(div);
+      });
+    }
+    document.addEventListener("keydown", function (e) {
+      var key = e.key;
+      var entries = Object.entries(grid);
+      if (key === "ArrowLeft") {
+        entries.sort(function (a, b) { return a[0].localeCompare(b[0]); });
+        var moved = false;
+        entries.forEach(function ([pos, v], i) {
+          if (i > 0 && entries[i - 1][1] === v) { moved = true; }
+        });
+        if (moved) { grid = { "1-1": 4, "2-1": 8, "3-1": 64, "3-2": 32 }; render(); }
+      } else if (["ArrowRight", "ArrowUp", "ArrowDown"].includes(key)) {
+        e.preventDefault();
+      }
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const rootDir = path.resolve(__dirname, "..");
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function normalizePath(p) {
   return p.split(path.sep).join("/");
@@ -257,7 +258,7 @@ function main() {
   console.log("Mirrored extension bundle into dist/extension");
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   try {
     main();
   } catch (error) {

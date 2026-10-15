@@ -10,7 +10,7 @@ import { canonicalJson } from './canonical.js';
 import { GauntletRuleError } from './errors.js';
 import { rngFromSeed, nextInt } from './rng.js';
 import { publicSeed } from './seeds.js';
-import { runEpisode } from './runner.js';
+import { extractAction, runEpisode } from './runner.js';
 
 /** @import { Game, TierSpec } from './types.js' */
 
@@ -229,6 +229,25 @@ function checkSeed(game, tier, seed, failures, counter) {
         assert(
           parsed && parsed.ok === true && parsed.action === action,
           `parseAction(${JSON.stringify(action)}) must return { ok: true, action: ${JSON.stringify(action)} }, got ${JSON.stringify(parsed)}`
+        );
+      }
+    }, counter);
+
+    check(failures, `${label}: every legal action round-trips through extractAction and parseAction`, () => {
+      // The runner reads the attempted action from the reply text with
+      // extractAction before parseAction, so a canonical action must survive
+      // that exact path unchanged. This catches grammar round-trip bugs;
+      // it does not catch observation-label bugs, which live in observe().
+      for (const action of legal) {
+        const attempted = extractAction(action);
+        const parsed =
+          attempted === null ? null : game.parseAction(state, seat, attempted);
+        assert(
+          attempted === action &&
+            parsed &&
+            parsed.ok === true &&
+            parsed.action === action,
+          `legal action ${JSON.stringify(action)} must survive extractAction + parseAction unchanged, got attempted ${JSON.stringify(attempted)} and ${JSON.stringify(parsed)}`
         );
       }
     }, counter);

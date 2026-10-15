@@ -138,14 +138,82 @@ test("heuristic is zero on the goal and grows with distance", () => {
   const oneMove = applyFifteenMove(FIFTEEN_GOAL, RIGHT);
   assert.equal(fifteenHeuristic(oneMove), 1);
   // Linear conflict: goal with the last row rotated is worth more than
-  // plain Manhattan distance (which would count 4).
+  // plain Manhattan distance (which would count 4). The admissible penalty
+  // is 2 × (tiles in line − longest non-conflicting subsequence):
+  // [14, 15, 13] has LIS {14,15} → one conflicting tile → +2, total 6.
+  // Pairwise pair-counting would (wrongly) add 4 here and total 8.
   const conflicted = [
     [1, 2, 3, 4],
     [5, 6, 7, 8],
     [9, 10, 11, 12],
     [14, 15, 13, 0],
   ];
-  assert.ok(fifteenHeuristic(conflicted) > 4);
+  assert.equal(fifteenHeuristic(conflicted), 6);
+});
+
+test("heuristic stays admissible when one tile conflicts with two others", () => {
+  // Row 3,1,2 of its goal row: tile 13 conflicts with both 14 and 15.
+  // Pairwise counting adds 4 (two reversed pairs); the admissible penalty
+  // is 2 (LIS {14,15} of goal indices [1,2,0] → 3 − 2 = 1 tile must leave).
+  const rotated = [
+    [1, 2, 3, 4],
+    [5, 6, 7, 8],
+    [9, 10, 11, 12],
+    [14, 15, 13, 0],
+  ];
+  const optimal = bfsOptimalLength(rotated, 20);
+  assert.ok(optimal !== null);
+  assert.ok(
+    fifteenHeuristic(rotated) <= optimal,
+    `h=${fifteenHeuristic(rotated)} must not exceed true distance ${optimal}`
+  );
+
+  // Reviewer repro: pairwise counting made h exceed the true distance on
+  // this board, so IDA* returned 17 moves where the optimum is 15.
+  const repro = [
+    [1, 3, 7, 4],
+    [5, 10, 0, 8],
+    [9, 2, 12, 15],
+    [13, 6, 14, 11],
+  ];
+  const reproOptimal = bfsOptimalLength(repro, 20);
+  assert.equal(reproOptimal, 15, "BFS reference pins the optimum at 15");
+  assert.ok(
+    fifteenHeuristic(repro) <= reproOptimal,
+    `h=${fifteenHeuristic(repro)} must not exceed true distance ${reproOptimal}`
+  );
+});
+
+test("solver returns the BFS optimum on multi-conflict boards", () => {
+  const cases = [
+    // Reviewer repro: pairwise linear conflict returned 17 here.
+    [
+      [1, 3, 7, 4],
+      [5, 10, 0, 8],
+      [9, 2, 12, 15],
+      [13, 6, 14, 11],
+    ],
+    // Single 3-cycle in the goal row.
+    [
+      [1, 2, 3, 4],
+      [5, 6, 7, 8],
+      [9, 10, 11, 12],
+      [14, 15, 13, 0],
+    ],
+  ];
+
+  for (const board of cases) {
+    const expected = bfsOptimalLength(board, 20);
+    assert.ok(expected !== null, "BFS reference should reach the goal");
+    const result = solveFifteen(board);
+    assert.equal(result.status, "solved", JSON.stringify(board));
+    assert.equal(
+      result.moves.length,
+      expected,
+      `move count must be optimal (BFS: ${expected})`
+    );
+    assert.ok(isFifteenSolved(applySequence(board, result.moves)));
+  }
 });
 
 test("solver returns optimal sequences matching BFS on fixed boards", () => {

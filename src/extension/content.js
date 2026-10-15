@@ -5602,33 +5602,51 @@
         }
       }
     
-      // Linear conflicts: two tiles in their goal row (or column) but reversed
-      // relative to each other need one of them to leave the line and return:
-      // two extra moves per conflicting pair.
+      // Linear conflicts (Hansson/Mayer/Yung form): for each line (row or
+      // column), the tiles already in their goal line must appear in goal order
+      // in any solution, so the tiles outside the longest strictly-increasing
+      // subsequence of their goal indices must each leave the line at least
+      // once — two extra moves apiece. Counting reversed *pairs* instead (as an
+      // earlier version did) is inadmissible when one tile conflicts with two
+      // or more others: row [3,1,2] of its goal row would add 4 where at most
+      // 2 extra moves are needed.
       for (let r = 0; r < SIZE; r++) {
-        for (let c1 = 0; c1 < SIZE; c1++) {
-          const v1 = board[r][c1];
-          if (v1 === 0 || Math.floor((v1 - 1) / SIZE) !== r) continue;
-          for (let c2 = c1 + 1; c2 < SIZE; c2++) {
-            const v2 = board[r][c2];
-            if (v2 === 0 || Math.floor((v2 - 1) / SIZE) !== r) continue;
-            if ((v2 - 1) % SIZE < (v1 - 1) % SIZE) h += 2;
-          }
+        const goalCols = [];
+        for (let c = 0; c < SIZE; c++) {
+          const v = board[r][c];
+          if (v !== 0 && Math.floor((v - 1) / SIZE) === r) goalCols.push((v - 1) % SIZE);
         }
+        h += 2 * (goalCols.length - longestIncreasingLength(goalCols));
       }
       for (let c = 0; c < SIZE; c++) {
-        for (let r1 = 0; r1 < SIZE; r1++) {
-          const v1 = board[r1][c];
-          if (v1 === 0 || (v1 - 1) % SIZE !== c) continue;
-          for (let r2 = r1 + 1; r2 < SIZE; r2++) {
-            const v2 = board[r2][c];
-            if (v2 === 0 || (v2 - 1) % SIZE !== c) continue;
-            if (Math.floor((v2 - 1) / SIZE) < Math.floor((v1 - 1) / SIZE)) h += 2;
-          }
+        const goalRows = [];
+        for (let r = 0; r < SIZE; r++) {
+          const v = board[r][c];
+          if (v !== 0 && (v - 1) % SIZE === c) goalRows.push(Math.floor((v - 1) / SIZE));
         }
+        h += 2 * (goalRows.length - longestIncreasingLength(goalRows));
       }
     
       return h;
+    }
+    
+    /**
+     * Length of the longest strictly increasing subsequence. Lines have at most
+     * SIZE (4) in-line tiles, so the simple O(n^2) DP is plenty.
+     * @param {number[]} values
+     * @returns {number}
+     */
+    function longestIncreasingLength(values) {
+      if (values.length === 0) return 0;
+      const best = new Array(values.length).fill(1);
+      let max = 1;
+      for (let i = 1; i < values.length; i++) {
+        for (let j = 0; j < i; j++) {
+          if (values[j] < values[i] && best[j] + 1 > best[i]) best[i] = best[j] + 1;
+        }
+        if (best[i] > max) max = best[i];
+      }
+      return max;
     }
     
     /**

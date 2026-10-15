@@ -14,6 +14,7 @@ import sokoban from './sokoban/index.js';
 import connect4 from './connect4/index.js';
 import mastermind from './mastermind/index.js';
 import holdem from './holdem/index.js';
+import chessEndgames from './chess-endgames/index.js';
 
 /** @import { Game } from '../core/types.js' */
 
@@ -21,6 +22,7 @@ import holdem from './holdem/index.js';
 export const GAMES = {
   tictactoe,
   chess,
+  'chess-endgames': chessEndgames,
   minesweeper,
   '2048': twoZeroFourEight,
   sliding,

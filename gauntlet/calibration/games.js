@@ -186,7 +186,10 @@ function tictactoeBest(state, seat, ply) {
     const outcome = tictactoe.outcome(child);
     let score;
     if (outcome) {
-      score = outcome.normalized[seat] * 100 - ply;
+      // Negamax: terminal values are scored from the node's mover's
+      // perspective; the caller negates. Scoring from the root seat here
+      // inverts every odd ply and makes the search prefer losing lines.
+      score = outcome.normalized[mover] * 100 - ply;
     } else {
       score = -tictactoeBest(child, seat, ply + 1).score;
     }

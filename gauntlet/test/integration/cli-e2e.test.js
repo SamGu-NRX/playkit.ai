@@ -92,7 +92,7 @@ test('cli end-to-end: suite build → run → verify → leaderboard', { timeout
   assert.equal(dryTrajectory.agent.id, 'model:anthropic/claude-sonnet-4-5');
   assert.equal(dryTrajectory.agent.track, 'official');
   assert.equal(dryTrajectory.agent.dryRun, true);
-  assert.equal(dryTrajectory.end.reason, 'forfeit', "the 'pass' reply is never legal, so the runner forfeits it");
+  assert.equal(dryTrajectory.end.reason, 'forfeit-invalid', "three 'pass' replies are never legal, so the runner forfeits it");
   const dryVerify = gauntlet('verify', dryDir);
   assert.match(dryVerify.stdout, new RegExp(`${episodeCount}/${episodeCount} trajectories verified`));
 
@@ -106,5 +106,7 @@ test('cli end-to-end: suite build → run → verify → leaderboard', { timeout
   assert.equal(official.ranked, false, 'a dry-run trajectory is never ranked');
   assert.equal(official.rank, null);
   assert.match(official.unrankedReason ?? '', /dry-run/i);
-  assert.equal(official.agent.dryRun, true);
+  // The leaderboard agent record is { id, track, model?, provider? } by
+  // contract; dry-run-ness lives on the trajectory and in unrankedReason.
+  assert.equal(dryTrajectory.agent.dryRun, true);
 });

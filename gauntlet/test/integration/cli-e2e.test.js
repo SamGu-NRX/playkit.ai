@@ -4,11 +4,13 @@
  * 1. `suite build --split public --seeds-per-tier 1` writes a manifest whose
  *    tiers carry exactly one public seed each.
  * 2. `run --agent random --limit 1` covers that manifest fully (one episode
- *    per game-tier) and writes one trajectory per episode plus `_run.json`.
- * 3. `verify` replays every trajectory cleanly.
- * 4. `leaderboard` ranks the random agent #1 in the baseline track with a
+ *    per game-tier) through gauntlet/runs/: nested trajectory files plus a
+ *    run.json provenance record and a suite.json copy.
+ * 3. `verify` replays every trajectory cleanly (recursive traversal).
+ * 4. `bundle verify` checks the run directory end to end.
+ * 5. `leaderboard` ranks the random agent #1 in the baseline track with a
  *    numeric benchmark score.
- * 5. The same suite with a dry-run scripted model agent (`--dry-run
+ * 6. The same suite with a dry-run scripted model agent (`--dry-run
  *    --script`) produces official-track trajectories that verify, and the
  *    leaderboard flags the entry as a dry run and leaves it unranked.
  *
@@ -18,7 +20,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,6 +38,28 @@ function gauntlet(...args) {
     maxBuffer: 64 * 1024 * 1024,
   });
   return { stdout, status: 0 };
+}
+
+/**
+ * Trajectory files under a run directory, recursively: `*.json` that is not
+ * bundle metadata (`run.json`, `suite.json`) or a `_`-prefixed summary.
+ *
+ * @param {string} root
+ * @param {string[]} out
+ * @returns {void}
+ */
+function collectTrajectories(root, out) {
+  for (const name of readdirSync(root).sort()) {
+    const path = join(root, name);
+    if (statSync(path).isDirectory()) {
+      collectTrajectories(path, out);
+      continue;
+    }
+    if (!name.endsWith('.json') || name.startsWith('_') || name === 'run.json' || name === 'suite.json') {
+      continue;
+    }
+    out.push(path);
+  }
 }
 
 test('cli end-to-end: suite build → run → verify → leaderboard', { timeout: 10 * 60 * 1000 }, async (t) => {
@@ -56,14 +80,28 @@ test('cli end-to-end: suite build → run → verify → leaderboard', { timeout
   // 2. Run the random agent; --limit 1 covers the manifest exactly once.
   const runDir = join(root, 'run-random');
   gauntlet('run', '--suite', suiteFile, '--agent', 'random', '--limit', '1', '--out', runDir);
-  const files = readdirSync(runDir).filter((name) => name.endsWith('.json') && !name.startsWith('_'));
+  /** @type {string[]} */
+  const files = [];
+  collectTrajectories(runDir, files);
   assert.equal(files.length, episodeCount, 'one trajectory per manifest episode');
+  const runRecord = JSON.parse(readFileSync(join(runDir, 'run.json'), 'utf8'));
+  assert.equal(runRecord.format, 'playkit-gauntlet-run/1');
+  assert.equal(runRecord.agent.id, 'random');
+  assert.equal(runRecord.counts.played, episodeCount);
+  assert.equal(runRecord.counts.unplayed, 0);
+  assert.ok(readFileSync(join(runDir, 'suite.json'), 'utf8').length > 0, 'suite.json copy exists');
 
   // 3. Verify every trajectory through the real CLI.
   const verify = gauntlet('verify', runDir);
   assert.match(verify.stdout, new RegExp(`${episodeCount}/${episodeCount} trajectories verified`));
 
-  // 4. The baseline track ranks the random agent.
+  // 4. Bundle verify: manifest hash, trajectories, strays, score.
+  const bundle = gauntlet('bundle', 'verify', runDir);
+  assert.match(bundle.stdout, /manifest ok/);
+  assert.match(bundle.stdout, /strays\s+none/);
+  assert.match(bundle.stdout, /verdict\s+ok/);
+
+  // 5. The baseline track ranks the random agent.
   const lbDir = join(root, 'lb-random');
   gauntlet('leaderboard', '--suite', suiteFile, '--out', lbDir, runDir);
   const board = JSON.parse(readFileSync(join(lbDir, 'leaderboard.json'), 'utf8'));
@@ -86,8 +124,11 @@ test('cli end-to-end: suite build → run → verify → leaderboard', { timeout
     '--dry-run', '--script', script,
     '--out', dryDir
   );
+  /** @type {string[]} */
+  const dryFiles = [];
+  collectTrajectories(dryDir, dryFiles);
   const dryTrajectory = JSON.parse(
-    readFileSync(join(dryDir, readdirSync(dryDir).find((n) => n.startsWith('tictactoe') && n.endsWith('.json')) ?? ''), 'utf8')
+    readFileSync(dryFiles.find((n) => n.includes('tictactoe')) ?? dryFiles[0], 'utf8')
   );
   assert.equal(dryTrajectory.agent.id, 'model:anthropic/claude-sonnet-4-5');
   assert.equal(dryTrajectory.agent.track, 'official');

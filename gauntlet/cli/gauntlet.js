@@ -29,10 +29,15 @@
  *   baseline:<game>:<greedy|engine> A game packet's bundled baseline; a suite
  *                                   run with this spec covers that game only.
  *   model:<provider>/<model>        An official-track model agent (provider
- *                                   anthropic or openai). Live runs need the
- *                                   provider API key in the environment and
- *                                   --prices for cost accounting; --dry-run
- *                                   with --script <file> replays replies.
+ *                                   anthropic, openai or openai-chat).
+ *                                   openai-chat speaks any OpenAI-compatible
+ *                                   chat-completions server and requires
+ *                                   --base-url <url>; every provider reads its
+ *                                   key from the environment variable named by
+ *                                   --api-key-env <VAR> (read at call time,
+ *                                   never logged). Live runs need --prices for
+ *                                   cost accounting; --dry-run with
+ *                                   --script <file> replays replies.
  *
  * Node-only: imports `node:*` freely.
  * @module
@@ -44,9 +49,11 @@ import { runEpisode, findTier } from '../core/runner.js';
 import { publicSeed } from '../core/seeds.js';
 import { serve } from '../protocol/server.js';
 import { buildSuiteManifest } from './suite.js';
-import { runSuite } from './run.js';
+import { runSuite, printRunSummary } from './run.js';
 import { verifyPath } from './verify.js';
 import { buildLeaderboard } from './leaderboard.js';
+import { buildEstimate } from './estimate.js';
+import { printBundleVerify } from './bundle.js';
 import { parseAgentSpec } from './agents.js';
 
 /**
@@ -130,14 +137,34 @@ function numberFlag(flags, name) {
 }
 
 /**
+ * Like numberFlag but accepts any finite non-negative number — for caps that
+ * are naturally fractional (`--max-usd`) or rates (`--requests-per-minute`).
+ *
  * @param {Map<string, string>} flags
- * @returns {{ dryRun: boolean, prices?: string, script?: string }}
+ * @param {string} name
+ * @returns {number | undefined}
+ */
+function finiteNumberFlag(flags, name) {
+  const raw = flags.get(name);
+  if (raw === undefined) return undefined;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`--${name} must be a finite non-negative number, got ${JSON.stringify(raw)}`);
+  }
+  return value;
+}
+
+/**
+ * @param {Map<string, string>} flags
+ * @returns {{ dryRun: boolean, prices?: string, script?: string, baseUrl?: string, apiKeyEnv?: string }}
  */
 function modelFlags(flags) {
   return {
     dryRun: flags.has('dry-run'),
     ...(flags.has('prices') ? { prices: /** @type {string} */ (flags.get('prices')) } : {}),
     ...(flags.has('script') ? { script: /** @type {string} */ (flags.get('script')) } : {}),
+    ...(flags.has('base-url') ? { baseUrl: /** @type {string} */ (flags.get('base-url')) } : {}),
+    ...(flags.has('api-key-env') ? { apiKeyEnv: /** @type {string} */ (flags.get('api-key-env')) } : {}),
   };
 }
 
@@ -232,19 +259,73 @@ async function main(argv) {
     return;
   }
 
+  if (command === 'estimate') {
+    const suitePath = flags.get('suite');
+    const agentSpecText = flags.get('agent');
+    if (!suitePath || !agentSpecText) usage();
+    await buildEstimate({
+      suitePath,
+      agentSpecText,
+      ...(flags.has('prices') ? { prices: /** @type {string} */ (flags.get('prices')) } : {}),
+      ...(flags.has('out') ? { outDir: /** @type {string} */ (flags.get('out')) } : {}),
+      ...(flags.has('json') ? { json: true } : {}),
+    });
+    return;
+  }
+
   if (command === 'run') {
     const suitePath = flags.get('suite');
     const agentSpecText = flags.get('agent');
     const outDir = flags.get('out');
     if (!suitePath || !agentSpecText || !outDir) usage();
-    await runSuite({
-      suitePath,
-      agentSpecText,
-      outDir,
-      ...(flags.has('limit') ? { limit: numberFlag(flags, 'limit') } : {}),
-      ...(flags.has('max-invalid') ? { maxInvalid: numberFlag(flags, 'max-invalid') } : {}),
-      ...modelFlags(flags),
+    if (flags.has('max-invalid')) {
+      throw new Error(
+        '--max-invalid applies to `play`; engine-backed `run` uses the runner\'s default invalid-action policy'
+      );
+    }
+    // A signalled run (SIGINT/SIGTERM) stops after the calls in flight and
+    // still writes its run.json provenance record, so the bundle stays
+    // resumable; only the in-flight episodes are lost.
+    const controller = new AbortController();
+    const stop = () => {
+      controller.abort();
+    };
+    process.on('SIGINT', stop);
+    process.on('SIGTERM', stop);
+    try {
+      const result = await runSuite({
+        suitePath,
+        agentSpecText,
+        outDir,
+        ...(flags.has('limit') ? { limit: numberFlag(flags, 'limit') } : {}),
+        ...(flags.has('concurrency') ? { concurrency: numberFlag(flags, 'concurrency') } : {}),
+        ...(flags.has('max-usd') ? { maxUsd: finiteNumberFlag(flags, 'max-usd') } : {}),
+        ...(flags.has('max-calls') ? { maxCalls: numberFlag(flags, 'max-calls') } : {}),
+        ...(flags.has('requests-per-minute')
+          ? { requestsPerMinute: finiteNumberFlag(flags, 'requests-per-minute') }
+          : {}),
+        ...(flags.has('resume') ? { resume: true } : {}),
+        signal: controller.signal,
+        ...modelFlags(flags),
+      });
+      printRunSummary(result);
+      if (result.stopped || result.run.counts.failed > 0) {
+        process.exitCode = 1;
+      }
+    } finally {
+      process.off('SIGINT', stop);
+      process.off('SIGTERM', stop);
+    }
+    return;
+  }
+
+  if (command === 'bundle' && positionals[0] === 'verify') {
+    if (positionals.length !== 2) usage();
+    const report = await printBundleVerify({
+      outDir: positionals[1],
+      ...(flags.has('json') ? { json: true } : {}),
     });
+    if (!report.ok) process.exitCode = 1;
     return;
   }
 

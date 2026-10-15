@@ -16,6 +16,7 @@ import sokoban from './sokoban/index.js';
 import connect4 from './connect4/index.js';
 import mastermind from './mastermind/index.js';
 import holdem from './holdem/index.js';
+import cube from './cube/index.js';
 
 /** @import { Game } from '../core/types.js' */
 
@@ -25,6 +26,7 @@ export const GAMES = {
   chess,
   'chess-endgames': chessEndgames,
   'chess-stockfish': chessStockfish,
+  'cube': cube,
   minesweeper,
   '2048': twoZeroFourEight,
   sliding,

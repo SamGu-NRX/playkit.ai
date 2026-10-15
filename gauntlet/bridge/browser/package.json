@@ -1,0 +1,16 @@
+{
+  "name": "@playkit-gauntlet/bridge-browser",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Real-Chromium proof of the gauntlet/bridge: vendored gabrielecirulli/2048 at a pinned commit, attached by the overlay's own bookmarklet loader, driven by Gauntlet baselines, refereed by gauntlet/bridge.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node bridge-browser.tests.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.49.1"
+  }
+}

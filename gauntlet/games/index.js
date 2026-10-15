@@ -6,12 +6,14 @@
  */
 
 import tictactoe from './tictactoe/index.js';
+import sokoban from './sokoban/index.js';
 
 /** @import { Game } from '../core/types.js' */
 
 /** @type {Record<string, Game<*>>} */
 export const GAMES = {
   tictactoe,
+  sokoban,
 };
 
 /**

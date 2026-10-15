@@ -1,0 +1,150 @@
+{
+  "format": "playkit-gauntlet-calibration-table/1",
+  "game": {
+    "id": "holdem",
+    "version": "1.0.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "seedsPerTier": 12,
+  "baselines": {
+    "random": {
+      "tiers": {
+        "station": {
+          "id": "station",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.019327,
+            "ci95": [
+              0.005349,
+              0.038189
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "rules": {
+          "id": "rules",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.449807,
+            "ci95": [
+              0.340518,
+              0.565427
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "equity": {
+          "id": "equity",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.010805,
+            "ci95": [
+              0.002767,
+              0.021347
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "station": {
+          "id": "station",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.669253,
+            "ci95": [
+              0.43396,
+              0.876495
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "rules": {
+          "id": "rules",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.37318,
+            "ci95": [
+              0.182374,
+              0.575171
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "equity": {
+          "id": "equity",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.17094,
+            "ci95": [
+              0.005461,
+              0.408909
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "station": {
+          "id": "station",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.86889,
+            "ci95": [
+              0.744444,
+              0.965953
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "rules": {
+          "id": "rules",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.730764,
+            "ci95": [
+              0.542202,
+              0.886547
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "equity": {
+          "id": "equity",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.317863,
+            "ci95": [
+              0.118749,
+              0.547046
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        }
+      }
+    }
+  }
+}

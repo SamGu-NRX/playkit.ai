@@ -46,6 +46,29 @@ observation's canonical JSON, so `verifyTrajectory` can replay any recorded
 episode from `(game, tier, seed)` alone and catch tampering with actions,
 hashes, counts, or the outcome.
 
+## Agents
+
+`harness/` holds the agent implementations:
+
+- `official.js` — the official-track prompt (a verbatim ARC-AGI-3 system
+  prompt) and the per-turn user message: rules, the full previous reply,
+  invalid-action feedback when present, then the current state. Bounded so a
+  turn's message stays within size limits.
+- `model-agent.js` — provider-backed agents for Anthropic Messages and OpenAI
+  Responses over global `fetch` (no SDKs). Keys are read from the environment
+  at call time and never logged; 429/5xx/network errors retry with exponential
+  backoff and surface the retry count in the reply's metadata; token usage is
+  recorded, and costs are computed only from a caller-supplied, sourced price
+  file (`prices.example.json` shows the shape).
+- `dry-run.js` — offline agents: a scripted agent (static list or function)
+  and a replay agent that re-plays a recorded trajectory against the same
+  `(game, tier, seed)`, refusing on an observation-hash mismatch. Both record
+  `dryRun: true` and zero usage so trajectories distinguish them from real
+  model runs.
+
+Model-client tests run offline against a local `node:http` stub on
+`127.0.0.1`; no paid API calls.
+
 ## Browser rule
 
 Game and core code must not import `node:*` — the overlay will later load

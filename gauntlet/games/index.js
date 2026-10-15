@@ -10,6 +10,7 @@ import chess from './chess/index.js';
 import sliding from './sliding/index.js';
 import sokoban from './sokoban/index.js';
 import connect4 from './connect4/index.js';
+import mastermind from './mastermind/index.js';
 
 /** @import { Game } from '../core/types.js' */
 
@@ -20,6 +21,7 @@ export const GAMES = {
   sliding,
   sokoban,
   connect4,
+  mastermind,
 };
 
 /**

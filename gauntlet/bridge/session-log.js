@@ -13,8 +13,7 @@
  * @module
  */
 
-import { slide } from '../games/2048/rules.js';
-import { placeTile } from '../games/2048/rules.js';
+import { referee } from './referee.js';
 
 /** @import { Board, Direction } from '../games/2048/rules.js' */
 /** @import { Spawn, Verdict } from './referee.js' */
@@ -104,11 +103,16 @@ function cloneBoard(board) {
 }
 
 /**
- * Verify a session log by replay: start from the recorded initial board,
- * apply each recorded applied direction with `slide`, place the recorded
- * spawn, and require the result to equal the recorded next board. A log of a
- * clean session verifies; a log whose page diverged from the rules fails at
- * the first tampered step.
+ * Verify a session log by replay: start from the recorded initial board and
+ * re-derive every transition with `referee()` instead of trusting the saved
+ * fields — the saved verdict, applied direction and spawn are attacker- and
+ * bug-visible records, not evidence. Each step must chain onto the replayed
+ * board (its recorded `boardBefore` must match), the referee must re-derive
+ * the transition (which enforces the spawn rules: one new 2 or 4 in an empty
+ * cell — `placeTile` alone would accept any value and overwrite occupied
+ * cells), and the re-derived applied direction and spawn must match the saved
+ * ones. A log of a clean session verifies; a forged or tampered log fails at
+ * the first step that does not replay.
  *
  * @param {BridgeLog} log
  * @returns {{ ok: true, finalBoard: Board } | { ok: false, index: number, reason: string }}
@@ -127,19 +131,33 @@ export function verifyBridgeLog(log) {
     if (step.applied === null) {
       return { ok: false, index: i, reason: 'no applied direction recorded' };
     }
-    const result = slide(board, /** @type {Direction} */ (step.applied));
-    if (!result.moved) {
-      return { ok: false, index: i, reason: `the recorded applied direction "${step.applied}" changes nothing` };
-    }
-    if (step.spawn === null) {
-      return { ok: false, index: i, reason: 'no spawn recorded for a changed board' };
-    }
-    const withSpawn = placeTile(result.board, step.spawn.r, step.spawn.c, step.spawn.value);
-    if (JSON.stringify(withSpawn) !== JSON.stringify(step.boardAfter)) {
+    if (JSON.stringify(step.boardBefore) !== JSON.stringify(board)) {
       return {
         ok: false,
         index: i,
-        reason: `replaying "${step.applied}" plus the recorded spawn does not reproduce the recorded board`,
+        reason: 'the recorded boardBefore does not match the replayed board',
+      };
+    }
+    const checked = referee(board, step.chosen, step.boardAfter);
+    if (!checked.ok) {
+      return {
+        ok: false,
+        index: i,
+        reason: `replaying the recorded transition does not reproduce the recorded board: ${checked.reason}`,
+      };
+    }
+    if (checked.applied !== step.applied) {
+      return {
+        ok: false,
+        index: i,
+        reason: `the recorded applied direction "${step.applied}" differs from the direction the referee re-derives ("${checked.applied}")`,
+      };
+    }
+    if (JSON.stringify(checked.spawn) !== JSON.stringify(step.spawn)) {
+      return {
+        ok: false,
+        index: i,
+        reason: 'the recorded spawn is not the one the rules produce for this transition',
       };
     }
     board = cloneBoard(step.boardAfter);

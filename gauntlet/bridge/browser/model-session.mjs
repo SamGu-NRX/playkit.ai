@@ -173,6 +173,10 @@ export async function runBrowserModelSession(setup) {
       }
     });
 
+    // The result channel back to Node — the same contract runBrowserSession
+    // uses; the page-side evaluate below resolves it when the session ends.
+    await page.exposeFunction('__bridgeReport', (value) => resolveReport(value));
+
     await page.goto(`http://127.0.0.1:${port}${urlPath}`, { waitUntil: 'load' });
     // The page constructs the game inside requestAnimationFrame — wait for it.
     await page.waitForFunction(() => document.querySelectorAll('.tile').length >= 2, null, {

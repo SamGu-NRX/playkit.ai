@@ -69,6 +69,101 @@ export function parseBookmarklet(loaderSource, port) {
 }
 
 /**
+ * @typedef {object} RuntimeTakeover
+ * @property {string} adapterName The overlay adapter the runtime detected.
+ * @property {number} preMoves Moves the overlay's own auto-play loop made
+ *   before takeover.
+ */
+
+/**
+ * Take over the overlay runtime: stop the bookmarklet's auto-play loop, wait
+ * until any in-flight automatic move has landed, and hand the same driver to
+ * the Gauntlet agent. Runs entirely in the page.
+ *
+ * Greptile P1 #4285440447: `rt.stop()` (the driver's `stop()`) only flips
+ * flags — a tick already inside `await this.executeMove()` keeps running, and
+ * its DOM write can land after takeover, beside the first Gauntlet step (an
+ * unrecorded move, or a referee rejection of a clean page). The harness wraps
+ * the driver's `executeMove` to track the active move, stops the runtime, and
+ * awaits that move. A move already in flight when the wrapper is installed is
+ * invisible to it — but at most one such move can land after `rt.stop()`, its
+ * remaining work is bounded (the overlay's own auto-play engine is the naive
+ * fallback: at most four DOM-change windows), and the real executeMove
+ * increments the driver's moveCount when its move lands. The takeover
+ * therefore also requires one second of moveCount quiet before it returns.
+ *
+ * @param {import('playwright').Page} page
+ * @returns {Promise<RuntimeTakeover>}
+ */
+export async function takeoverRuntime(page) {
+  return page.evaluate(async () => {
+    const rt = /** @type {*} */ (window).ai2048Runtime;
+    if (!rt) throw new Error('overlay runtime did not start');
+    const preMoves = rt.driver ? rt.driver.getStats().moveCount : 0;
+    const driver = rt.driver;
+    /** @type {Promise<*> | null} */
+    let active = null;
+    if (
+      driver &&
+      typeof driver.executeMove === 'function' &&
+      !driver.__gauntletQuiesce
+    ) {
+      const realExecuteMove = driver.executeMove.bind(driver);
+      driver.executeMove = async () => {
+        const pending = realExecuteMove();
+        active = pending;
+        try {
+          return await pending;
+        } finally {
+          if (active === pending) active = null;
+        }
+      };
+      driver.__gauntletQuiesce = true;
+    }
+    if (rt.isRunning) {
+      rt.stop();
+      if (active) {
+        try {
+          await active;
+        } catch {
+          // A failed move is still a settled move.
+        }
+      }
+      if (driver) {
+        // At most ONE pre-wrapper move can still land: the tick chain is
+        // single-file, and rt.stop() keeps any later tick from moving. The
+        // overlay's own auto-play engine is its naive fallback (the WASM
+        // solver 404s on the fixture), so that move's remaining work is
+        // bounded by up to four DOM-change windows (~0.5s); one second of
+        // moveCount quiet therefore proves the chain drained. Any move that
+        // starts after the wrapper was installed is awaited directly above.
+        const quietFor = 1000;
+        let last = driver.moveCount;
+        let quiet = 0;
+        const deadline = Date.now() + 15000;
+        while (Date.now() < deadline) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          const now = driver.moveCount;
+          if (now !== last) {
+            last = now;
+            quiet = 0;
+          } else {
+            quiet += 50;
+            if (quiet >= quietFor) break;
+          }
+        }
+      }
+    }
+    if (!rt.currentAdapter) rt.detectGame();
+    if (!rt.currentAdapter || !rt.currentAdapter.canAttach()) {
+      throw new Error('the overlay runtime did not detect the 2048 game');
+    }
+    if (!rt.driver) rt.setupComponents();
+    return { adapterName: rt.currentAdapter.getName(), preMoves };
+  });
+}
+
+/**
  * Per-test browser context: no touch input (the overlay adapter's touch
  * fallback becomes a silent no-op, exactly as on a desktop browser without
  * touch — otherwise every sendMove would deliver one keyboard move *and* one
@@ -79,7 +174,7 @@ export function parseBookmarklet(loaderSource, port) {
  * @param {{ seed?: number }} [options]
  * @returns {Promise<import('playwright').BrowserContext>}
  */
-async function newSessionContext(browser, options = {}) {
+export async function newSessionContext(browser, options = {}) {
   const context = await browser.newContext();
   await context.addInitScript(() => {
     window.Touch = undefined;
@@ -230,20 +325,7 @@ export async function runBrowserSession(setup) {
       polling: 100,
     });
 
-    const attachInfo = await page.evaluate(() => {
-      const rt = /** @type {*} */ (window).ai2048Runtime;
-      if (!rt) throw new Error('overlay runtime did not start');
-      // The bookmarklet's quickStart auto-plays with the overlay's own solver;
-      // stop the loop and hand the same driver to the Gauntlet agent.
-      const preMoves = rt.driver ? rt.driver.getStats().moveCount : 0;
-      if (rt.isRunning) rt.stop();
-      if (!rt.currentAdapter) rt.detectGame();
-      if (!rt.currentAdapter || !rt.currentAdapter.canAttach()) {
-        throw new Error('the overlay runtime did not detect the 2048 game');
-      }
-      if (!rt.driver) rt.setupComponents();
-      return { adapterName: rt.currentAdapter.getName(), preMoves };
-    });
+    const attachInfo = await takeoverRuntime(page);
 
     await page.evaluate(
       async ({ agentName, moves }) => {

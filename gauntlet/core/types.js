@@ -224,7 +224,7 @@ export {};
  * @property {number} seat
  * @property {'agent' | 'opponent'} by
  * @property {string} observationHash
- * @property {{ text: string }} reply
+ * @property {{ text: string, meta?: Record<string, *> }} reply
  * @property {string} action
  * @property {boolean} invalid
  * @property {Usage | null} usage

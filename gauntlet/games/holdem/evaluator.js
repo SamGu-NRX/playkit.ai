@@ -174,7 +174,10 @@ export function categorize(rankMask, suitMasks, counts) {
     // One pair from 7 cards has three kickers.
     return packValue(1, [pairs[0], kicker1, kicker2, kicker3(counts, pairs[0], kicker1, kicker2)]);
   }
-  return packValue(0, [kicker1, kicker2, kicker3(counts, -1, kicker1, kicker2)]);
+  // No-pair: every rank is a singleton, so the top five ranks of the mask
+  // are exactly the best-five kickers. Packing all five matters — the third
+  // and below decide most showdowns where both players miss the board.
+  return TOP5[rankMask & 8191];
 }
 
 /**

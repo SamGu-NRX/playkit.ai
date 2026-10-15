@@ -1,0 +1,22 @@
+{
+  "name": "playkit-gauntlet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "PlayKit Gauntlet: seeded, verifiable game benchmark environments for AI agents.",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "chess.js": "1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "jsdom": "^24.1.0",
+    "typescript": "^5.5.0"
+  },
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

@@ -18,7 +18,7 @@ import chess, {
   TRUNCATION_WIN_CP,
 } from './index.js';
 import { OPENINGS } from './openings.js';
-import { bestMove, legalUcis, quiescenceWhite, replayUci } from './engine.js';
+import { bestMove, evaluateWhite, legalUcis, quiescenceWhite, replayUci, START_FEN } from './engine.js';
 import { createGreedyBaselineAgent } from './baselines.js';
 
 /** @import { TierSpec } from '../../core/types.js' */
@@ -405,4 +405,74 @@ test('conformance kit passes across all four tiers', async () => {
   assert.equal(report.ok, true);
   assert.equal(report.game, 'chess');
   assert.ok(report.checks > 0);
+});
+
+test('truncation referee: a mover capture crossing the win band stays in the draw band', () => {
+  // Black to move can win the hanging white queen with Nxd4, so the honest
+  // quiescence value is about -320 for white: inside the draw band. A root
+  // that maximizes from white's perspective over black's options instead
+  // returns white's best case (+575) and flips a draw to a white win.
+  const blackToMove = new Chess('4k3/8/2n5/8/3Q4/8/8/4K3 b - - 0 1');
+  const score = quiescenceWhite(blackToMove, {
+    nodeBudget: 20000,
+    quiescenceMaxPlies: 10,
+  });
+  assert.ok(
+    Math.abs(score) < TRUNCATION_WIN_CP,
+    `black-to-move hanging-queen quiescence must stay inside the draw band, got ${score}`
+  );
+  // Control: white to move, Rxd8 Kxd8 is a dead-equal capture chain.
+  const whiteToMove = new Chess('3qk3/8/8/8/8/8/3R4/4K3 w - - 0 1');
+  assert.equal(
+    quiescenceWhite(whiteToMove, { nodeBudget: 20000, quiescenceMaxPlies: 10 }),
+    0,
+    'dead-equal white-to-move capture chain must quiesce to 0'
+  );
+});
+
+test('evaluation symmetry: the start position evaluates to 0 and mirrored FENs cancel', () => {
+  // Mirrors a FEN across the horizontal axis with colours swapped, so
+  // evaluateWhite(mirror(fen)) === -evaluateWhite(fen) iff the evaluation is
+  // colour-symmetric. A king table picked from partially accumulated material
+  // breaks this (the black king is scanned first and misread the phase).
+  /** @param {string} fen @returns {string} */
+  const mirrorFen = (fen) => {
+    const [board, side, castling, ep, half, full] = fen.split(' ');
+    /** @param {string} s @returns {string} */
+    const swapCase = (s) =>
+      s.replace(/[A-Za-z]/g, (ch) => (ch >= 'a' ? ch.toUpperCase() : ch.toLowerCase()));
+    const flipped = board
+      .split('/')
+      .reverse()
+      .map((rank) => swapCase(rank))
+      .join('/');
+    const rights = castling === '-' ? '' : swapCase(castling);
+    const mirroredCastling = ['K', 'Q', 'k', 'q'].filter((c) => rights.includes(c)).join('') || '-';
+    const mirroredEp = ep === '-' ? '-' : swapCase(ep);
+    return [flipped, side === 'w' ? 'b' : 'w', mirroredCastling, mirroredEp, half, full].join(' ');
+  };
+  assert.equal(evaluateWhite(new Chess(START_FEN)), 0, 'the mirrored start position must evaluate to 0');
+  const positions = [
+    START_FEN,
+    PERFT_FENS.kiwipete,
+    'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4',
+  ];
+  for (const fen of positions) {
+    const mirrored = evaluateWhite(new Chess(mirrorFen(fen)));
+    const original = evaluateWhite(new Chess(fen));
+    // -0 and 0 compare unequal under Object.is; cancellation means the sum
+    // of the two signed evaluations is zero.
+    assert.equal(mirrored + original, 0, `mirrored FEN must cancel for ${fen}`);
+  }
+});
+
+test('opening book: every named line is legal from the start position', () => {
+  assert.ok(OPENINGS.length > 0, 'the opening book must not be empty');
+  for (const opening of OPENINGS) {
+    const line = new Chess();
+    for (const san of opening.san) {
+      const move = line.move(san);
+      assert.ok(move, `opening "${opening.name}": ${san} is illegal`);
+    }
+  }
 });

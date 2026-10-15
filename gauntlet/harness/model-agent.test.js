@@ -437,3 +437,284 @@ test('createModelAgent rejects unknown providers and empty models', () => {
   );
   assert.throws(() => createModelAgent({ provider: 'openai', model: '' }), /model is required/);
 });
+
+// ---------------------------------------------------------------------------
+// openai-chat: OpenAI-compatible chat-completions (llama.cpp, Ollama, vLLM,
+// other labs' gateways). Same local-stub discipline: 127.0.0.1 only.
+
+/**
+ * A chat-completions stub, same contract as openaiStub.
+ *
+ * @param {Array<[number, *]>} script
+ */
+async function chatStub(script) {
+  /** @type {*} */
+  const requests = [];
+  const { url, close } = await startStubServer((req, res, body) => {
+    requests.push({
+      method: req.method,
+      url: req.url,
+      auth: req.headers.authorization,
+      body,
+    });
+    const [status, payload] = script[Math.min(requests.length - 1, script.length - 1)];
+    sendJson(res, status, payload);
+  });
+  return { url, requests, close };
+}
+
+const CHAT_OK = /** @type {[number, *]} */ ([
+  200,
+  {
+    id: 'chatcmpl_1',
+    object: 'chat.completion',
+    model: 'stub-model',
+    choices: [
+      {
+        index: 0,
+        message: { role: 'assistant', content: 'Center is strongest.\naction: b2' },
+        finish_reason: 'stop',
+      },
+    ],
+    usage: { prompt_tokens: 88, completion_tokens: 9, total_tokens: 97 },
+  },
+]);
+
+test('openai-chat agent posts the official system+user messages to /v1/chat/completions and maps usage', async () => {
+  const stub = await chatStub([CHAT_OK]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      maxOutputTokens: 64,
+    });
+    const reply = await agent.act(CTX);
+    assert.equal(stub.requests.length, 1);
+    const req = stub.requests[0];
+    assert.equal(req.url, '/v1/chat/completions');
+    assert.equal(req.auth, 'Bearer stub-key-anthropic');
+    assert.deepEqual(req.body.messages, [
+      { role: 'system', content: OFFICIAL_SYSTEM_PROMPT },
+      {
+        role: 'user',
+        content: [
+          RULES,
+          'Your previous reply:\n(none)',
+          'Current state:\nOBSERVATION TEXT',
+        ].join('\n\n'),
+      },
+    ]);
+    assert.equal(req.body.model, 'stub-model');
+    assert.equal(req.body.max_tokens, 64);
+    assert.equal(reply.text, 'Center is strongest.\naction: b2');
+    assert.deepEqual(reply.usage, { inputTokens: 88, outputTokens: 9, costUsd: null });
+    assert.equal(reply.meta.retries, 0);
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai-chat sends no auth header when the key environment variable is unset', async () => {
+  const stub = await chatStub([CHAT_OK]);
+  const unset = 'GAUNTLET_TEST_DEFINITELY_UNSET_KEY';
+  delete process.env[unset];
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: unset,
+    });
+    const reply = await agent.act(CTX);
+    assert.equal(stub.requests[0].auth, undefined);
+    assert.equal(reply.text, 'Center is strongest.\naction: b2');
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai-chat keeps separately delivered reasoning out of the reply and records only its length', async () => {
+  const reasoningContent = 'Take the center before any corner.';
+  const contentStub = await chatStub([
+    [
+      200,
+      {
+        ...CHAT_OK[1],
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'action: b2',
+              reasoning_content: reasoningContent,
+            },
+            finish_reason: 'stop',
+          },
+        ],
+      },
+    ],
+  ]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: contentStub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+    });
+    const reply = await agent.act(CTX);
+    assert.equal(reply.text, 'action: b2');
+    assert.ok(!reply.text.includes('center'));
+    assert.equal(reply.meta.reasoningChars, reasoningContent.length);
+  } finally {
+    await contentStub.close();
+  }
+
+  // Some servers use message.reasoning instead of message.reasoning_content.
+  const reasoningField = 'Occupied cells are invalid; block the diagonal.';
+  const fieldStub = await chatStub([
+    [
+      200,
+      {
+        ...CHAT_OK[1],
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'action: a1',
+              reasoning: reasoningField,
+            },
+            finish_reason: 'stop',
+          },
+        ],
+      },
+    ],
+  ]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: fieldStub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+    });
+    const reply = await agent.act(CTX);
+    assert.equal(reply.text, 'action: a1');
+    assert.ok(!reply.text.includes('diagonal'));
+    assert.equal(reply.meta.reasoningChars, reasoningField.length);
+  } finally {
+    await fieldStub.close();
+  }
+});
+
+test('openai-chat treats null content as an empty reply, not a transport failure', async () => {
+  const stub = await chatStub([
+    [
+      200,
+      {
+        ...CHAT_OK[1],
+        choices: [
+          {
+            index: 0,
+            message: { role: 'assistant', content: null },
+            finish_reason: 'stop',
+          },
+        ],
+      },
+    ],
+  ]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+    });
+    const reply = await agent.act(CTX);
+    assert.equal(stub.requests.length, 1); // no retry: the runner counts an invalid attempt
+    assert.equal(reply.text, '');
+    assert.equal(reply.meta.reasoningChars, 0);
+    assert.deepEqual(reply.usage, { inputTokens: 88, outputTokens: 9, costUsd: null });
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai-chat costUsd is 0 only with an explicit zero-rate price entry', async () => {
+  const stub = await chatStub([CHAT_OK, CHAT_OK]);
+  try {
+    const zeroRates = {
+      'openai-chat/stub-model': {
+        inputPerMTok: 0,
+        outputPerMTok: 0,
+        source: 'local server, no charge',
+        checked: '2026-10-15',
+      },
+    };
+    const free = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      prices: zeroRates,
+    });
+    const freeReply = await free.act(CTX);
+    assert.equal(freeReply.usage?.costUsd, 0);
+
+    const unpriced = createModelAgent({
+      provider: 'openai-chat',
+      model: 'other-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      prices: zeroRates,
+    });
+    const unpricedReply = await unpriced.act(CTX);
+    assert.equal(unpricedReply.usage?.costUsd, null);
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai-chat retries a 500 and then succeeds', async () => {
+  const stub = await chatStub([[500, { error: { message: 'model is loading' } }], CHAT_OK]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      retryBaseDelayMs: 1,
+    });
+    const reply = await agent.act(CTX);
+    assert.equal(stub.requests.length, 2);
+    assert.equal(reply.meta.retries, 1);
+    assert.equal(reply.text, 'Center is strongest.\naction: b2');
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai-chat fails at once on a 4xx, with the response body excerpt', async () => {
+  const stub = await chatStub([[400, { error: { message: 'max_tokens is too large' } }]]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      retryBaseDelayMs: 1,
+    });
+    await assert.rejects(agent.act(CTX), /HTTP 400.*max_tokens is too large/s);
+    assert.equal(stub.requests.length, 1); // no retry on a 4xx
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai-chat requires the baseUrl option and names it in the error', () => {
+  assert.throws(
+    () => createModelAgent({ provider: 'openai-chat', model: 'stub-model' }),
+    /baseUrl/
+  );
+});

@@ -9,7 +9,8 @@
  *   into a lost-on-the-spot position.
  * - The forced-win tier generates, per seed, positions from seeded random
  *   play that the exact solver proves are a win for the agent's side within
- *   7 to 15 plies, against the strongest engine opponent.
+ *   17 to 21 plies (fallback 13 to 21), against the strongest engine opponent
+ *   (exact play at every depth).
  *
  * @module
  */
@@ -37,8 +38,8 @@ const MARKS = ['X', 'O'];
 const EXACT_MIN_DISCS = 30;
 
 /** Forced-win tier: accepted win distances, in plies. */
-const MIN_WIN_PLIES = 7;
-const MAX_WIN_PLIES = 15;
+const MIN_WIN_PLIES = 17;
+const MAX_WIN_PLIES = 21;
 
 /**
  * The agent's seat alternates with the seed, so it plays both colors across
@@ -91,7 +92,7 @@ function withSeededOpening(state, seed) {
  */
 function generateForcedWinPosition(agentSeat, seed) {
   for (let pass = 0; pass < 2; pass++) {
-    const [lo, hi] = pass === 0 ? [MIN_WIN_PLIES, MAX_WIN_PLIES] : [5, 21];
+    const [lo, hi] = pass === 0 ? [MIN_WIN_PLIES, MAX_WIN_PLIES] : [13, 21];
     for (let k = 0; k < 240; k++) {
       // Shallower boards keep forced wins long enough to land in the band;
       // deeper random play either ends early or leaves only win-in-1 shorts.
@@ -141,7 +142,7 @@ function boardRows(state) {
 export const connect4 = {
   spec: {
     id: 'connect4',
-    version: '1.0.0',
+    version: '1.1.0',
     title: 'Connect Four',
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {InformationMode} */ ('perfect'),
@@ -408,8 +409,8 @@ export const connect4 = {
   /**
    * The opponent agent for the seat the agent is not in: seeded uniform
    * random on ladder-1, the negamax engine at the tier's depth on the other
-   * ladders, and the strongest engine (exact endgame play at 30 or more
-   * discs, depth 12 below) on the forced-win tier.
+   * ladders, and the strongest engine (exact play at every depth) on the
+   * forced-win tier.
    *
    * @param {TierSpec} tier
    * @param {string} seed
@@ -448,7 +449,11 @@ export const connect4 = {
           throw new GauntletRuleError('engine opponent asked to move in a finished game');
         }
         const key = `${seedKey}${ctx.turn}`;
-        if (params.exact && state.discs >= EXACT_MIN_DISCS) {
+        // On the forced-win tier the opponent defends exactly at every depth:
+        // below EXACT_MIN_DISCS the depth-12 search blunders in deep wins, and
+        // those blunders are what let weak agents convert the proven win by
+        // luck. Exact defense never concedes it.
+        if (params.exact) {
           const choice = chooseExactMove(state, key);
           return { text: String(choice.col + 1) };
         }

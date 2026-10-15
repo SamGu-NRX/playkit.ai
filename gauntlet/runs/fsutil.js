@@ -38,15 +38,28 @@ export function canonicalSha256(value) {
 /**
  * Where a job's trajectory lives inside a run directory:
  * `<outDir>/<game>/<tier>/<seed>.json`. Seeds are strings like
- * `<game>/<tier>/public/<i>`, so the path nests below the tier directory;
- * `planJobs` refuses seeds that could escape it.
+ * `<game>/<tier>/public/<i>`, so the path nests below the tier directory.
+ * `planJobs` refuses seeds whose components could escape it, and this
+ * function independently refuses any job that resolves outside `outDir` —
+ * belt and braces, so no caller (including `verifyBundle` on an untrusted
+ * bundle's own suite.json) can be steered to a path outside the run
+ * directory.
  *
  * @param {string} outDir
  * @param {import('./plan.js').Job} job
  * @returns {string}
  */
 export function trajectoryPath(outDir, job) {
-  return path.join(outDir, job.gameId, job.tierId, `${job.seed}.json`);
+  const result = path.join(outDir, job.gameId, job.tierId, `${job.seed}.json`);
+  const root = path.resolve(outDir) + path.sep;
+  if (!path.resolve(result).startsWith(root)) {
+    throw new Error(
+      `[gauntlet/runs/fsutil.js] trajectoryPath: job ${JSON.stringify(
+        `${job.gameId}/${job.tierId}/${job.seed}`
+      )} escapes the run directory ${JSON.stringify(outDir)}`
+    );
+  }
+  return result;
 }
 
 /**

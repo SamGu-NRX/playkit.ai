@@ -7,10 +7,12 @@
  * and replies with one face turn per action. Scoring is action efficiency
  * against the proven-optimal turn count (`parKind: "optimal"`): an episode's
  * efficiency score is `solved ? min(1, (par / agentActions)^2) : 0` — you
- * cannot beat the optimal line, so the cap is 1.0. The runner counts invalid
- * attempts in agentActions; this game's outcome() only sees its own valid
- * turn count, so outcome.normalized reports the score over valid turns and
- * the scoring layer recomputes from the trajectory's agentActions count.
+ * cannot beat the optimal line, so the cap is 1.0. Invalid replies burn
+ * budget but are invisible to the score: the runner records them in
+ * `trajectory.end.agentActions` (and its budget accounting), while
+ * `outcome()` is computed from the game state alone and scores over valid
+ * turns only. Nothing recomputes `normalized` from total attempts — the
+ * scoring layer that would do that does not exist in this stack.
  *
  * Clockwise is the convention solvers and models get wrong, so it is pinned
  * in rulesText, restated in every observation, and fixed by hand-written net
@@ -211,7 +213,7 @@ export const cube = {
       "Accepted alternates: Ui or U- for U' (the i or - suffix means prime), U2' for U2, and surrounding quotes or backticks ('R', \"R'\", `R`) with extra internal whitespace (R 2) are tolerated.",
       'Lowercase face letters (r, u, f...) are rejected: in cube notation lowercase means a wide two-layer turn, which this game does not use.',
       "A sequence such as R U R' is rejected: one turn per reply.",
-      'Scoring: efficiency against the proven-optimal (par) turn count for your scramble. Solving with exactly par turns scores 1.0; every extra turn multiplies the score by (par/turns)^2, capped at 1.0. Invalid replies consume turns.',
+      'Scoring: efficiency against the proven-optimal (par) turn count for your scramble. Solving with exactly par turns scores 1.0; every extra turn multiplies the score by (par/turns)^2, capped at 1.0. Invalid replies consume action budget but do not count as turns when scoring: the score is computed over your valid turns only.',
     ].join(' '),
     tiers: /** @type {TierSpec[]} */ ([
       {
@@ -302,7 +304,6 @@ export const cube = {
       ].join('\n'),
       data: {
         facelets: state.facelets,
-        par: state.par,
         moveCount: state.moveCount,
         maxActions: state.maxActions,
         solved: solved(state),

@@ -1,0 +1,58 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.0.0"
+  },
+  "tier": "torus",
+  "seed": "minesweeper/torus/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c668863e0846b195",
+      "reply": {
+        "text": "flag 10 8"
+      },
+      "action": "flag 10 8",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6c29304c6eaca5c4",
+      "reply": {
+        "text": "reveal 2 12"
+      },
+      "action": "reveal 2 12",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.5046296296296297
+      ],
+      "raw": [
+        109
+      ],
+      "reason": "mine revealed at row 2, column 12 — episode ends with 109 of 216 safe cells revealed"
+    },
+    "agentActions": 2,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-15T21:11:23.444Z",
+  "finishedAt": "2026-10-15T21:11:23.445Z"
+}

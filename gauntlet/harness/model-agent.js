@@ -14,6 +14,13 @@
  *   (POST /v1/responses; header Authorization: Bearer; body model, input,
  *   instructions, max_output_tokens; response output[] message items with
  *   content[] output_text, and usage.input_tokens / usage.output_tokens).
+ * - OpenAI chat completions (provider "openai-chat"): the wire format spoken
+ *   by local servers (llama.cpp, Ollama, vLLM) and most other labs' gateways.
+ *   https://platform.openai.com/docs/api-reference/chat
+ *   (POST <baseUrl>/v1/chat/completions; Authorization: Bearer optional; body
+ *   model, messages, max_tokens; response choices[0].message.content and
+ *   usage.prompt_tokens / usage.completion_tokens; reasoning may arrive
+ *   separately as message.reasoning_content or message.reasoning).
  *
  * Pure JS except for reading the API key from `process.env` at call time; no
  * `node:*` imports.
@@ -40,13 +47,17 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
 
 /**
  * @typedef {object} ModelAgentOptions
- * @property {'anthropic' | 'openai'} provider Which wire protocol to speak.
+ * @property {'anthropic' | 'openai' | 'openai-chat'} provider Which wire
+ *   protocol to speak.
  * @property {string} model The provider's model id, sent as-is.
  * @property {string} [baseUrl] API root. Defaults to the provider's public
- *   API; tests point this at a local stub server.
+ *   API for "anthropic" and "openai"; required for "openai-chat" (local
+ *   servers have no default). Tests point this at a local stub server.
  * @property {string} [apiKeyEnv] Environment variable holding the API key,
  *   read at call time, never logged. Defaults to ANTHROPIC_API_KEY /
- *   OPENAI_API_KEY.
+ *   OPENAI_API_KEY. Required for "anthropic" and "openai"; optional for
+ *   "openai-chat" (some local servers need no key) — when unset, no
+ *   Authorization header is sent.
  * @property {number} [maxOutputTokens] Per-reply cap. Default 4096.
  * @property {Record<string, *>} [params] Extra provider parameters merged into
  *   the request body (temperature, top_p, ...). Required protocol fields win
@@ -70,6 +81,7 @@ const DEFAULT_BASE_URLS = /** @type {Record<string, string>} */ ({
 const DEFAULT_API_KEY_ENVS = /** @type {Record<string, string>} */ ({
   anthropic: 'ANTHROPIC_API_KEY',
   openai: 'OPENAI_API_KEY',
+  'openai-chat': 'OPENAI_API_KEY',
 });
 const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
 const DEFAULT_MAX_RETRIES = 3;
@@ -113,6 +125,26 @@ function resolveApiKey(apiKeyEnv, provider) {
     throw new Error(
       `model agent: environment variable ${apiKeyEnv} is not set; it must contain the ${provider} API key (the key is read at call time and is never logged)`
     );
+  }
+  return key;
+}
+
+/**
+ * Read the API key for a provider where the key is optional ("openai-chat").
+ * Returns null when the environment variable is unset or empty — the request
+ * then simply carries no Authorization header. The key value is never placed
+ * in an error message or a log.
+ *
+ * @param {string} apiKeyEnv
+ * @param {string} provider
+ * @returns {string | null}
+ */
+function resolveOptionalApiKey(apiKeyEnv, provider) {
+  const env =
+    typeof process !== 'undefined' && process.env ? process.env : undefined;
+  const key = env ? env[apiKeyEnv] : undefined;
+  if (typeof key !== 'string' || key.length === 0) {
+    return null;
   }
   return key;
 }
@@ -262,10 +294,24 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  */
 
 /**
+ * One successful provider turn, as the agent records it. `reasoningChars` is
+ * set only by the openai-chat client (character count of separately delivered
+ * reasoning; the reasoning content itself never enters the reply text).
+ *
+ * @typedef {object} ProviderTurnResult
+ * @property {string} text
+ * @property {number} inputTokens
+ * @property {number} outputTokens
+ * @property {number} retries
+ * @property {string | null} responseId
+ * @property {number} [reasoningChars]
+ */
+
+/**
  * Call the Anthropic Messages API for one official-track turn.
  *
  * @param {ProviderCallOptions} options
- * @returns {Promise<{ text: string, inputTokens: number, outputTokens: number, retries: number, responseId: string | null }>}
+ * @returns {Promise<ProviderTurnResult>}
  */
 async function callAnthropic({
   baseUrl,
@@ -321,7 +367,7 @@ async function callAnthropic({
  * Call the OpenAI Responses API for one official-track turn.
  *
  * @param {ProviderCallOptions} options Same shape as callAnthropic.
- * @returns {Promise<{ text: string, inputTokens: number, outputTokens: number, retries: number, responseId: string | null }>}
+ * @returns {Promise<ProviderTurnResult>}
  */
 async function callOpenAI({
   baseUrl,
@@ -380,6 +426,109 @@ async function callOpenAI({
 }
 
 /**
+ * @typedef {object} ChatCallOptions
+ * @property {string} baseUrl API root; the request goes to
+ *   <baseUrl>/v1/chat/completions.
+ * @property {string | null} apiKey API key, or null when the server needs
+ *   none (no Authorization header is sent).
+ * @property {string} model
+ * @property {number} maxOutputTokens
+ * @property {Record<string, *>} [params]
+ * @property {string} userMessage
+ * @property {typeof fetch} fetchImpl
+ * @property {number} maxRetries
+ * @property {number} retryBaseDelayMs
+ * @property {(ms: number) => Promise<void>} sleep
+ */
+
+/**
+ * Reply text from a chat-completions `message.content`: a string, or null /
+ * missing (an empty reply — the runner counts it as an invalid attempt, it is
+ * not a transport error), or an array of { type: 'text', text } parts.
+ *
+ * @param {*} content
+ * @returns {string}
+ */
+function chatContentText(content) {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter((/** @type {any} */ part) => part && part.type === 'text' && typeof part.text === 'string')
+      .map((/** @type {any} */ part) => part.text)
+      .join('\n');
+  }
+  return '';
+}
+
+/**
+ * Call an OpenAI-compatible chat-completions endpoint for one official-track
+ * turn. Used for local servers (llama.cpp, Ollama, vLLM) and any other
+ * gateway speaking the same wire format; baseUrl is required and the API key
+ * is optional.
+ *
+ * @param {ChatCallOptions} options
+ * @returns {Promise<ProviderTurnResult>}
+ */
+async function callOpenAIChat({
+  baseUrl,
+  apiKey,
+  model,
+  maxOutputTokens,
+  params,
+  userMessage,
+  fetchImpl,
+  maxRetries,
+  retryBaseDelayMs,
+  sleep,
+}) {
+  const body = {
+    ...(params ?? {}),
+    model,
+    max_tokens: maxOutputTokens,
+    messages: [
+      { role: 'system', content: OFFICIAL_SYSTEM_PROMPT },
+      { role: 'user', content: userMessage },
+    ],
+  };
+  /** @type {Record<string, string>} */
+  const headers = { 'content-type': 'application/json' };
+  if (apiKey !== null && apiKey.length > 0) {
+    headers.authorization = `Bearer ${apiKey}`;
+  }
+  const { json, retries } = await requestWithRetries({
+    url: joinUrl(baseUrl, '/v1/chat/completions'),
+    headers,
+    body,
+    fetchImpl,
+    maxRetries,
+    retryBaseDelayMs,
+    sleep,
+    provider: 'openai-chat',
+  });
+  const choice = Array.isArray(/** @type {*} */ (json)?.choices)
+    ? /** @type {Array<any>} */ (json.choices)[0]
+    : null;
+  const message = choice && choice.message ? choice.message : null;
+  const text = chatContentText(message?.content);
+  // Reasoning delivered separately never enters the reply text the runner
+  // parses; only its character count is recorded.
+  const reasoning =
+    typeof message?.reasoning_content === 'string'
+      ? message.reasoning_content
+      : typeof message?.reasoning === 'string'
+        ? message.reasoning
+        : '';
+  return {
+    text,
+    inputTokens: tokenCount(json?.usage?.prompt_tokens),
+    outputTokens: tokenCount(json?.usage?.completion_tokens),
+    retries,
+    responseId: typeof json?.id === 'string' ? json.id : null,
+    reasoningChars: reasoning.length,
+  };
+}
+
+/**
  * Build an official-track agent backed by a frontier model. The agent carries
  * its previous reply forward itself: each act() sends exactly one user message
  * built by `buildOfficialTurnMessage` and stores the full reply for the next
@@ -402,15 +551,24 @@ export function createModelAgent({
   sleep,
   id,
 }) {
-  if (provider !== 'anthropic' && provider !== 'openai') {
+  if (
+    provider !== 'anthropic' &&
+    provider !== 'openai' &&
+    provider !== 'openai-chat'
+  ) {
     throw new Error(
-      `createModelAgent: provider must be "anthropic" or "openai", got ${JSON.stringify(provider)}`
+      `createModelAgent: provider must be "anthropic", "openai" or "openai-chat", got ${JSON.stringify(provider)}`
     );
   }
   if (typeof model !== 'string' || model.length === 0) {
     throw new Error('createModelAgent: model is required');
   }
   const base = baseUrl ?? DEFAULT_BASE_URLS[provider];
+  if (!base) {
+    throw new Error(
+      'createModelAgent: provider "openai-chat" requires the baseUrl option (an OpenAI-compatible chat-completions server is self-hosted, so there is no default base URL)'
+    );
+  }
   const keyEnv = apiKeyEnv ?? DEFAULT_API_KEY_ENVS[provider];
   const limit =
     typeof maxOutputTokens === 'number' && maxOutputTokens > 0
@@ -441,12 +599,15 @@ export function createModelAgent({
     dryRun: false,
     async act(ctx) {
       const userMessage = buildOfficialTurnMessage(ctx, previousReply);
-      const apiKey = resolveApiKey(keyEnv, provider);
+      const apiKey =
+        provider === 'openai-chat'
+          ? resolveOptionalApiKey(keyEnv, provider)
+          : resolveApiKey(keyEnv, provider);
       const result =
         provider === 'anthropic'
           ? await callAnthropic({
               baseUrl: base,
-              apiKey,
+              apiKey: /** @type {string} */ (apiKey),
               model,
               maxOutputTokens: limit,
               params,
@@ -456,18 +617,31 @@ export function createModelAgent({
               retryBaseDelayMs: backoff,
               sleep: wait,
             })
-          : await callOpenAI({
-              baseUrl: base,
-              apiKey,
-              model,
-              maxOutputTokens: limit,
-              params,
-              userMessage,
-              fetchImpl: doFetch,
-              maxRetries: retries,
-              retryBaseDelayMs: backoff,
-              sleep: wait,
-            });
+          : provider === 'openai'
+            ? await callOpenAI({
+                baseUrl: base,
+                apiKey: /** @type {string} */ (apiKey),
+                model,
+                maxOutputTokens: limit,
+                params,
+                userMessage,
+                fetchImpl: doFetch,
+                maxRetries: retries,
+                retryBaseDelayMs: backoff,
+                sleep: wait,
+              })
+            : await callOpenAIChat({
+                baseUrl: base,
+                apiKey,
+                model,
+                maxOutputTokens: limit,
+                params,
+                userMessage,
+                fetchImpl: doFetch,
+                maxRetries: retries,
+                retryBaseDelayMs: backoff,
+                sleep: wait,
+              });
       previousReply = result.text;
       /** @type {Usage} */
       const usage = {
@@ -490,6 +664,9 @@ export function createModelAgent({
         meta: {
           retries: result.retries,
           ...(result.responseId ? { responseId: result.responseId } : {}),
+          ...(result.reasoningChars !== undefined
+            ? { reasoningChars: result.reasoningChars }
+            : {}),
         },
       };
       return reply;

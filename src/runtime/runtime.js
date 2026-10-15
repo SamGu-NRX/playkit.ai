@@ -142,7 +142,15 @@ export class Runtime {
 
     this.driver.setAdapter(this.currentAdapter);
 
-    if (this.solverManager) {
+    // A game-specific adapter can supply its own solver engine (e.g. the
+    // 15-puzzle, whose moves are exact and must not come from 2048
+    // heuristics). 2048 adapters don't implement this and keep the shared
+    // WASM/naive solver manager.
+    const preferredEngine =
+      this.currentAdapter.getPreferredSolverEngine?.();
+    if (preferredEngine) {
+      this.driver.setSolverEngine(preferredEngine);
+    } else if (this.solverManager) {
       this.driver.setSolverEngine(this.solverManager);
       this._notifySolverStatus();
     }

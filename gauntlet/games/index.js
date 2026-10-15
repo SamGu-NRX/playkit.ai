@@ -10,6 +10,8 @@ import chess from './chess/index.js';
 
 import sliding from './sliding/index.js';
 
+import sokoban from './sokoban/index.js';
+
 /** @import { Game } from '../core/types.js' */
 
 /** @type {Record<string, Game<*>>} */
@@ -18,6 +20,8 @@ export const GAMES = {
   chess,
 
   sliding,
+
+  sokoban,
 };
 
 /**

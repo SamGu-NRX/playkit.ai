@@ -1,0 +1,126 @@
+=== sokoban/one-box, seed sokoban/one-box/public/0, agent human ===
+--- stdin: "help", "", "9", then the winning line (5 moves) ---
+
+=== PlayKit Gauntlet — human at the terminal ===
+game     Sokoban (sokoban v1.0.0), tier one-box
+seat     0
+rules    Classic Sokoban. You are the warehouse keeper (@; + when you stand on a goal) on a rectangular floor bordered by walls (#). Boxes are $ (* when a box sits on a goal); goals are .. You win by pushing every box onto a goal: a level is solved exactly when no box is off a goal. Actions: up, down, left, right move you one square. Walking into a box pushes it one square in the same direction if the square behind it is free; otherwise the move is illegal and consumes an action attempt. Boxes can never be pulled. Pushes are irreversible in practice: a box pushed into a corner, against a wall line without goals, or against another frozen box can never reach a goal again, which can make the level unsolvable. A pushed box may also block you in; if you have no legal action left, the episode ends unsolved. undo reverts your last action (undoes stack: repeated undos walk back through the whole game) and counts as an action like any other. Scoring is efficiency against par: par is the proven minimum number of actions for this exact level. Finishing in par actions scores highest; every extra action (walks, pushes, undos, and invalid attempts) lowers the score, and running out of the action budget scores zero. The board is drawn in standard Sokoban notation: # wall, @ you, + you on a goal, $ box, * box on goal, . goal, space floor.
+input:
+  <number>        play the numbered legal action from the list above
+  <action text>   play that action — the referee judges it exactly like
+                  any agent reply (an illegal or unparseable action
+                  consumes an attempt, just as for every other agent)
+  help (h, ?)     show this help and re-prompt
+  quit (q, exit, forfeit)
+                  forfeit the episode; the recording ends forfeit-shaped
+Empty lines and out-of-range numbers re-prompt and never consume an action.
+
+--- turn 1 (seat 0) ---
+Sokoban. You are seat 0.
+       
+   .   
+       
+  $    
+  @    
+       
+       
+Actions taken: 0 of a budget that ends the episode at 5 × par. Par for this level: 5.
+Legal actions (4): down, left, right, up
+legal actions (4):
+  1) down
+  2) left
+  3) right
+  4) up
+Move — number, action text, help, quit: input:
+  <number>        play the numbered legal action from the list above
+  <action text>   play that action — the referee judges it exactly like
+                  any agent reply (an illegal or unparseable action
+                  consumes an attempt, just as for every other agent)
+  help (h, ?)     show this help and re-prompt
+  quit (q, exit, forfeit)
+                  forfeit the episode; the recording ends forfeit-shaped
+Empty lines and out-of-range numbers re-prompt and never consume an action.
+Move — number, action text, help, quit: (empty line ignored — type an action, its number, help, or quit)
+Move — number, action text, help, quit: (no legal action number 9 — pick 1 to 4)
+Move — number, action text, help, quit: 
+--- turn 2 (seat 0) ---
+Sokoban. You are seat 0.
+       
+   .   
+  $    
+  @    
+       
+       
+       
+Actions taken: 1 of a budget that ends the episode at 5 × par. Par for this level: 5.
+Legal actions (5): down, left, right, undo, up
+legal actions (5):
+  1) down
+  2) left
+  3) right
+  4) undo
+  5) up
+Move — number, action text, help, quit: 
+--- turn 3 (seat 0) ---
+Sokoban. You are seat 0.
+       
+  $.   
+  @    
+       
+       
+       
+       
+Actions taken: 2 of a budget that ends the episode at 5 × par. Par for this level: 5.
+Legal actions (5): down, left, right, undo, up
+legal actions (5):
+  1) down
+  2) left
+  3) right
+  4) undo
+  5) up
+Move — number, action text, help, quit: 
+--- turn 4 (seat 0) ---
+Sokoban. You are seat 0.
+       
+  $.   
+ @     
+       
+       
+       
+       
+Actions taken: 3 of a budget that ends the episode at 5 × par. Par for this level: 5.
+Legal actions (5): down, left, right, undo, up
+legal actions (5):
+  1) down
+  2) left
+  3) right
+  4) undo
+  5) up
+Move — number, action text, help, quit: 
+--- turn 5 (seat 0) ---
+Sokoban. You are seat 0.
+       
+ @$.   
+       
+       
+       
+       
+       
+Actions taken: 4 of a budget that ends the episode at 5 × par. Par for this level: 5.
+Legal actions (5): down, left, right, undo, up
+legal actions (5):
+  1) down
+  2) left
+  3) right
+  4) undo
+  5) up
+Move — number, action text, help, quit: game     sokoban/one-box
+seed     sokoban/one-box/public/0 (public)
+agent    human at seat 0 (track community)
+end      terminal after 5 agent actions (0 invalid)
+outcome  seat0=1.000 — solved in 5 actions against par 5
+saved    /tmp/b14-ev-sokoban.json
+
+=== gauntlet verify /tmp/b14-ev-sokoban.json ===
+ok   /tmp/b14-ev-sokoban.json — sokoban/one-box seed sokoban/one-box/public/0 (5 steps, end terminal)
+1/1 trajectories verified

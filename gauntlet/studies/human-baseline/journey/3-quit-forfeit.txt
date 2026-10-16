@@ -1,0 +1,41 @@
+=== tictactoe/random-opponent, agent human:sam, stdin "quit" ===
+
+=== PlayKit Gauntlet — human at the terminal ===
+game     Tic-Tac-Toe (tictactoe v1.2.0), tier random-opponent
+seat     0 of 2
+rules    Standard 3x3 tic-tac-toe on a board with columns a-c (left to right) and rows 1-3 (top to bottom). Seat 0 plays X and moves first; seat 1 plays O. Players alternate; a player wins by placing three of their marks in a row, column, or diagonal. A full board with no line is a draw. Action grammar: name an empty cell as <column><row>, e.g. "a1" is the top-left cell and "c3" the bottom-right. Documented alternates: "play a1", "place a1", "move a1", "mark a1", uppercase letters, and surrounding quotes or backticks are all accepted. Playing an occupied or unknown cell is invalid and consumes an action attempt.
+input:
+  <number>        play the numbered legal action from the list above
+  <action text>   play that action — the referee judges it exactly like
+                  any agent reply (an illegal or unparseable action
+                  consumes an attempt, just as for every other agent)
+  help (h, ?)     show this help and re-prompt
+  quit (q, exit, forfeit)
+                  forfeit the episode; the recording ends forfeit-shaped
+Empty lines and out-of-range numbers re-prompt and never consume an action.
+
+--- turn 1 (seat 0) ---
+Tic-Tac-Toe, tier random-opponent. You are seat 0 (X).
+    a   b   c
+1   .   .   .
+2   .   .   .
+3   .   .   .
+X to move.
+Legal actions (9, at most 64 so all are listed): a1, a2, a3, b1, b2, b3, c1, c2, c3
+legal actions (9):
+  1) a1
+  2) a2
+  3) a3
+  4) b1
+  5) b2
+  6) b3
+  7) c1
+  8) c2
+  9) c3
+Move — number, action text, help, quit: quitting — the episode ends forfeit-shaped (your score: 0).
+game     tictactoe/random-opponent
+seed     tictactoe/random-opponent/public/0 (public)
+agent    human:sam at seat 0 (track community)
+end      forfeit-invalid after 3 agent actions (3 invalid)
+outcome  seat0=0.000 seat1=1.000 — forfeit-invalid
+saved    /tmp/b14-ev-quit.json

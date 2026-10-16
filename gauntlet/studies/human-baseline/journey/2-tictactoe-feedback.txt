@@ -1,0 +1,93 @@
+=== tictactoe/random-opponent, seed tictactoe/random-opponent/public/3, agent human:sam ===
+--- stdin: "b1 b1" (illegal), then "1" x 8 ---
+
+=== PlayKit Gauntlet — human at the terminal ===
+game     Tic-Tac-Toe (tictactoe v1.2.0), tier random-opponent
+seat     1 of 2
+rules    Standard 3x3 tic-tac-toe on a board with columns a-c (left to right) and rows 1-3 (top to bottom). Seat 0 plays X and moves first; seat 1 plays O. Players alternate; a player wins by placing three of their marks in a row, column, or diagonal. A full board with no line is a draw. Action grammar: name an empty cell as <column><row>, e.g. "a1" is the top-left cell and "c3" the bottom-right. Documented alternates: "play a1", "place a1", "move a1", "mark a1", uppercase letters, and surrounding quotes or backticks are all accepted. Playing an occupied or unknown cell is invalid and consumes an action attempt.
+input:
+  <number>        play the numbered legal action from the list above
+  <action text>   play that action — the referee judges it exactly like
+                  any agent reply (an illegal or unparseable action
+                  consumes an attempt, just as for every other agent)
+  help (h, ?)     show this help and re-prompt
+  quit (q, exit, forfeit)
+                  forfeit the episode; the recording ends forfeit-shaped
+Empty lines and out-of-range numbers re-prompt and never consume an action.
+
+--- turn 1 (seat 1) ---
+Tic-Tac-Toe, tier random-opponent. You are seat 1 (O).
+    a   b   c
+1   .   .   .
+2   .   X   .
+3   .   .   .
+O to move.
+Legal actions (8, at most 64 so all are listed): a1, a2, a3, b1, b3, c1, c2, c3
+legal actions (8):
+  1) a1
+  2) a2
+  3) a3
+  4) b1
+  5) b3
+  6) c1
+  7) c2
+  8) c3
+Move — number, action text, help, quit: 
+--- turn 2 (seat 1) ---
+Tic-Tac-Toe, tier random-opponent. You are seat 1 (O).
+    a   b   c
+1   .   .   .
+2   .   X   .
+3   .   .   .
+O to move.
+Legal actions (8, at most 64 so all are listed): a1, a2, a3, b1, b3, c1, c2, c3
+Your last action was rejected: cannot parse "b1 b1" as a cell; use <column><row>, e.g. "b2"
+legal actions (8):
+  1) a1
+  2) a2
+  3) a3
+  4) b1
+  5) b3
+  6) c1
+  7) c2
+  8) c3
+Move — number, action text, help, quit: 
+--- turn 3 (seat 1) ---
+Tic-Tac-Toe, tier random-opponent. You are seat 1 (O).
+    a   b   c
+1   O   .   .
+2   .   X   .
+3   .   X   .
+O to move.
+Legal actions (6, at most 64 so all are listed): a2, a3, b1, c1, c2, c3
+legal actions (6):
+  1) a2
+  2) a3
+  3) b1
+  4) c1
+  5) c2
+  6) c3
+Move — number, action text, help, quit: 
+--- turn 4 (seat 1) ---
+Tic-Tac-Toe, tier random-opponent. You are seat 1 (O).
+    a   b   c
+1   O   .   .
+2   O   X   .
+3   X   X   .
+O to move.
+Legal actions (4, at most 64 so all are listed): b1, c1, c2, c3
+legal actions (4):
+  1) b1
+  2) c1
+  3) c2
+  4) c3
+Move — number, action text, help, quit: game     tictactoe/random-opponent
+seed     tictactoe/random-opponent/public/3 (public)
+agent    human:sam at seat 1 (track community)
+end      terminal after 4 agent actions (1 invalid)
+outcome  seat0=1.000 seat1=0.000 — seat 0 (X) won with three in a row
+saved    /tmp/b14-ev-ttt.json
+
+=== gauntlet verify /tmp/b14-ev-ttt.json ===
+ok   /tmp/b14-ev-ttt.json — tictactoe/random-opponent seed tictactoe/random-opponent/public/3 (8 steps, end terminal)
+1/1 trajectories verified

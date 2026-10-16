@@ -4,6 +4,10 @@
  * scored 1 / 0.5 / 0. Columns are 1-based (1 = leftmost, 7 = rightmost); the
  * choice is stated in rulesText and in every observation.
  *
+ * - The depth-2 rung `ladder-0` sits between the random `ladder-1` and the
+ *   depth-4 `ladder-2`: a shallow search punishes pure luck (it takes wins
+ *   and blocks losses) without depth-4 tactics, so weak-but-real play
+ *   separates from luck.
  * - Ladder tiers open with 0 to 4 seeded random plies that never hand the
  *   mover an immediate win or give the opponent one, so the agent never steps
  *   into a lost-on-the-spot position.
@@ -179,8 +183,17 @@ export const connect4 = {
         params: { opponent: 'random' },
       },
       {
-        id: 'ladder-2',
+        id: 'ladder-0',
         rank: 2,
+        scoring: 'outcome',
+        maxActions: 30,
+        // 16 public seeds: the on-ramp verdict needs >= 16 scored episodes.
+        publicSeeds: 16,
+        params: { opponent: 'engine', depth: 2 },
+      },
+      {
+        id: 'ladder-2',
+        rank: 3,
         scoring: 'outcome',
         maxActions: 30,
         publicSeeds: 12,
@@ -188,7 +201,7 @@ export const connect4 = {
       },
       {
         id: 'ladder-3',
-        rank: 3,
+        rank: 4,
         scoring: 'outcome',
         maxActions: 30,
         publicSeeds: 12,
@@ -196,7 +209,7 @@ export const connect4 = {
       },
       {
         id: 'ladder-4',
-        rank: 4,
+        rank: 5,
         scoring: 'outcome',
         maxActions: 30,
         publicSeeds: 12,
@@ -204,7 +217,7 @@ export const connect4 = {
       },
       {
         id: 'forced-win',
-        rank: 5,
+        rank: 6,
         scoring: 'outcome',
         maxActions: 30,
         publicSeeds: 12,
@@ -415,8 +428,8 @@ export const connect4 = {
   /**
    * The opponent agent for the seat the agent is not in: seeded uniform
    * random on ladder-1, the negamax engine at the tier's depth on the other
-   * ladders, and the strongest engine (exact play at every depth) on the
-   * forced-win tier.
+   * ladders (depth 2 on ladder-0, 4/8/12 on ladder-2..4), and the strongest
+   * engine (exact play at every depth) on the forced-win tier.
    *
    * @param {TierSpec} tier
    * @param {string} seed

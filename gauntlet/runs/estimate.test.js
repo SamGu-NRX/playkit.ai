@@ -30,35 +30,44 @@ test('engine-probe basis: tictactoe, low = an independently replayed baseline me
   const suite = buildSuite([tictactoe], { split: 'public' });
   const estimate = await estimateSuite({ suite, games: [tictactoe] });
 
-  const tier = tictactoe.spec.tiers.find((t) => t.id === 'perfect-opponent');
-  assert.ok(tier, 'tictactoe has the perfect-opponent tier');
-  assert.equal(estimate.jobs.length, 8);
+  assert.equal(estimate.jobs.length, 40);
 
-  // Independent measurement: replay the engine baseline directly through the
-  // core runner on the same two seeds the estimate probes.
-  const probeSeeds = suite.games[0].tiers[0].seeds.slice(0, 2);
-  assert.equal(probeSeeds.length, 2);
-  let sum = 0;
-  for (const seed of probeSeeds) {
-    const seat = tictactoe.agentSeat(tier, seed);
-    const baseline = tictactoe.opponent(tier, seed, seat);
-    const trajectory = await runEpisode({ game: tictactoe, tierId: tier.id, seed, agent: baseline });
-    sum += trajectory.end.agentActions;
+  // Independent measurement: for every tier, replay that tier's own engine
+  // baseline through the core runner on the same two seeds the probe uses.
+  const tierMeans = new Map();
+  for (const st of suite.games[0].tiers) {
+    const tier = /** @type {*} */ (tictactoe.spec.tiers.find((t) => t.id === st.id));
+    assert.ok(tier, `tictactoe has the ${st.id} tier`);
+    const probeSeeds = st.seeds.slice(0, 2);
+    assert.equal(probeSeeds.length, 2);
+    let sum = 0;
+    for (const seed of probeSeeds) {
+      const seat = tictactoe.agentSeat(tier, seed);
+      const baseline = tictactoe.opponent(tier, seed, seat);
+      const trajectory = await runEpisode({ game: tictactoe, tierId: tier.id, seed, agent: baseline });
+      sum += trajectory.end.agentActions;
+    }
+    tierMeans.set(st.id, sum / probeSeeds.length);
   }
-  const mean = sum / probeSeeds.length;
 
+  let lowSum = 0;
+  let highSum = 0;
   for (const job of estimate.jobs) {
     assert.equal(job.basis, 'engine-probe');
-    assert.ok(Math.abs(/** @type {number} */ (job.callsLow) - mean) < 1e-9, `callsLow ${job.callsLow} vs measured ${mean}`);
+    const mean = /** @type {number} */ (tierMeans.get(job.tierId));
+    assert.ok(Math.abs(/** @type {number} */ (job.callsLow) - mean) < 1e-9, `callsLow ${job.callsLow} vs measured ${mean} on ${job.tierId}`);
+    const tier = /** @type {*} */ (tictactoe.spec.tiers.find((t) => t.id === job.tierId));
     assert.equal(job.callsHigh, tier.maxActions);
     // No prices given: every USD figure stays unknown rather than guessed.
     assert.equal(job.usdLow, null);
     assert.equal(job.usdHigh, null);
     assert.match(/** @type {string} */ (job.note), /engine baseline/);
+    lowSum += /** @type {number} */ (job.callsLow);
+    highSum += /** @type {number} */ (job.callsHigh);
   }
   assert.equal(estimate.suite.manifestSha256, manifestSha256(suite));
-  assert.equal(estimate.totals.callsHigh, 8 * tier.maxActions);
-  assert.equal(estimate.totals.callsLow, 8 * mean);
+  assert.equal(estimate.totals.callsHigh, highSum);
+  assert.equal(estimate.totals.callsLow, lowSum);
   assert.equal(estimate.totals.usdLow, null);
 });
 

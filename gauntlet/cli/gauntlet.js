@@ -5,6 +5,14 @@
  *
  * Commands:
  *   list                                   List registered games and tiers.
+ *   replay <file> [--step N] [--format text|json] [--max-reply-chars K]
+ *                                          Show a recorded episode turn by turn
+ *                                          in the terminal. Delegates to the
+ *                                          standalone viewer in replay/cli.js
+ *                                          (same arguments, same exit codes:
+ *                                          2 on usage errors, 1 when the
+ *                                          trajectory is refused by replay
+ *                                          verification).
  *   play --game <id> --tier <id> [--seed <s>] [--agent <spec>]
  *        [--split <split>] [--out <file>] [--max-invalid <n>]
  *        [--prices <file>] [--dry-run --script <file>]
@@ -41,6 +49,13 @@
  *   random                          The bundled seeded random agent (baseline).
  *   baseline:<game>:<greedy|engine> A game packet's bundled baseline; a suite
  *                                   run with this spec covers that game only.
+ *   skill:<p>:<expert-spec>         The skill dial (agents/skill-dial.js): the
+ *                                   expert degraded toward random play by a
+ *                                   per-turn probability p in [0, 1];
+ *                                   <expert-spec> is "random" or any baseline
+ *                                   spec, e.g. skill:0.25:baseline:sokoban:
+ *                                   engine. The trajectory records the dial's
+ *                                   own id, dial-<expert id>-p<p*100>.
  *   model:<provider>/<model>        An official-track model agent (provider
  *                                   anthropic, openai or openai-chat).
  *                                   openai-chat speaks any OpenAI-compatible
@@ -77,6 +92,8 @@
  */
 
 import { writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { getGame, listGames } from '../games/index.js';
 import { runEpisode, findTier } from '../core/runner.js';
 import { publicSeed } from '../core/seeds.js';
@@ -104,6 +121,8 @@ function usage() {
       '                      [--split <split>] [--out <file>] [--max-invalid <n>]',
       '                      [--prices <file>] [--dry-run --script <file>]',
       '       gauntlet verify <trajectory.json-or-dir>',
+      '       gauntlet replay <trajectory.json> [--step N] [--format text|json]',
+      '                      [--max-reply-chars K]',
       '       gauntlet suite build --split public|eval [--salt-file <file>]',
       '                      [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]',
       '       gauntlet run --suite <file> --agent <spec> --out <dir> [--limit <n>]',
@@ -115,7 +134,10 @@ function usage() {
       '       gauntlet rate <dirs...> [--ladder <file>] [--json]',
       '       gauntlet serve',
       '',
-      'agent specs: random | baseline:<game>:<greedy|engine> | model:<provider>/<model>',
+      'agent specs: random | baseline:<game>:<greedy|engine> | skill:<p>:<expert-spec>',
+      '             | model:<provider>/<model>',
+      '',
+      '  skill:<p>:<expert-spec> — the skill dial over "random" or a baseline spec',
     ].join('\n') + '\n'
   );
   process.exit(2);
@@ -306,6 +328,19 @@ async function main(argv) {
     if (positionals.length !== 1) usage();
     const report = await verifyPath(positionals[0]);
     if (report.failures.length > 0) process.exitCode = 1;
+    return;
+  }
+
+  if (command === 'replay') {
+    // Delegate to the standalone viewer (replay/cli.js): one implementation,
+    // the same argument grammar, and the same exit codes (2 usage, 1 refused
+    // by replay verification). The raw arguments pass through untouched.
+    const viewer = fileURLToPath(new URL('../replay/cli.js', import.meta.url));
+    const result = spawnSync(process.execPath, [viewer, ...rest], {
+      stdio: 'inherit',
+    });
+    if (result.error) throw result.error;
+    process.exitCode = result.status ?? 1;
     return;
   }
 

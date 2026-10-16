@@ -21,6 +21,16 @@
  *                                     (default 2) within the same turn. Track
  *                                     "community": the leaderboard keeps these
  *                                     results out of the official table.
+ *   human[:name]                    — a person at the terminal
+ *                                     (agents/human.js): moves are read line
+ *                                     by line from stdin (an action text, its
+ *                                     number in the rendered legal list, help,
+ *                                     or quit), the rules and observations go
+ *                                     to stderr, and the recording verifies
+ *                                     like any other. Works without a TTY, so
+ *                                     scripted input drives it. Track
+ *                                     "community": human baselines stay out of
+ *                                     the official table.
  *   model:<provider>/<model>        — an official-track model agent through
  *                                     harness/model-agent.js (provider
  *                                     anthropic, openai or openai-chat;
@@ -57,6 +67,7 @@ import { skillDial } from '../agents/skill-dial.js';
 import { createScriptedAgent } from '../harness/dry-run.js';
 import { createModelAgent } from '../harness/model-agent.js';
 import { createAssistedAgent } from '../community/assisted-agent.js';
+import { createHumanAgent } from '../agents/human.js';
 import { getGame } from '../games/index.js';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -503,6 +514,42 @@ export async function parseAgentSpec(text, options = {}) {
     };
   }
 
+  // The human spec seats a person at the terminal (agents/human.js): the
+  // same runner and referee as any agent, moves read line by line from
+  // stdin. Community track by construction — the leaderboard keeps human
+  // baselines out of the official table, and the legal-action list the agent
+  // renders needs a non-official track. No flags apply: a human run has no
+  // provider, prices, or reply script.
+  const humanMatch = /^human(?::([^:]+))?$/.exec(text);
+  if (humanMatch) {
+    if (
+      options.dryRun ||
+      options.script ||
+      options.prices ||
+      options.maxOutputTokens !== undefined ||
+      options.callTimeoutMs !== undefined ||
+      options.thinkingBudget !== undefined ||
+      options.reasoningEffort !== undefined ||
+      options.baseUrl !== undefined ||
+      options.apiKeyEnv !== undefined
+    ) {
+      throw new Error(
+        `agent spec "${text}" takes no --dry-run, --script, --prices, --base-url, --api-key-env, --max-output-tokens, --call-timeout-ms, --thinking-budget or --reasoning-effort flags; a human plays from stdin`
+      );
+    }
+    return {
+      text,
+      gameId: null,
+      track: 'community',
+      dryRun: false,
+      createForEpisode() {
+        return createHumanAgent(
+          humanMatch[1] !== undefined ? { name: humanMatch[1] } : {}
+        );
+      },
+    };
+  }
+
   const modelMatch = /^model:([a-z0-9-]+)\/(.+)$/.exec(text);
   if (modelMatch) {
     const provider = modelMatch[1];
@@ -702,6 +749,6 @@ export async function parseAgentSpec(text, options = {}) {
   }
 
   throw new Error(
-    `unknown agent spec "${text}"; expected "random", "baseline:<game>:<greedy|engine>", "skill:<p>:<expert-spec>", "community-assisted:<provider>/<model>[:retries=N]" or "model:<provider>/<model>"`
+    `unknown agent spec "${text}"; expected "random", "baseline:<game>:<greedy|engine>", "skill:<p>:<expert-spec>", "community-assisted:<provider>/<model>[:retries=N]", "human[:name]" or "model:<provider>/<model>"`
   );
 }

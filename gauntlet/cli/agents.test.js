@@ -227,3 +227,50 @@ test('a live community-assisted spec builds a community-track wrapper around a m
   assert.equal(agent.provider, 'openai-chat');
   assert.equal(agent.model, 'stub-model');
 });
+
+// The human spec seats a person at the terminal: community track (human
+// baselines stay out of the official table, and the agent renders the legal
+// actions a non-official track provides), id `human` or `human:<name>`, and
+// no provider machinery — any model flag is refused at parse time.
+test('the human spec resolves a community-track per-episode factory', async () => {
+  for (const text of ['human', 'human:sam']) {
+    const spec = await parseAgentSpec(text);
+    assert.equal(spec.track, 'community', text);
+    assert.equal(spec.dryRun, false, text);
+    assert.equal(spec.gameId, null, text);
+    const agent = await spec.createForEpisode({
+      game: getGame('tictactoe'),
+      tier: getGame('tictactoe').spec.tiers[0],
+      seed: 's0',
+      agentSeat: 0,
+    });
+    assert.equal(agent.id, text === 'human' ? 'human' : 'human:sam', `${text} kept the spec id`);
+    assert.equal(agent.track, 'community', text);
+    assert.equal(typeof agent.act, 'function', text);
+  }
+});
+
+test('the human spec refuses provider and rehearsal flags', async () => {
+  await assert.rejects(
+    () => parseAgentSpec('human', { prices: '/tmp/no-prices.json' }),
+    /human" takes no --dry-run/
+  );
+  await assert.rejects(
+    () => parseAgentSpec('human:sam', { thinkingBudget: 1024 }),
+    /a human plays from stdin/
+  );
+  await assert.rejects(
+    () => parseAgentSpec('human', { reasoningEffort: 'high' }),
+    /a human plays from stdin/
+  );
+  await assert.rejects(
+    () => parseAgentSpec('human', { script: '/tmp/no-script.mjs', dryRun: true }),
+    /a human plays from stdin/
+  );
+});
+
+test('a name with a colon is not a human spec — the grammar refuses it', async () => {
+  await assert.rejects(() => parseAgentSpec('human:a:b'), /unknown agent spec "human:a:b"/);
+  // and the unknown-spec error names the human form so it is discoverable
+  await assert.rejects(() => parseAgentSpec('humanoid'), /"human\[:name\]"/);
+});

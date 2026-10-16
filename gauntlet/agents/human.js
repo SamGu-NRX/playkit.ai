@@ -1,0 +1,263 @@
+/**
+ * The human agent: a person playing a Gauntlet episode at the terminal.
+ *
+ * `gauntlet play --agent human` (or `human:<name>`) seats this agent and the
+ * game runs exactly as it does for any other agent — same runner, same
+ * referee, same trajectory shape — so the recording verifies like any other
+ * and can be scored, replayed, and filed beside model runs. The point is the
+ * RHAE human baseline: scoring's `h` is "solved pass@2 by at least two
+ * humans" (docs/DESIGN.md section 5), and until now there was no way for a
+ * person to play an episode at all.
+ *
+ * Input and output:
+ *
+ *   - The rules are printed once, on the agent's first turn.
+ *   - Every turn prints the observation text, the previous invalid attempt's
+ *     referee reason (when there is one), the legal actions numbered when
+ *     there are few (at most `maxNumbered`), and a prompt.
+ *   - All of this goes to stderr, so stdout stays machine-readable (the
+ *     `play` summary) and the transcript can be captured with `2>`.
+ *
+ * Input grammar, one line per turn:
+ *
+ *   <number>        play the numbered legal action from the list above
+ *   <action text>   anything else non-empty is forwarded verbatim to the
+ *                   referee: the game's parseAction and legality check judge
+ *                   it exactly as they judge any agent reply
+ *   help (h, ?)     print the input help and re-prompt
+ *   quit (q, exit, forfeit)
+ *                   forfeit the episode (see below)
+ *
+ *   Empty lines and out-of-range or non-numeric input when a numbered list is
+ *   shown are agent-grammar errors: they re-prompt and never consume an
+ *   action. An illegal — or game-unparseable — action text takes the normal
+ *   invalid path: it consumes an attempt, returns as feedback next turn, and
+ *   after enough consecutive invalid attempts forfeits the episode, exactly
+ *   as for every other agent. The agent deliberately does NOT pre-validate
+ *   action text against the legal list, so a human-baseline run measures
+ *   invalid-action rates under the same referee as a model run.
+ *
+ * Quitting: the Agent contract has no quit signal — the runner ends an
+ * episode as forfeit only through the invalid-reply path. On `quit` (or EOF
+ * on stdin: a player who closed the input has stopped playing) the agent
+ * returns an empty reply — guaranteed invalid under `extractAction` — marked
+ * `meta: { human: { quit: true } }`, and keeps returning it without further
+ * prompting until the episode ends as `forfeit-invalid` (agent 0, everyone
+ * else 1, the standard forfeit outcome). The `meta.human.quit` marks make the
+ * forfeited steps self-explanatory in the trajectory and in the
+ * studies/human-baseline kit.
+ *
+ * Works without a TTY: stdin is read through readline regardless of what it
+ * is attached to, so scripted input (`... < script.txt`) drives a full
+ * episode. Node-only (imports `node:*`), unlike the browser-safe baseline
+ * agents.
+ *
+ * @module
+ */
+
+import readline from 'node:readline';
+
+/** @import { Agent, AgentReply, TurnContext } from '../core/types.js' */
+
+/**
+ * @typedef {object} HumanAgentOptions
+ * @property {string} [name] Player name for the agent id: `human:<name>`.
+ *   The name is descriptive only — the trajectory's agent id records it, but
+ *   nothing keys scores or identity to it.
+ * @property {import('node:stream').Readable} [input] The stream to read moves
+ *   from. Default `process.stdin`.
+ * @property {import('node:stream').Writable} [output] The stream the rules,
+ *   observations and prompts are written to. Default `process.stderr`.
+ * @property {number} [maxNumbered] Largest legal-action count that is printed
+ *   numbered. Above it the list is summarized (the count only) and the player
+ *   types the action text. Default 64 — the same threshold observations use
+ *   for embedding the legal-action list.
+ */
+
+const HELP_TEXT = [
+  'input:',
+  '  <number>        play the numbered legal action from the list above',
+  '  <action text>   play that action — the referee judges it exactly like',
+  '                  any agent reply (an illegal or unparseable action',
+  '                  consumes an attempt, just as for every other agent)',
+  '  help (h, ?)     show this help and re-prompt',
+  '  quit (q, exit, forfeit)',
+  '                  forfeit the episode; the recording ends forfeit-shaped',
+  'Empty lines and out-of-range numbers re-prompt and never consume an action.',
+].join('\n');
+
+/**
+ * Build the human agent for one episode. One agent instance reads one input
+ * stream, so — like model agents — create one per episode, not one shared
+ * across a concurrent suite run.
+ *
+ * @param {HumanAgentOptions} [options]
+ * @returns {Agent}
+ */
+export function createHumanAgent(options = {}) {
+  const name = options.name;
+  const id = name ? `human:${name}` : 'human';
+  const input = options.input ?? process.stdin;
+  const output = options.output ?? process.stderr;
+  const maxNumbered = options.maxNumbered ?? 64;
+  if (!Number.isInteger(maxNumbered) || maxNumbered < 1) {
+    throw new Error(
+      `createHumanAgent: maxNumbered must be an integer >= 1, got ${options.maxNumbered}`
+    );
+  }
+  if (name !== undefined && (typeof name !== 'string' || name.length === 0)) {
+    throw new Error('createHumanAgent: name must be a non-empty string when given');
+  }
+
+  // Input plumbing: one readline interface for the agent's lifetime, lines
+  // queued so scripted input piped faster than the game turns still arrives
+  // line by line. `closed` marks EOF — the forfeit path.
+  /** @type {string[]} */
+  const pending = [];
+  let closed = false;
+  let started = false;
+  let rulesShown = false;
+  let quitting = false;
+
+  /**
+   * Attach the readline interface lazily, on the first turn, so an agent
+   * built but never seated does not hold the process's stdin open.
+   *
+   * @returns {void}
+   */
+  function startInput() {
+    if (started) return;
+    started = true;
+    const rl = readline.createInterface({ input, terminal: false });
+    rl.on('line', (line) => {
+      pending.push(line);
+    });
+    rl.on('close', () => {
+      closed = true;
+    });
+  }
+
+  /**
+   * The next input line, or null at EOF. Resolves as soon as a line is
+   * buffered or the input stream closes.
+   *
+   * @returns {Promise<string | null>}
+   */
+  async function nextLine() {
+    for (;;) {
+      const line = pending.shift();
+      if (line !== undefined) return line;
+      if (closed) return null;
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+  }
+
+  /**
+   * @param {string} text
+   * @returns {void}
+   */
+  function say(text) {
+    output.write(`${text}\n`);
+  }
+
+  /**
+   * The forfeit reply: an empty text is guaranteed invalid under the runner's
+   * `extractAction` ("no action found in reply"), so it walks the standard
+   * invalid path to a forfeit without pretending to be a game action.
+   *
+   * @returns {AgentReply}
+   */
+  function quitReply() {
+    return { text: '', meta: { human: { quit: true } } };
+  }
+
+  return {
+    id,
+    track: /** @type {'community'} */ ('community'),
+    async act(ctx) {
+      startInput();
+
+      if (quitting) {
+        // Already quitting: no further prompting, just keep feeding the
+        // invalid path until the runner's forfeit threshold ends the episode.
+        return quitReply();
+      }
+
+      if (!rulesShown) {
+        rulesShown = true;
+        say('=== PlayKit Gauntlet — human at the terminal ===');
+        say(
+          `game     ${ctx.spec.title} (${ctx.spec.id} v${ctx.spec.version}), tier ${ctx.tier.id}`
+        );
+        say(`seat     ${ctx.seat}${ctx.spec.seats > 1 ? ` of ${ctx.spec.seats}` : ''}`);
+        say(`rules    ${ctx.spec.rulesText}`);
+        say(HELP_TEXT);
+      }
+
+      const legal = ctx.legalActions;
+      say('');
+      say(`--- turn ${ctx.turn + 1} (seat ${ctx.seat}) ---`);
+      say(ctx.observation.text);
+      if (ctx.feedback) {
+        say(`Your last action was rejected: ${ctx.feedback}`);
+      }
+      if (Array.isArray(legal)) {
+        if (legal.length <= maxNumbered) {
+          say(`legal actions (${legal.length}):`);
+          legal.forEach((action, i) => say(`  ${i + 1}) ${action}`));
+        } else {
+          say(
+            `legal actions: ${legal.length} (too many to list — type the action text; see the rules above)`
+          );
+        }
+      }
+
+      for (;;) {
+        output.write('Move — number, action text, help, quit: ');
+
+        const line = await nextLine();
+        if (line === null) {
+          say('');
+          say('input closed — forfeiting (the recording ends forfeit-shaped).');
+          quitting = true;
+          return quitReply();
+        }
+        const text = line.trim();
+
+        if (text === '') {
+          say('(empty line ignored — type an action, its number, help, or quit)');
+          continue;
+        }
+
+        if (/^-?\d+$/.test(text)) {
+          const n = Number(text);
+          if (Array.isArray(legal) && n >= 1 && n <= legal.length) {
+            return { text: /** @type {string} */ (legal[n - 1]) };
+          }
+          say(
+            `(no legal action number ${text}${
+              Array.isArray(legal) ? ` — pick 1 to ${legal.length}` : ''
+            })`
+          );
+          continue;
+        }
+
+        if (text === 'help' || text === 'h' || text === '?') {
+          say(HELP_TEXT);
+          continue;
+        }
+
+        if (text === 'quit' || text === 'q' || text === 'exit' || text === 'forfeit') {
+          say('quitting — the episode ends forfeit-shaped (your score: 0).');
+          quitting = true;
+          return quitReply();
+        }
+
+        // Anything else is the action text: forwarded verbatim. The referee
+        // (parseAction + legality) decides, the same as for any agent — an
+        // illegal action consumes an attempt and comes back as feedback.
+        return { text: line.trim() };
+      }
+    },
+  };
+}

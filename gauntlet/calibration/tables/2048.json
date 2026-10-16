@@ -1,0 +1,192 @@
+{
+  "format": "playkit-gauntlet-calibration-table/1",
+  "game": {
+    "id": "2048",
+    "version": "1.0.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "seedsPerTier": 20,
+  "baselines": {
+    "random": {
+      "tiers": {
+        "t256": {
+          "id": "t256",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.384028,
+            "ci95": [
+              0.279861,
+              0.513229
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        },
+        "t512": {
+          "id": "t512",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.234184,
+            "ci95": [
+              0.209184,
+              0.261237
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        },
+        "t1024": {
+          "id": "t1024",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.190625,
+            "ci95": [
+              0.170703,
+              0.211328
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        },
+        "t2048": {
+          "id": "t2048",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.125,
+            "ci95": [
+              0.108951,
+              0.142284
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "t256": {
+          "id": "t256",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.797917,
+            "ci95": [
+              0.661111,
+              0.934722
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        },
+        "t512": {
+          "id": "t512",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.411735,
+            "ci95": [
+              0.311224,
+              0.534694
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        },
+        "t1024": {
+          "id": "t1024",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.257813,
+            "ci95": [
+              0.230469,
+              0.285156
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        },
+        "t2048": {
+          "id": "t2048",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.207716,
+            "ci95": [
+              0.182716,
+              0.233333
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "t256": {
+          "id": "t256",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        },
+        "t512": {
+          "id": "t512",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.968367,
+            "ci95": [
+              0.905102,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        },
+        "t1024": {
+          "id": "t1024",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        },
+        "t2048": {
+          "id": "t2048",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.774383,
+            "ci95": [
+              0.639444,
+              0.90463
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 20
+        }
+      }
+    }
+  }
+}

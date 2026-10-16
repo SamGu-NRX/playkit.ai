@@ -10,7 +10,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -20,7 +20,16 @@ import { buildSuite } from '../scoring/suite.js';
 import { runEpisode } from '../core/runner.js';
 
 import { manifestSha256 } from './plan.js';
-import { estimateSuite, estimateToMarkdown, resolveBaseline, writeEstimate } from './estimate.js';
+import { runSuite } from './run.js';
+import {
+  COMPARE_FORMAT,
+  compareRunAgainstEstimate,
+  comparisonToMarkdown,
+  estimateSuite,
+  estimateToMarkdown,
+  resolveBaseline,
+  writeEstimate,
+} from './estimate.js';
 import { ESTIMATE_FIT } from './estimate-fit/params.js';
 
 const PRICES = {
@@ -84,7 +93,13 @@ test('model-fit basis: tictactoe uses the fitted parameters from committed runs'
 
   const tier = tictactoe.spec.tiers.find((t) => t.id === 'perfect-opponent');
   assert.ok(tier);
-  for (const job of estimate.jobs) {
+  // The committed fit covers tictactoe/perfect-opponent only; the other
+  // tictactoe tiers fall back to the engine-probe basis.
+  const fittedJobs = estimate.jobs.filter((j) => j.tierId === 'perfect-opponent');
+  for (const job of estimate.jobs.filter((j) => j.tierId !== 'perfect-opponent')) {
+    assert.equal(job.basis, 'engine-probe');
+  }
+  for (const job of fittedJobs) {
     assert.equal(job.basis, 'model-fit');
     // Low = the fitted mean agent actions per episode, exactly as fitted.
     assert.equal(job.callsLow, fitTier.callsExpected);
@@ -134,8 +149,10 @@ test('none basis: take-or-pass reports explicit unknowns', async () => {
     assert.equal(job.callsHigh, 5);
     assert.equal(job.note, null);
   }
-  assert.equal(estimate.totals.callsLow, null);
-  assert.equal(estimate.totals.usdHigh, null);
+  assert.equal(estimate.totals.callsLow, 0);
+  assert.equal(estimate.totals.usdHigh, null); // no prices given at all
+  // The one game without a basis is named, not silently dropped.
+  assert.deepEqual(estimate.totals.noLowBasis, ['take-or-pass']);
 
   // Markdown renders the unknowns as em dashes, not invented numbers.
   const md = estimateToMarkdown(estimate);
@@ -226,6 +243,175 @@ test('writeEstimate writes estimate.json and estimate.md that round-trip', async
     const md = await readFile(mdPath, 'utf8');
     assert.match(md, /Manifest sha256 `[0-9a-f]{64}`/);
     assert.match(md, /\| \*\*Total\*\* \|/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('totals: sum every game with a basis and name the games without one', async () => {
+  const suite = buildSuite([countdown, takeOrPass], { split: 'public' });
+  const estimate = await estimateSuite({
+    suite,
+    games: [countdown, takeOrPass],
+    prices: PRICES,
+    pricingKey: 'acme/alpha',
+  });
+
+  const countdownRow = estimate.games.find((g) => g.gameId === 'countdown');
+  assert.ok(countdownRow, 'the suite plans countdown');
+  assert.ok(countdownRow.usdLow !== null && countdownRow.usdHigh !== null, 'countdown is priced');
+
+  // Totals never null out because take-or-pass lacks a basis: they sum the
+  // games that have one and name the games that do not.
+  assert.equal(estimate.totals.callsLow, countdownRow.callsLow);
+  assert.equal(estimate.totals.usdLow, countdownRow.usdLow);
+  assert.equal(estimate.totals.usdHigh, countdownRow.usdHigh);
+  assert.deepEqual(estimate.totals.noLowBasis, ['take-or-pass']);
+  assert.deepEqual(estimate.totals.noTokenBasis, ['take-or-pass']);
+
+  // Markdown: the exclusions are named next to the totals row, and each
+  // tier's basis is shown at a glance.
+  const md = estimateToMarkdown(estimate);
+  assert.match(
+    md,
+    /Totals sum every game that has a basis — no low basis: take-or-pass; no token basis \(USD unknown\): take-or-pass\./
+  );
+  assert.match(md, /\| countdown\/[a-z-]+ \| par \|/);
+  assert.match(md, /\| take-or-pass\/[a-z-]+ \| none \|/);
+  assert.match(md, /Unestimated tiers \(no fitted or par basis\): take-or-pass\//);
+});
+
+test('noProbes: no baseline episodes — fit where fitted, par where not, unestimated with neither', async () => {
+  const suite = buildSuite([tictactoe, countdown, takeOrPass], { split: 'public' });
+  const estimate = await estimateSuite({
+    suite,
+    games: [tictactoe, countdown, takeOrPass],
+    noProbes: true,
+  });
+
+  /** @param {string} id */
+  const byGame = (id) => estimate.jobs.filter((j) => j.gameId === id);
+  // Fitted tier: the fit supplies the low side exactly as with probes. The
+  // committed fit covers tictactoe/perfect-opponent only.
+  const fitTier = ESTIMATE_FIT.tiers['tictactoe/perfect-opponent'];
+  assert.ok(fitTier, 'the committed fit covers tictactoe/perfect-opponent');
+  for (const job of byGame('tictactoe').filter((j) => j.tierId === 'perfect-opponent')) {
+    assert.equal(job.basis, 'model-fit');
+    assert.equal(job.callsLow, fitTier.callsExpected);
+    assert.ok(job.tokens, 'a fitted job carries the fitted token figures');
+  }
+  // Par tier: the tier's par stands in for the unplayed probe episodes, and
+  // the token basis still renders from the initial official turn.
+  for (const job of byGame('countdown')) {
+    assert.equal(job.basis, 'par');
+    assert.match(/** @type {string} */ (job.note), /--no-probes/);
+    assert.ok(job.tokens, 'a par job carries the initial-turn token figures');
+  }
+  // Neither: explicitly unestimated, never probed, never guessed.
+  for (const job of byGame('take-or-pass')) {
+    assert.equal(job.basis, 'none');
+    assert.equal(job.callsLow, null);
+    assert.match(/** @type {string} */ (job.note), /unestimated/);
+    assert.equal(job.tokens, null);
+  }
+
+  // The tier basis table answers, per planned tier, what its low side is.
+  assert.ok(estimate.tiers.some((t) => t.gameId === 'tictactoe' && t.basis === 'model-fit'));
+  assert.ok(estimate.tiers.some((t) => t.gameId === 'countdown' && t.basis === 'par'));
+  assert.ok(estimate.tiers.some((t) => t.gameId === 'take-or-pass' && t.basis === 'none'));
+
+  // Totals sum what has a basis and name the rest; the note explains the mode.
+  // Under noProbes, tictactoe's unfitted tiers and take-or-pass have no
+  // no-probe basis, so both games are named (the fitted tier still
+  // contributes its figures).
+  assert.deepEqual(estimate.totals.noLowBasis, ['tictactoe', 'take-or-pass']);
+  assert.equal(estimate.totals.callsLow, estimate.games.reduce((a, g) => a + (g.callsLow ?? 0), 0));
+  assert.match(estimate.note, /--no-probes/);
+});
+
+/** A priced stand-in agent: first legal action, fixed usage and cost.
+ *
+ * @returns {(job: *) => import('../core/types.js').Agent}
+ */
+function fakePricedFactory() {
+  return () => /** @type {import('../core/types.js').Agent} */ ({
+    id: 'fake-priced',
+    track: 'community',
+    async act(ctx) {
+      return {
+        text: /** @type {string[]} */ (ctx.legalActions)[0],
+        usage: { inputTokens: 50, outputTokens: 10, costUsd: 0.001 },
+      };
+    },
+  });
+}
+
+test('compareRunAgainstEstimate: actual calls/tokens/spend vs the estimate, per game and in total', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'gauntlet-estimate-compare-'));
+  try {
+    const suite = buildSuite([takeOrPass, countdown], { split: 'public' });
+    const games = [takeOrPass, countdown];
+    const outDir = path.join(dir, 'run');
+    await runSuite({ suite, games, agentFactory: fakePricedFactory(), outDir });
+
+    const estimate = await estimateSuite({ suite, games });
+    const comparison = await compareRunAgainstEstimate(estimate, outDir);
+
+    assert.equal(comparison.format, COMPARE_FORMAT);
+    assert.equal(comparison.kind, 'estimate-vs-actual');
+    // Every planned episode has a trajectory, and all were played.
+    const planned = suite.games.reduce((a, g) => a + g.tiers.reduce((b, t) => b + t.seeds.length, 0), 0);
+    assert.equal(comparison.episodes, planned);
+    assert.equal(comparison.unplayedEpisodes, 0);
+
+    // Actuals mirror run.json's whole-bundle total block by construction:
+    // both sum the same trajectories.
+    const run = JSON.parse(await readFile(path.join(outDir, 'run.json'), 'utf8'));
+    assert.equal(comparison.totals.figures.actual.calls, run.total.calls);
+    assert.equal(comparison.totals.figures.actual.tokensIn, run.total.tokens.input);
+    assert.ok(Math.abs(comparison.totals.figures.actual.spendUsd - run.total.spendUsd) < 1e-9);
+
+    // take-or-pass has no low basis: its low ratio is null, never 0 — a
+    // missing basis must not masquerade as a 0% error. Its worst-case
+    // (maxActions) basis still produces a positive ratio.
+    const top = comparison.games.find((g) => g.gameId === 'take-or-pass');
+    assert.ok(top, 'take-or-pass is compared');
+    assert.equal(top.figures.ratio.callsLow, null);
+    assert.ok(top.figures.ratio.callsHigh !== null);
+    assert.ok(top.figures.ratio.callsHigh > 0);
+    // countdown has a par low basis: the actual lands at a finite multiple.
+    const cd = comparison.games.find((g) => g.gameId === 'countdown');
+    assert.ok(cd && cd.figures.ratio.callsLow !== null && cd.figures.ratio.callsLow > 0);
+    // No prices on the estimate: USD ratios stay null while the actual spend
+    // (from the trajectories' own costs) is still shown.
+    assert.equal(top.figures.ratio.usdLow, null);
+    assert.ok(top.figures.actual.spendUsd > 0);
+
+    const md = comparisonToMarkdown(comparison);
+    assert.match(md, /# Estimate vs actual/);
+    assert.match(md, /Actual, not an estimate/);
+    assert.match(md, /—/); // missing ratios render as em dashes, not zeros
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('compareRunAgainstEstimate refuses a bundle whose suite manifest differs', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'gauntlet-estimate-compare-'));
+  try {
+    const suite = buildSuite([takeOrPass], { split: 'public' });
+    const outDir = path.join(dir, 'run');
+    await runSuite({ suite, games: [takeOrPass], agentFactory: fakePricedFactory(), outDir });
+
+    const run = JSON.parse(await readFile(path.join(outDir, 'run.json'), 'utf8'));
+    run.suite.manifestSha256 = '0'.repeat(64);
+    await writeFile(path.join(outDir, 'run.json'), JSON.stringify(run, null, 2) + '\n');
+
+    const estimate = await estimateSuite({ suite, games: [takeOrPass] });
+    await assert.rejects(
+      () => compareRunAgainstEstimate(estimate, outDir),
+      /does not match the estimate's/
+    );
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

@@ -31,6 +31,15 @@
  * `"<provider>/<model>"`), the estimate prices low and high per game and in
  * total, as JSON and Markdown.
  *
+ * With `noProbes`, no baseline episode is played at all: the low side comes
+ * from the fitted parameters where a game/tier has them, else the tier's par;
+ * a tier with neither is reported as unestimated rather than probed. Totals
+ * sum every game that has a basis and name the games without one, so the
+ * totals row never nulls out because a single game lacks a basis. After a
+ * run, `compareRunAgainstEstimate` reads a run bundle and reports, per game
+ * and in total, how the actual calls, tokens and dollars landed against the
+ * estimate's low and high figures.
+ *
  * Baseline resolution order (unfitted tiers only): an optional
  * `game.baselineAgent(tier, seed)` hook; else the bundled engine every
  * two-seat game must provide (`game.opponent` seated at the agent's seat);
@@ -42,13 +51,17 @@
  * @module
  */
 
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
+
 import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from '../harness/official.js';
 import { runEpisode } from '../core/runner.js';
+import { TRAJECTORY_FORMAT } from '../core/trajectory.js';
 import { findSuiteTier, SUITE_FORMAT } from '../scoring/suite.js';
 
 import { ESTIMATE_FIT } from './estimate-fit/params.js';
 import { manifestSha256, normalizeGames, planJobs } from './plan.js';
-import { atomicWriteFile } from './fsutil.js';
+import { atomicWriteFile, readJsonFile } from './fsutil.js';
 
 /** @import { Agent, Game, TierSpec } from '../core/types.js' */
 /** @import { SuiteManifest } from '../scoring/suite.js' */
@@ -100,6 +113,20 @@ export const PROBE_SEEDS = 2;
  */
 function refuse(step, message) {
   throw new Error(`[gauntlet/runs/estimate.js] ${step}: ${message}`);
+}
+
+/**
+ * Display label for one job. A job key is `<game>/<tier>/<seed>` and the
+ * seed itself is `<game>/<tier>/<split>/<i>`, so the raw key repeats the
+ * game and tier prefix (`chess/wood/chess/wood/public/0`); wherever a job is
+ * shown to a person, show the seed alone. Machine-read fields (`jobs[].key`,
+ * run.json's key lists) keep the full stable key.
+ *
+ * @param {{ key: string, gameId: string, tierId: string, seed: string }} job
+ * @returns {string}
+ */
+function jobDisplayLabel(job) {
+  return job.seed.startsWith(`${job.gameId}/${job.tierId}/`) ? job.seed : job.key;
 }
 
 /**
@@ -332,6 +359,51 @@ export async function probeTier(game, tier, seeds, split) {
 }
 
 /**
+ * A TierProbe for the no-probes estimate: no episode is played. The fit was
+ * already checked first, so this resolves the tier's par (tier params, or
+ * the reset state's `par`) where one exists and reports the tier as
+ * unestimated where it does not — an engine-probe basis needs baseline
+ * episodes, which is exactly what a no-probes estimate skips.
+ *
+ * @param {Game<*>} game
+ * @param {TierSpec} tier
+ * @param {string} seed The tier's first suite seed, for the token render.
+ * @returns {TierProbe}
+ */
+function parOnlyProbe(game, tier, seed) {
+  /** @param {number} par @returns {TierProbe} */
+  const parProbe = (par) => ({
+    basis: 'par',
+    callsPerEpisode: null,
+    tokens: initialTurnTokens(
+      game,
+      tier,
+      seed,
+      typeof game.agentSeat === 'function' ? game.agentSeat(tier, seed) : 0
+    ),
+    note: `low = the episode par (${par}); probe episodes skipped (--no-probes)`,
+  });
+  const paramsPar = /** @type {any} */ (tier.params)?.par;
+  if (typeof paramsPar === 'number' && Number.isFinite(paramsPar) && paramsPar > 0) {
+    return parProbe(paramsPar);
+  }
+  try {
+    const state = /** @type {any} */ (game.reset(tier, seed));
+    if (state && typeof state.par === 'number' && Number.isFinite(state.par) && state.par > 0) {
+      return parProbe(state.par);
+    }
+  } catch {
+    // reset failure: the tier stays unestimated
+  }
+  return {
+    basis: 'none',
+    callsPerEpisode: null,
+    tokens: null,
+    note: 'unestimated: no fitted parameters and no par, and probe episodes are skipped (--no-probes)',
+  };
+}
+
+/**
  * @typedef {object} EstimateOptions
  * @property {SuiteManifest} suite
  * @property {Game<*>[] | Map<string, Game<*>> | Record<string, Game<*>>} games
@@ -342,6 +414,11 @@ export async function probeTier(game, tier, seeds, split) {
  *   real-model runs where a game/tier has them (default true; the
  *   engine-probe/par bases apply where it does not, and `false` disables the
  *   fit entirely).
+ * @property {boolean} [noProbes] Skip the baseline probe episodes entirely:
+ *   the low side comes from the fit where a game/tier has fitted parameters,
+ *   else the tier's par; a tier with neither is unestimated (basis `none`)
+ *   rather than probed. Default false. Makes a pre-run estimate practical
+ *   where probe episodes would dominate the wall clock.
  * @property {() => number} [now]
  */
 
@@ -356,6 +433,9 @@ export async function probeTier(game, tier, seeds, split) {
  * @property {number} callsHigh
  * @property {number | null} usdLow
  * @property {number | null} usdHigh
+ * @property {TokenStats | null} tokens Per-call token figures behind the USD
+ *   figures, from the job's basis (fit, probe, or initial-turn render); null
+ *   when the tier has no token basis.
  * @property {string | null} note
  */
 
@@ -382,7 +462,16 @@ export async function probeTier(game, tier, seeds, split) {
  * @property {string} generatedAt
  * @property {EstimateGame[]} games
  * @property {EstimateJob[]} jobs
- * @property {{ jobs: number, callsLow: number | null, callsHigh: number, usdLow: number | null, usdHigh: number | null }} totals
+ * @property {{ gameId: string, tierId: string, basis: EstimateJob['basis'] }[]} tiers
+ *   One entry per game/tier the suite plans, with the basis its jobs used —
+ *   the at-a-glance answer to what each tier's low side is made of.
+ * @property {{ jobs: number, callsLow: number, callsHigh: number, usdLow: number | null, usdHigh: number | null, noLowBasis: string[], noTokenBasis: string[] }} totals
+ *   Totals sum every game that has a basis and never null out because one
+ *   game lacks one: callsLow sums the games with a low basis (the games
+ *   without one are named in noLowBasis), and the USD figures sum the priced
+ *   games with a basis (games without a token basis are named in
+ *   noTokenBasis). The USD totals are null only when no prices were given at
+ *   all.
  */
 
 /**
@@ -439,7 +528,15 @@ function fittedProbe(fitTier) {
  * @param {EstimateOptions} options
  * @returns {Promise<Estimate>}
  */
-export async function estimateSuite({ suite, games, prices, pricingKey, fit = true, now = Date.now }) {
+export async function estimateSuite({
+  suite,
+  games,
+  prices,
+  pricingKey,
+  fit = true,
+  noProbes = false,
+  now = Date.now,
+}) {
   if (!suite || suite.format !== SUITE_FORMAT) {
     refuse(
       'suite-format',
@@ -483,7 +580,9 @@ export async function estimateSuite({ suite, games, prices, pricingKey, fit = tr
         const tier = /** @type {TierSpec} */ (
           game.spec.tiers.find((t) => t.id === job.tierId)
         );
-        probe = await probeTier(game, tier, suiteTier.seeds, suite.split);
+        probe = noProbes
+          ? parOnlyProbe(game, tier, suiteTier.seeds[0])
+          : await probeTier(game, tier, suiteTier.seeds, suite.split);
       }
       tierProbes.set(probeKey, probe);
     }
@@ -500,7 +599,7 @@ export async function estimateSuite({ suite, games, prices, pricingKey, fit = tr
       const resolved = resolveBaseline(game, tier, job.seed);
       if (resolved.kind === 'par') {
         callsLow = resolved.par;
-      } else if (resolved.kind === 'agent') {
+      } else if (resolved.kind === 'agent' && !noProbes) {
         // The tier-level probe said par, but this seed resolves to an agent
         // (seed-dependent hooks); measure it directly rather than guess.
         try {
@@ -509,6 +608,10 @@ export async function estimateSuite({ suite, games, prices, pricingKey, fit = tr
         } catch (err) {
           note = `per-seed probe failed: ${err instanceof Error ? err.message : String(err)}`;
         }
+      } else if (resolved.kind === 'agent') {
+        // A no-probes estimate cannot measure a seed-dependent baseline
+        // agent, so this seed's low side stays unknown rather than guessed.
+        note = 'this seed resolves to a baseline agent; probe episodes are skipped (--no-probes), so its low basis is unknown';
       }
     }
 
@@ -537,6 +640,7 @@ export async function estimateSuite({ suite, games, prices, pricingKey, fit = tr
       callsHigh,
       usdLow,
       usdHigh,
+      tokens: probe.tokens,
       note,
     });
   }
@@ -566,7 +670,11 @@ export async function estimateSuite({ suite, games, prices, pricingKey, fit = tr
       'recorded provider usage. Unfitted tiers: low calls = the game engine/greedy baseline\'s mean ' +
       'agent actions on two seeds of the tier, or the episode par where no baseline exists; tokens per ' +
       `call = the official system prompt plus the per-turn official user message (harness/official.js) ` +
-      `rendered along the baseline episode at ${CHARS_PER_TOKEN} characters per token. Real runs may cost more.`,
+      `rendered along the baseline episode at ${CHARS_PER_TOKEN} characters per token. Real runs may cost more.` +
+      (noProbes
+        ? ' Probe episodes were skipped (--no-probes): the low side comes from the fit where fitted, ' +
+          "else the tier's par; tiers with neither are unestimated."
+        : ''),
     suite: { id: suite.id, split: suite.split, manifestSha256: manifestSha256(suite) },
     pricing: { key: priced ? /** @type {string} */ (pricingKey) : null, priced },
     fit: jobEstimates.some((j) => j.basis === 'model-fit')
@@ -575,12 +683,23 @@ export async function estimateSuite({ suite, games, prices, pricingKey, fit = tr
     generatedAt: new Date(now()).toISOString(),
     games: gameEstimates,
     jobs: jobEstimates,
+    tiers: [...tierProbes.entries()].map(([key, probe]) => {
+      const at = key.indexOf('|');
+      return { gameId: key.slice(0, at), tierId: key.slice(at + 1), basis: probe.basis };
+    }),
     totals: {
       jobs: jobEstimates.length,
-      callsLow: sumNullable(gameEstimates, (g) => g.callsLow),
+      // Sum every game that has a basis; the games without one are named in
+      // noLowBasis/noTokenBasis, so the totals never null out because a
+      // single game lacks a basis.
+      callsLow: gameEstimates.reduce((a, g) => a + (g.callsLow ?? 0), 0),
       callsHigh: gameEstimates.reduce((a, g) => a + g.callsHigh, 0),
-      usdLow: sumNullable(gameEstimates, (g) => g.usdLow),
-      usdHigh: sumNullable(gameEstimates, (g) => g.usdHigh),
+      usdLow: priced ? gameEstimates.reduce((a, g) => a + (g.usdLow ?? 0), 0) : null,
+      usdHigh: priced ? gameEstimates.reduce((a, g) => a + (g.usdHigh ?? 0), 0) : null,
+      noLowBasis: gameEstimates.filter((g) => g.callsLow === null).map((g) => g.gameId),
+      noTokenBasis: priced
+        ? gameEstimates.filter((g) => g.usdHigh === null).map((g) => g.gameId)
+        : [],
     },
   };
 }
@@ -620,11 +739,41 @@ export function estimateToMarkdown(estimate) {
   lines.push(
     `| **Total** | **${estimate.totals.jobs}** | **${calls(estimate.totals.callsLow)}** | **${calls(estimate.totals.callsHigh)}** | **${usd(estimate.totals.usdLow)}** | **${usd(estimate.totals.usdHigh)}** |`
   );
+  // Totals never null out because one game lacks a basis — they sum every
+  // game that has one and name the games that do not.
+  const exclusions = [];
+  if (estimate.totals.noLowBasis.length > 0) {
+    exclusions.push(`no low basis: ${estimate.totals.noLowBasis.join(', ')}`);
+  }
+  if (estimate.totals.noTokenBasis.length > 0) {
+    exclusions.push(`no token basis (USD unknown): ${estimate.totals.noTokenBasis.join(', ')}`);
+  }
+  if (exclusions.length > 0) {
+    lines.push('');
+    lines.push(`Totals sum every game that has a basis — ${exclusions.join('; ')}.`);
+  }
+  if (estimate.tiers.length > 0) {
+    lines.push('');
+    lines.push('| Tier | Basis |');
+    lines.push('|---|---|');
+    for (const t of estimate.tiers) {
+      lines.push(`| ${t.gameId}/${t.tierId} | ${t.basis} |`);
+    }
+    const unestimated = estimate.tiers.filter((t) => t.basis === 'none');
+    if (unestimated.length > 0) {
+      lines.push('');
+      lines.push(
+        `Unestimated tiers (no fitted or par basis): ${unestimated.map((t) => `${t.gameId}/${t.tierId}`).join(', ')}.`
+      );
+    }
+  }
   const notes = estimate.jobs.filter((j) => j.note);
   if (notes.length > 0) {
     lines.push('');
     for (const n of notes) {
-      lines.push(`- \`${n.key}\`: ${n.note}`);
+      // The seed already begins `<game>/<tier>/`, so the footnote shows the
+      // seed alone instead of repeating the game and tier prefix.
+      lines.push(`- \`${jobDisplayLabel(n)}\`: ${n.note}`);
     }
   }
   lines.push('');
@@ -644,6 +793,285 @@ export async function writeEstimate(outDir, estimate) {
   await atomicWriteFile(jsonPath, JSON.stringify(estimate, null, 2) + '\n');
   await atomicWriteFile(mdPath, estimateToMarkdown(estimate));
   return { jsonPath, mdPath };
+}
+
+/**
+ * The comparison record format printed by the CLI's `--against <dir>` mode.
+ */
+export const COMPARE_FORMAT = 'playkit-gauntlet-estimate-compare/1';
+
+/**
+ * @typedef {object} ComparisonFigures
+ * @property {{ calls: number, tokensIn: number, tokensOut: number, spendUsd: number }} actual
+ *   Summed from the run bundle's trajectories (the whole bundle, so a
+ *   `--resume` does not hide earlier invocations' episodes).
+ * @property {{ callsLow: number | null, callsHigh: number, tokensInLow: number | null, tokensOutLow: number | null, tokensInHigh: number | null, tokensOutHigh: number | null, usdLow: number | null, usdHigh: number | null }} estimated
+ *   From the estimate: low = expected (Σ callsLow × mean tokens per call),
+ *   high = worst case (Σ callsHigh × max tokens per call). Per game, a tier
+ *   without a basis nulls its low-side figure; in total, the games with a
+ *   basis are summed and the games without one simply do not contribute.
+ * @property {{ callsLow: number | null, callsHigh: number | null, tokensInLow: number | null, tokensOutLow: number | null, tokensInHigh: number | null, tokensOutHigh: number | null, usdLow: number | null, usdHigh: number | null }} ratio
+ *   actual ÷ estimated; null where the estimate has no basis (or is 0), so a
+ *   missing basis never masquerades as a 0% error.
+ */
+
+/**
+ * @typedef {object} ComparisonRow
+ * @property {string} gameId
+ * @property {number} episodes Trajectories summed for this game.
+ * @property {number} unknownCostSteps Steps with usage but no finite cost —
+ *   the actual spend is understated by them.
+ * @property {ComparisonFigures} figures
+ */
+
+/**
+ * @typedef {object} EstimateComparison
+ * @property {'playkit-gauntlet-estimate-compare/1'} format
+ * @property {'estimate-vs-actual'} kind
+ * @property {string} runDir
+ * @property {number} episodes
+ * @property {number} unplayedEpisodes Episodes still unplayed in the bundle:
+ *   the actuals are partial-run figures.
+ * @property {ComparisonRow[]} games
+ * @property {{ episodes: number, unknownCostSteps: number, unplayedEpisodes: number, figures: ComparisonFigures }} totals
+ */
+
+/**
+ * Compare a built estimate with a finished run bundle: per game and in
+ * total, how the run's actual calls, tokens and dollars landed against the
+ * estimate's low (expected) and high (worst-case) figures, as ratios of
+ * actual to estimated. Actuals are summed from every trajectory in the run
+ * directory — the same whole-bundle basis as run.json's `total` block — and
+ * the comparison refuses a bundle whose suite manifest hash differs from the
+ * estimate's, because comparing costs across different suites would be
+ * meaningless.
+ *
+ * Ported from the #69 journey's `journeys/model/estimate-check.mjs`; this is
+ * the library shape the CLI's `--against <dir>` mode calls directly.
+ *
+ * @param {Estimate} estimate
+ * @param {string} runDir
+ * @returns {Promise<EstimateComparison>}
+ */
+export async function compareRunAgainstEstimate(estimate, runDir) {
+  const runParsed = await readJsonFile(path.join(runDir, 'run.json'));
+  if (!runParsed.ok) {
+    refuse('run-dir', `no run.json under ${runDir} (was the run started?)`);
+  }
+  const run = /** @type {any} */ (runParsed.value);
+  const runManifest = run?.suite?.manifestSha256;
+  if (runManifest !== estimate.suite.manifestSha256) {
+    refuse(
+      'manifest',
+      `the run bundle's suite manifest does not match the estimate's ` +
+        `(run ${runManifest ?? 'unknown'}, estimate ${estimate.suite.manifestSha256})`
+    );
+  }
+
+  /** @type {Map<string, { episodes: number, calls: number, tokensIn: number, tokensOut: number, spendUsd: number, unknownCostSteps: number }>} */
+  const actual = new Map();
+  let episodes = 0;
+  const unplayedEpisodes = Number(run?.counts?.unplayed ?? 0);
+  const stack = [runDir];
+  for (;;) {
+    const dir = stack.pop();
+    if (!dir) break;
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const filePath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(filePath);
+        continue;
+      }
+      if (!entry.name.endsWith('.json')) continue;
+      // Top-level records (suite.json, run.json, prices.json) do not parse
+      // as trajectories, so the format check below skips them.
+      const parsed = await readJsonFile(filePath);
+      const t = /** @type {any} */ (parsed.ok ? parsed.value : null);
+      if (!t || t.format !== TRAJECTORY_FORMAT || !Array.isArray(t.steps)) continue;
+      episodes += 1;
+      const gameId = typeof t.game?.id === 'string' ? t.game.id : 'unknown';
+      const bucket =
+        actual.get(gameId) ??
+        { episodes: 0, calls: 0, tokensIn: 0, tokensOut: 0, spendUsd: 0, unknownCostSteps: 0 };
+      bucket.episodes += 1;
+      for (const step of t.steps) {
+        const usage = step?.usage;
+        if (!usage) continue;
+        bucket.calls += 1;
+        if (typeof usage.inputTokens === 'number' && Number.isFinite(usage.inputTokens)) {
+          bucket.tokensIn += usage.inputTokens;
+        }
+        if (typeof usage.outputTokens === 'number' && Number.isFinite(usage.outputTokens)) {
+          bucket.tokensOut += usage.outputTokens;
+        }
+        if (typeof usage.costUsd === 'number' && Number.isFinite(usage.costUsd)) {
+          bucket.spendUsd += usage.costUsd;
+        } else {
+          bucket.unknownCostSteps += 1;
+        }
+      }
+      actual.set(gameId, bucket);
+    }
+  }
+
+  /** @type {Map<string, EstimateJob[]>} */
+  const jobsByGame = new Map();
+  for (const job of estimate.jobs) {
+    const rows = jobsByGame.get(job.gameId) ?? [];
+    rows.push(job);
+    jobsByGame.set(job.gameId, rows);
+  }
+
+  /**
+   * @param {{ calls: number, tokensIn: number, tokensOut: number, spendUsd: number }} act
+   * @param {{ callsLow: number | null, callsHigh: number, tokensInLow: number | null, tokensOutLow: number | null, tokensInHigh: number | null, tokensOutHigh: number | null, usdLow: number | null, usdHigh: number | null }} estimated
+   * @returns {ComparisonFigures}
+   */
+  function withRatios(act, estimated) {
+    /** @param {number} a @param {number | null} e @returns {number | null} */
+    const ratio = (a, e) => (e === null || e === 0 ? null : a / e);
+    return {
+      actual: act,
+      estimated,
+      ratio: {
+        callsLow: ratio(act.calls, estimated.callsLow),
+        callsHigh: ratio(act.calls, estimated.callsHigh),
+        tokensInLow: ratio(act.tokensIn, estimated.tokensInLow),
+        tokensOutLow: ratio(act.tokensOut, estimated.tokensOutLow),
+        tokensInHigh: ratio(act.tokensIn, estimated.tokensInHigh),
+        tokensOutHigh: ratio(act.tokensOut, estimated.tokensOutHigh),
+        usdLow: ratio(act.spendUsd, estimated.usdLow),
+        usdHigh: ratio(act.spendUsd, estimated.usdHigh),
+      },
+    };
+  }
+
+  /**
+   * Estimated figures for one game's jobs: a tier without a basis nulls the
+   * game's low-side figure rather than hiding inside a sum.
+   *
+   * @param {EstimateJob[]} rows
+   */
+  const estimateRows = (rows) => ({
+    callsLow: sumNullable(rows, (r) => r.callsLow),
+    callsHigh: rows.reduce((a, r) => a + r.callsHigh, 0),
+    tokensInLow: sumNullable(rows, (r) =>
+      r.callsLow !== null && r.tokens ? r.callsLow * r.tokens.input.mean : null
+    ),
+    tokensOutLow: sumNullable(rows, (r) =>
+      r.callsLow !== null && r.tokens ? r.callsLow * r.tokens.output.mean : null
+    ),
+    tokensInHigh: sumNullable(rows, (r) => (r.tokens ? r.callsHigh * r.tokens.input.max : null)),
+    tokensOutHigh: sumNullable(rows, (r) => (r.tokens ? r.callsHigh * r.tokens.output.max : null)),
+    usdLow: sumNullable(rows, (r) => r.usdLow),
+    usdHigh: sumNullable(rows, (r) => r.usdHigh),
+  });
+
+  const rows = estimate.games.map((game) => {
+    const act =
+      actual.get(game.gameId) ??
+      { episodes: 0, calls: 0, tokensIn: 0, tokensOut: 0, spendUsd: 0, unknownCostSteps: 0 };
+    return {
+      gameId: game.gameId,
+      episodes: act.episodes,
+      unknownCostSteps: act.unknownCostSteps,
+      figures: withRatios(act, estimateRows(jobsByGame.get(game.gameId) ?? [])),
+    };
+  });
+
+  const totalAct = rows.reduce(
+    (a, r) => ({
+      calls: a.calls + r.figures.actual.calls,
+      tokensIn: a.tokensIn + r.figures.actual.tokensIn,
+      tokensOut: a.tokensOut + r.figures.actual.tokensOut,
+      spendUsd: a.spendUsd + r.figures.actual.spendUsd,
+    }),
+    { calls: 0, tokensIn: 0, tokensOut: 0, spendUsd: 0 }
+  );
+  const totalEstimated = {
+    callsLow: rows.reduce((a, r) => a + (r.figures.estimated.callsLow ?? 0), 0),
+    callsHigh: rows.reduce((a, r) => a + r.figures.estimated.callsHigh, 0),
+    tokensInLow: rows.reduce((a, r) => a + (r.figures.estimated.tokensInLow ?? 0), 0),
+    tokensOutLow: rows.reduce((a, r) => a + (r.figures.estimated.tokensOutLow ?? 0), 0),
+    tokensInHigh: rows.reduce((a, r) => a + (r.figures.estimated.tokensInHigh ?? 0), 0),
+    tokensOutHigh: rows.reduce((a, r) => a + (r.figures.estimated.tokensOutHigh ?? 0), 0),
+    usdLow: rows.reduce((a, r) => a + (r.figures.estimated.usdLow ?? 0), 0),
+    usdHigh: rows.reduce((a, r) => a + (r.figures.estimated.usdHigh ?? 0), 0),
+  };
+
+  return {
+    format: COMPARE_FORMAT,
+    kind: 'estimate-vs-actual',
+    runDir,
+    episodes,
+    unplayedEpisodes,
+    games: rows,
+    totals: {
+      episodes,
+      unknownCostSteps: rows.reduce((a, r) => a + r.unknownCostSteps, 0),
+      unplayedEpisodes,
+      figures: withRatios(totalAct, totalEstimated),
+    },
+  };
+}
+
+/**
+ * Render the comparison as a Markdown table for the CLI.
+ *
+ * @param {EstimateComparison} comparison
+ * @returns {string}
+ */
+export function comparisonToMarkdown(comparison) {
+  /** @param {number | null | undefined} v */
+  const ratio = (v) =>
+    v === null || v === undefined ? '—' : `${(Math.round(v * 100) / 100).toFixed(2)}×`;
+  /** @param {number | null | undefined} v */
+  const calls = (v) => (v === null || v === undefined ? '—' : String(Math.ceil(v)));
+  /** @param {number} a @param {number | null} low @param {number | null} high */
+  const cell = (a, low, high) => `${calls(a)} (${ratio(low)} low, ${ratio(high)} high)`;
+  /** @type {string[]} */
+  const lines = [];
+  lines.push(`# Estimate vs actual — ${comparison.runDir}`);
+  lines.push('');
+  lines.push(
+    '**Actual, not an estimate.** ' +
+      `${comparison.episodes} trajectory/ies summed per step from the run bundle (the whole bundle, so a ` +
+      'resumed run compares against its full actuals). Ratio = actual ÷ estimated; low = expected, ' +
+      'high = worst case.'
+  );
+  if (comparison.totals.unknownCostSteps > 0) {
+    lines.push(
+      `${comparison.totals.unknownCostSteps} step(s) reported usage without a priced cost — actual spend is understated by them.`
+    );
+  }
+  if (comparison.unplayedEpisodes > 0) {
+    lines.push(
+      `${comparison.unplayedEpisodes} episode(s) are still unplayed in this bundle — the actuals are partial-run figures.`
+    );
+  }
+  lines.push('');
+  lines.push('| Game | Calls | Tokens in | Tokens out | USD |');
+  lines.push('|---|---|---|---|---|');
+  for (const row of comparison.games) {
+    const f = row.figures;
+    lines.push(
+      `| ${row.gameId} | ${cell(f.actual.calls, f.ratio.callsLow, f.ratio.callsHigh)} | ${cell(
+        f.actual.tokensIn,
+        f.ratio.tokensInLow,
+        f.ratio.tokensInHigh
+      )} | ${cell(f.actual.tokensOut, f.ratio.tokensOutLow, f.ratio.tokensOutHigh)} | ${f.actual.spendUsd.toFixed(4)} (${ratio(f.ratio.usdLow)} low, ${ratio(f.ratio.usdHigh)} high) |`
+    );
+  }
+  const t = comparison.totals.figures;
+  lines.push(
+    `| **Total** | ${cell(t.actual.calls, t.ratio.callsLow, t.ratio.callsHigh)} | ${cell(
+      t.actual.tokensIn,
+      t.ratio.tokensInLow,
+      t.ratio.tokensInHigh
+    )} | ${cell(t.actual.tokensOut, t.ratio.tokensOutLow, t.ratio.tokensOutHigh)} | ${t.actual.spendUsd.toFixed(4)} (${ratio(t.ratio.usdLow)} low, ${ratio(t.ratio.usdHigh)} high) |`
+  );
+  lines.push('');
+  return lines.join('\n');
 }
 
 // Re-exported for callers that want to plan without importing plan.js too.

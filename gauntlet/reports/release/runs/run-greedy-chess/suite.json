@@ -1,0 +1,47 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-first1",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "chess",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "paper",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/paper/public/0"
+          ]
+        },
+        {
+          "id": "wood",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/wood/public/0"
+          ]
+        },
+        {
+          "id": "steel",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/steel/public/0"
+          ]
+        },
+        {
+          "id": "granite",
+          "rank": 4,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/granite/public/0"
+          ]
+        }
+      ]
+    }
+  ]
+}

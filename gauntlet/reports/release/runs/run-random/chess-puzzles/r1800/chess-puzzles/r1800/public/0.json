@@ -1,0 +1,46 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-puzzles",
+    "version": "1.0.0"
+  },
+  "tier": "r1800",
+  "seed": "chess-puzzles/r1800/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "487a593f25b02811",
+      "reply": {
+        "text": "b4a2"
+      },
+      "action": "b4a2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": [
+        "loss"
+      ],
+      "reason": "puzzle 8lbu7 failed: played b4a2, the line expects b4d3"
+    },
+    "agentActions": 1,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:18:47.256Z",
+  "finishedAt": "2026-10-16T06:18:47.257Z"
+}

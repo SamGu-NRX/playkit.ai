@@ -236,20 +236,20 @@ function applyOutcomeProfile(profile, baseline, tier, trajectory, e) {
   if (!game || typeof game.version !== 'string') {
     refuse(
       'baseline-tier-missing',
-      `the scoring baseline has no entry for game "${gameId}"; chance-adjusted cannot rescale ${gameId}/${tier.id}`
+      `the scoring baseline has no entry for game "${gameId}"; chance-adjusted cannot rescale ${gameId}/${tier.id} — regenerate the baseline with node scoring/generate-baseline.js (if calibration/tables/${gameId}.json is also missing or stale, calibrate first with node calibration/run.js --games=${gameId})`
     );
   }
   if (game.version !== trajectory.game.version) {
     refuse(
       'baseline-version',
-      `the scoring baseline for "${gameId}" was measured on game version ${game.version} but the trajectory ${trajectory.game.id}/${trajectory.tier}/${trajectory.seed} records game version ${trajectory.game.version}; a stale baseline cannot rescale this tier`
+      `the scoring baseline for "${gameId}" was measured on game version ${game.version} but the trajectory ${trajectory.game.id}/${trajectory.tier}/${trajectory.seed} records game version ${trajectory.game.version}; a stale baseline cannot rescale this tier — regenerate the baseline with node scoring/generate-baseline.js`
     );
   }
   const entry = game.tiers[tier.id];
   if (!entry) {
     refuse(
       'baseline-tier-missing',
-      `the scoring baseline has no random-baseline entry for ${gameId}/${tier.id}; chance-adjusted cannot rescale this tier`
+      `the scoring baseline has no random-baseline entry for ${gameId}/${tier.id}; chance-adjusted cannot rescale this tier — regenerate the baseline with node scoring/generate-baseline.js`
     );
   }
   return transformOutcomeEpisode(profile, e, entry.mean, gameId, tier.id);

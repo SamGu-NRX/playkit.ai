@@ -498,13 +498,13 @@ test('a suite with no benchmark games is refused', async () => {
  * @param {string[]} tierIds
  */
 function makeBaseline(gameId, version, tierIds) {
-  /** @type {Record<string, { mean: number }>} */
+  /** @type {Record<string, { scoring: 'outcome', mean: number, ci95: [number, number] | null, episodes: number }>} */
   const tiers = {};
-  for (const id of tierIds) tiers[id] = { mean: 0.3 };
+  for (const id of tierIds) tiers[id] = { scoring: 'outcome', mean: 0.3, ci95: [0.2, 0.4], episodes: 2 };
   return {
     format: BASELINE_FORMAT,
     agent: 'random',
-    games: { [gameId]: { version, tiers } },
+    games: { [gameId]: { id: gameId, benchmark: true, version, tiers } },
   };
 }
 

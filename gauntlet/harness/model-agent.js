@@ -87,6 +87,22 @@ const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
 const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_RETRY_BASE_DELAY_MS = 500;
 const ERROR_EXCERPT_CHARS = 500;
+const UNPARSEABLE_BODY_EXCERPT_CHARS = 200;
+
+/**
+ * An Error carrying the number of retries the caller performed, so a consumer
+ * can tell an exhausted-retry failure from an immediate one (0 when the first
+ * answer was not retryable).
+ *
+ * @param {string} message
+ * @param {number} retries
+ * @returns {Error}
+ */
+function retryError(message, retries) {
+  const err = new Error(message);
+  /** @type {*} */ (err).retries = retries;
+  return err;
+}
 
 /**
  * @param {(ms: number) => Promise<void>} [sleep]
@@ -173,7 +189,11 @@ async function responseExcerpt(response) {
  * One provider request with retries. 429, 5xx and network errors retry up to
  * `maxRetries` times with exponential backoff (plus a server-provided
  * Retry-After when present); any other non-OK status fails immediately with an
- * excerpt of the response body.
+ * excerpt of the response body; a 2xx body that does not parse as JSON fails
+ * immediately too (a bad answer is final, not retryable), naming the provider,
+ * the status and the first 200 characters of the body. Every error thrown
+ * carries a numeric `retries` property: the retries performed, 0 when the
+ * first answer was not retryable.
  *
  * @param {object} options
  * @param {string} options.url
@@ -209,8 +229,9 @@ async function requestWithRetries({
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       if (retries >= maxRetries) {
-        throw new Error(
-          `model agent: ${provider} request failed after ${retries} retr${retries === 1 ? 'y' : 'ies'}: ${reason}`
+        throw retryError(
+          `model agent: ${provider} request failed after ${retries} retr${retries === 1 ? 'y' : 'ies'}: ${reason}`,
+          retries
         );
       }
       retries += 1;
@@ -218,19 +239,45 @@ async function requestWithRetries({
       continue;
     }
     if (response.ok) {
-      const json = await response.json();
+      // A 2xx body that is not JSON is a failed answer, not a transport
+      // error: it is never retried, and the error names the provider, the
+      // status, and the first 200 characters of the body — a bare
+      // SyntaxError helps nobody debug a misbehaving proxy.
+      let raw = '';
+      try {
+        raw = await response.text();
+      } catch (err) {
+        raw = `<unreadable body: ${err instanceof Error ? err.message : String(err)}>`;
+      }
+      let json;
+      try {
+        json = JSON.parse(raw);
+      } catch {
+        const excerpt =
+          raw.length > UNPARSEABLE_BODY_EXCERPT_CHARS
+            ? `${raw.slice(0, UNPARSEABLE_BODY_EXCERPT_CHARS)}…`
+            : raw.length > 0
+              ? raw
+              : '(empty body)';
+        throw retryError(
+          `model agent: ${provider} returned an unparseable 2xx body (HTTP ${response.status}): ${excerpt}`,
+          retries
+        );
+      }
       return { json, retries };
     }
     const excerpt = await responseExcerpt(response);
     const retryable = response.status === 429 || response.status >= 500;
     if (!retryable) {
-      throw new Error(
-        `model agent: ${provider} API returned HTTP ${response.status}: ${excerpt}`
+      throw retryError(
+        `model agent: ${provider} API returned HTTP ${response.status}: ${excerpt}`,
+        retries
       );
     }
     if (retries >= maxRetries) {
-      throw new Error(
-        `model agent: ${provider} API returned HTTP ${response.status} after ${retries} retr${retries === 1 ? 'y' : 'ies'}: ${excerpt}`
+      throw retryError(
+        `model agent: ${provider} API returned HTTP ${response.status} after ${retries} retr${retries === 1 ? 'y' : 'ies'}: ${excerpt}`,
+        retries
       );
     }
     retries += 1;
@@ -243,28 +290,35 @@ async function requestWithRetries({
   }
 }
 
+// Usage honesty: a provider that omits a count (or reports a negative or
+// non-numeric one) did not measure it, so the count is null — never 0, which
+// would make unreported usage look measured and bill a priced run at $0. A
+// reported 0 stays 0.
 /**
  * @param {*} value
- * @returns {number}
+ * @returns {number | null}
  */
 function tokenCount(value) {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0
     ? value
-    : 0;
+    : null;
 }
 
 /**
  * Cost from the caller-supplied price file only; null whenever there is no
- * entry, so an unknown price can never masquerade as a known one.
+ * entry, so an unknown price can never masquerade as a known one — and null
+ * whenever either token count is unreported, so unknown usage can never
+ * masquerade as a spend of zero.
  *
  * @param {PriceFile | undefined} prices
  * @param {string} provider
  * @param {string} model
- * @param {number} inputTokens
- * @param {number} outputTokens
+ * @param {number | null} inputTokens
+ * @param {number | null} outputTokens
  * @returns {number | null}
  */
 function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
+  if (inputTokens === null || outputTokens === null) return null;
   if (!prices) return null;
   const entry = prices[`${provider}/${model}`];
   if (!entry) return null;
@@ -300,8 +354,10 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  *
  * @typedef {object} ProviderTurnResult
  * @property {string} text
- * @property {number} inputTokens
- * @property {number} outputTokens
+ * @property {number | null} inputTokens Reported input tokens, or null when
+ *   the provider did not report them.
+ * @property {number | null} outputTokens Reported output tokens, or null when
+ *   the provider did not report them.
  * @property {number} retries
  * @property {string | null} responseId
  * @property {number} [reasoningChars]

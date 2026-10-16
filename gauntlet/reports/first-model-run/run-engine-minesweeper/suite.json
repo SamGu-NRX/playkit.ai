@@ -1,0 +1,47 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-first1-tictactoe+cube+mastermind+connect4+chess-endgames+sokoban+chess+chess-stockfish+sliding+minesweeper+holdem+2048",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "minesweeper",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "beginner",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/beginner/public/0"
+          ]
+        },
+        {
+          "id": "intermediate",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/intermediate/public/0"
+          ]
+        },
+        {
+          "id": "expert",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/expert/public/0"
+          ]
+        },
+        {
+          "id": "torus",
+          "rank": 4,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/torus/public/0"
+          ]
+        }
+      ]
+    }
+  ]
+}

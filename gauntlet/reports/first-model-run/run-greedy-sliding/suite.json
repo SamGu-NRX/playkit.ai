@@ -1,0 +1,51 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-first1-tictactoe+cube+mastermind+connect4+chess-endgames+sokoban+chess+chess-stockfish+sliding+minesweeper+holdem+2048",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "sliding",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "p8",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p8/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p15-short",
+          "rank": 2,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p15-short/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p15-mid",
+          "rank": 3,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p15-mid/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p15-long",
+          "rank": 4,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p15-long/public/0"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    }
+  ]
+}

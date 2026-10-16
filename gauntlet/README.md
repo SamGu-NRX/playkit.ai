@@ -66,11 +66,14 @@ hashes, counts, or the outcome.
   turn's message stays within size limits.
 - `model-agent.js` — provider-backed agents for Anthropic Messages, OpenAI
   Responses, and any OpenAI-compatible chat-completions server (`openai-chat`,
-  pointed at `--base-url`) over global `fetch` (no SDKs). Keys are read from
-  the environment at call time and never logged; 429/5xx/network errors retry
-  with exponential backoff and surface the retry count in the reply's
-  metadata; token usage is recorded, and costs are computed only from a
-  caller-supplied, sourced price file (`prices.example.json` shows the shape).
+  pointed at `--base-url`) over global `fetch` (no SDKs) — the same provider
+  behind the local-server browser sessions in `bridge/browser` (see
+  `harness/PROVIDERS.md` for the per-provider request shape and serve
+  commands). Keys are read from the environment at call time and never logged;
+  429/5xx/network errors retry with exponential backoff and surface the retry
+  count in the reply's metadata; token usage is recorded, and costs are
+  computed only from a caller-supplied, sourced price file
+  (`prices.example.json` shows the shape).
 - `dry-run.js` — offline agents: a scripted agent (static list or function)
   and a replay agent that re-plays a recorded trajectory against the same
   `(game, tier, seed)`, refusing on an observation-hash mismatch. Both record

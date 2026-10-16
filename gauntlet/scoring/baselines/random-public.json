@@ -40,6 +40,11 @@
       "sha256": "0cd71860c20ecad0f5adbd9692a0b73a189d639d21f06bdad3691d76c5513408"
     },
     {
+      "gameId": "go",
+      "path": "calibration/tables/go.json",
+      "sha256": "8db587fc58d740e5b765d29175c5ca3078508d1e12312af7a955ec3150c5f668"
+    },
+    {
       "gameId": "holdem",
       "path": "calibration/tables/holdem.json",
       "sha256": "ee5abee898d4d21a01293cb6f32b7b61812893dae4f81ee66235fc31e3a0ea1b"
@@ -77,7 +82,7 @@
     {
       "gameId": "sudoku",
       "path": "calibration/tables/sudoku.json",
-      "sha256": "4986d485bb8697a422b753aba5a86f783329ba3b0fa2aa00c87936cace8eca64"
+      "sha256": "2f3dd436424b9a932eb050a6fc4ca10050085100d606a9bd72a19189172a9542"
     },
     {
       "gameId": "tictactoe",
@@ -87,7 +92,7 @@
     {
       "gameId": "wordle",
       "path": "calibration/tables/wordle.json",
-      "sha256": "c35e14ade7e48a0d52de6bed1c847829a0448b8e0c4ecec1b7c92df41b05ea55"
+      "sha256": "e8fa9a67fc00f383f4ad1053b5ad8497d292c485a1c542ed48880b14b6302dd2"
     }
   ],
   "games": {
@@ -443,6 +448,49 @@
             0
           ],
           "episodes": 6
+        }
+      }
+    },
+    "go": {
+      "id": "go",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "ladder-1": {
+          "scoring": "outcome",
+          "mean": 0.541667,
+          "ci95": [
+            0.291667,
+            0.791667
+          ],
+          "episodes": 12
+        },
+        "ladder-2": {
+          "scoring": "outcome",
+          "mean": 0.125,
+          "ci95": [
+            0,
+            0.333333
+          ],
+          "episodes": 12
+        },
+        "ladder-3": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 12
+        },
+        "ladder-4": {
+          "scoring": "outcome",
+          "mean": 0.25,
+          "ci95": [
+            0,
+            0.5
+          ],
+          "episodes": 12
         }
       }
     },
@@ -826,7 +874,7 @@
     },
     "wordle": {
       "id": "wordle",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "benchmark": true,
       "tiers": {
         "four-letter-10": {
@@ -849,10 +897,10 @@
         },
         "hard-mode": {
           "scoring": "efficiency",
-          "mean": 0.217833,
+          "mean": 0,
           "ci95": [
-            0.089378,
-            0.369691
+            0,
+            0
           ],
           "episodes": 25
         }

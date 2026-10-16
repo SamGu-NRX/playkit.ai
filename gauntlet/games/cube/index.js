@@ -196,7 +196,7 @@ const NOTATION_LINE =
 export const cube = {
   spec: {
     id: 'cube',
-    version: '1.0.0',
+    version: '1.1.0',
     title: "Rubik's Cube",
     seats: /** @type {1 | 2} */ (1),
     information: /** @type {InformationMode} */ ('perfect'),

@@ -139,7 +139,7 @@ function negamax(state) {
 export const tictactoe = {
   spec: {
     id: 'tictactoe',
-    version: '1.1.0',
+    version: '1.2.0',
     title: 'Tic-Tac-Toe',
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {import('../../core/types.js').InformationMode} */ ('perfect'),

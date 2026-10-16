@@ -25,7 +25,7 @@ import { makeOpponent } from './opponents.js';
 /** @import { MatchState } from './engine.js' */
 
 export const GAME_ID = 'holdem';
-export const GAME_VERSION = '1.1.0';
+export const GAME_VERSION = '1.2.0';
 
 /**
  * The hold'em spec. benchmark: true per the design doc's roster.

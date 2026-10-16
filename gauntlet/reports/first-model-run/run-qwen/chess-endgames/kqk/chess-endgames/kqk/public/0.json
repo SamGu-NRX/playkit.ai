@@ -1,0 +1,223 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-endgames",
+    "version": "1.0.0"
+  },
+  "tier": "kqk",
+  "seed": "chess-endgames/kqk/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "tablebase-perfect"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "16a13aa22030a338",
+      "reply": {
+        "text": "c7b6",
+        "usage": {
+          "inputTokens": 715,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-cVEZ2HsjneLDaXlDlwqFStts2uJg6Wza",
+          "reasoningChars": 0
+        }
+      },
+      "action": "c7b6",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 715,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 6444
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "e008d12831df248f",
+      "reply": {
+        "text": "b2c1"
+      },
+      "action": "b2c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4e7edbba7ef4157c",
+      "reply": {
+        "text": "move c7b6",
+        "usage": {
+          "inputTokens": 718,
+          "outputTokens": 6,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-huJMVwS93YsaY1IXpOeBqhbXuk9rPDLY",
+          "reasoningChars": 0
+        }
+      },
+      "action": "move c7b6",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 718,
+        "outputTokens": 6,
+        "costUsd": 0
+      },
+      "ms": 6685
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4e7edbba7ef4157c",
+      "reply": {
+        "text": "d3a3",
+        "usage": {
+          "inputTokens": 735,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-cHKjDGzYVNiYxMkOJlvA8cW7adj89APf",
+          "reasoningChars": 0
+        }
+      },
+      "action": "d3a3",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 735,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 11512
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "6a936a0a50b74dd4",
+      "reply": {
+        "text": "c1b1"
+      },
+      "action": "c1b1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "67e761b9494fe249",
+      "reply": {
+        "text": "d3a3",
+        "usage": {
+          "inputTokens": 696,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Kfwfkv2Xn4pIJtj4avBq0qR02NDvweHJ",
+          "reasoningChars": 0
+        }
+      },
+      "action": "d3a3",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 696,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 5672
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "67e761b9494fe249",
+      "reply": {
+        "text": "d3d5",
+        "usage": {
+          "inputTokens": 712,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-wxBpbHQEkaC6r14ddRW755GY8lrjXdNm",
+          "reasoningChars": 0
+        }
+      },
+      "action": "d3d5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 712,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 5374
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "67e761b9494fe249",
+      "reply": {
+        "text": "d5d4",
+        "usage": {
+          "inputTokens": 712,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-1oc0SK2jyWX8VcEcZfExXGA5yOiAlH4H",
+          "reasoningChars": 0
+        }
+      },
+      "action": "d5d4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 712,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 3768
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0,
+        1
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 6,
+    "invalidActions": 4
+  },
+  "startedAt": "2026-10-15T20:15:45.522Z",
+  "finishedAt": "2026-10-15T20:16:25.097Z"
+}

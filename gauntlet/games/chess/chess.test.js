@@ -18,7 +18,7 @@ import chess, {
   TRUNCATION_WIN_CP,
 } from './index.js';
 import { OPENINGS } from './openings.js';
-import { bestMove, evaluateWhite, legalUcis, quiescenceWhite, replayUci, START_FEN } from './engine.js';
+import { bestMove, evaluateWhite, internals, legalUcis, MATE, quiescenceWhite, replayUci, START_FEN } from './engine.js';
 import { createGreedyBaselineAgent } from './baselines.js';
 
 /** Deep perft and the full four-tier conformance run only under GAUNTLET_SLOW=1. */
@@ -124,7 +124,7 @@ test('perft through the public contract: start position 20/400/8902', () => {
   const state = stateFromFen(PERFT_FENS.start);
   assert.equal(perft(state, 1), 20);
   assert.equal(perft(state, 2), 400);
-  if (SLOW) assert.equal(perft(state, 3), 8902);
+  assert.equal(perft(state, 3), 8902);
 });
 
 test('perft through the public contract: kiwipete 48/2039', () => {
@@ -137,7 +137,27 @@ test('perft through the public contract: position 3, 14/191/2812', () => {
   const state = stateFromFen(PERFT_FENS.position3);
   assert.equal(perft(state, 1), 14);
   assert.equal(perft(state, 2), 191);
-  if (SLOW) assert.equal(perft(state, 3), 2812);
+  assert.equal(perft(state, 3), 2812);
+});
+
+test('quiescence detects checkmate behind pseudo-legal captures', () => {
+  // Regression: the in-check mate probe used to run only when the side in
+  // check had NO pseudo-legal captures, so a mated side whose captures are
+  // all illegal (here: contact check by a defended queen, so every rook and
+  // pawn capture leaves the king in check) fell through to stand-pat. The
+  // root already handled bare mates exactly; this exercises the inner
+  // quiescence reached from a capture: Qxe7 delivers a position where black
+  // is checkmated (0 legal moves) yet still has 3 pseudo-legal captures.
+  const before = stateFromFen('4k3/3pn3/3BPQ2/3Ppr2/8/8/8/K7 w - - 0 1');
+  const after = stateToChess(before);
+  after.move({ from: 'f6', to: 'e7' });
+  assert.equal(after.isCheckmate(), true, 'the fixture must be mate after Qxe7');
+  assert.equal(after.moves().length, 0);
+  assert.ok(internals(after)._moves({ legal: false }).filter((/** @type {any} */ m) => m.captured || m.promotion).length > 0);
+  const score = quiescenceWhite(stateToChess(before), { nodeBudget: 20000 });
+  assert.ok(score > MATE - 100, `mate found through a capture must score near MATE, got ${score}`);
+  // The bare mated position itself scores exactly MATE at the root.
+  assert.equal(quiescenceWhite(after, { nodeBudget: 20000 }), MATE);
 });
 
 test('env steps agree with public chess.js moves over a middlegame line', () => {
@@ -498,3 +518,4 @@ test('opening book: every named line is legal from the start position', () => {
     }
   }
 });
+

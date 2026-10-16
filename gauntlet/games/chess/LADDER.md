@@ -25,7 +25,10 @@ reproduce the tables below exactly on the same hardware class.
   tier's `maxActions` budget; a still-running episode is truncation-adjudicated
   exactly like a real agent episode (500cp quiescence threshold).
 - Score for the pair = mean normalized score of the **higher** rung (win 1,
-  draw 0.5, loss 0), with a Wilson 95% interval over the games.
+  draw 0.5, loss 0). The reported interval is a Wilson 95% interval computed
+  on the per-game mean; with draws in the mix this is a Wilson-style interval
+  on a {0, 0.5, 1}-valued mean, not an exact binomial Wilson interval, so
+  treat the bounds as approximate.
 
 ## Latest results (24 games per pair, both colours)
 
@@ -35,10 +38,13 @@ reproduce the tables below exactly on the same hardware class.
 | steel > wood | 0.708 / 24 | [0.508, 0.851] | checkmate:12 material:1 threefold:11 | 93.8 | 10.9s |
 | granite > steel | 0.792 / 24 | [0.595, 0.908] | checkmate:16 threefold:8 | 110.7 | 31.5s |
 
-Every adjacent pair is ordered with the Wilson lower bound above 0.5, so the
+Every adjacent pair is ordered with the interval lower bound above 0.5, so the
 ladder has no inversions at this sample size. Average seconds per move per
-tier: paper 0.06s, wood 0.09s, steel 0.21s, granite 0.28s. Full 72-game run:
-207s wall time on an 8-core machine with 6 workers.
+tier: paper 0.06s, wood 0.09s, steel 0.21s, granite 0.28s — note the per-tier
+timing splits each game's wall time evenly between the two engines, so these
+are approximations (a tier that finishes its moves early still accrues half
+the game's remaining wait). Full 72-game run: 207s wall time on an 8-core
+machine with 6 workers.
 
 Read the intervals, not the point estimates: with 24 games a pair, a 0.708 is
 statistically consistent with a 0.85. What the table pins is *ordering*, not

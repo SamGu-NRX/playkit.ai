@@ -432,7 +432,11 @@ function quiescence(chess, alpha, beta, pliesLeft, ply, budget) {
       .filter((move) => move.captured || move.promotion),
     null
   );
-  if (inCheck && captures.length === 0 && !hasLegalMove(fast)) {
+  if (inCheck && !hasLegalMove(fast)) {
+    // Every in-check node reaches here cheaply, and the check is required
+    // for correctness: a side in check whose pseudo-legal captures are all
+    // illegal (pins, or any non-queen-capture move against a contact check)
+    // is checkmated, not stand-patted.
     return -(MATE - ply + 1);
   }
   const stand = evaluateSideToMove(chess);

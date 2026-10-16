@@ -14,7 +14,7 @@
 
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-GROOT="$(cd "$HERE/../.." && pwd)"
+GROOT="$(cd "$HERE/../../.." && pwd)"
 cd "$GROOT"
 
 echo "== 1/4 installing dependencies =="
@@ -32,7 +32,7 @@ pids=()
 for g in tictactoe connect4 holdem chess chess-endgames chess-puzzles; do
   node studies/skill-dial/versus/compute-stats.mjs \
     --game="$g" \
-    --runs=studies/skill-dial/versus/runs \
+    --runs="$GROOT/studies/skill-dial/versus/runs" \
     --out="/tmp/dialstats-repro/$g.json" &
   pids+=($!)
 done

@@ -34,6 +34,16 @@ import { generateLevel } from './generator.js';
  * @type {Record<string, { width: number, height: number, boxes: number, parMin: number, parMax: number, pullsMin: number, pullsMax: number, wallsMax: number }>}
  */
 export const TIER_GENERATION = {
+  'one-box': {
+    width: 5,
+    height: 5,
+    boxes: 1,
+    parMin: 4,
+    parMax: 15,
+    pullsMin: 6,
+    pullsMax: 15,
+    wallsMax: 1,
+  },
   'two-box': {
     width: 7,
     height: 7,
@@ -207,8 +217,17 @@ const RULES_TEXT = [
 /** @type {TierSpec[]} */
 const TIERS = [
   {
-    id: 'two-box',
+    id: 'one-box',
     rank: 1,
+    scoring: 'efficiency',
+    maxActions: 5 * TIER_GENERATION['one-box'].parMax, // 75
+    publicSeeds: 16,
+    parKind: 'optimal',
+    params: { ...TIER_GENERATION['one-box'] },
+  },
+  {
+    id: 'two-box',
+    rank: 2,
     scoring: 'efficiency',
     maxActions: 5 * TIER_GENERATION['two-box'].parMax, // 130
     publicSeeds: 25,
@@ -217,7 +236,7 @@ const TIERS = [
   },
   {
     id: 'three-box',
-    rank: 2,
+    rank: 3,
     scoring: 'efficiency',
     maxActions: 5 * TIER_GENERATION['three-box'].parMax, // 220
     publicSeeds: 25,
@@ -226,7 +245,7 @@ const TIERS = [
   },
   {
     id: 'four-box',
-    rank: 3,
+    rank: 4,
     scoring: 'efficiency',
     maxActions: 5 * TIER_GENERATION['four-box'].parMax, // 350
     publicSeeds: 25,

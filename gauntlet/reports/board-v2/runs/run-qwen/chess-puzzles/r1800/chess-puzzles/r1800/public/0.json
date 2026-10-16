@@ -1,0 +1,89 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-puzzles",
+    "version": "1.0.0"
+  },
+  "tier": "r1800",
+  "seed": "chess-puzzles/r1800/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "487a593f25b02811",
+      "reply": {
+        "text": "e5",
+        "usage": {
+          "inputTokens": 988,
+          "outputTokens": 3,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-SgyPVaqJwgqvSQVcGH3jX0bA47Dx6SNJ",
+          "reasoningChars": 0
+        }
+      },
+      "action": "e5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 988,
+        "outputTokens": 3,
+        "costUsd": 0
+      },
+      "ms": 2713
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "487a593f25b02811",
+      "reply": {
+        "text": "a5a2",
+        "usage": {
+          "inputTokens": 1033,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-uHH0eqq3SS6IYLzNTn4QBWUwCJIcVr9k",
+          "reasoningChars": 0
+        }
+      },
+      "action": "a5a2",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1033,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 9407
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": [
+        "loss"
+      ],
+      "reason": "puzzle 8lbu7 failed: played a5a2, the line expects b4d3"
+    },
+    "agentActions": 2,
+    "invalidActions": 1
+  },
+  "startedAt": "2026-10-16T05:44:47.373Z",
+  "finishedAt": "2026-10-16T05:44:59.496Z"
+}

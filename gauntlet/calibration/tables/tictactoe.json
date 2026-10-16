@@ -9,9 +9,37 @@
   "baselines": {
     "random": {
       "tiers": {
+        "random-opponent": {
+          "id": "random-opponent",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.46875,
+            "ci95": [
+              0.25,
+              0.6875
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 16
+        },
+        "blunder-opponent": {
+          "id": "blunder-opponent",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.1875,
+            "ci95": [
+              0.0625,
+              0.34375
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 16
+        },
         "perfect-opponent": {
           "id": "perfect-opponent",
-          "rank": 1,
+          "rank": 3,
           "scoring": "outcome",
           "score": {
             "value": 0.0625,
@@ -27,9 +55,37 @@
     },
     "greedy": {
       "tiers": {
+        "random-opponent": {
+          "id": "random-opponent",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.84375,
+            "ci95": [
+              0.71875,
+              0.9375
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 16
+        },
+        "blunder-opponent": {
+          "id": "blunder-opponent",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.625,
+            "ci95": [
+              0.5,
+              0.75
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 16
+        },
         "perfect-opponent": {
           "id": "perfect-opponent",
-          "rank": 1,
+          "rank": 3,
           "scoring": "outcome",
           "score": {
             "value": 0.4375,
@@ -45,9 +101,37 @@
     },
     "engine": {
       "tiers": {
+        "random-opponent": {
+          "id": "random-opponent",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.96875,
+            "ci95": [
+              0.90625,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 16
+        },
+        "blunder-opponent": {
+          "id": "blunder-opponent",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.6875,
+            "ci95": [
+              0.5625,
+              0.8125
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 16
+        },
         "perfect-opponent": {
           "id": "perfect-opponent",
-          "rank": 1,
+          "rank": 3,
           "scoring": "outcome",
           "score": {
             "value": 0.5,

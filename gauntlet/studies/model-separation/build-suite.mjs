@@ -12,6 +12,7 @@
  */
 
 import { writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { buildSuite } from '../../scoring/suite.js';
 import { GAMES } from '../../games/index.js';
 
@@ -55,7 +56,10 @@ const manifest = buildSuite(games, {
   id: `gauntlet-public-model-separation-first${seedsPerTier}`,
 });
 
-const out = 'suite.public.json';
+// Beside the manifest (this file), never the caller's working directory:
+// reproduce.sh runs from gauntlet/, and the study commands read the suite
+// from this directory (Codex P1 on PR #43).
+const out = fileURLToPath(new URL('./suite.public.json', import.meta.url));
 writeFileSync(out, JSON.stringify(manifest, null, 2) + '\n');
 const jobs = manifest.games.reduce((n, g) => n + g.tiers.reduce((m, t) => m + t.seeds.length, 0), 0);
 process.stdout.write(`wrote ${out} — ${manifest.games.length} games, ${jobs} jobs, ${seedsPerTier} seeds/tier\n`);

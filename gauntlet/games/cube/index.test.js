@@ -11,16 +11,17 @@ import { getGame, listGames } from '../index.js';
 /** Warm the solver once so per-seed reset timing excludes the table build. */
 buildDistanceTable();
 
-test('spec declares three efficiency tiers with optimal par and the 5x budget rule', () => {
+test('spec declares four efficiency tiers with optimal par and the 5x budget rule', () => {
   const { spec } = cube;
   assert.equal(spec.id, 'cube');
   assert.equal(spec.benchmark, true);
   assert.equal(spec.stochastic, false);
-  assert.equal(spec.tiers.length, 3);
+  assert.equal(spec.tiers.length, 4);
   const expected = [
-    { id: 'cube-5', rank: 1, maxActions: 25 },
-    { id: 'cube-7', rank: 2, maxActions: 35 },
-    { id: 'cube-9', rank: 3, maxActions: 45 },
+    { id: 'cube-2', rank: 1, maxActions: 15 },
+    { id: 'cube-5', rank: 2, maxActions: 25 },
+    { id: 'cube-7', rank: 3, maxActions: 35 },
+    { id: 'cube-9', rank: 4, maxActions: 45 },
   ];
   for (const [i, tier] of spec.tiers.entries()) {
     assert.equal(tier.id, expected[i].id);
@@ -28,14 +29,14 @@ test('spec declares three efficiency tiers with optimal par and the 5x budget ru
     assert.equal(tier.scoring, 'efficiency');
     assert.equal(tier.parKind, 'optimal');
     assert.equal(tier.maxActions, expected[i].maxActions);
-    assert.equal(tier.publicSeeds, 6);
-    // the budget is 5 x the band maximum (bands 5, 7, 9)
-    assert.equal(tier.maxActions, 5 * [5, 7, 9][i]);
+    assert.equal(tier.publicSeeds, i === 0 ? 16 : 6);
+    // the budget is 5 x the band maximum (bands 3, 5, 7, 9)
+    assert.equal(tier.maxActions, 5 * [3, 5, 7, 9][i]);
   }
   assert.ok(spec.rulesText.includes('clockwise'));
 });
 
-test('the full conformance kit passes on three seeds per tier', async () => {
+test('the full conformance kit passes on every tier', async () => {
   await runConformance(cube);
 });
 
@@ -71,6 +72,18 @@ test('reset is fast on every public seed: under 2 s per seed per tier', () => {
       );
       assert.ok(state.facelets.length === 54);
     }
+  }
+});
+
+test('cube-2 pars are pinned on the first public seeds', () => {
+  // Golden pins for the on-ramp tier: band 1-3, budget 15, 16 public seeds.
+  const tier = cube.spec.tiers.find((t) => t.id === 'cube-2');
+  assert.ok(tier, 'cube-2 tier exists');
+  const expected = [3, 3, 3];
+  for (let i = 0; i < expected.length; i++) {
+    const state = cube.reset(tier, 'cube/cube-2/public/' + i);
+    assert.equal(state.par, expected[i], `cube-2 seed ${i}`);
+    assert.equal(solveOptimal(state.facelets).solution.length, expected[i], `cube-2 seed ${i} solves at par`);
   }
 });
 

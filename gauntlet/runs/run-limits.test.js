@@ -34,7 +34,7 @@ const GAMES = [takeOrPass];
 
 // The CLI resolves the manifest's games through the registered game registry,
 // so the subprocess leg needs a registered game: cube, limited to one seed per
-// tier (--limit 1, three episodes) because a hanging provider fails slowly.
+// tier (--limit 1, four episodes) because a hanging provider fails slowly.
 const CLI_SUITE = buildSuite([getGame('cube')], { split: 'public' });
 
 /**
@@ -166,7 +166,7 @@ test('run --max-output-tokens and --call-timeout-ms plumb through the CLI to the
   const elapsed = Date.now() - started;
 
   const record = JSON.parse(await readFile(join(dir, 'run', 'run.json'), 'utf8'));
-  assert.equal(record.counts.failed, 3, 'every episode fails (--limit 1 on cube: three episodes)');
+  assert.equal(record.counts.failed, 4, 'every episode fails (--limit 1 on cube: four episodes)');
   assert.equal(record.counts.played, 0, 'no episode was scored');
   assert.ok(
     elapsed < 3 * (100 * (3 + 1) + 5000),

@@ -1,0 +1,44 @@
+# Usage aggregate — reports/release/runs/run-qwen
+
+agent model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m · calls 1960 · invalid 142 (7.2%) · in 1487070 tok · out 4444 tok · 4422 ms/call mean
+
+| game | eps | calls | invalid | in tok/call | out tok/call | ms/call mean/p50/max | ends |
+|---|---|---:|---:|---:|---:|---|---|
+| 2048 | 4/4 | 654 | 2 (0.3%) | 560.674312 | 2 | 2343/2292/7873 | terminal:4 |
+| tictactoe | 1/1 | 3 | 0 (0.0%) | 320 | 3 | 8114/6145/15505 | terminal:1 |
+| chess | 4/4 | 13 | 12 (92.3%) | 692.846154 | 3 | 4095/4100/6241 | forfeit-invalid:4 |
+| chess-endgames | 4/4 | 25 | 8 (32.0%) | 669.72 | 4.92 | 5144/4757/9668 | forfeit-invalid:2 terminal:2 |
+| chess-stockfish | 5/5 | 26 | 19 (73.1%) | 699.730769 | 4 | 4310/3924/7939 | forfeit-invalid:5 |
+| chess-puzzles | 6/6 | 13 | 9 (69.2%) | 1027.923077 | 4.692308 | 6678/6274/10815 | forfeit-invalid:2 terminal:4 |
+| cube | 3/3 | 105 | 0 (0.0%) | 948.514286 | 3 | 4041/3606/17901 | budget-exhausted:3 |
+| minesweeper | 4/4 | 10 | 9 (90.0%) | 1136.8 | 6 | 6348/5535/9883 | forfeit-invalid:3 terminal:1 |
+| sliding | 4/4 | 93 | 35 (37.6%) | 562.677419 | 2 | 1872/1522/3981 | forfeit-invalid:4 |
+| sokoban | 3/3 | 575 | 38 (6.6%) | 450.615652 | 2 | 2429/1455/12117 | budget-exhausted:3 |
+| connect4 | 5/5 | 21 | 0 (0.0%) | 443.142857 | 2 | 1121/1046/2009 | terminal:5 |
+| mastermind | 3/3 | 16 | 10 (62.5%) | 494.0625 | 4.8125 | 2179/2059/3004 | forfeit-invalid:3 |
+| holdem | 3/3 | 406 | 0 (0.0%) | 1533.293103 | 2.389163 | 11363/10477/37407 | terminal:3 |
+
+Top rejected replies:
+- 63× "up" (sliding/p15-long @ sliding/p15-long/public/0)
+- 17× "e5" (chess/granite @ chess/granite/public/0)
+- 12× "right" (2048/t256 @ 2048/t256/public/0)
+- 9× "h6h5" (chess-puzzles/r1000 @ chess-puzzles/r1000/public/0)
+- 9× "reveal 3 4" (minesweeper/beginner @ minesweeper/beginner/public/0)
+
+Estimator check (measured vs pre-run estimate):
+
+| game | est calls/ep low–high | measured calls/ep | call err vs low | est in tok/call | measured in tok/call | tok err |
+|---|---|---:|---:|---:|---:|---:|
+| 2048 | —–1125 | 163.5 | — | — | 560.674312 | — |
+| tictactoe | 5–20 | 3 | -40% | 261.45 | 320 | 22.394339% |
+| chess | 51.5–150 | 3.25 | -93.68932% | 490.293689 | 692.846154 | 41.312476% |
+| chess-endgames | 2–49 | 6.25 | 212.5% | 463.59375 | 669.72 | 44.46269% |
+| chess-stockfish | —–150 | 5.2 | — | — | 699.730769 | — |
+| chess-puzzles | —–8 | 2.166667 | — | — | 1027.923077 | — |
+| cube | 7–35 | 35 | 400% | 806.25 | 948.514286 | 17.645183% |
+| minesweeper | —–288.25 | 2.5 | — | — | 1136.8 | — |
+| sliding | 27.75–185 | 23.25 | -16.216216% | 525.551802 | 562.677419 | 7.064121% |
+| sokoban | 12–191.666667 | 191.666667 | 1497.222225% | 463.972222 | 450.615652 | -2.878743% |
+| connect4 | 11.6–30 | 4.2 | -63.793103% | 383.672414 | 443.142857 | 15.500318% |
+| mastermind | —–36.666667 | 5.333333 | — | — | 494.0625 | — |
+| holdem | 168.666667–400 | 135.333333 | -19.762846% | 1337.687747 | 1533.293103 | 14.622647% |

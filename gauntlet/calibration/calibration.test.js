@@ -23,6 +23,7 @@ import { dirname } from 'node:path';
 
 import { runChecks, TABLE_FORMAT } from './checks.js';
 import { renderReport } from './report.js';
+import { getGame } from '../games/index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const gauntletRoot = dirname(here);
@@ -443,16 +444,20 @@ test('--per-game-cap rejects non-positive and non-finite values', { timeout: 60_
 test('tables record executed episode coverage, not the requested seed limit', { timeout: 300_000 }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'gauntlet-calib-coverage-'));
   try {
-    // tictactoe ships 8 public seeds per tier: requesting 100 must not record 100.
+    // tictactoe ships 16/16/8 public seeds across its tiers: requesting 100
+    // must not record 100 — each tier records exactly its own public seeds.
     runCalibration(dir, ['tictactoe'], 100);
     const table = JSON.parse(readFileSync(join(dir, 'tictactoe.json'), 'utf8'));
     assert.ok(!('seedsPerTier' in table), 'table must not carry a requested-seeds field that reads as coverage');
+    const expectedSeeds = getGame('tictactoe').spec.tiers
+      .map((t) => t.publicSeeds)
+      .sort((a, b) => a - b);
     for (const kind of ['random', 'greedy', 'engine']) {
       const blocks = Object.values(table.baselines[kind].tiers);
       assert.ok(blocks.length > 0);
       const counts = blocks.map((b) => /** @type {{episodes: number}} */ (b).episodes);
       assert.ok(counts.every((n) => n > 0), `${kind} has empty tiers in a full reduced run`);
-      assert.equal(new Set(counts).size, 1, `${kind} tiers disagree on executed episode counts`);
+      assert.deepEqual(counts.sort((a, b) => a - b), expectedSeeds, `${kind} executed episodes must equal each tier's public seeds`);
     }
   } finally {
     rmSync(dir, { recursive: true, force: true });

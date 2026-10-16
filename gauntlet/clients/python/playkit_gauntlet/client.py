@@ -14,7 +14,7 @@ import subprocess
 import threading
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Sequence
 
 __all__ = ["GauntletClient", "GauntletError"]
 
@@ -44,6 +44,9 @@ class GauntletClient:
             ``gauntlet/protocol/server.js`` next to this package.
         node_executable: Node binary used to run the server (default ``node``).
             Node 20 or later is required.
+        server_args: Extra arguments appended after the server script, for
+            example ``["serve"]`` to run ``node gauntlet/cli/gauntlet.js serve``
+            instead of ``node gauntlet/protocol/server.js``.
         request_timeout: Maximum seconds to wait for one response line.
             ``None`` (default) reads blocking, which suits the deterministic
             local server. When set, a response that never arrives raises
@@ -57,6 +60,7 @@ class GauntletClient:
         self,
         server_path: Optional[str] = None,
         node_executable: str = "node",
+        server_args: Optional[Sequence[str]] = None,
         request_timeout: Optional[float] = None,
     ):
         resolved = Path(server_path) if server_path else _DEFAULT_SERVER
@@ -70,7 +74,7 @@ class GauntletClient:
         self._closed = False
         self._unusable = False
         self.process: subprocess.Popen[str] = subprocess.Popen(
-            [node_executable, self.server_path],
+            [node_executable, self.server_path, *(server_args or [])],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             text=True,

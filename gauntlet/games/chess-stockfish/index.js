@@ -39,7 +39,12 @@ const SEARCH_TIMEOUT_MS = {
 export const chessStockfish = {
   spec: {
     id: 'chess-stockfish',
-    version: '1.0.0',
+    // 1.1.0: the opponent now pins MultiPV 1 and Contempt 0 (and gates
+    // UCI_LimitStrength/UCI_Elo on advertisement) in addition to Threads 1
+    // and Hash 16. Pinning options the engine may not have had set before
+    // can change its play on a binary whose defaults differ, so the spec
+    // version moves per the game-versioning rules.
+    version: '1.1.0',
     title: 'Chess (Stockfish tiers)',
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {import('../../core/types.js').InformationMode} */ ('perfect'),

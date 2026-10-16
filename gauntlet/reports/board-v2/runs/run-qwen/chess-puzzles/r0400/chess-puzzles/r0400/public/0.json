@@ -1,0 +1,115 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-puzzles",
+    "version": "1.0.0"
+  },
+  "tier": "r0400",
+  "seed": "chess-puzzles/r0400/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5514f0b7012791a4",
+      "reply": {
+        "text": "g2h4",
+        "usage": {
+          "inputTokens": 1051,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-PC2Lvo9DRUViXL4UXpRRLeFObHoqORTp",
+          "reasoningChars": 0
+        }
+      },
+      "action": "g2h4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 1051,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 8923
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5514f0b7012791a4",
+      "reply": {
+        "text": "g2h4",
+        "usage": {
+          "inputTokens": 1072,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Xzm7nvnzZO5xQjz6SdV4MV6Ao80Htrp8",
+          "reasoningChars": 0
+        }
+      },
+      "action": "g2h4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 1072,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 5176
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5514f0b7012791a4",
+      "reply": {
+        "text": "h2h5",
+        "usage": {
+          "inputTokens": 1072,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-e7S5dkjX1j6jQ70YHxQTEiJHJdqV2KD4",
+          "reasoningChars": 0
+        }
+      },
+      "action": "h2h5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 1072,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 4479
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3
+  },
+  "startedAt": "2026-10-16T05:44:28.789Z",
+  "finishedAt": "2026-10-16T05:44:47.371Z"
+}

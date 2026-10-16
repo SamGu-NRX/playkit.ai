@@ -9,9 +9,23 @@
   "baselines": {
     "random": {
       "tiers": {
+        "mini": {
+          "id": "mini",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.029847,
+            "ci95": [
+              0.0004,
+              0.07955
+            ]
+          },
+          "solvedFraction": 0.16,
+          "episodes": 25
+        },
         "classic": {
           "id": "classic",
-          "rank": 1,
+          "rank": 2,
           "scoring": "efficiency",
           "score": {
             "value": 0,
@@ -25,7 +39,7 @@
         },
         "wide": {
           "id": "wide",
-          "rank": 2,
+          "rank": 3,
           "scoring": "efficiency",
           "score": {
             "value": 0,
@@ -39,7 +53,7 @@
         },
         "deep": {
           "id": "deep",
-          "rank": 3,
+          "rank": 4,
           "scoring": "efficiency",
           "score": {
             "value": 0,
@@ -55,15 +69,29 @@
     },
     "greedy": {
       "tiers": {
+        "mini": {
+          "id": "mini",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.723733,
+            "ci95": [
+              0.590564,
+              0.855458
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
         "classic": {
           "id": "classic",
-          "rank": 1,
+          "rank": 2,
           "scoring": "efficiency",
           "score": {
             "value": 0.909378,
             "ci95": [
-              0.831378,
-              0.9808
+              0.830711,
+              0.982
             ]
           },
           "solvedFraction": 1,
@@ -71,13 +99,13 @@
         },
         "wide": {
           "id": "wide",
-          "rank": 2,
+          "rank": 3,
           "scoring": "efficiency",
           "score": {
             "value": 0.817146,
             "ci95": [
-              0.72774,
-              0.909209
+              0.729755,
+              0.908667
             ]
           },
           "solvedFraction": 1,
@@ -85,13 +113,13 @@
         },
         "deep": {
           "id": "deep",
-          "rank": 3,
+          "rank": 4,
           "scoring": "efficiency",
           "score": {
             "value": 0.883068,
             "ci95": [
-              0.788426,
-              0.96946
+              0.791221,
+              0.968436
             ]
           },
           "solvedFraction": 1,
@@ -101,9 +129,23 @@
     },
     "engine": {
       "tiers": {
+        "mini": {
+          "id": "mini",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
         "classic": {
           "id": "classic",
-          "rank": 1,
+          "rank": 2,
           "scoring": "efficiency",
           "score": {
             "value": 1,
@@ -117,7 +159,7 @@
         },
         "wide": {
           "id": "wide",
-          "rank": 2,
+          "rank": 3,
           "scoring": "efficiency",
           "score": {
             "value": 1,
@@ -131,7 +173,7 @@
         },
         "deep": {
           "id": "deep",
-          "rank": 3,
+          "rank": 4,
           "scoring": "efficiency",
           "score": {
             "value": 1,

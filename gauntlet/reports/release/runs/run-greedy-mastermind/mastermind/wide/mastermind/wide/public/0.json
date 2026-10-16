@@ -1,0 +1,96 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "wide",
+  "seed": "mastermind/wide/public/0",
+  "split": "public",
+  "agent": {
+    "id": "greedy",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ea20131f2a8901f7",
+      "reply": {
+        "text": "guess FHBDF"
+      },
+      "action": "guess FHBDF",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "169bb3931d4a83c2",
+      "reply": {
+        "text": "guess EAFHH"
+      },
+      "action": "guess EAFHH",
+      "invalid": false,
+      "usage": null,
+      "ms": 8
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d668db0c43c6657e",
+      "reply": {
+        "text": "guess BCHGC"
+      },
+      "action": "guess BCHGC",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "57fc36ccd08e7ce3",
+      "reply": {
+        "text": "guess BDDAA"
+      },
+      "action": "guess BDDAA",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b222c09c5aad145d",
+      "reply": {
+        "text": "guess BDDAD"
+      },
+      "action": "guess BDDAD",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1
+      ],
+      "raw": [
+        5
+      ],
+      "reason": "solved: the secret was found in 5 guess(es), reference par 6",
+      "solved": true,
+      "par": 6
+    },
+    "agentActions": 5,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:19:47.591Z",
+  "finishedAt": "2026-10-16T06:19:47.643Z"
+}

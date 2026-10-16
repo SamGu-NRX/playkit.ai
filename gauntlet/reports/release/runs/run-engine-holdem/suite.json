@@ -1,0 +1,39 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-first1",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "holdem",
+      "version": "1.2.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "station",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "holdem/station/public/0"
+          ]
+        },
+        {
+          "id": "rules",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "holdem/rules/public/0"
+          ]
+        },
+        {
+          "id": "equity",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "holdem/equity/public/0"
+          ]
+        }
+      ]
+    }
+  ]
+}

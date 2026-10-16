@@ -21,7 +21,7 @@ test('extractAction reads the last non-empty line and strips wrappers', () => {
 });
 
 test('findTier resolves tiers and rejects unknown ones', () => {
-  assert.equal(findTier(game, 'perfect-opponent').rank, 1);
+  assert.equal(findTier(game, 'perfect-opponent').rank, 3);
   assert.throws(() => findTier(game, 'nope'), /has no tier "nope"/);
 });
 

@@ -31,6 +31,9 @@ export class HUD {
     this.controller = null;
     this.isAutoSolving = false;
     this.autoSolveTimeout = null;
+    // True while the page is hidden (VisibilityHandler contract). Paused
+    // state is remembered so resume() restarts only what was running.
+    this.visibilityPaused = false;
 
     this.directionPriority = [...DEFAULT_DIRECTION_PRIORITY];
     this.solverConfig = { ...DEFAULT_SOLVER_CONFIG };
@@ -357,6 +360,36 @@ export class HUD {
 
     this.updateRunState(true);
     this.autoSolveLoop();
+  }
+
+  /**
+   * Suspend HUD-side timers when the page becomes hidden. The Visibility
+   * Handler requires every managed component to expose pause()/resume();
+   * without these, Runtime.init() threw "Component must have pause() and
+   * resume() methods" and the overlay never initialized (ported from draft
+   * PR #1, obv/products-playkit-hardening-20261009, FIX-9). Controller-driven
+   * driving pauses via the Driver itself; this guards the HUD's local
+   * fallback loop and its timers.
+   */
+  pause() {
+    this.visibilityPaused = true;
+    if (this.autoSolveTimeout) {
+      clearTimeout(this.autoSolveTimeout);
+      this.autoSolveTimeout = null;
+    }
+  }
+
+  /**
+   * Allow HUD timers again when the page becomes visible. Restarts the
+   * HUD-local fallback auto-solve loop only if it was actually running.
+   */
+  resume() {
+    this.visibilityPaused = false;
+    if (this.isAutoSolving && !this.autoSolveTimeout && !this.controller) {
+      this.autoSolveTimeout = setTimeout(() => {
+        this.autoSolveLoop();
+      }, 0);
+    }
   }
 
   /**

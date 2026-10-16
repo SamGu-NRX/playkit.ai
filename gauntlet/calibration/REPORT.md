@@ -8,16 +8,15 @@ Baseline calibration over the gauntlet's public seeds: every game is played by a
 
 | | |
 |---|---|
-| Run at | 2026-10-16T10:45:40.965Z |
+| Run at | 2026-10-16T10:48:49.855Z |
 | Node | v20.20.2 |
 | Machine | linux 6.1.158+ x64, Intel(R) Xeon(R) Processor @ 2.60GHz, 8 cores, 7.8 GiB |
 | Worker parallelism | 8 |
 | Seeds per tier | all public seeds |
 | Per-game wall cap | 1200s |
-| Total wall time | 3526s |
-| HEAD | 454b45602118325be79b0c7c2901cd295a19d0dd |
+| Total wall time | 3513.3s |
+| HEAD | ff8e413d7eba409f4c359e5e1857e11648e7e93a |
 | Base | cc4e56e48884199f31aca8839c17262a99ab80a6 |
-| Merge parents of HEAD | f080f35557c05095c960d219c8c9d50b0d56e845, 17598855403561785822a94e71b59dbe25dd9be8 |
 
 Reproduce from `gauntlet/` with `node calibration/run.js` (flags: `--games=`, `--seeds=`, `--per-game-cap=`, `--out=`, `--report=`). One worker process per game; deterministic end to end — same seeds and code produce byte-identical tables.
 
@@ -143,15 +142,15 @@ _Run:_ 54 episodes, 3.2s.
 
 _Baselines:_ Packet-native baselines: `greedy` takes the one-ply move that most increases matched-facelet count with seeded tie-breaks; `engine` replays a proven-optimal solved line (re-solving from live facelets if the state ever leaves it).
 
-### holdem (v1.2.0)
+### holdem (v1.3.0)
 
 | tier (rank) | scoring | random | greedy | engine | engine solved |
 |---|---|---|---|---|---|
-| station (1) | outcome | 0.019 [0.005, 0.038] | 0.668 [0.434, 0.876] | 0.868 [0.744, 0.965] | — |
+| station (1) | outcome | 0.019 [0.005, 0.038] | 0.668 [0.434, 0.876] | 0.869 [0.744, 0.966] | — |
 | rules (2) | outcome | 0.014 [0.004, 0.03] | 0.52 [0.279, 0.755] | 0.901 [0.764, 0.987] | — |
 | equity (3) | outcome | 0.031 [0.003, 0.077] | 0.176 [0.007, 0.411] | 0.329 [0.125, 0.561] | — |
 
-_Run:_ 108 episodes, 26.9s.
+_Run:_ 108 episodes, 14.2s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 

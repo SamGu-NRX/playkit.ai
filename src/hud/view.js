@@ -42,12 +42,15 @@ export class HUDView {
       solverHeuristic: null,
       solverDepth: null,
       solverProbability: null,
+      strategyHint: null,
+      announcer: null,
     };
 
     this.isCollapsed = false;
     this.isDragging = false;
     this.dragOffset = { x: 0, y: 0 };
     this._suppressSolverEvents = false;
+    this.announcementTimeout = null;
 
     this.boundHandlers = {
       headerMouseDown: this.handleHeaderMouseDown.bind(this),
@@ -95,6 +98,11 @@ export class HUDView {
 
     this.detachEventListeners();
 
+    if (this.announcementTimeout) {
+      clearTimeout(this.announcementTimeout);
+      this.announcementTimeout = null;
+    }
+
     if (this.shadowHost.parentNode) {
       this.shadowHost.parentNode.removeChild(this.shadowHost);
     }
@@ -126,6 +134,8 @@ export class HUDView {
       solverHeuristic: this.shadowRoot.getElementById("solver-heuristic"),
       solverDepth: this.shadowRoot.getElementById("solver-depth"),
       solverProbability: this.shadowRoot.getElementById("solver-probability"),
+      strategyHint: this.shadowRoot.getElementById("strategy-engine-hint"),
+      announcer: this.shadowRoot.getElementById("hud-announcer"),
     };
   }
 
@@ -287,9 +297,29 @@ export class HUDView {
         : COLLAPSE_ICON.EXPANDED;
     }
 
+    this.setCollapseAccessibleState(this.isCollapsed);
+
     if (typeof this.callbacks.onCollapse === "function") {
       this.callbacks.onCollapse(this.isCollapsed);
     }
+  }
+
+  /**
+   * Keep the collapse button's accessible name and expanded state in sync
+   * with the panel. The name states what pressing the button does; the
+   * glyph is decorative.
+   * @param {boolean} isCollapsed
+   * @private
+   */
+  setCollapseAccessibleState(isCollapsed) {
+    if (!this.elements.collapseBtn) {
+      return;
+    }
+
+    const action = isCollapsed ? "Expand panel" : "Collapse panel";
+    this.elements.collapseBtn.setAttribute("aria-expanded", String(!isCollapsed));
+    this.elements.collapseBtn.setAttribute("aria-label", action);
+    this.elements.collapseBtn.title = action;
   }
 
   /**
@@ -381,6 +411,32 @@ export class HUDView {
   }
 
   /**
+   * Enable Strategy and Heuristic only when the active engine honours them
+   * (the WASM solver); while disabled, describe the reason via the hint.
+   * @param {boolean} wasmActive
+   */
+  setEngineDependentControlsEnabled(wasmActive) {
+    const active = Boolean(wasmActive);
+
+    for (const control of [this.elements.solverStrategy, this.elements.solverHeuristic]) {
+      if (!control) {
+        continue;
+      }
+
+      control.disabled = !active;
+      if (active) {
+        control.removeAttribute("aria-describedby");
+      } else {
+        control.setAttribute("aria-describedby", "strategy-engine-hint");
+      }
+    }
+
+    if (this.elements.strategyHint) {
+      this.elements.strategyHint.hidden = active;
+    }
+  }
+
+  /**
    * Update the solver status indicator text and colour.
    * @param {{text:string, color:string, title:string}} status
    */
@@ -415,6 +471,30 @@ export class HUDView {
     if (this.elements.scoreStatus) {
       this.elements.scoreStatus.textContent = scoreText;
     }
+  }
+
+  /**
+   * Queue an announcement on the polite live region. The region is a stable
+   * empty element that is cleared first so repeated announcements are re-read;
+   * a pending older announcement is cancelled so the latest event wins.
+   * @param {string} message
+   */
+  setAnnouncement(message) {
+    const announcer = this.elements.announcer;
+    if (!announcer) {
+      return;
+    }
+
+    if (this.announcementTimeout) {
+      clearTimeout(this.announcementTimeout);
+      this.announcementTimeout = null;
+    }
+
+    announcer.textContent = "";
+    this.announcementTimeout = setTimeout(() => {
+      this.announcementTimeout = null;
+      announcer.textContent = message;
+    }, 20);
   }
 
   /**

@@ -10,7 +10,7 @@
  *   river; at most four bets per street (the initial bet or blind counts as
  *   the first, so three raises after it).
  * - Stacks reset every hand: each seat has 100 chips available for the hand,
- *   which the bet cap can never exceed (worst case is 24 per hand), so
+ *   which the bet cap can never exceed (worst case is 48 per hand), so
  *   all-in never occurs and pots always split evenly.
  * - One episode is a duplicate match of 20 deals, each dealt twice with the
  *   button swapped (40 hands): in hand 2k the deal's dealer posts the small

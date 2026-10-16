@@ -1,0 +1,233 @@
+{
+  "format": "playkit-gauntlet-calibration-table/2",
+  "game": {
+    "id": "connect4",
+    "version": "1.1.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "baselines": {
+    "random": {
+      "tiers": {
+        "ladder-1": {
+          "id": "ladder-1",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.416667,
+            "ci95": [
+              0.166667,
+              0.666667
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-2": {
+          "id": "ladder-2",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-3": {
+          "id": "ladder-3",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-4": {
+          "id": "ladder-4",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "forced-win": {
+          "id": "forced-win",
+          "rank": 5,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.041667,
+            "ci95": [
+              0,
+              0.125
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "ladder-1": {
+          "id": "ladder-1",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-2": {
+          "id": "ladder-2",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.5,
+            "ci95": [
+              0.25,
+              0.75
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-3": {
+          "id": "ladder-3",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.291667,
+            "ci95": [
+              0.083333,
+              0.541667
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-4": {
+          "id": "ladder-4",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.375,
+            "ci95": [
+              0.125,
+              0.625
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "forced-win": {
+          "id": "forced-win",
+          "rank": 5,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.083333,
+            "ci95": [
+              0,
+              0.208333
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "ladder-1": {
+          "id": "ladder-1",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-2": {
+          "id": "ladder-2",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.916667,
+            "ci95": [
+              0.791667,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-3": {
+          "id": "ladder-3",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.833333,
+            "ci95": [
+              0.583333,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-4": {
+          "id": "ladder-4",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.875,
+            "ci95": [
+              0.666667,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "forced-win": {
+          "id": "forced-win",
+          "rank": 5,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        }
+      }
+    }
+  }
+}

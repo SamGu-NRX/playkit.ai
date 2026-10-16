@@ -107,3 +107,46 @@ npm test
   tree with the one-line patch applied at serve time, so the vendored
   directory stays byte-identical to upstream and the deviation is reviewable
   in `faulty-copy.mjs`.
+
+## Model sessions (`model-session.mjs`)
+
+A language model can sit behind the same choreography: `runBrowserModelSession`
+runs the attachment path above unchanged, but the agent wired through
+`driver.setSolverEngine` is a page-side proxy whose `act(ctx)` forwards the
+turn context to Node over Playwright's `page.exposeFunction`. In Node, the
+official-track agent (`harness/model-agent.js`, `provider: "openai-chat"`)
+builds the official turn message and calls the OpenAI-compatible server on
+`127.0.0.1`; the reply text travels back and the overlay path parses it
+exactly like any official-track reply (`extractAction` → `parseAction`).
+
+The model call runs in Node, not in the page, for two reasons: the page never
+needs CORS access to the model server, and every call is logged in this
+process with its latency and token usage (`modelTurns`, `modelLatencyMs`,
+`totalPromptTokens` / `totalCompletionTokens` on the report). A model call
+that fails after retries is recorded and becomes an empty reply — the driver
+falls back, the step is logged with `chosen: null`, and the session continues.
+The failed turn records `retries: null` ("unknown"): the provider client's
+throw carries no retry metadata, so the report never undercounts by claiming
+zero.
+
+The session timeout (`timeoutMs`, default 600000) is enforced from Node, not
+from the page: the session-driving `page.evaluate` runs detached and is raced
+against the report channel and the timeout, so a model endpoint that stalls
+forever settles the caller at `timeoutMs` (the stub-server test below pins
+this) and cleanup still closes the wedged page.
+
+Accounting on every report: `fallbacks` counts moves the driver played that
+the model did not choose (`chosen === null` steps); `diverged` counts steps
+where the driver applied a different direction than the model chose (the
+driver's designed fall-through when the chosen direction does not change the
+board). Both live in the session log, so `verifyBridgeLog` audits them like
+everything else.
+
+Tests: an offline fixture test replays a recorded real-model session log
+(`fixtures/model-session-2048.json`) through `verifyBridgeLog`; the pure
+report reductions and the full Playwright path are exercised by the default
+suite against local stub servers (one stalled endpoint pinning the timeout
+contract, one always-failing endpoint pinning error-turn recording); the
+live-model tests are opt-in — skipped with a named reason unless
+`GAUNTLET_LOCAL_CHAT_URL` and `GAUNTLET_LOCAL_CHAT_MODEL` name the model
+server (serve commands in `harness/PROVIDERS.md`).

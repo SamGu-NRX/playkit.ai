@@ -22,10 +22,10 @@ export function chenScore(hole) {
   const high = Math.max(r1, r2);
   const low = Math.min(r1, r2);
 
-  // High-card points: ace 10, king 8, queen 7, jack 6, ten 5, else rank/2
-  // (nine 4.5, deuce 1). Ranks 8..12 are T, J, Q, K, A.
+  // High-card points: ace 10, king 8, queen 7, jack 6, ten 5, else face
+  // value / 2 (nine 4.5, deuce 1). Ranks 8..12 are T, J, Q, K, A.
   const HIGH_POINTS = [5, 6, 7, 8, 10];
-  const points = high >= 8 ? HIGH_POINTS[high - 8] : high / 2;
+  const points = high >= 8 ? HIGH_POINTS[high - 8] : (high + 2) / 2;
 
   if (r1 === r2) {
     // Pairs: double the high-card points, minimum 5 (22 = 5).

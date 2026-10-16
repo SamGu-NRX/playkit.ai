@@ -2,7 +2,8 @@
  * `gauntlet verify`: replay-verify one trajectory file or every trajectory in
  * a directory — recursively, so both the legacy flat layout and the
  * engine-written bundle layout (`<game>/<tier>/<seed>.json`) work. Bundle
- * metadata (`run.json`, `suite.json`, `_`-prefixed summaries) is skipped.
+ * Bundle metadata (`run.json`, `suite.json`, `estimate.json`/`estimate.md`,
+ * `_`-prefixed summaries) is skipped.
  * Exit code 1 when anything fails. Node-only.
  *
  * @module
@@ -16,7 +17,7 @@ import { getGame } from '../games/index.js';
 /** @import { Trajectory } from '../core/types.js' */
 
 /** The bundle metadata files a run directory holds besides its trajectories. */
-const METADATA_NAMES = new Set(['run.json', 'suite.json']);
+const METADATA_NAMES = new Set(['run.json', 'suite.json', 'estimate.json', 'estimate.md']);
 
 /**
  * Collect trajectory files under a path: `*.json` files that are not bundle
@@ -42,6 +43,39 @@ export function collectJsonFiles(root, out) {
     if (!name.endsWith('.json') || name.startsWith('_') || METADATA_NAMES.has(name)) continue;
     out.push(path);
   }
+}
+
+/**
+ * Load every trajectory file from the given directories, in order. Traversal
+ * is recursive — both the legacy flat layout and the engine-written bundle
+ * layout (`<game>/<tier>/<seed>.json`) work — and skips bundle metadata
+ * (`run.json`, `suite.json`) and `_`-prefixed run summaries. Shared by
+ * `leaderboard` and `rate`, which read the same run directories.
+ *
+ * @param {string[]} dirs
+ * @returns {Trajectory[]}
+ */
+export function loadTrajectories(dirs) {
+  /** @type {Trajectory[]} */
+  const trajectories = [];
+  for (const dir of dirs) {
+    /** @type {string[]} */
+    const paths = [];
+    collectJsonFiles(dir, paths);
+    if (paths.length === 0) {
+      throw new Error(
+        `"${dir}" holds no trajectory files (*.json, excluding run.json/suite.json and _-prefixed summaries)`
+      );
+    }
+    for (const path of paths) {
+      const parsed = /** @type {*} */ (JSON.parse(readFileSync(path, 'utf8')));
+      if (!parsed || !parsed.game || typeof parsed.game.id !== 'string' || !Array.isArray(parsed.steps)) {
+        throw new Error(`${path} is not a gauntlet trajectory`);
+      }
+      trajectories.push(/** @type {Trajectory} */ (parsed));
+    }
+  }
+  return trajectories;
 }
 
 /**

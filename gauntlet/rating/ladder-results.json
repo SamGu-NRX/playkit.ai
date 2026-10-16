@@ -10,7 +10,7 @@
     },
     "chessSpec": {
       "id": "chess",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "chessStockfishSpec": {
       "id": "chess-stockfish",
@@ -21,10 +21,10 @@
       "id": "Stockfish 17.1"
     },
     "git": {
-      "baseCommit": "e4f8c6f2bdbc0c20cbbec5f638dd2c97ffbfa4ee",
-      "branch": "obv/burst7-playkit-chess-rating"
+      "baseCommit": "4f7ef3e2c6642b14206717e4088c3ff7cb2414c0",
+      "branch": "obv/burst7-playkit-integration-2"
     },
-    "finishedAt": "2026-10-16T04:13:13.765Z"
+    "finishedAt": "2026-10-16T05:19:15.600Z"
   },
   "pairs": {
     "paper-vs-wood": {
@@ -43,26 +43,26 @@
         {
           "seed": "rating/paper-vs-wood/1",
           "seat": 0,
-          "agentScore": 0.5,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 61,
-          "steps": 122
+          "agentActions": 71,
+          "steps": 142
         },
         {
           "seed": "rating/paper-vs-wood/2",
           "seat": 1,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 70,
-          "steps": 140
+          "agentActions": 77,
+          "steps": 154
         },
         {
           "seed": "rating/paper-vs-wood/3",
           "seat": 0,
-          "agentScore": 0.5,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 84,
-          "steps": 169
+          "agentActions": 56,
+          "steps": 112
         },
         {
           "seed": "rating/paper-vs-wood/4",
@@ -75,18 +75,18 @@
         {
           "seed": "rating/paper-vs-wood/5",
           "seat": 0,
-          "agentScore": 0.5,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 57,
-          "steps": 113
+          "agentActions": 43,
+          "steps": 85
         },
         {
           "seed": "rating/paper-vs-wood/6",
           "seat": 1,
-          "agentScore": 0.5,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 37,
-          "steps": 74
+          "agentActions": 66,
+          "steps": 132
         },
         {
           "seed": "rating/paper-vs-wood/7",
@@ -163,10 +163,10 @@
         {
           "seed": "rating/paper-vs-wood/16",
           "seat": 0,
-          "agentScore": 0.5,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 46,
-          "steps": 93
+          "agentActions": 73,
+          "steps": 146
         },
         {
           "seed": "rating/paper-vs-wood/17",
@@ -205,16 +205,16 @@
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 67,
-          "steps": 133
+          "agentActions": 63,
+          "steps": 125
         },
         {
           "seed": "rating/paper-vs-wood/22",
           "seat": 1,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 54,
-          "steps": 108
+          "agentActions": 72,
+          "steps": 143
         },
         {
           "seed": "rating/paper-vs-wood/23",
@@ -235,26 +235,26 @@
         {
           "seed": "rating/paper-vs-wood/25",
           "seat": 0,
-          "agentScore": 0.5,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 92,
-          "steps": 183
+          "agentActions": 64,
+          "steps": 127
         },
         {
           "seed": "rating/paper-vs-wood/26",
           "seat": 1,
           "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 56,
-          "steps": 112
+          "agentActions": 59,
+          "steps": 118
         },
         {
           "seed": "rating/paper-vs-wood/27",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 45,
-          "steps": 89
+          "agentActions": 44,
+          "steps": 87
         },
         {
           "seed": "rating/paper-vs-wood/28",
@@ -269,8 +269,8 @@
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 47,
-          "steps": 93
+          "agentActions": 24,
+          "steps": 47
         },
         {
           "seed": "rating/paper-vs-wood/30",
@@ -291,10 +291,10 @@
         {
           "seed": "rating/paper-vs-wood/32",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 25,
-          "steps": 50
+          "agentActions": 52,
+          "steps": 104
         },
         {
           "seed": "rating/paper-vs-wood/33",
@@ -333,16 +333,16 @@
           "seat": 1,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 46,
-          "steps": 91
+          "agentActions": 57,
+          "steps": 113
         },
         {
           "seed": "rating/paper-vs-wood/38",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 48,
-          "steps": 95
+          "agentActions": 21,
+          "steps": 41
         },
         {
           "seed": "rating/paper-vs-wood/39",
@@ -354,7 +354,7 @@
         }
       ],
       "rawScore": {
-        "score": 32,
+        "score": 35.5,
         "n": 40
       }
     },
@@ -374,10 +374,10 @@
         {
           "seed": "rating/wood-vs-sf-250/1",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 26,
-          "steps": 53
+          "agentActions": 125,
+          "steps": 250
         },
         {
           "seed": "rating/wood-vs-sf-250/2",
@@ -392,16 +392,16 @@
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 28,
-          "steps": 57
+          "agentActions": 57,
+          "steps": 115
         },
         {
           "seed": "rating/wood-vs-sf-250/4",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 34,
-          "steps": 68
+          "agentActions": 67,
+          "steps": 134
         },
         {
           "seed": "rating/wood-vs-sf-250/5",
@@ -416,16 +416,16 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 21,
-          "steps": 43
+          "agentActions": 24,
+          "steps": 49
         },
         {
           "seed": "rating/wood-vs-sf-250/7",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 84,
-          "steps": 168
+          "agentActions": 79,
+          "steps": 158
         },
         {
           "seed": "rating/wood-vs-sf-250/8",
@@ -446,7 +446,7 @@
         {
           "seed": "rating/wood-vs-sf-250/10",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "budget-exhausted",
           "agentActions": 150,
           "steps": 301
@@ -456,8 +456,8 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 27,
-          "steps": 55
+          "agentActions": 28,
+          "steps": 57
         },
         {
           "seed": "rating/wood-vs-sf-250/12",
@@ -478,10 +478,10 @@
         {
           "seed": "rating/wood-vs-sf-250/14",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 77,
-          "steps": 153
+          "agentActions": 144,
+          "steps": 288
         },
         {
           "seed": "rating/wood-vs-sf-250/15",
@@ -504,16 +504,16 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 17,
-          "steps": 34
+          "agentActions": 52,
+          "steps": 104
         },
         {
           "seed": "rating/wood-vs-sf-250/18",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 51,
-          "steps": 101
+          "agentActions": 56,
+          "steps": 112
         },
         {
           "seed": "rating/wood-vs-sf-250/19",
@@ -526,26 +526,26 @@
         {
           "seed": "rating/wood-vs-sf-250/20",
           "seat": 1,
-          "agentScore": 0.5,
-          "reason": "budget-exhausted",
-          "agentActions": 150,
-          "steps": 300
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 68,
+          "steps": 136
         },
         {
           "seed": "rating/wood-vs-sf-250/21",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 54,
-          "steps": 108
+          "agentActions": 28,
+          "steps": 56
         },
         {
           "seed": "rating/wood-vs-sf-250/22",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 44,
-          "steps": 89
+          "agentActions": 130,
+          "steps": 261
         },
         {
           "seed": "rating/wood-vs-sf-250/23",
@@ -574,18 +574,18 @@
         {
           "seed": "rating/wood-vs-sf-250/26",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 53,
-          "steps": 105
+          "agentActions": 24,
+          "steps": 48
         },
         {
           "seed": "rating/wood-vs-sf-250/27",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 113,
-          "steps": 227
+          "agentActions": 40,
+          "steps": 80
         },
         {
           "seed": "rating/wood-vs-sf-250/28",
@@ -616,16 +616,16 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 71,
-          "steps": 143
+          "agentActions": 48,
+          "steps": 97
         },
         {
           "seed": "rating/wood-vs-sf-250/32",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 17,
-          "steps": 35
+          "agentActions": 18,
+          "steps": 37
         },
         {
           "seed": "rating/wood-vs-sf-250/33",
@@ -640,24 +640,24 @@
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 23,
-          "steps": 46
+          "agentActions": 27,
+          "steps": 54
         },
         {
           "seed": "rating/wood-vs-sf-250/35",
           "seat": 1,
-          "agentScore": 0.5,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 60,
-          "steps": 120
+          "agentActions": 25,
+          "steps": 51
         },
         {
           "seed": "rating/wood-vs-sf-250/36",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 46,
-          "steps": 92
+          "agentActions": 111,
+          "steps": 222
         },
         {
           "seed": "rating/wood-vs-sf-250/37",
@@ -672,20 +672,20 @@
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 47,
-          "steps": 94
+          "agentActions": 116,
+          "steps": 232
         },
         {
           "seed": "rating/wood-vs-sf-250/39",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 29,
-          "steps": 59
+          "agentActions": 27,
+          "steps": 55
         }
       ],
       "rawScore": {
-        "score": 9,
+        "score": 8,
         "n": 40
       }
     },
@@ -1772,8 +1772,8 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 37,
-          "steps": 75
+          "agentActions": 36,
+          "steps": 73
         },
         {
           "seed": "rating/skip-paper-vs-sf-1k/11",
@@ -1868,8 +1868,8 @@
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 18,
-          "steps": 37
+          "agentActions": 36,
+          "steps": 73
         },
         {
           "seed": "rating/skip-paper-vs-sf-1k/23",
@@ -2015,27 +2015,27 @@
     }
   },
   "rawScores": {
-    "chess-wood": 41,
-    "chess-paper": 8,
-    "chess-stockfish-sf-250": 32.5,
+    "chess-wood": 43.5,
+    "chess-paper": 4.5,
+    "chess-stockfish-sf-250": 33.5,
     "chess-stockfish-sf-1k": 79.5,
     "chess-stockfish-sf-10k": 41,
     "chess-stockfish-sf-100k": 38
   },
   "fit": {
     "ratings": {
-      "chess-wood": 1243.598664985884,
+      "chess-wood": 1360.8525441242361,
       "chess-paper": 1000,
-      "chess-stockfish-sf-250": 1460.9903255075853,
-      "chess-stockfish-sf-1k": 2037.396994083647,
-      "chess-stockfish-sf-10k": 2673.822836894247,
-      "chess-stockfish-sf-100k": 3185.324277275379
+      "chess-stockfish-sf-250": 1602.9504083025786,
+      "chess-stockfish-sf-1k": 2172.4190324666056,
+      "chess-stockfish-sf-10k": 2808.8448752772047,
+      "chess-stockfish-sf-100k": 3320.3463156583366
     },
     "intervals": {
       "chess-wood": {
-        "low": 1161.2678539941708,
-        "high": 1352.2504682459976,
-        "mean": 1247.8904263455593
+        "low": 1266.3117600541736,
+        "high": 1519.7354543094525,
+        "mean": 1368.496551183834
       },
       "chess-paper": {
         "low": 1000,
@@ -2043,29 +2043,29 @@
         "mean": 1000
       },
       "chess-stockfish-sf-250": {
-        "low": 1329.4785909620055,
-        "high": 1641.4719526917456,
-        "mean": 1471.0157487376553
+        "low": 1464.200950639241,
+        "high": 1805.322242056487,
+        "mean": 1617.370622435712
       },
       "chess-stockfish-sf-1k": {
-        "low": 1857.8391868567928,
-        "high": 2310.139533541864,
-        "mean": 2063.9637467536177
+        "low": 1979.6578248142946,
+        "high": 2459.760815200961,
+        "mean": 2203.1084854353417
       },
       "chess-stockfish-sf-10k": {
-        "low": 2428.5422046631284,
-        "high": 3014.493617200449,
-        "mean": 2707.351994016883
+        "low": 2546.0451525088783,
+        "high": 3156.6926676567555,
+        "mean": 2840.323220911008
       },
       "chess-stockfish-sf-100k": {
-        "low": 2900.5262253271876,
-        "high": 3623.5803471694626,
-        "mean": 3238.3512735469844
+        "low": 3014.5129792408056,
+        "high": 3766.439934791553,
+        "mean": 3371.5920371690713
       }
     },
     "meta": {
-      "iterations": 14,
-      "gradientInfNorm": 3.8195575174926333e-13,
+      "iterations": 16,
+      "gradientInfNorm": 1.1452772280887147e-10,
       "replicates": 1999,
       "divergentReplicates": 1
     },

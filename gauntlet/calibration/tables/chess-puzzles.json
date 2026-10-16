@@ -1,0 +1,275 @@
+{
+  "format": "playkit-gauntlet-calibration-table/2",
+  "game": {
+    "id": "chess-puzzles",
+    "version": "1.0.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "baselines": {
+    "random": {
+      "tiers": {
+        "r0400": {
+          "id": "r0400",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r1000": {
+          "id": "r1000",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r1400": {
+          "id": "r1400",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.016667,
+            "ci95": [
+              0,
+              0.05
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r1800": {
+          "id": "r1800",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r2200": {
+          "id": "r2200",
+          "rank": 5,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r2600": {
+          "id": "r2600",
+          "rank": 6,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "r0400": {
+          "id": "r0400",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.066667,
+            "ci95": [
+              0.016667,
+              0.133333
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r1000": {
+          "id": "r1000",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.05,
+            "ci95": [
+              0,
+              0.116667
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r1400": {
+          "id": "r1400",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r1800": {
+          "id": "r1800",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.066667,
+            "ci95": [
+              0.016667,
+              0.133333
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r2200": {
+          "id": "r2200",
+          "rank": 5,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.016667,
+            "ci95": [
+              0,
+              0.05
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r2600": {
+          "id": "r2600",
+          "rank": 6,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "r0400": {
+          "id": "r0400",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.9,
+            "ci95": [
+              0.816667,
+              0.966667
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r1000": {
+          "id": "r1000",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.766667,
+            "ci95": [
+              0.65,
+              0.866667
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r1400": {
+          "id": "r1400",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.65,
+            "ci95": [
+              0.533333,
+              0.766667
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r1800": {
+          "id": "r1800",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.383333,
+            "ci95": [
+              0.266667,
+              0.5
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r2200": {
+          "id": "r2200",
+          "rank": 5,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.116667,
+            "ci95": [
+              0.033333,
+              0.2
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        },
+        "r2600": {
+          "id": "r2600",
+          "rank": 6,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.05,
+            "ci95": [
+              0,
+              0.116667
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 60
+        }
+      }
+    }
+  }
+}

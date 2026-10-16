@@ -9,7 +9,9 @@
  *   into a lost-on-the-spot position.
  * - The forced-win tier generates, per seed, positions from seeded random
  *   play that the exact solver proves are a win for the agent's side within
- *   7 to 15 plies, against the strongest engine opponent.
+ *   17 to 21 plies, against the strongest engine opponent (exact play at
+ *   every depth). Generation makes two passes of 240 attempts per seed; the
+ *   retry pass re-rolls positions within the same band and never widens it.
  *
  * @module
  */
@@ -36,9 +38,11 @@ const MARKS = ['X', 'O'];
 /** Positions with this many discs or more are solved exactly. */
 const EXACT_MIN_DISCS = 30;
 
-/** Forced-win tier: accepted win distances, in plies. */
-const MIN_WIN_PLIES = 7;
-const MAX_WIN_PLIES = 15;
+/** Forced-win tier: accepted win distances, in plies. The retry pass re-rolls
+ *  attempts within the same band — the tier never emits a win shallower than
+ *  MIN_WIN_PLIES, so these constants are the tier's advertised contract. */
+export const MIN_WIN_PLIES = 17;
+export const MAX_WIN_PLIES = 21;
 
 /**
  * The agent's seat alternates with the seed, so it plays both colors across
@@ -91,7 +95,10 @@ function withSeededOpening(state, seed) {
  */
 function generateForcedWinPosition(agentSeat, seed) {
   for (let pass = 0; pass < 2; pass++) {
-    const [lo, hi] = pass === 0 ? [MIN_WIN_PLIES, MAX_WIN_PLIES] : [5, 21];
+    // Both passes accept the same band; pass 1 only re-rolls the attempts
+    // (different RNG streams), so no seed can receive a win outside the
+    // advertised [MIN_WIN_PLIES, MAX_WIN_PLIES].
+    const [lo, hi] = [MIN_WIN_PLIES, MAX_WIN_PLIES];
     for (let k = 0; k < 240; k++) {
       // Shallower boards keep forced wins long enough to land in the band;
       // deeper random play either ends early or leaves only win-in-1 shorts.
@@ -108,7 +115,7 @@ function generateForcedWinPosition(agentSeat, seed) {
       if (current.toMove !== agentSeat) continue;
       // The mover taking a win-in-1 is below the band; skip before solving.
       if (immediateWinCols(current).length > 0) continue;
-      const value = solveExact(current, { horizon: pass === 0 ? MAX_WIN_PLIES : 21 });
+      const value = solveExact(current, { horizon: MAX_WIN_PLIES });
       if (value.verdict === 'win' && value.plies !== null && value.plies >= lo && value.plies <= hi) {
         return { ...current, forcedWinPlies: value.plies };
       }
@@ -141,7 +148,7 @@ function boardRows(state) {
 export const connect4 = {
   spec: {
     id: 'connect4',
-    version: '1.0.0',
+    version: '1.1.0',
     title: 'Connect Four',
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {InformationMode} */ ('perfect'),
@@ -408,8 +415,8 @@ export const connect4 = {
   /**
    * The opponent agent for the seat the agent is not in: seeded uniform
    * random on ladder-1, the negamax engine at the tier's depth on the other
-   * ladders, and the strongest engine (exact endgame play at 30 or more
-   * discs, depth 12 below) on the forced-win tier.
+   * ladders, and the strongest engine (exact play at every depth) on the
+   * forced-win tier.
    *
    * @param {TierSpec} tier
    * @param {string} seed
@@ -448,7 +455,11 @@ export const connect4 = {
           throw new GauntletRuleError('engine opponent asked to move in a finished game');
         }
         const key = `${seedKey}${ctx.turn}`;
-        if (params.exact && state.discs >= EXACT_MIN_DISCS) {
+        // On the forced-win tier the opponent defends exactly at every depth:
+        // below EXACT_MIN_DISCS the depth-12 search blunders in deep wins, and
+        // those blunders are what let weak agents convert the proven win by
+        // luck. Exact defense never concedes it.
+        if (params.exact) {
           const choice = chooseExactMove(state, key);
           return { text: String(choice.col + 1) };
         }

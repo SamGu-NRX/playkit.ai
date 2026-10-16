@@ -177,6 +177,24 @@ test('leaderboard: ranking, tracks, costs, unranked entries, JSON and Markdown',
   }
 });
 
+test('leaderboard: agent labels with Markdown metacharacters render escaped, not as formatting', async () => {
+  // An agent id is data, not Markdown: a raw `|` would shift every following
+  // table column, `*`/`_` would flip emphasis, a newline would split the row.
+  const hostile = 'evil|id\nline *x*_y_';
+  const entries = [
+    {
+      agent: { id: hostile, track: 'official' },
+      trajectories: await runSuite(SUITE, gameList, () => officialAgent(hostile)),
+    },
+  ];
+  const { markdown } = await leaderboard(SUITE, entries, gameList);
+  assert.ok(
+    markdown.includes('evil\\|id<br>line \\*x\\*\\_y\\_'),
+    'pipe, newline, star and underscore all render escaped inside one row',
+  );
+  assert.ok(!markdown.includes('evil|id'), 'the raw id never reaches the Markdown');
+});
+
 test('leaderboard: an entry whose trajectories fail verification is refused, not listed', async () => {
   const good = await runSuite(SUITE, gameList, () =>
     scriptedAgent(['take'], { id: 'honest', track: 'community' })
@@ -224,3 +242,64 @@ test('leaderboard: an unknown track is refused', async () => {
 // Reference the imported score helper through the same refusal path the
 // leaderboard uses, keeping the import list meaningful.
 void score;
+
+test('leaderboard: the chess rating column renders only with a ladder and never changes ranking', async () => {
+  const entries = [
+    {
+      agent: { id: 'frontier-y', track: 'official' },
+      trajectories: await runSuite(SUITE, gameList, () => officialAgent('frontier-y')),
+    },
+    {
+      agent: { id: 'harness-z', track: 'community' },
+      trajectories: await runSuite(SUITE, gameList, () =>
+        scriptedAgent(['take'], { id: 'harness-z', track: 'community' })
+      ),
+    },
+  ];
+
+  const plain = await leaderboard(SUITE, entries, gameList);
+  assert.ok(!plain.markdown.includes('Chess rating'), 'no rating column without a ladder');
+  assert.ok(plain.leaderboard.tracks.official.every((entry) => entry.rating === undefined));
+
+  // A ladder that knows none of the fixture rungs: the column renders, every
+  // cell is '—', and no entry gains a rating.
+  const unknownRungs = await leaderboard(SUITE, entries, gameList, {
+    ratingLadder: { ratings: { 'chess-paper': 1000 }, anchorRung: 'chess-paper' },
+  });
+  assert.ok(unknownRungs.markdown.includes('Chess rating (95% CI)'));
+  assert.ok(unknownRungs.leaderboard.tracks.official.every((entry) => entry.rating === undefined));
+  const unknownRow = unknownRungs.markdown
+    .split('\n')
+    .find((line) => line.includes('| frontier-y |'));
+  assert.ok(unknownRow && unknownRow.trim().endsWith('| — |'));
+
+  // A ladder over the fixture rungs rates both entries — and leaves ranks,
+  // ranking eligibility, and scores identical to the ladder-free board.
+  const fixtureLadder = {
+    ratings: {
+      'take-or-pass-main': 1200,
+      'countdown-reference-par': 900,
+      'countdown-optimal-par': 1500,
+      'slot-main': 1100,
+    },
+    anchorRung: 'take-or-pass-main',
+  };
+  const rated = await leaderboard(SUITE, entries, gameList, { ratingLadder: fixtureLadder });
+  const official = rated.leaderboard.tracks.official;
+  assert.ok(
+    official.every(
+      (entry) => typeof entry.rating?.rating === 'number' && entry.rating.games === entry.episodes
+    )
+  );
+  assert.deepEqual(
+    official.map((entry) => [entry.agent.id, entry.rank, entry.ranked, entry.benchmarkScore]),
+    plain.leaderboard.tracks.official.map((entry) => [
+      entry.agent.id,
+      entry.rank,
+      entry.ranked,
+      entry.benchmarkScore,
+    ])
+  );
+  const ratedRow = rated.markdown.split('\n').find((line) => line.includes('| frontier-y |'));
+  assert.ok(ratedRow && !ratedRow.trim().endsWith('| — |'), 'a rated entry shows a rating, not —');
+});

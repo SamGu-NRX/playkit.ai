@@ -8,14 +8,14 @@ Baseline calibration over the gauntlet's public seeds: every game is played by a
 
 | | |
 |---|---|
-| Run at | 2026-10-16T04:56:07.948Z |
+| Run at | 2026-10-16T07:15:13.884Z |
 | Node | v20.20.2 |
 | Machine | linux 6.1.158+ x64, Intel(R) Xeon(R) Processor @ 2.60GHz, 8 cores, 7.8 GiB |
 | Worker parallelism | 7 |
 | Seeds per tier | all public seeds |
 | Per-game wall cap | 3600s |
-| Total wall time | 3433.8999999999996s |
-| HEAD | 4f7ef3e2c664 |
+| Total wall time | 3918.4s |
+| HEAD | 840aa03f83da |
 | Base | unknown |
 
 Reproduce from `gauntlet/` with `node calibration/run.js` (flags: `--games=`, `--seeds=`, `--per-game-cap=`, `--out=`, `--report=`). One worker process per game; deterministic end to end — same seeds and code produce byte-identical tables.
@@ -31,7 +31,7 @@ Reproduce from `gauntlet/` with `node calibration/run.js` (flags: `--games=`, `-
 | t1024 (3) | outcome | 0.191 [0.171, 0.211] | 0.258 [0.23, 0.285] | 1 [1, 1] | — |
 | t2048 (4) | outcome | 0.125 [0.109, 0.142] | 0.208 [0.183, 0.233] | 0.774 [0.639, 0.905] | — |
 
-_Run:_ 240 episodes, 13.5s.
+_Run:_ 240 episodes, 16.4s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -44,7 +44,7 @@ _Run:_ 240 episodes, 13.5s.
 | kbbk (3) | outcome | 0 [0, 0] | 0 [0, 0] | 1 [1, 1] | — |
 | kbnk (4) | outcome | 0 [0, 0] | 0 [0, 0] | 1 [1, 1] | — |
 
-_Run:_ 120 episodes, 38.6s.
+_Run:_ 120 episodes, 43.8s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -61,7 +61,7 @@ _Baselines:_ Packet-native baselines: `greedy` is a seeded mobility-greedy attac
 | r2200 (5) | outcome | 0 [0, 0] | 0.017 [0, 0.05] | 0.117 [0.033, 0.2] | — |
 | r2600 (6) | outcome | 0 [0, 0] | 0 [0, 0] | 0.05 [0, 0.117] | — |
 
-_Run:_ 1080 episodes, 10.3s.
+_Run:_ 1080 episodes, 12.2s.
 
 ❌ **b-monotonic** — greedy rises from 0 [0, 0] on r1400 (rank 3) to 0.066667 [0.016667, 0.133333] on r1800 (rank 4)
 
@@ -87,7 +87,7 @@ _Baselines:_ `greedy` and `engine` are the chess packet's material-capture greed
 | sf-100k (4) | outcome | 0 [0, 0] | 0 [0, 0] | 0.7 [0.5, 0.9] | — |
 | sf-1m (5) | outcome | 0 [0, 0] | 0 [0, 0] | 0.5 [0.5, 0.5] | — |
 
-_Run:_ 75 episodes, 3301.6s.
+_Run:_ 75 episodes, 3819.4s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -102,7 +102,7 @@ _Baselines:_ `greedy` is the chess packet's material-capture agent; `engine` is 
 | steel (3) | outcome | 0 [0, 0] | 0 [0, 0] | 0.7 [0.3, 1] | — |
 | granite (4) | outcome | 0 [0, 0] | 0 [0, 0] | 0.7 [0.3, 1] | — |
 
-_Run:_ 60 episodes, 405.2s.
+_Run:_ 60 episodes, 432.3s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -116,7 +116,7 @@ _Run:_ 60 episodes, 405.2s.
 | ladder-4 (4) | outcome | 0 [0, 0] | 0.375 [0.125, 0.625] | 0.875 [0.667, 1] | — |
 | forced-win (5) | outcome | 0.042 [0, 0.125] | 0.083 [0, 0.208] | 1 [1, 1] | — |
 
-_Run:_ 180 episodes, 74.8s.
+_Run:_ 180 episodes, 89.2s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -128,7 +128,7 @@ _Run:_ 180 episodes, 74.8s.
 
   _Why not a violation:_ the 95% intervals do not separate (they overlap, or a side has no interval), so the misordering is not demonstrated at the measured precision; re-measure at more seeds before changing tier parameters.
 
-### cube (v1.0.0)
+### cube (v1.1.0)
 
 | tier (rank) | scoring | random | greedy | engine | engine solved |
 |---|---|---|---|---|---|
@@ -136,23 +136,27 @@ _Run:_ 180 episodes, 74.8s.
 | cube-7 (2) | efficiency | 0 [0, 0] | 0 [0, 0] | 1 [1, 1] | 100% |
 | cube-9 (3) | efficiency | 0 [0, 0] | 0 [0, 0] | 1 [1, 1] | 100% |
 
-_Run:_ 54 episodes, 2.8s.
+_Run:_ 54 episodes, 3.2s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
 _Baselines:_ Packet-native baselines: `greedy` takes the one-ply move that most increases matched-facelet count with seeded tie-breaks; `engine` replays a proven-optimal solved line (re-solving from live facelets if the state ever leaves it).
 
-### holdem (v1.1.0)
+### holdem (v1.2.0)
 
 | tier (rank) | scoring | random | greedy | engine | engine solved |
 |---|---|---|---|---|---|
-| station (1) | outcome | 0.019 [0.005, 0.038] | 0.669 [0.434, 0.876] | 0.869 [0.744, 0.966] | — |
-| rules (2) | outcome | 0.013 [0.003, 0.029] | 0.521 [0.282, 0.755] | 0.908 [0.768, 0.986] | — |
-| equity (3) | outcome | 0.011 [0.003, 0.021] | 0.171 [0.005, 0.409] | 0.318 [0.119, 0.547] | — |
+| station (1) | outcome | 0.019 [0.005, 0.038] | 0.668 [0.434, 0.876] | 0.868 [0.744, 0.965] | — |
+| rules (2) | outcome | 0.014 [0.004, 0.03] | 0.52 [0.279, 0.755] | 0.901 [0.764, 0.987] | — |
+| equity (3) | outcome | 0.031 [0.003, 0.077] | 0.176 [0.007, 0.411] | 0.329 [0.125, 0.561] | — |
 
-_Run:_ 108 episodes, 23.9s.
+_Run:_ 108 episodes, 26.9s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
+
+⚠️ **b-monotonic (within noise)** — random rises from 0.013901 [0.003515, 0.030342] on rules (rank 2) to 0.030808 [0.002825, 0.077091] on equity (rank 3)
+
+  _Why not a violation:_ the 95% intervals do not separate (they overlap, or a side has no interval), so the misordering is not demonstrated at the measured precision; re-measure at more seeds before changing tier parameters.
 
 ### mastermind (v1.0.0)
 
@@ -162,7 +166,7 @@ _Run:_ 108 episodes, 23.9s.
 | wide (2) | efficiency | 0 [0, 0] | 0.817 [0.728, 0.909] | 1 [1, 1] | 100% |
 | deep (3) | efficiency | 0 [0, 0] | 0.883 [0.788, 0.969] | 1 [1, 1] | 100% |
 
-_Run:_ 225 episodes, 21.9s.
+_Run:_ 225 episodes, 27.3s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -179,7 +183,7 @@ _Run:_ 225 episodes, 21.9s.
 | torus (3) | outcome | 0.188 [0.156, 0.223] | 1 [1, 1] | 1 [1, 1] | — |
 | expert (4) | outcome | 0.135 [0.102, 0.173] | 1 [1, 1] | 1 [1, 1] | — |
 
-_Run:_ 300 episodes, 39.4s.
+_Run:_ 300 episodes, 43.9s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -194,7 +198,7 @@ _Baselines:_ `greedy` is the packet's probability agent (proven-safe cells first
 | p15-mid (3) | efficiency | 0 [0, 0] | 0 [0, 0] | 1 [1, 1] | 100% |
 | p15-long (4) | efficiency | 0 [0, 0] | 0 [0, 0] | 1 [1, 1] | 100% |
 
-_Run:_ 96 episodes, 36.6s.
+_Run:_ 96 episodes, 39s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -208,17 +212,17 @@ _Baselines:_ The sliding packet ships no greedy baseline: `greedy` here minimize
 | three-box (2) | efficiency | 0 [0, 0] | 0.04 [0, 0.121] | 1 [1, 1] | 100% |
 | four-box (3) | efficiency | 0 [0, 0] | 0 [0, 0] | 1 [1, 1] | 100% |
 
-_Run:_ 225 episodes, 180.6s.
+_Run:_ 225 episodes, 220.6s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
-### tictactoe (v1.1.0, benchmark: false — smoke game, not scored on the gauntlet leaderboard)
+### tictactoe (v1.2.0, benchmark: false — smoke game, not scored on the gauntlet leaderboard)
 
 | tier (rank) | scoring | random | greedy | engine | engine solved |
 |---|---|---|---|---|---|
 | perfect-opponent (1) | outcome | 0.063 [0, 0.188] | 0.438 [0.313, 0.5] | 0.5 [0.5, 0.5] | — |
 
-_Run:_ 24 episodes, 2.8s.
+_Run:_ 24 episodes, 3.9s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -236,4 +240,5 @@ Warnings — point inversions within noise (the 95% intervals do not separate; t
 - ⚠️ chess-puzzles — b-monotonic (r1400): random rises from 0 [0, 0] on r1000 (rank 2) to 0.016667 [0, 0.05] on r1400 (rank 3)
 - ⚠️ connect4 — b-monotonic (forced-win): random rises from 0 [0, 0] on ladder-4 (rank 4) to 0.041667 [0, 0.125] on forced-win (rank 5)
 - ⚠️ connect4 — b-monotonic (ladder-4): greedy rises from 0.291667 [0.083333, 0.541667] on ladder-3 (rank 3) to 0.375 [0.125, 0.625] on ladder-4 (rank 4)
+- ⚠️ holdem — b-monotonic (equity): random rises from 0.013901 [0.003515, 0.030342] on rules (rank 2) to 0.030808 [0.002825, 0.077091] on equity (rank 3)
 - ⚠️ mastermind — b-monotonic (deep): greedy rises from 0.817146 [0.72774, 0.909209] on wide (rank 2) to 0.883068 [0.788426, 0.96946] on deep (rank 3)

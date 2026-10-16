@@ -86,18 +86,18 @@ test('spec: identity, requires and four ascending node-budget tiers', () => {
   assert.equal(spec.seats, 2);
   assert.equal(spec.benchmark, true);
   assert.deepEqual(spec.requires, ['stockfish']);
-  assert.equal(spec.tiers.length, 4);
+  assert.equal(spec.tiers.length, 5);
   assert.deepEqual(
     spec.tiers.map((tier) => tier.id),
-    ['sf-1k', 'sf-10k', 'sf-100k', 'sf-1m']
+    ['sf-1k', 'sf-10k', 'sf-100k', 'sf-1m', 'sf-250']
   );
   assert.deepEqual(
     spec.tiers.map((tier) => tier.params.nodes),
-    [1_000, 10_000, 100_000, 1_000_000]
+    [1_000, 10_000, 100_000, 1_000_000, 250]
   );
   assert.deepEqual(
     spec.tiers.map((tier) => tier.rank),
-    [1, 2, 3, 4]
+    [2, 3, 4, 5, 1]
   );
   for (const tier of spec.tiers) {
     assert.equal(tier.scoring, 'outcome');

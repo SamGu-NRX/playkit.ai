@@ -51,8 +51,8 @@ what the run records.
 |---|---|---|---|
 | `--reasoning-effort <v>` | `anthropic` | `output_config: {effort: v}` (per-model capability table) | enforced per model; `low` \| `medium` \| `high` \| `xhigh` \| `max` on the models that document all five |
 | `--thinking-budget <n>` | `anthropic` (manual-thinking models only) | `thinking: {type: "enabled", budget_tokens: n}` | integer ≥ 1024 |
-| `--reasoning-effort <v>` | `openai` | `reasoning: {effort: v}` | `low` \| `medium` \| `high` \| `xhigh` (per-model value sets vary — see the OpenAI reasoning guide) |
-| `--reasoning-effort <v>` | `openai-chat` | `reasoning_effort: v` | `low` \| `medium` \| `high` |
+| `--reasoning-effort <v>` | `openai` | `reasoning: {effort: v}` | enforced per model (OpenAI capability table): `low` \| `medium` \| `high` \| `xhigh` \| `max` on the 6-generation rows, `low` \| `medium` \| `high` \| `xhigh` on gpt-5.2/5.4, `low` \| `medium` \| `high` on gpt-5.1 |
+| `--reasoning-effort <v>` | `openai-chat` | `reasoning_effort: v` | enforced per model on `gemini-*` ids (Gemini capability table): `low` \| `medium` \| `high` (Google maps it to thinking_level); other ids — local servers, proxies — keep the permissive provider set |
 
 Rules that hold for both:
 
@@ -71,15 +71,19 @@ Rules that hold for both:
   `baseline:` agent**; both are loud parse errors naming the spec.
 - **The provider pairing and per-model settings are validated, not silently
   ignored.** A thinking budget on a non-Anthropic spec fails at parse time
-  with the spec named in the message. On Anthropic, the effort value is
-  checked against the model's capability row (`resolveAnthropicCapability` in
-  `harness/model-agent.js`): a `claude-*` id matching no row is refused with a
-  message naming the table, a manual budget on an adaptive-thinking model
-  (the API answers HTTP 400) and an effort on a row without documented effort
-  levels are both refused, and sampling fields in `params` are refused
-  exactly on the models the docs say reject them with HTTP 400. Rows record
-  their doc URLs and check dates, so a refusal reads as documentation, not
-  guesswork.
+  with the spec named in the message. On every provider the effort value is
+  checked against the model's capability row in `harness/model-agent.js`
+  (`resolveAnthropicCapability` / `resolveOpenAICapability` /
+  `resolveGeminiCapability`): a `claude-*`, `gpt-*`, or `gemini-*` id matching
+  no row is refused with a message naming its table, a manual budget on an
+  adaptive-thinking model (the API answers HTTP 400) and an effort on a row
+  without documented effort levels are both refused, an effort level the row
+  does not document is refused naming the documented levels, and sampling
+  fields in `params` are refused exactly on the models the docs say reject
+  them with HTTP 400. Ids that are not frontier model ids — proxies, stubs,
+  local servers on `openai-chat` — are not tabled and keep the permissive
+  default. Rows record their doc URLs and check dates, so a refusal reads as
+  documentation, not guesswork.
 
 Anthropic specifics:
 
@@ -131,17 +135,54 @@ Anthropic specifics:
 
 OpenAI and chat-completions specifics:
 
-- The `reasoning` output item on Responses is stripped from the reply text,
-  same as Anthropic's blocks. A response with `status: "incomplete"` and no
-  message item (cut off mid-reasoning by the output cap) records empty reply
-  text and its usage instead of throwing.
-- Reasoning tokens are inside the reported output total on both providers, and
-  that total is what is billed. The provider's breakdown (Anthropic
-  `usage.output_tokens_details.thinking_tokens`, OpenAI Responses
+- **Per-model capability tables, checked 2026-10-16.** Provider `openai`
+  resolves `gpt-*` ids against `OPENAI_CAPABILITIES` and provider
+  `openai-chat` resolves `gemini-*` ids against `GEMINI_CAPABILITIES` (both
+  in `harness/model-agent.js`; the Anthropic table predates them). The rows
+  carry the documented effort levels and API default, the sampling-field
+  rule, a documented default output cap, and the doc URLs + check date — the
+  same contract as the Anthropic table. A new frontier id cannot run at all
+  until a row is added: construction fails with a message naming the table
+  and the model docs.
+- **Reasoning rows default their output cap to 16384.** Reasoning/thinking
+  tokens ride inside the output cap on these models too (OpenAI reasoning
+  docs; Gemini thinking docs), so the legacy 4096 default cuts
+  reasoning-heavy replies off mid-thought at the higher efforts; the rows
+  record the reason, the pages, and the ceiling to stay under (OpenAI's
+  documented 128,000-token max output for GPT-6 Astra; Gemini's
+  OpenAI-compatibility endpoint stops at 32,768 output tokens non-streaming).
+  An explicit `--max-output-tokens` always wins; untabled ids keep 4096.
+- **An unset effort on a tabled id is recorded, not guessed.** The agent id
+  gets `:reasoning-effort=provider-default` (same as Anthropic) and the
+  documented API default is exposed alongside — e.g. Gemini 4 Argon documents
+  default `medium`; the GPT-6 Astra pages checked are silent on the API
+  default, and the row records that silence as unknown rather than a guess.
+- **The `reasoning` output item on Responses is stripped from the reply
+  text**, same as Anthropic's blocks. A response with `status: "incomplete"`
+  and no message item (cut off mid-reasoning by the output cap) records empty
+  reply text and its usage instead of throwing.
+- **Cut-off replies are recorded, not hidden, on every provider.** Responses
+  reports the cap via top-level `status: "incomplete"` with
+  `incomplete_details.reason` (`max_output_tokens` when the cap did it);
+  chat-completions reports it via `choices[0].finish_reason: "length"`. Both
+  land in `meta.truncated: {stopReason, outputTokens}` on the step — the same
+  record the Anthropic client keeps for `stop_reason: "max_tokens"` — so a
+  trajectory shows why a reply is incomplete without changing how the runner
+  treats the text.
+- **Reasoning tokens are inside the reported output total on all three
+  providers,** and that total is what is billed. The provider's breakdown
+  (Anthropic `usage.output_tokens_details.thinking_tokens`, OpenAI Responses
   `usage.output_tokens_details.reasoning_tokens`, chat-completions
   `usage.completion_tokens_details.reasoning_tokens`) is recorded per step as
   `meta.reasoningTokens` when reported; cost follows the reported totals (see
   `prices.example.json`).
+- **The dollar cap quotes the wire output limit.** On the tabled reasoning
+  rows the default cap is the row's documented 16384 (the legacy 4096 on
+  untabled ids), and `prices.example.json` carries verified rates for the
+  release-board models — `openai/gpt-6-astra` $10/$50 and
+  `openai-chat/gemini-4-argon` $2/$10, each with its source page and
+  `checked` date — so `--max-usd` reserves and settles against real numbers
+  on both connections.
 
 Deprecation note: Anthropic documents manual thinking-budget mode as
 deprecated on Claude 4.6 and not accepted on later models, which steer

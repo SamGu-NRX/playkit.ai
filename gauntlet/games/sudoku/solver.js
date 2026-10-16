@@ -617,14 +617,59 @@ export function generatePuzzle(dims, targetClues, stream) {
   return { puzzle, solution, clues };
 }
 
-/** Digging targets per tier key. A tier's difficulty is decided by the
- * technique grade; the target only steers the rejection-sampling hit rate. */
+/** Digging target ladders per tier key. A tier's difficulty is decided by
+ * the technique grade; each target only steers the rejection-sampling hit
+ * rate. Ladders try easier-then-harder clue counts within one attempt
+ * because grade-1 puzzles get rare at deep digging and grade-2+ puzzles get
+ * rare at shallow digging. */
 const TIER_TARGET_CLUES = /** @type {const} */ ({
-  mini: 8,
-  easy: 40,
-  medium: 32,
-  hard: 26,
+  mini: [8],
+  easy: [40],
+  medium: [32, 38],
+  hard: [26, 22],
 });
+
+/**
+ * Boundary dig for the medium tier: remove clues (uniqueness-preserving) in
+ * seeded order just until the puzzle stops being solvable by singles alone,
+ * and accept it only when that first crossing lands exactly on grade 1
+ * (pairs or locked candidates required, X-wing and beyond not). Puzzles
+ * whose next removal jumps straight to grade 2 have that removal restored
+ * and the walk continues; a full grid that never crosses to grade 1 rejects
+ * the attempt. Deterministic in (dims, stream). The returned puzzle carries
+ * exactly one solution by construction — every accepted removal passed the
+ * solution counter.
+ *
+ * @param {Dims} dims
+ * @param {RngStream} stream Mutable stream.
+ * @returns {{ puzzle: number[], solution: number[], clues: number, grade: number } | null}
+ *   Null when this attempt produced no grade-1 puzzle.
+ */
+export function generateBoundaryGrade1(dims, stream) {
+  const solution = generateSolution(dims, stream);
+  const n = dims.size * dims.size;
+  const puzzle = solution.slice();
+  let clues = n;
+  const order = stream.shuffle(Array.from({ length: n }, (_, i) => i));
+  for (const p of order) {
+    const saved = puzzle[p];
+    puzzle[p] = 0;
+    if (countSolutions(puzzle, dims, 2) !== 1) {
+      puzzle[p] = saved;
+      continue;
+    }
+    if (techniqueSolve(puzzle, dims, 0).solved) {
+      clues--; // still grade 0: keep digging
+      continue;
+    }
+    const grade = gradePuzzle(puzzle, dims);
+    if (grade === 1) {
+      return { puzzle, solution, clues: clues - 1, grade };
+    }
+    puzzle[p] = saved; // grade 2+: too far, try other cells
+  }
+  return null;
+}
 
 /**
  * @param {string} tierKey
@@ -639,7 +684,7 @@ function acceptsGrade(tierKey, grade) {
 
 /**
  * Rejection-sample a puzzle whose technique grade matches the tier, fully
- * deterministic in (dims, tierKey, seed). Throws after 200 attempts.
+ * deterministic in (dims, tierKey, seed). Throws after 500 attempts.
  *
  * @param {Dims} dims
  * @param {'mini' | 'easy' | 'medium' | 'hard'} tierKey
@@ -647,16 +692,27 @@ function acceptsGrade(tierKey, grade) {
  * @returns {{ givens: number[], solution: number[], grade: number, clues: number, attempts: number }}
  */
 export function generateForTier(dims, tierKey, seed) {
-  const targetClues = TIER_TARGET_CLUES[tierKey];
-  for (let attempt = 0; attempt < 200; attempt++) {
+  const targets = TIER_TARGET_CLUES[tierKey];
+  for (let attempt = 0; attempt < 500; attempt++) {
     const stream = streamFromSeed(`${seed}/gen/${attempt}`);
-    const { puzzle, solution, clues } = generatePuzzle(dims, targetClues, stream);
-    const grade = gradePuzzle(puzzle, dims);
-    if (acceptsGrade(tierKey, grade)) {
-      return { givens: puzzle, solution, grade, clues, attempts: attempt + 1 };
+    if (tierKey === 'medium') {
+      // Grade-1 puzzles are a narrow band under rejection sampling at any
+      // fixed clue count; the boundary walk finds one almost every attempt.
+      const hit = generateBoundaryGrade1(dims, stream);
+      if (hit) {
+        return { givens: hit.puzzle, solution: hit.solution, grade: hit.grade, clues: hit.clues, attempts: attempt + 1 };
+      }
+      continue;
+    }
+    for (const targetClues of targets) {
+      const { puzzle, solution, clues } = generatePuzzle(dims, targetClues, stream);
+      const grade = gradePuzzle(puzzle, dims);
+      if (acceptsGrade(tierKey, grade)) {
+        return { givens: puzzle, solution, grade, clues, attempts: attempt + 1 };
+      }
     }
   }
   throw new Error(
-    `generateForTier: no ${tierKey} puzzle accepted for seed ${seed} in 200 attempts`
+    `generateForTier: no ${tierKey} puzzle accepted for seed ${seed} in 500 attempts`
   );
 }

@@ -4,19 +4,27 @@
  * `baseline` track. The runner reads the action from the last non-empty line
  * of the reply, so replies are one canonical action each.
  *
+ * Both agents keep their per-episode memory (step counter, placement order,
+ * refuted guesses) in the factory closure: one agent instance plays one
+ * episode, so the memory is episode-scoped and the behavior stays
+ * deterministic in the episode seed.
+ *
  * - `createGreedyAgent` — places any forced cell (naked or hidden single),
- *   else guesses: among empty cells the one with the fewest candidates, a
- *   seeded digit among them. No repair: guesses stay guessed.
+ *   else guesses: among empty cells the one with the fewest local
+ *   candidates, a step-seeded digit among them. It keeps no failure memory;
+ *   when its wrong guesses have locally doomed the grid (no empty cell can
+ *   legally hold anything), it undoes its most recent placement so the
+ *   episode runs to a natural ending instead of deadlocking.
  * - `createEngineAgent` — the technique solver as an agent: plays the first
  *   cell the level-2 ladder (singles, pairs, locked candidates, X-wing,
- *   XY-wing) fills beyond the input. When the ladder stalls, it first checks
- *   whether the grid still extends to any solution (the same solution
- *   counter the generator uses — with a unique-solution puzzle, zero
- *   completions proves some player entry is wrong) and if so erases the
- *   entry whose removal restores solvability; only on a still-solvable
- *   stall does it guess, seeded per turn. Because it repairs its own wrong
- *   guesses, the hard tier — whose puzzles sit beyond the ladder — is not
- *   solved every time.
+ *   XY-wing) fills beyond the input. When the ladder stalls on a solvable
+ *   grid it guesses (step-seeded); when the grid loses solvability — the
+ *   generator's own solution counter proves some player entry is wrong on a
+ *   unique puzzle — it records that exact guess digit as refuted for the
+ *   offending cell, erases the entry whose removal restores solvability,
+ *   and continues. Refuted candidates are never re-guessed, so every repair
+ *   permanently shrinks the search space; erasing a correct entry is safe
+ *   because the ladder re-derives it.
  *
  * No `node:*` imports; all randomness flows from the episode seed.
  *
@@ -90,41 +98,53 @@ function firstDiffPlacement(data, result) {
 }
 
 /**
- * Seeded guess in the most constrained empty cell (fewest candidates,
- * lowest index on ties).
+ * Local candidate masks straight from the observed grid.
  *
  * @param {SudokuViewData} data
- * @param {string} episodeSeed
- * @param {string} agentId
- * @param {number} turn
- * @returns {string | null}
+ * @returns {number[]}
  */
-function guessAction(data, episodeSeed, agentId, turn) {
-  const dims = dimsOf(data);
-  const cand = computeCandidates(data.cells, dims);
-  let best = -1;
-  let bestCount = data.size + 1;
-  for (let i = 0; i < cand.length; i++) {
-    if (data.cells[i]) continue;
-    const count = popcount(cand[i]);
-    if (count === 0) continue;
-    if (count < bestCount) {
-      bestCount = count;
-      best = i;
-    }
-  }
-  if (best === -1) return null;
-  const digits = bitsToDigits(cand[best], dims);
-  const pick = nextInt(
-    rngFromSeed(`${episodeSeed}/${agentId}/guess/${turn}`),
-    0,
-    digits.length - 1
-  ).value;
-  return `place ${rowCol(data, best)} ${digits[pick]}`;
+function localCandidates(data) {
+  return computeCandidates(data.cells, dimsOf(data));
 }
 
 /**
- * The greedy baseline: forced cells (naked or hidden singles), else guess.
+ * Indices of the player's own entries (not givens), ascending.
+ *
+ * @param {SudokuViewData} data
+ * @returns {number[]}
+ */
+function userEntries(data) {
+  /** @type {number[]} */
+  const out = [];
+  for (let i = 0; i < data.cells.length; i++) {
+    if (data.cells[i] && !data.givens[i]) out.push(i);
+  }
+  return out;
+}
+
+/**
+ * Seeded digit pick among `digits` for `cell` at agent step `step`.
+ *
+ * @param {number[]} digits
+ * @param {number} cell
+ * @param {string} episodeSeed
+ * @param {string} agentId
+ * @param {number} step
+ * @returns {number}
+ */
+function pickDigit(digits, cell, episodeSeed, agentId, step) {
+  if (digits.length === 1) return digits[0];
+  const pick = nextInt(
+    rngFromSeed(`${episodeSeed}/${agentId}/guess/${step}/${cell}`),
+    0,
+    digits.length - 1
+  ).value;
+  return digits[pick];
+}
+
+/**
+ * The greedy baseline: forced cells (naked or hidden singles), else guess;
+ * LIFO undo when the grid is locally doomed.
  *
  * @param {BaselineOptions} options
  * @returns {Agent}
@@ -133,6 +153,12 @@ export function createGreedyAgent({ episodeSeed, id = 'sudoku-greedy', track = '
   if (typeof episodeSeed !== 'string' || episodeSeed.length === 0) {
     throw new Error('createGreedyAgent: episodeSeed is required');
   }
+  /**
+   * Cell indices this agent has placed, in placement order.
+   * @type {number[]}
+   */
+  const placedStack = [];
+  let steps = 0;
   return {
     id,
     track,
@@ -141,21 +167,52 @@ export function createGreedyAgent({ episodeSeed, id = 'sudoku-greedy', track = '
       if (data.status !== 'playing') {
         throw new Error(`greedy agent "${id}" was asked to act on a finished episode`);
       }
+      steps++;
       const forced = firstDiffPlacement(
         data,
         techniqueSolve(data.cells, dimsOf(data), 0)
       );
-      if (forced) return { text: forced };
-      const guess = guessAction(data, episodeSeed, id, ctx.turn);
-      if (guess) return { text: guess };
-      throw new Error(`greedy agent "${id}" found no legal move`);
+      if (forced) {
+        placedStack.push(Number(forced.split(' ')[1]) * data.size + Number(forced.split(' ')[2]) - data.size - 1);
+        return { text: forced };
+      }
+      const cand = localCandidates(data);
+      let best = -1;
+      let bestCount = data.size + 1;
+      for (let i = 0; i < cand.length; i++) {
+        if (data.cells[i]) continue;
+        const count = popcount(cand[i]);
+        if (count === 0) continue;
+        if (count < bestCount) {
+          bestCount = count;
+          best = i;
+        }
+      }
+      if (best !== -1) {
+        const digit = pickDigit(
+          bitsToDigits(cand[best], dimsOf(data)),
+          best,
+          episodeSeed,
+          id,
+          steps
+        );
+        placedStack.push(best);
+        return { text: `place ${rowCol(data, best)} ${digit}` };
+      }
+      // No empty cell can legally hold anything: undo the most recent
+      // placement so the episode can continue.
+      if (placedStack.length === 0) {
+        throw new Error(`greedy agent "${id}" found no legal move`);
+      }
+      const top = /** @type {number} */ (placedStack.pop());
+      return { text: `erase ${rowCol(data, top)}` };
     },
   };
 }
 
 /**
- * The engine baseline: the technique solver, plus honest repair and seeded
- * guessing on stalls.
+ * The engine baseline: the technique solver, plus refutation memory and
+ * step-seeded guessing on stalls.
  *
  * @param {BaselineOptions} options
  * @returns {Agent}
@@ -164,6 +221,14 @@ export function createEngineAgent({ episodeSeed, id = 'sudoku-engine', track = '
   if (typeof episodeSeed !== 'string' || episodeSeed.length === 0) {
     throw new Error('createEngineAgent: episodeSeed is required');
   }
+  /**
+   * Cell indices this agent has placed, in placement order.
+   * @type {number[]}
+   */
+  const placedStack = [];
+  /** Cell index -> digits proven impossible for it by refuted guesses. */
+  const refuted = /** @type {Map<number, Set<number>>} */ (new Map());
+  let steps = 0;
   return {
     id,
     track,
@@ -172,36 +237,73 @@ export function createEngineAgent({ episodeSeed, id = 'sudoku-engine', track = '
       if (data.status !== 'playing') {
         throw new Error(`engine agent "${id}" was asked to act on a finished episode`);
       }
+      steps++;
       const dims = dimsOf(data);
       const result = techniqueSolve(data.cells, dims, 2);
       const forced = firstDiffPlacement(data, result);
-      if (forced) return { text: forced };
+      if (forced) {
+        const [, r, c] = forced.split(' ');
+        placedStack.push((Number(r) - 1) * data.size + (Number(c) - 1));
+        return { text: forced };
+      }
       // Stall. On a unique-solution puzzle, zero completions proves some
-      // player entry is wrong; erase the entry whose removal restores
-      // solvability (leftmost as the fallback when several entries are
-      // wrong). Only a still-solvable stall earns a guess.
+      // player entry is wrong. Record the refutation, erase the entry whose
+      // removal restores solvability (LIFO as the fallback), and continue.
       if (result.contradiction || countSolutions(data.cells, dims, 1) === 0) {
-        /** @type {number[]} */
-        const userEntries = [];
-        for (let i = 0; i < data.cells.length; i++) {
-          if (data.cells[i] && !data.givens[i]) userEntries.push(i);
+        const entries = userEntries(data);
+        if (entries.length === 0) {
+          throw new Error(`engine agent "${id}" hit a contradiction with no entries to undo`);
         }
-        if (userEntries.length > 0) {
-          let target = userEntries[0];
-          for (const u of userEntries) {
-            const probe = data.cells.slice();
-            probe[u] = 0;
-            if (countSolutions(probe, dims, 1) >= 1) {
-              target = u;
-              break;
-            }
+        let target = entries[entries.length - 1];
+        for (const u of entries) {
+          const probe = data.cells.slice();
+          probe[u] = 0;
+          if (countSolutions(probe, dims, 1) >= 1) {
+            target = u;
+            break;
           }
-          return { text: `erase ${rowCol(data, target)}` };
+        }
+        // The refuted digit of the offending cell is dead — record it so it
+        // is never guessed again.
+        const refutedForCell = refuted.get(target) ?? new Set();
+        refutedForCell.add(data.cells[target]);
+        refuted.set(target, refutedForCell);
+        const stackAt = placedStack.indexOf(target);
+        if (stackAt !== -1) placedStack.splice(stackAt, 1);
+        return { text: `erase ${rowCol(data, target)}` };
+      }
+      // Solvable stall: guess. Candidates exclude refuted digits; the most
+      // constrained surviving cell goes first. If exactly one candidate
+      // survives refutation anywhere, that cell is now forced.
+      const cand = localCandidates(data);
+      let best = -1;
+      let bestDigits = /** @type {number[]} */ ([]);
+      let bestCount = data.size + 1;
+      for (let i = 0; i < cand.length; i++) {
+        if (data.cells[i]) continue;
+        const survived = bitsToDigits(cand[i], dims).filter(
+          (d) => !refuted.get(i)?.has(d)
+        );
+        if (survived.length === 0) continue;
+        if (survived.length < bestCount) {
+          bestCount = survived.length;
+          best = i;
+          bestDigits = survived;
+          if (survived.length === 1) break;
         }
       }
-      const guess = guessAction(data, episodeSeed, id, ctx.turn);
-      if (guess) return { text: guess };
-      throw new Error(`engine agent "${id}" found no legal move`);
+      if (best === -1) {
+        // Every empty cell is refuted or blocked: the grid is doomed.
+        // Undo the most recent placement and continue.
+        if (placedStack.length === 0) {
+          throw new Error(`engine agent "${id}" found no legal move`);
+        }
+        const top = /** @type {number} */ (placedStack.pop());
+        return { text: `erase ${rowCol(data, top)}` };
+      }
+      const digit = pickDigit(bestDigits, best, episodeSeed, id, steps);
+      placedStack.push(best);
+      return { text: `place ${rowCol(data, best)} ${digit}` };
     },
   };
 }

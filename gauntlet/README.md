@@ -54,8 +54,11 @@ hashes, counts, or the outcome.
   prompt) and the per-turn user message: rules, the full previous reply,
   invalid-action feedback when present, then the current state. Bounded so a
   turn's message stays within size limits.
-- `model-agent.js` — provider-backed agents for Anthropic Messages and OpenAI
-  Responses over global `fetch` (no SDKs). Keys are read from the environment
+- `model-agent.js` — provider-backed agents for Anthropic Messages, OpenAI
+  Responses, and OpenAI-compatible chat completions (`openai-chat`, the
+  provider behind the local-server browser sessions in `bridge/browser` — see
+  `harness/PROVIDERS.md` for the per-provider request shape and serve
+  commands) over global `fetch` (no SDKs). Keys are read from the environment
   at call time and never logged; 429/5xx/network errors retry with exponential
   backoff and surface the retry count in the reply's metadata; token usage is
   recorded, and costs are computed only from a caller-supplied, sourced price

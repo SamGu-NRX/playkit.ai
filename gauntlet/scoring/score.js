@@ -55,23 +55,20 @@ export const EFFICIENCY_CAP_REFERENCE = 1.15;
 
 /**
  * A refusal: this input cannot be scored honestly. The message names the
- * file and the step that refused it.
+ * file and the step that refused it. Re-exported from `refusal.js` so every
+ * existing import site keeps working.
  */
-export class GauntletRefusalError extends Error {
-  /**
-   * @param {string} file Basename of the refusing file, e.g. "score.js".
-   * @param {string} step The check that refused, e.g. "duplicate-episodes".
-   * @param {string} message Human-readable detail.
-   */
-  constructor(file, step, message) {
-    super(`[gauntlet/scoring/${file}] ${step}: ${message}`);
-    this.name = 'GauntletRefusalError';
-    /** @type {string} */
-    this.file = `gauntlet/scoring/${file}`;
-    /** @type {string} */
-    this.step = step;
-  }
-}
+export { GauntletRefusalError } from './refusal.js';
+
+import { GauntletRefusalError } from './refusal.js';
+import {
+  DEFAULT_PROFILE,
+  resolveProfile,
+  transformOutcomeEpisode,
+  validateBaseline,
+} from './profiles.js';
+
+/** @import { ScoringBaseline } from './profiles.js' */
 
 /**
  * @param {string} step
@@ -83,13 +80,19 @@ function refuse(step, message) {
 }
 
 /**
- * One agent's submission.
+ * One agent's submission. The profile fields are optional: `score()` itself
+ * takes them as options, and the leaderboard accepts them per entry to
+ * detect mixed-profile boards.
  *
  * @typedef {object} ScoreEntry
  * @property {{ id: string, track: string, model?: string, provider?: string }} agent
  * @property {Trajectory[]} trajectories
  * @property {string} [saltCommitment] The salt commitment the entry claims it
  *   was run under; must match the suite's when present.
+ * @property {string} [profile] The entry's scoring profile id.
+ * @property {ScoringBaseline} [baseline] The entry's parsed scoring baseline
+ *   (required by `chance-adjusted`).
+ * @property {string} [baselineSha256] SHA-256 hex of the baseline file.
  */
 
 /**
@@ -133,6 +136,10 @@ function refuse(step, message) {
  * @property {number} invalidActionRate
  * @property {number} meanAgentActions
  * @property {Record<string, GameScore>} games
+ * @property {{ profile: string, baselineSha256?: string }} [scoring] Present
+ *   only when a scoring profile was explicitly selected or is non-default;
+ *   the default `rhae-v1` output is byte-identical to the pre-profiles
+ *   scorer. `baselineSha256` appears when the caller supplied one.
  */
 
 /**
@@ -141,6 +148,17 @@ function refuse(step, message) {
  *   The submitting agent. Defaults to the first trajectory's agent record;
  *   every trajectory must then agree with it.
  * @property {string} [saltCommitment] The entry's claimed salt commitment.
+ * @property {string} [profile] The scoring profile id — one of
+ *   `SCORING_PROFILES` from `profiles.js`. Defaults to `rhae-v1`, whose
+ *   output is byte-identical to the pre-profiles scorer. When a non-default
+ *   profile (or an explicit profile option) is used, the result carries a
+ *   `scoring` block naming the profile and, when one is used, the SHA-256 of
+ *   the baseline file.
+ * @property {ScoringBaseline} [baseline] A parsed scoring-baseline file
+ *   (validate with `validateBaseline` or load with `loadBaselineFile`).
+ *   Required by `chance-adjusted`; unused by the other profiles.
+ * @property {string} [baselineSha256] SHA-256 hex of the baseline file's
+ *   bytes, reported in the `scoring` block when present.
  */
 
 /**
@@ -198,13 +216,55 @@ function trajectoryCost(trajectory) {
 }
 
 /**
+ * Apply the profile's outcome-tier transform to one raw episode score.
+ * Efficiency tiers never reach this: under every profile they are unchanged
+ * (random already scores exactly 0 there).
+ *
+ * @param {string} profile A member of `SCORING_PROFILES`.
+ * @param {ScoringBaseline | undefined} baseline The parsed scoring baseline.
+ * @param {SuiteTier} tier
+ * @param {Trajectory} trajectory
+ * @param {number} e The raw episode score, `outcome.normalized[seat]`.
+ * @returns {number}
+ */
+function applyOutcomeProfile(profile, baseline, tier, trajectory, e) {
+  if (profile === 'rhae-v1') return e;
+  if (profile === 'squared-outcome') return e * e;
+  // chance-adjusted: resolve this tier's random-baseline mean r.
+  const gameId = trajectory.game.id;
+  const game = /** @type {ScoringBaseline} */ (baseline).games[gameId];
+  if (!game || typeof game.version !== 'string') {
+    refuse(
+      'baseline-tier-missing',
+      `the scoring baseline has no entry for game "${gameId}"; chance-adjusted cannot rescale ${gameId}/${tier.id}`
+    );
+  }
+  if (game.version !== trajectory.game.version) {
+    refuse(
+      'baseline-version',
+      `the scoring baseline for "${gameId}" was measured on game version ${game.version} but the trajectory ${trajectory.game.id}/${trajectory.tier}/${trajectory.seed} records game version ${trajectory.game.version}; a stale baseline cannot rescale this tier`
+    );
+  }
+  const entry = game.tiers[tier.id];
+  if (!entry) {
+    refuse(
+      'baseline-tier-missing',
+      `the scoring baseline has no random-baseline entry for ${gameId}/${tier.id}; chance-adjusted cannot rescale this tier`
+    );
+  }
+  return transformOutcomeEpisode(profile, e, entry.mean, gameId, tier.id);
+}
+
+/**
  * Episode score e and its solved flag, from one verified trajectory.
  *
  * @param {SuiteTier} tier
  * @param {Trajectory} trajectory
+ * @param {string} profile A member of `SCORING_PROFILES`.
+ * @param {ScoringBaseline | undefined} baseline
  * @returns {{ e: number, solved: boolean }}
  */
-function episodeScore(tier, trajectory) {
+function episodeScore(tier, trajectory, profile, baseline) {
   const outcome = /** @type {Outcome | null} */ (trajectory.end.outcome);
   const seat = trajectory.agent.seat;
   if (tier.scoring === 'outcome') {
@@ -215,7 +275,7 @@ function episodeScore(tier, trajectory) {
         `trajectory ${trajectory.game.id}/${trajectory.tier}/${trajectory.seed} ended without a finite normalized[${seat}] on an outcome tier`
       );
     }
-    return { e: /** @type {number} */ (normalized[seat]), solved: false };
+    return { e: applyOutcomeProfile(profile, baseline, tier, trajectory, /** @type {number} */ (normalized[seat])), solved: false };
   }
 
   // Efficiency tier.
@@ -314,6 +374,23 @@ export async function score(suite, trajectories, games, options = {}) {
   }
   if (!Array.isArray(trajectories)) {
     refuse('trajectories', 'trajectories must be an array');
+  }
+  const profile = resolveProfile(options.profile);
+  if (options.baseline !== undefined) validateBaseline(options.baseline);
+  if (profile === 'chance-adjusted' && !options.baseline) {
+    refuse(
+      'profile-baseline-required',
+      'profile "chance-adjusted" requires a scoring baseline (options.baseline), e.g. the parsed scoring/baselines/random-public.json'
+    );
+  }
+  if (profile === 'chance-adjusted') {
+    const baselineAgent = /** @type {ScoringBaseline} */ (options.baseline).agent;
+    if (baselineAgent !== 'random') {
+      refuse(
+        'chance-baseline-agent',
+        `profile "chance-adjusted" rescales against random-baseline means but the provided baseline records agent ${JSON.stringify(baselineAgent)}; build the baseline from the random agent (scoring/generate-baseline.js) — rescaling against any other agent's means would silently mislabel the scale`
+      );
+    }
   }
   const gameMap = toGameMap(games, suite);
 
@@ -416,7 +493,7 @@ export async function score(suite, trajectories, games, options = {}) {
   for (const [key, trajectory] of byKey) {
     const suiteGame = /** @type {SuiteGame} */ (suiteGames.get(trajectory.game.id));
     const suiteTier = /** @type {SuiteTier} */ (suiteGame.tiers.find((t) => t.id === trajectory.tier));
-    const { e, solved } = episodeScore(suiteTier, trajectory);
+    const { e, solved } = episodeScore(suiteTier, trajectory, profile, options.baseline);
     const dataKey = `${suiteGame.id}|${suiteTier.id}`;
     let data = tierData.get(dataKey);
     if (!data) {
@@ -664,5 +741,14 @@ export async function score(suite, trajectories, games, options = {}) {
   };
   if (agent.model !== undefined) result.agent.model = agent.model;
   if (agent.provider !== undefined) result.agent.provider = agent.provider;
+  // The profile block appears only when a profile was explicitly selected or
+  // is non-default, so the default output stays byte-identical to the
+  // pre-profiles scorer (pinned by scoring/profiles.test.js).
+  if (options.profile !== undefined || profile !== DEFAULT_PROFILE) {
+    /** @type {{ profile: string, baselineSha256?: string }} */
+    const scoring = { profile };
+    if (typeof options.baselineSha256 === 'string') scoring.baselineSha256 = options.baselineSha256;
+    result.scoring = scoring;
+  }
   return result;
 }

@@ -22,6 +22,7 @@ import { buildSuite } from '../scoring/suite.js';
 import { countdown, takeOrPass } from '../scoring/fixtures.js';
 
 import { createRateLimiter, runSuite } from './run.js';
+import { printRunSummary } from '../cli/run.js';
 import { manifestSha256, planJobs } from './plan.js';
 import { trajectoryPath } from './fsutil.js';
 
@@ -439,5 +440,44 @@ test('createRateLimiter spaces acquisitions by 60000/rpm under a fake clock', as
   assert.equal(stamps[0], 1000); // first request never waits
   for (let i = 1; i < stamps.length; i++) {
     assert.equal(stamps[i] - stamps[i - 1], 100);
+  }
+});
+
+test('usage reported without a priced cost stays unknown in the run record and summary', async () => {
+  const outDir = await mkdtemp(path.join(tmpdir(), 'gauntlet-run-unknown-cost-'));
+  try {
+    // No maxUsd: the null-cost refusal must NOT fire, but the steps must not
+    // read as free either — they are unknown, separately counted, and the
+    // summary says unknown instead of printing the known-cost sum as spend.
+    const result = await runSuite({
+      suite: SUITE,
+      games: GAMES,
+      agentFactory: pricedFactory({ costUsd: null }),
+      outDir,
+    });
+    const usageSteps = result.trajectories.reduce(
+      (a, t) => a + t.steps.filter((s) => s.usage).length,
+      0,
+    );
+    assert.ok(usageSteps > 0, 'the fixture suite produced usage-bearing steps');
+    assert.equal(result.run.spendUsd, 0, 'the known-cost sum has nothing to sum');
+    assert.equal(result.run.unknownCostSteps, usageSteps, 'every usage-bearing step with no cost is counted as unknown');
+
+    let captured = '';
+    const orig = process.stdout.write.bind(process.stdout);
+    process.stdout.write = (chunk) => {
+      captured += typeof chunk === 'string' ? chunk : String(chunk);
+      return true;
+    };
+    try {
+      printRunSummary(result);
+    } finally {
+      process.stdout.write = orig;
+    }
+    assert.match(captured, /spend    unknown \(/);
+    assert.match(captured, /known-cost sum 0\.000000/);
+    assert.doesNotMatch(captured, /spend    0\.000000/, 'unknown spend is never printed as a bare 0');
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
   }
 });

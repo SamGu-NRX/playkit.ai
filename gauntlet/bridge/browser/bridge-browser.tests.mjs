@@ -317,20 +317,26 @@ test('a recorded real-model bridge session log replays through verifyBridgeLog (
 // ---------------------------------------------------------------------------
 
 test('the report reductions and modelSessionSummary reduce a session offline (pure logic, no Chromium)', async () => {
-  /** Minimal ModelTurnRecord list: one ok turn, one failed turn, one ok turn. */
+  /** Minimal ModelTurnRecord list: one ok turn, one failed turn (its usage unknown), one ok turn. */
   const turns = [
     { turn: 0, ms: 100, inputTokens: 123, outputTokens: 2, retries: 0, responseId: 'r1', reasoningChars: 0, replyChars: 5 },
-    { turn: 1, ms: 300, inputTokens: 0, outputTokens: 0, retries: null, responseId: null, reasoningChars: 0, replyChars: 0, error: 'model agent: openai-chat API returned HTTP 400: no' },
+    { turn: 1, ms: 300, inputTokens: null, outputTokens: null, retries: null, responseId: null, reasoningChars: 0, replyChars: 0, error: 'model agent: openai-chat API returned HTTP 400: no' },
     { turn: 2, ms: 500, inputTokens: 321, outputTokens: 4, retries: 0, responseId: 'r3', reasoningChars: 0, replyChars: 5 },
   ];
   const reduced = summarizeModelTurns(turns);
   assert.equal(reduced.errorTurns, 1, 'exactly the turns carrying an error count as error turns');
   assert.deepEqual(reduced.modelLatencyMs, latencyStats([100, 500]), 'latency covers only completed calls');
   assert.equal(reduced.modelLatencyMs.mean, 300);
-  assert.equal(reduced.totalPromptTokens, 444, 'token totals cover every turn, failed included');
-  assert.equal(reduced.totalCompletionTokens, 6);
-  // Every turn failing: latency collapses to the zero stats, errors still count.
-  assert.deepEqual(summarizeModelTurns([turns[1]]), { errorTurns: 1, modelLatencyMs: { mean: 0, p50: 0, p95: 0, max: 0 }, totalPromptTokens: 0, totalCompletionTokens: 0 });
+  assert.equal(reduced.totalPromptTokens, 'unknown', 'a turn with unknown token counts makes the total unknown — never a partial sum, never 0');
+  assert.equal(reduced.totalCompletionTokens, 'unknown');
+  // Every turn failing: latency collapses to the zero stats, errors still count, usage stays unknown.
+  assert.deepEqual(summarizeModelTurns([turns[1]]), { errorTurns: 1, modelLatencyMs: { mean: 0, p50: 0, p95: 0, max: 0 }, totalPromptTokens: 'unknown', totalCompletionTokens: 'unknown' });
+  // Fully measured turns still sum.
+  const measured = summarizeModelTurns([turns[0], turns[2]]);
+  assert.equal(measured.errorTurns, 0);
+  assert.deepEqual(measured.modelLatencyMs, latencyStats([100, 500]));
+  assert.equal(measured.totalPromptTokens, 444, 'measured turns still sum');
+  assert.equal(measured.totalCompletionTokens, 6);
 
   const report = {
     log: {
@@ -441,16 +447,18 @@ test('a model endpoint that always fails: every turn is an error turn, the drive
       // recording 0 here would undercount exactly on failing turns.
       assert.equal(turn.retries, null);
       assert.equal(turn.responseId, null);
-      assert.equal(turn.inputTokens, 0);
-      assert.equal(turn.outputTokens, 0);
+      // A failed turn has no usage: unknown, never 0 — 0 would read as
+      // measured.
+      assert.equal(turn.inputTokens, null);
+      assert.equal(turn.outputTokens, null);
     }
     const verified = verifyBridgeLog(report.log);
     assert.equal(verified.ok, true, verified.ok ? '' : `fallback session log failed replay at step ${verified.index}: ${verified.reason}`);
     // The pure reduction agrees with the report fields.
     const reduced = summarizeModelTurns(report.modelTurns);
     assert.equal(reduced.errorTurns, 3);
-    assert.equal(reduced.totalPromptTokens, 0);
-    assert.equal(reduced.totalCompletionTokens, 0);
+    assert.equal(reduced.totalPromptTokens, 'unknown');
+    assert.equal(reduced.totalCompletionTokens, 'unknown');
   } finally {
     failing.closeAllConnections();
     await new Promise((closeOk) => failing.close(closeOk));

@@ -106,12 +106,30 @@ function fmtScoreCI(scored) {
 }
 
 /**
+ * Escape text for a Markdown table cell: backslash first, then the divider
+ * and emphasis characters, and hard newlines become `<br>` (a table row
+ * cannot span lines). An agent id, model or provider is data, not Markdown —
+ * an id containing `|` shifts every following column, and `*` or `_` flip
+ * emphasis on.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function escapeMarkdownCell(text) {
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/([|*`_])/g, '\\$1')
+    .replace(/\r\n|\r|\n/g, '<br>');
+}
+
+/**
  * @param {{ id: string, track: string, model?: string, provider?: string }} agent
  * @returns {string}
  */
 function agentLabel(agent) {
   const detail = [agent.model, agent.provider].filter(Boolean).join(' @ ');
-  return detail ? `${agent.id} (${detail})` : agent.id;
+  const id = escapeMarkdownCell(agent.id);
+  return detail ? `${id} (${escapeMarkdownCell(detail)})` : id;
 }
 
 /**

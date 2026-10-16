@@ -37,8 +37,12 @@ const thisDir = fileURLToPath(new URL('.', import.meta.url));
  * @typedef {object} ModelTurnRecord
  * @property {number} turn Zero-based model-call index (one per driver step).
  * @property {number} ms Wall time of the model call in this Node process.
- * @property {number} inputTokens usage.prompt_tokens as the server reported.
- * @property {number} outputTokens usage.completion_tokens as reported.
+ * @property {number | null} inputTokens usage.prompt_tokens as the server
+ *   reported; null when the agent's usage was absent or the count null — a
+ *   provider that omitted a count did not measure it, and 0 would read as
+ *   measured.
+ * @property {number | null} outputTokens usage.completion_tokens as reported;
+ *   null when unknown, same rule as inputTokens.
  * @property {number | null} retries Transport retries the provider client
  *   needed; null means unknown — a provider call that failed after retries
  *   throws a plain Error carrying no retry metadata, so a failed turn cannot
@@ -72,8 +76,11 @@ const thisDir = fileURLToPath(new URL('.', import.meta.url));
  * @property {{ provider: 'openai-chat', model: string, baseUrl: string }} modelAgent Identity of the agent that played.
  * @property {ModelTurnRecord[]} modelTurns One record per model call.
  * @property {{ mean: number, p50: number, p95: number, max: number }} modelLatencyMs Latency over the model calls that completed.
- * @property {number} totalPromptTokens
- * @property {number} totalCompletionTokens
+ * @property {number | 'unknown'} totalPromptTokens Sum of reported prompt
+ *   tokens, or 'unknown' when any turn's count is unknown — unknown stays
+ *   unknown; it is never folded into 0.
+ * @property {number | 'unknown'} totalCompletionTokens Same rule as
+ *   totalPromptTokens.
  */
 
 /**
@@ -157,8 +164,8 @@ export async function runBrowserModelSession(setup) {
         modelTurns.push({
           turn,
           ms,
-          inputTokens: reply.usage ? reply.usage.inputTokens : 0,
-          outputTokens: reply.usage ? reply.usage.outputTokens : 0,
+          inputTokens: reply.usage && typeof reply.usage.inputTokens === 'number' ? reply.usage.inputTokens : null,
+          outputTokens: reply.usage && typeof reply.usage.outputTokens === 'number' ? reply.usage.outputTokens : null,
           retries: reply.meta && typeof reply.meta.retries === 'number' ? reply.meta.retries : 0,
           responseId: reply.meta && typeof reply.meta.responseId === 'string' ? reply.meta.responseId : null,
           reasoningChars: reply.meta && typeof reply.meta.reasoningChars === 'number' ? reply.meta.reasoningChars : 0,
@@ -176,7 +183,7 @@ export async function runBrowserModelSession(setup) {
         // unknown — recording 0 would undercount retries exactly on failing
         // turns, the one place the count matters. Surfacing the real count on
         // the thrown error belongs with the provider client.
-        modelTurns.push({ turn, ms, inputTokens: 0, outputTokens: 0, retries: null, responseId: null, reasoningChars: 0, replyChars: 0, error: reason });
+        modelTurns.push({ turn, ms, inputTokens: null, outputTokens: null, retries: null, responseId: null, reasoningChars: 0, replyChars: 0, error: reason });
         return { text: '', usage: null, meta: { retries: null } };
       }
     });
@@ -300,15 +307,23 @@ export async function runBrowserModelSession(setup) {
  * path itself is exercised by the stub-server tests in the suite.
  *
  * @param {ModelTurnRecord[]} modelTurns
- * @returns {{ errorTurns: number, modelLatencyMs: { mean: number, p50: number, p95: number, max: number }, totalPromptTokens: number, totalCompletionTokens: number }}
+ * @returns {{ errorTurns: number, modelLatencyMs: { mean: number, p50: number, p95: number, max: number }, totalPromptTokens: number | 'unknown', totalCompletionTokens: number | 'unknown' }}
  */
 export function summarizeModelTurns(modelTurns) {
   const completed = modelTurns.filter((t) => t.error === undefined);
+  // A turn with a null token count (usage omitted or the count unreported)
+  // makes the total unknown: summing only the known turns would print a
+  // partial number that reads as complete, and treating null as 0 would
+  // print a measured-looking total for an unmeasured session.
+  const sumTokens = (key) =>
+    modelTurns.every((t) => typeof t[key] === 'number')
+      ? modelTurns.reduce((a, t) => a + t[key], 0)
+      : 'unknown';
   return {
     errorTurns: modelTurns.length - completed.length,
     modelLatencyMs: latencyStats(completed.map((t) => t.ms)),
-    totalPromptTokens: modelTurns.reduce((a, t) => a + t.inputTokens, 0),
-    totalCompletionTokens: modelTurns.reduce((a, t) => a + t.outputTokens, 0),
+    totalPromptTokens: sumTokens('inputTokens'),
+    totalCompletionTokens: sumTokens('outputTokens'),
   };
 }
 

@@ -152,11 +152,21 @@ export async function runSuite(options) {
  */
 export function printRunSummary(result) {
   const { run } = result;
+  // Unknown stays unknown: a step that reported usage without a priced cost
+  // means the real spend is not known, so the line says unknown (with the
+  // known-cost sum kept visible) instead of printing that sum — or 0 — as if
+  // it were the whole spend.
+  const spendText =
+    !Number.isFinite(run.spendUsd)
+      ? 'unknown (no cost data)'
+      : run.unknownCostSteps > 0
+        ? `unknown (${run.unknownCostSteps} call(s) reported usage without a priced cost; known-cost sum ${run.spendUsd.toFixed(6)})`
+        : run.spendUsd.toFixed(6);
   const lines = [
     `suite    ${run.suite.id} (${run.suite.split}) — manifest ${run.suite.manifestSha256.slice(0, 12)}…`,
     `episodes ${run.counts.jobs} planned, ${run.counts.played} played, ${run.counts.skipped} skipped (verified on resume), ${run.counts.replayed} replayed, ${run.counts.unplayed} unplayed, ${run.counts.failed} failed`,
     `calls    ${run.calls}${run.limits.maxCalls !== null ? ` / cap ${run.limits.maxCalls}` : ''}`,
-    `spend    ${Number.isFinite(run.spendUsd) ? `${run.spendUsd.toFixed(6)}` : 'unknown (no cost data)'}${run.limits.maxUsd !== null ? ` / cap ${run.limits.maxUsd}` : ''}`,
+    `spend    ${spendText}${run.limits.maxUsd !== null ? ` / cap ${run.limits.maxUsd}` : ''}`,
     `record   run.json (format ${run.format})`,
   ];
   if (result.stopped) {

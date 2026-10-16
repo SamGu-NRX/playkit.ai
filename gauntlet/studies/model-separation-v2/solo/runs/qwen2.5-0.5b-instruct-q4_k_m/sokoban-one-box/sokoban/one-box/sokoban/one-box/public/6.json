@@ -1,0 +1,116 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "sokoban",
+    "version": "1.0.0"
+  },
+  "tier": "one-box",
+  "seed": "sokoban/one-box/public/6",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-0.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e380d8685f5ce04b",
+      "reply": {
+        "text": "undo",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-xFDy7eQNizoM3Fy4I6hAfTSUpHbtN2Je",
+          "reasoningChars": 0
+        }
+      },
+      "action": "undo",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 517
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e380d8685f5ce04b",
+      "reply": {
+        "text": "undo",
+        "usage": {
+          "inputTokens": 446,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-kNq65jCik1O2vL8s7SnFeMx2KEBVLgha",
+          "reasoningChars": 0
+        }
+      },
+      "action": "undo",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 446,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 1239
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e380d8685f5ce04b",
+      "reply": {
+        "text": "undo",
+        "usage": {
+          "inputTokens": 446,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-y8YEbXWu4j3poQZRFbGUJc2KtraSD6tj",
+          "reasoningChars": 0
+        }
+      },
+      "action": "undo",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 446,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 37
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:12:21.407Z",
+  "finishedAt": "2026-10-16T11:12:23.201Z"
+}

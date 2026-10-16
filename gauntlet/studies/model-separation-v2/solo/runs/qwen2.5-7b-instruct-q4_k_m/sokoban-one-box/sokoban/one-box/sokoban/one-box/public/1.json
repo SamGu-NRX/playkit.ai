@@ -1,0 +1,168 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "sokoban",
+    "version": "1.0.0"
+  },
+  "tier": "one-box",
+  "seed": "sokoban/one-box/public/1",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4116fc2103f51b78",
+      "reply": {
+        "text": "down",
+        "usage": {
+          "inputTokens": 436,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-BnYbYg9VFdX8arq4oTpNBHdm7yw7jOLe",
+          "reasoningChars": 0
+        }
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 436,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 1452
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a220985babc5e926",
+      "reply": {
+        "text": "right",
+        "usage": {
+          "inputTokens": 435,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-13ws5aujLVbGIFrs5uzj4LFkbCpjAc9K",
+          "reasoningChars": 0
+        }
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 435,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 1315
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "daf92b95841eb82f",
+      "reply": {
+        "text": "rightundo",
+        "usage": {
+          "inputTokens": 436,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-zjHp0GOLHrReowygo4j7XdfkynnOS30q",
+          "reasoningChars": 0
+        }
+      },
+      "action": "rightundo",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 436,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 1401
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "daf92b95841eb82f",
+      "reply": {
+        "text": "rightundo",
+        "usage": {
+          "inputTokens": 464,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-5XZZUyJUkCiZLqTXKRIW3PyfGPa0pG8m",
+          "reasoningChars": 0
+        }
+      },
+      "action": "rightundo",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 464,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 1782
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "daf92b95841eb82f",
+      "reply": {
+        "text": "rightundo",
+        "usage": {
+          "inputTokens": 464,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-SCUoel8YqSAJE2hfB4RZQIEUtBCV7X6f",
+          "reasoningChars": 0
+        }
+      },
+      "action": "rightundo",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 464,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 319
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 5,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:53:56.105Z",
+  "finishedAt": "2026-10-16T11:54:02.375Z"
+}

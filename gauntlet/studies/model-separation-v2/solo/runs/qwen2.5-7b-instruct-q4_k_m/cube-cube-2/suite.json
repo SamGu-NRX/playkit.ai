@@ -1,0 +1,27 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-msep-v2-qwen2.5-7b-instruct-q4_k_m-cube-cube-2-4",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "cube",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "cube-2",
+          "rank": 1,
+          "scoring": "efficiency",
+          "parKind": "optimal",
+          "seeds": [
+            "cube/cube-2/public/0",
+            "cube/cube-2/public/1",
+            "cube/cube-2/public/2",
+            "cube/cube-2/public/3"
+          ]
+        }
+      ]
+    }
+  ]
+}

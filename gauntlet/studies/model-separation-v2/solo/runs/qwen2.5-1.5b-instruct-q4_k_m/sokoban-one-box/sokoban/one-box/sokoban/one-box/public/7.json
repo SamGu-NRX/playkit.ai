@@ -1,0 +1,1988 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "sokoban",
+    "version": "1.0.0"
+  },
+  "tier": "one-box",
+  "seed": "sokoban/one-box/public/7",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "793578ff29522b82",
+      "reply": {
+        "text": "right",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-aFnAdCX9fm6EDNa9FQQvgtXk9yNTPcx7",
+          "reasoningChars": 0
+        }
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 382
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f0adba92b15bcd17",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 439,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-dZJ77OsNIOzFpCmXS9tpELLfHA5Zab8i",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 439,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 363
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "978eeaf4afced739",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-wXqnLRk8IzUoZWy1wV3V9tMMsUs8MgY2",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 360
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "793a67e3e90d3624",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Nqb9n0mhGRhTYIKYxdi49NpXYkjj1KRN",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 393
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "793a67e3e90d3624",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 458,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-OP7gLFSQtKfzN5I6CdC4MAYH6ttbVyCp",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 458,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 450
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6e1ff4faa73295de",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 436,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-pBEACa5XuCRYNYxsEmoZuafQUwY6i1Fe",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 436,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 365
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6e1ff4faa73295de",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 457,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-XGF6XPk48nJzqvxbD6Jj44Z17aEEgeUG",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 457,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 510
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9542a1322c107cbf",
+      "reply": {
+        "text": "down",
+        "usage": {
+          "inputTokens": 434,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-tXkoCOSbbRpCArgEI8LXc227AkXDh36J",
+          "reasoningChars": 0
+        }
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 434,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 450
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a042ae9b523b2837",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-BkQDVRYtCySFCbkxg8Ye4KR45YLD9GS8",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 449
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9eeb856b5f85081c",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-YzM46XC1VLSl3m6VliCI49h8fB0jScEh",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 437
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9eeb856b5f85081c",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 458,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-scnOIJMwLsMz0ygQQ0y2kWMSAQqapD8b",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 458,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 490
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e6e5af38d35c13ba",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-eoEQlUZiiB5o0TdMMJsV2xOcjaHvunCH",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 391
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e6e5af38d35c13ba",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 458,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-4hRIOhahaBbden3ErNLgIvdc3kthu1KE",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 458,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 500
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "92a615f2ffb70d81",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-EQl3vS1cuifA3PWMtGrkOAIp8YLwaP9s",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 409
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "92a615f2ffb70d81",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 458,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-fNkdybulpshkkJV4BK9nRUbOFzWp2uJW",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 458,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 507
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "29c3e35f8d682705",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-32B664fZvFJYTwDZT5Zb9XLtTknoyJmc",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 354
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "29c3e35f8d682705",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-8HQgc81fcyGra2lOZBKm4gr9fWhcKtIV",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 450
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2e3e9c48db120d3c",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-vU9MDDlrZwpwvnSvtJS4Uwcf2YVqM2qX",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 415
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2e3e9c48db120d3c",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-wIjmCXKGkWa4WevbP98j7iwex0ZmATZ1",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 490
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3ab4c6f797b349a2",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-aij7fcg23ZYxDHeuifsyiEyhUi8DeYxc",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 391
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3ab4c6f797b349a2",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 458,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-KyGK3lxFUCk4nZjfedVXPndgS7QJM6Pa",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 458,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 468
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2bd6a7d1a8d3bb47",
+      "reply": {
+        "text": "down",
+        "usage": {
+          "inputTokens": 435,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-a5fYxNuODgDqJvWFScY7yvxMx6TdFX9J",
+          "reasoningChars": 0
+        }
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 435,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 435
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9c8cae069732f40b",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 439,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-vKUbdeZoihbHxE9zT7Mpkd11AQd4vsqd",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 439,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 456
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "40ad5a9e54efaa04",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-KkaOZyLb9wRAH9aqSbI4mckmOqxXJ9fM",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 535
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "40ad5a9e54efaa04",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-OcWsZv0TjUhnllAVMthFwV0Bs3yGqDvZ",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 665
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7688b1a41e4d660e",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-nI5WTbpFiaCyPBPf0uhN1qtFv8a90fVK",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 549
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7688b1a41e4d660e",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-bujAc396RFRgjc58phOCsiQDtw32O656",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 595
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "87b37bb41e414de1",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-QfURCP4ubrShbkeqI8D5e1mQnZ3aDWwW",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 632
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "87b37bb41e414de1",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-8AYCWwjtg7RXuqjpczITbu13yedP5yWG",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 690
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "8abc7f7208e2235d",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-K5e24kBrhYvvIWnxyID4jKnJHV9lYWem",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 557
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "8abc7f7208e2235d",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-EL8Atr5U2Z6jhvVmcfiQpQx0j49Sl90b",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 695
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c82818d177e4dec4",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-WLUwwbB813AQU7fmsU3bmIdU6drJDueL",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 551
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c82818d177e4dec4",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-T3CDuwOMiypGscMLooWSO4OkP9uY0cbJ",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 669
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "87cc0049a2b40966",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-FZ5tm9hLftrEAt9RQPQVHJ2Dk3pWab4P",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 538
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "87cc0049a2b40966",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 458,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-uGWRHpv2IOKyCzKF5nnUvwaaKHaV0cF2",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 458,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 538
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c6c3d529bf917ccf",
+      "reply": {
+        "text": "down",
+        "usage": {
+          "inputTokens": 435,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-vd53jrPy6f4DbmVNkhXlii9EGDAZjpEn",
+          "reasoningChars": 0
+        }
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 435,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 485
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "382a3ab03ff73a1b",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 439,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-CvlP0EYCy4jNHd0lPGUDR6Vm0c12iOEi",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 439,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 466
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bbd3853029e1ef40",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-dPeVXG4wVpGcBjFrKSNy5ZaZJXn5C7e6",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 471
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bbd3853029e1ef40",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-ANCntGtzklb1URWUs03gQ5y09MYi61oO",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 508
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b0987329c9aa0e72",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Ral8Jdxj6l0xRHohyQPMH7cEONLJXI98",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 462
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b0987329c9aa0e72",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-AzOukdR1l392e61qUZg3S5t0kfwbb8Pc",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 562
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f0f35e7e5a87bd11",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-jBfh4UDqvUGkCUPnuZVQd5HdhdQW3YMu",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 482
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f0f35e7e5a87bd11",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Q4Y0OLAKykQoBuwdfQUvwB5PnHKa4rR7",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 483
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "01ed0dad18d119cd",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Clwu6JjlAfjMiRXl61ZYw0ciL9evDTvt",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 407
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "01ed0dad18d119cd",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-czzLjDMa5xGkVcGG4zosvqME1cNIRJwF",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 534
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b1d83674cbbb40a0",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-FjtqvI61Et1RIs8O2LsL8kzCTLeViE4r",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 576
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b1d83674cbbb40a0",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-RAgFRYrPHPgf5zMztrwSS8QxRBNXX2Fx",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 506
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "76e8c155904ba95e",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-utWBcrk47Quq6M5gN5Idj5E1flktnKx0",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 435
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "76e8c155904ba95e",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 458,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-c9J9XpBvgQaH3PbtIFjO6WDo9ka8ynzH",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 458,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 437
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "78a4f936ca4977b7",
+      "reply": {
+        "text": "down",
+        "usage": {
+          "inputTokens": 435,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-a7wGSOpMWdyTliccHWTcWqyDM3CNyLHB",
+          "reasoningChars": 0
+        }
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 435,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 400
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4573b508ded43997",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 439,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-VmbURdHfPmXiR7wkpJVFcaCYCBpNGcku",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 439,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 382
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "688ebae0a3ab01bc",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-VpfmIwkdIAbluwKpuJcHvpNrwUwSCbNO",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 372
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "688ebae0a3ab01bc",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-bSL83xpuY5MTwmD5jceR3Dm6RzIL3qto",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 446
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f240d2f818196162",
+      "reply": {
+        "text": "right",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-M4metJ3HVkdh1mWZQ0pOaISVKFNysb89",
+          "reasoningChars": 0
+        }
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 382
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ddcdd8a2f7fc1f4b",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-wwZggWsSMik9wankIDFmgV0xeuIXvFwG",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 399
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ddcdd8a2f7fc1f4b",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-IQCBy4lZ2REqZa8oLmV6TBfKOjxSG6XC",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 485
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c036282ddbf51e6d",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-gzTrDYCcqf0v5DPcUiRrsKMGEhUBSHGD",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 385
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c036282ddbf51e6d",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-M9hiVjpTP2dcfgLeFvxdQMN9ywnUS2j3",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 425
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "33ce5854af9f5be6",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-QJqywHe50yW2kbf35gQzWLdDimXoFZio",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 386
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "33ce5854af9f5be6",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 459,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-3TSGvvAjNGIr6sCeyfMavATNUG6LiRw3",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 459,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 426
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d6ce15ddf0e3e42e",
+      "reply": {
+        "text": "down",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-rJnujXNixplY7SleCQZnXTrsolMlY7UX",
+          "reasoningChars": 0
+        }
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 352
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2030b9e7f7215644",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 440,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-S2k6fkEwI9jlSzGYsdh1Xh4HSYcptCBD",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 440,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 377
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "781b38422286d42e",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 440,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-2RpBRs2jArIFzQQNFONIHdU660Mmjmgl",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 440,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 414
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "1ff54a526a367221",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-l9MRbTGxulgetvipEfsWNGneCRguN1Lx",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 444
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6de28400eedafad3",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-qjWuWkpPgOUHv038bBtQs5vjplMxnRmn",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 344
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6de28400eedafad3",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 458,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-A4HS9Ifqo5S255Ovh9Hq4HvwtWMSmJay",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 458,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 411
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "86e948a79ebbdc76",
+      "reply": {
+        "text": "down",
+        "usage": {
+          "inputTokens": 435,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-v0QfFGjoyKoppq0nUQyCh9SCU7gJ2KCk",
+          "reasoningChars": 0
+        }
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 435,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 327
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "671cb53155377fca",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 439,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-oSANbq8RGYibMQIXYtZqDYmeTg21TLFp",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 439,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 365
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5ddb9b6b95624945",
+      "reply": {
+        "text": "right",
+        "usage": {
+          "inputTokens": 438,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-b5fZLEDD4S1va7VMUjESWR8MrGOudx5k",
+          "reasoningChars": 0
+        }
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 438,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 345
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bf7eb52c88145e0b",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 439,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-4D514VVW0Iu6hsBbLAfHxiC24khM5w3f",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 439,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 355
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "59200e3827b5a490",
+      "reply": {
+        "text": "right",
+        "usage": {
+          "inputTokens": 435,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-6NY96W9aIRcLcXrtq2Yef1ndt2AxhuNw",
+          "reasoningChars": 0
+        }
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 435,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 377
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3e6e1cf466f009c4",
+      "reply": {
+        "text": "up",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-EpD1QqEnC8YUaVmckx7DP9ACjjREamKV",
+          "reasoningChars": 0
+        }
+      },
+      "action": "up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 355
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3e6e1cf466f009c4",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 458,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-EILbhgfU1jYdrIQHDjWZW7Ha69SBDZtx",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 458,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 432
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e0f77079b737d079",
+      "reply": {
+        "text": "down",
+        "usage": {
+          "inputTokens": 435,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-TN19WbOxZotL8f1nsVrsZJ2vyMVGKgsy",
+          "reasoningChars": 0
+        }
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 435,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 342
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "cc84c4bd830be34d",
+      "reply": {
+        "text": "left",
+        "usage": {
+          "inputTokens": 439,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-m8Po0n8w0kVa7km5g4A0qd3pfzbtYRjq",
+          "reasoningChars": 0
+        }
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 439,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 397
+    }
+  ],
+  "end": {
+    "reason": "budget-exhausted",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "budget-exhausted",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 75,
+    "invalidActions": 26,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:21:22.332Z",
+  "finishedAt": "2026-10-16T11:21:56.417Z"
+}

@@ -111,7 +111,11 @@ export class Play2048Adapter extends Adapter {
             continue;
           }
 
-          const scoreText = (scoreElement.textContent || "").trim();
+          // Read the element's own text: the game adds a transient
+          // .score-addition child (e.g. "+8") during score animations, and
+          // textContent would concatenate it onto the score ("2428+8" then
+          // strips to 24288).
+          const scoreText = this._readOwnScoreText(scoreElement);
           if (!scoreText) continue;
 
           const sanitized = scoreText.replace(/[^\d]/g, "");
@@ -127,6 +131,19 @@ export class Play2048Adapter extends Adapter {
     } catch (error) {
       return null;
     }
+  }
+
+  /**
+   * Read a score container's own text, excluding transient child elements
+   * such as the "+N" .score-addition animation node.
+   * @private
+   * @param {Element} element Score container element
+   * @returns {string} The container's own score text
+   */
+  _readOwnScoreText(element) {
+    const clone = element.cloneNode(true);
+    clone.querySelectorAll(".score-addition").forEach((node) => node.remove());
+    return (clone.textContent || "").trim();
   }
 
   /**

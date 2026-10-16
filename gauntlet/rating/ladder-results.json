@@ -1,0 +1,2074 @@
+{
+  "meta": {
+    "run": "gauntlet/rating/ladder.js",
+    "builtinOnly": false,
+    "gamesPerColour": 20,
+    "bootstrapReplicates": 2000,
+    "anchor": {
+      "rung": "chess-paper",
+      "rating": 1000
+    },
+    "chessSpec": {
+      "id": "chess",
+      "version": "1.0.0"
+    },
+    "chessStockfishSpec": {
+      "id": "chess-stockfish",
+      "version": "1.0.0"
+    },
+    "stockfish": {
+      "binaryPath": "/usr/games/stockfish",
+      "id": "Stockfish 17.1"
+    },
+    "git": {
+      "baseCommit": "e4f8c6f2bdbc0c20cbbec5f638dd2c97ffbfa4ee",
+      "branch": "obv/burst7-playkit-chess-rating"
+    },
+    "finishedAt": "2026-10-16T04:13:13.765Z"
+  },
+  "pairs": {
+    "paper-vs-wood": {
+      "pairId": "paper-vs-wood",
+      "agentRung": "chess-wood",
+      "opponentRung": "chess-paper",
+      "games": [
+        {
+          "seed": "rating/paper-vs-wood/0",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 52,
+          "steps": 104
+        },
+        {
+          "seed": "rating/paper-vs-wood/1",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 61,
+          "steps": 122
+        },
+        {
+          "seed": "rating/paper-vs-wood/2",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 70,
+          "steps": 140
+        },
+        {
+          "seed": "rating/paper-vs-wood/3",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 84,
+          "steps": 169
+        },
+        {
+          "seed": "rating/paper-vs-wood/4",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 53,
+          "steps": 105
+        },
+        {
+          "seed": "rating/paper-vs-wood/5",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 57,
+          "steps": 113
+        },
+        {
+          "seed": "rating/paper-vs-wood/6",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 37,
+          "steps": 74
+        },
+        {
+          "seed": "rating/paper-vs-wood/7",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 27,
+          "steps": 54
+        },
+        {
+          "seed": "rating/paper-vs-wood/8",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 37,
+          "steps": 74
+        },
+        {
+          "seed": "rating/paper-vs-wood/9",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 47,
+          "steps": 94
+        },
+        {
+          "seed": "rating/paper-vs-wood/10",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 29,
+          "steps": 57
+        },
+        {
+          "seed": "rating/paper-vs-wood/11",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 63,
+          "steps": 125
+        },
+        {
+          "seed": "rating/paper-vs-wood/12",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 51,
+          "steps": 101
+        },
+        {
+          "seed": "rating/paper-vs-wood/13",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 63,
+          "steps": 125
+        },
+        {
+          "seed": "rating/paper-vs-wood/14",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 24,
+          "steps": 48
+        },
+        {
+          "seed": "rating/paper-vs-wood/15",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 23,
+          "steps": 45
+        },
+        {
+          "seed": "rating/paper-vs-wood/16",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 93
+        },
+        {
+          "seed": "rating/paper-vs-wood/17",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 30,
+          "steps": 60
+        },
+        {
+          "seed": "rating/paper-vs-wood/18",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 91
+        },
+        {
+          "seed": "rating/paper-vs-wood/19",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 39,
+          "steps": 78
+        },
+        {
+          "seed": "rating/paper-vs-wood/20",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 91
+        },
+        {
+          "seed": "rating/paper-vs-wood/21",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 67,
+          "steps": 133
+        },
+        {
+          "seed": "rating/paper-vs-wood/22",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 54,
+          "steps": 108
+        },
+        {
+          "seed": "rating/paper-vs-wood/23",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 27,
+          "steps": 54
+        },
+        {
+          "seed": "rating/paper-vs-wood/24",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 92
+        },
+        {
+          "seed": "rating/paper-vs-wood/25",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 92,
+          "steps": 183
+        },
+        {
+          "seed": "rating/paper-vs-wood/26",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 56,
+          "steps": 112
+        },
+        {
+          "seed": "rating/paper-vs-wood/27",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 45,
+          "steps": 89
+        },
+        {
+          "seed": "rating/paper-vs-wood/28",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 48,
+          "steps": 96
+        },
+        {
+          "seed": "rating/paper-vs-wood/29",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 47,
+          "steps": 93
+        },
+        {
+          "seed": "rating/paper-vs-wood/30",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 27,
+          "steps": 53
+        },
+        {
+          "seed": "rating/paper-vs-wood/31",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 35,
+          "steps": 70
+        },
+        {
+          "seed": "rating/paper-vs-wood/32",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 25,
+          "steps": 50
+        },
+        {
+          "seed": "rating/paper-vs-wood/33",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 24,
+          "steps": 47
+        },
+        {
+          "seed": "rating/paper-vs-wood/34",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 36,
+          "steps": 71
+        },
+        {
+          "seed": "rating/paper-vs-wood/35",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 92
+        },
+        {
+          "seed": "rating/paper-vs-wood/36",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 47,
+          "steps": 93
+        },
+        {
+          "seed": "rating/paper-vs-wood/37",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 91
+        },
+        {
+          "seed": "rating/paper-vs-wood/38",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 48,
+          "steps": 95
+        },
+        {
+          "seed": "rating/paper-vs-wood/39",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 37,
+          "steps": 74
+        }
+      ],
+      "rawScore": {
+        "score": 32,
+        "n": 40
+      }
+    },
+    "wood-vs-sf-250": {
+      "pairId": "wood-vs-sf-250",
+      "agentRung": "chess-wood",
+      "opponentRung": "chess-stockfish-sf-250",
+      "games": [
+        {
+          "seed": "rating/wood-vs-sf-250/0",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 22,
+          "steps": 44
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/1",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 26,
+          "steps": 53
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/2",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 147,
+          "steps": 294
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/3",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 28,
+          "steps": 57
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/4",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 34,
+          "steps": 68
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/5",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 36,
+          "steps": 72
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/6",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 21,
+          "steps": 43
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/7",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 84,
+          "steps": 168
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/8",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 32,
+          "steps": 64
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/9",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 135,
+          "steps": 271
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/10",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "budget-exhausted",
+          "agentActions": 150,
+          "steps": 301
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/11",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 27,
+          "steps": 55
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/12",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 29,
+          "steps": 59
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/13",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 83,
+          "steps": 167
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/14",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 77,
+          "steps": 153
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/15",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 97,
+          "steps": 195
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/16",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 107,
+          "steps": 214
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/17",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 17,
+          "steps": 34
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/18",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 51,
+          "steps": 101
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/19",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 26,
+          "steps": 53
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/20",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "budget-exhausted",
+          "agentActions": 150,
+          "steps": 300
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/21",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 54,
+          "steps": 108
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/22",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 44,
+          "steps": 89
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/23",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 76,
+          "steps": 152
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/24",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 30,
+          "steps": 60
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/25",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 33,
+          "steps": 65
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/26",
+          "seat": 1,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 53,
+          "steps": 105
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/27",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 113,
+          "steps": 227
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/28",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 55,
+          "steps": 110
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/29",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 25,
+          "steps": 50
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/30",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 30,
+          "steps": 60
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/31",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 71,
+          "steps": 143
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/32",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 17,
+          "steps": 35
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/33",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "budget-exhausted",
+          "agentActions": 150,
+          "steps": 301
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/34",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 23,
+          "steps": 46
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/35",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 60,
+          "steps": 120
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/36",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 92
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/37",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 21,
+          "steps": 43
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/38",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 47,
+          "steps": 94
+        },
+        {
+          "seed": "rating/wood-vs-sf-250/39",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 29,
+          "steps": 59
+        }
+      ],
+      "rawScore": {
+        "score": 9,
+        "n": 40
+      }
+    },
+    "sf-250-vs-sf-1k": {
+      "pairId": "sf-250-vs-sf-1k",
+      "agentRung": "chess-stockfish-sf-250",
+      "opponentRung": "chess-stockfish-sf-1k",
+      "games": [
+        {
+          "seed": "rating/sf-250-vs-sf-1k/0",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 38,
+          "steps": 77
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/1",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 32,
+          "steps": 64
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/2",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 66,
+          "steps": 132
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/3",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 93
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/4",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 39,
+          "steps": 78
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/5",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 93
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/6",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 30,
+          "steps": 61
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/7",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 55,
+          "steps": 111
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/8",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 76,
+          "steps": 152
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/9",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 71,
+          "steps": 142
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/10",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 43,
+          "steps": 86
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/11",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 92,
+          "steps": 183
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/12",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 52,
+          "steps": 105
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/13",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 11,
+          "steps": 22
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/14",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 34,
+          "steps": 68
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/15",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 41,
+          "steps": 83
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/16",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 71,
+          "steps": 142
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/17",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 93
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/18",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 54,
+          "steps": 108
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/19",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 42,
+          "steps": 84
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/20",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 29,
+          "steps": 58
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/21",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 43,
+          "steps": 87
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/22",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 40,
+          "steps": 80
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/23",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 47,
+          "steps": 95
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/24",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 48,
+          "steps": 96
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/25",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 56,
+          "steps": 112
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/26",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 49,
+          "steps": 99
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/27",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 32,
+          "steps": 64
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/28",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 41,
+          "steps": 83
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/29",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 34,
+          "steps": 68
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/30",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 39,
+          "steps": 78
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/31",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 30,
+          "steps": 61
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/32",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 39,
+          "steps": 78
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/33",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 49,
+          "steps": 99
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/34",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 41,
+          "steps": 83
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/35",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 35,
+          "steps": 71
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/36",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 125,
+          "steps": 251
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/37",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 29,
+          "steps": 59
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/38",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 67,
+          "steps": 134
+        },
+        {
+          "seed": "rating/sf-250-vs-sf-1k/39",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 76,
+          "steps": 152
+        }
+      ],
+      "rawScore": {
+        "score": 1.5,
+        "n": 40
+      }
+    },
+    "sf-1k-vs-sf-10k": {
+      "pairId": "sf-1k-vs-sf-10k",
+      "agentRung": "chess-stockfish-sf-1k",
+      "opponentRung": "chess-stockfish-sf-10k",
+      "games": [
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/0",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 53,
+          "steps": 106
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/1",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 42,
+          "steps": 85
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/2",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 45,
+          "steps": 91
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/3",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 28,
+          "steps": 57
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/4",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 48,
+          "steps": 96
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/5",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 62,
+          "steps": 125
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/6",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 45,
+          "steps": 91
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/7",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 47,
+          "steps": 95
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/8",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 18,
+          "steps": 35
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/9",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 29,
+          "steps": 59
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/10",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 34,
+          "steps": 69
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/11",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 93
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/12",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 52,
+          "steps": 105
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/13",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 28,
+          "steps": 56
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/14",
+          "seat": 1,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 31,
+          "steps": 61
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/15",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 48,
+          "steps": 97
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/16",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 45,
+          "steps": 90
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/17",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 19,
+          "steps": 38
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/18",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 35,
+          "steps": 71
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/19",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 42,
+          "steps": 85
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/20",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 42,
+          "steps": 84
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/21",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 23,
+          "steps": 46
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/22",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 27,
+          "steps": 54
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/23",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 47,
+          "steps": 95
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/24",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 44,
+          "steps": 89
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/25",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 43,
+          "steps": 87
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/26",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 52,
+          "steps": 104
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/27",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 40,
+          "steps": 80
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/28",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 22,
+          "steps": 44
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/29",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 23,
+          "steps": 47
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/30",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 55,
+          "steps": 111
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/31",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 31,
+          "steps": 62
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/32",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 45,
+          "steps": 91
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/33",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 47,
+          "steps": 95
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/34",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 45,
+          "steps": 90
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/35",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 34,
+          "steps": 68
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/36",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 67,
+          "steps": 135
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/37",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 59,
+          "steps": 118
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/38",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 47,
+          "steps": 95
+        },
+        {
+          "seed": "rating/sf-1k-vs-sf-10k/39",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 34,
+          "steps": 68
+        }
+      ],
+      "rawScore": {
+        "score": 1,
+        "n": 40
+      }
+    },
+    "sf-10k-vs-sf-100k": {
+      "pairId": "sf-10k-vs-sf-100k",
+      "agentRung": "chess-stockfish-sf-10k",
+      "opponentRung": "chess-stockfish-sf-100k",
+      "games": [
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/0",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 51,
+          "steps": 102
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/1",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 93
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/2",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 56,
+          "steps": 111
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/3",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 40,
+          "steps": 81
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/4",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 58,
+          "steps": 117
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/5",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 83,
+          "steps": 166
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/6",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 70,
+          "steps": 140
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/7",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 58,
+          "steps": 116
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/8",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 55,
+          "steps": 110
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/9",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 50,
+          "steps": 101
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/10",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 54,
+          "steps": 109
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/11",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 58,
+          "steps": 117
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/12",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 92
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/13",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 83,
+          "steps": 166
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/14",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 51,
+          "steps": 103
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/15",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 55,
+          "steps": 110
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/16",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 31,
+          "steps": 63
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/17",
+          "seat": 0,
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 94,
+          "steps": 188
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/18",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 57,
+          "steps": 115
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/19",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 58,
+          "steps": 117
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/20",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 62,
+          "steps": 125
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/21",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 54,
+          "steps": 109
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/22",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 93
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/23",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 62,
+          "steps": 125
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/24",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 33,
+          "steps": 67
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/25",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 53,
+          "steps": 106
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/26",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 38,
+          "steps": 77
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/27",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 83,
+          "steps": 166
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/28",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 55,
+          "steps": 111
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/29",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 65,
+          "steps": 130
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/30",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 49,
+          "steps": 99
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/31",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 51,
+          "steps": 102
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/32",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 58,
+          "steps": 116
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/33",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 86,
+          "steps": 172
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/34",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 54,
+          "steps": 109
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/35",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 52,
+          "steps": 105
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/36",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 61,
+          "steps": 123
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/37",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 51,
+          "steps": 102
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/38",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 29,
+          "steps": 58
+        },
+        {
+          "seed": "rating/sf-10k-vs-sf-100k/39",
+          "seat": 0,
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 66,
+          "steps": 132
+        }
+      ],
+      "rawScore": {
+        "score": 2,
+        "n": 40
+      }
+    },
+    "skip-paper-vs-sf-1k": {
+      "pairId": "skip-paper-vs-sf-1k",
+      "agentRung": "chess-paper",
+      "opponentRung": "chess-stockfish-sf-1k",
+      "games": [
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/0",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 27,
+          "steps": 55
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/1",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 22,
+          "steps": 45
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/2",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 46,
+          "steps": 93
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/3",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 38,
+          "steps": 76
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/4",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 43,
+          "steps": 87
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/5",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 51,
+          "steps": 102
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/6",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 49,
+          "steps": 99
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/7",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 37,
+          "steps": 75
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/8",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 28,
+          "steps": 56
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/9",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 19,
+          "steps": 38
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/10",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 37,
+          "steps": 75
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/11",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 37,
+          "steps": 75
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/12",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 45,
+          "steps": 91
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/13",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 7,
+          "steps": 14
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/14",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 32,
+          "steps": 64
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/15",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 57,
+          "steps": 114
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/16",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 44,
+          "steps": 89
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/17",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 31,
+          "steps": 63
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/18",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 22,
+          "steps": 45
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/19",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 30,
+          "steps": 60
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/20",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 24,
+          "steps": 48
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/21",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 29,
+          "steps": 58
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/22",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 18,
+          "steps": 37
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/23",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 27,
+          "steps": 54
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/24",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 25,
+          "steps": 50
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/25",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 69,
+          "steps": 139
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/26",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 63,
+          "steps": 126
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/27",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 43,
+          "steps": 87
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/28",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 39,
+          "steps": 79
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/29",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 43,
+          "steps": 86
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/30",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 45,
+          "steps": 90
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/31",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 61,
+          "steps": 123
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/32",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 19,
+          "steps": 38
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/33",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 63,
+          "steps": 126
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/34",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 32,
+          "steps": 65
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/35",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 31,
+          "steps": 62
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/36",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 53,
+          "steps": 107
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/37",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 22,
+          "steps": 45
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/38",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 71,
+          "steps": 142
+        },
+        {
+          "seed": "rating/skip-paper-vs-sf-1k/39",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 23,
+          "steps": 46
+        }
+      ],
+      "rawScore": {
+        "score": 0,
+        "n": 40
+      }
+    }
+  },
+  "rawScores": {
+    "chess-wood": 41,
+    "chess-paper": 8,
+    "chess-stockfish-sf-250": 32.5,
+    "chess-stockfish-sf-1k": 79.5,
+    "chess-stockfish-sf-10k": 41,
+    "chess-stockfish-sf-100k": 38
+  },
+  "fit": {
+    "ratings": {
+      "chess-wood": 1243.598664985884,
+      "chess-paper": 1000,
+      "chess-stockfish-sf-250": 1460.9903255075853,
+      "chess-stockfish-sf-1k": 2037.396994083647,
+      "chess-stockfish-sf-10k": 2673.822836894247,
+      "chess-stockfish-sf-100k": 3185.324277275379
+    },
+    "intervals": {
+      "chess-wood": {
+        "low": 1161.2678539941708,
+        "high": 1352.2504682459976,
+        "mean": 1247.8904263455593
+      },
+      "chess-paper": {
+        "low": 1000,
+        "high": 1000,
+        "mean": 1000
+      },
+      "chess-stockfish-sf-250": {
+        "low": 1329.4785909620055,
+        "high": 1641.4719526917456,
+        "mean": 1471.0157487376553
+      },
+      "chess-stockfish-sf-1k": {
+        "low": 1857.8391868567928,
+        "high": 2310.139533541864,
+        "mean": 2063.9637467536177
+      },
+      "chess-stockfish-sf-10k": {
+        "low": 2428.5422046631284,
+        "high": 3014.493617200449,
+        "mean": 2707.351994016883
+      },
+      "chess-stockfish-sf-100k": {
+        "low": 2900.5262253271876,
+        "high": 3623.5803471694626,
+        "mean": 3238.3512735469844
+      }
+    },
+    "meta": {
+      "iterations": 14,
+      "gradientInfNorm": 3.8195575174926333e-13,
+      "replicates": 1999,
+      "divergentReplicates": 1
+    },
+    "error": null
+  }
+}

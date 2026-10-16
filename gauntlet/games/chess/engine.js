@@ -239,6 +239,8 @@ export function evaluateWhite(chess) {
   let whiteMaterial = 0;
   let blackMaterial = 0;
   let score = 0;
+  let whiteKingIndex = -1;
+  let blackKingIndex = -1;
   for (let square = 0; square <= 119; square++) {
     if (square & 0x88) {
       square += 7;
@@ -252,16 +254,25 @@ export function evaluateWhite(chess) {
     // Black pieces mirror the table vertically.
     const index = white ? row * 8 + file : (7 - row) * 8 + file;
     const value = PIECE_VALUES[piece.type];
-    let table = piece.type === 'k' ? KING_MIDDLE : PSTS[piece.type];
-    if (piece.type !== 'p' && piece.type !== 'k') {
+    if (piece.type === 'k') {
+      // King tables are applied after the scan: the endgame/middlegame
+      // choice needs the fully accumulated material for both sides, not
+      // the partial sum seen when each king happens to be visited.
+      if (white) whiteKingIndex = index;
+      else blackKingIndex = index;
+      continue;
+    }
+    if (piece.type !== 'p') {
       if (white) whiteMaterial += value;
       else blackMaterial += value;
     }
-    if (piece.type === 'k') {
-      table = whiteMaterial + blackMaterial <= ENDGAME_MATERIAL ? KING_END : KING_MIDDLE;
-    }
+    const table = PSTS[piece.type];
     score += white ? value + table[index] : -(value + table[index]);
   }
+  const kingTable =
+    whiteMaterial + blackMaterial <= ENDGAME_MATERIAL ? KING_END : KING_MIDDLE;
+  if (whiteKingIndex >= 0) score += kingTable[whiteKingIndex];
+  if (blackKingIndex >= 0) score -= kingTable[blackKingIndex];
   return score;
 }
 
@@ -494,15 +505,19 @@ export function quiescenceWhite(chess, params) {
   }
   const scored = orderMoves(moves.filter((move) => move.captured || move.promotion));
   let alpha = -Infinity;
-  let best = evaluateSideToMove(chess) * sign;
+  // Root maximizes from the side to move's perspective (matching the inner
+  // negamax quiescence) and converts to white's perspective exactly once at
+  // return. Maximizing white's perspective over the opponent's options would
+  // return white's best case when black is to move, biasing the truncation
+  // referee toward white.
+  let best = evaluateSideToMove(chess);
   for (const move of scored) {
     fast._makeMove(move);
     const score = -quiescence(chess, -Infinity, -alpha, qPlies - 1, budget);
     fast._undoMove();
-    const whiteScore = score * sign;
-    if (whiteScore > best) best = whiteScore;
+    if (score > best) best = score;
     if (best > alpha) alpha = best;
     if (budget.aborted) break;
   }
-  return best;
+  return best * sign;
 }

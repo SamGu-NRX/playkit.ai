@@ -66,7 +66,11 @@ function transformModule(absPath) {
           const aliasParts = part.split(/\s+as\s+/i).map((token) => token.trim());
           const original = aliasParts[0];
           const alias = aliasParts[1] || original;
-          lines.push(`exports.${alias} = ${tempVar}.${original};`);
+          // Local binding, so module code that uses a re-exported name
+          // bare (e.g. src/adapters/index.js's detectGame() referencing
+          // globalAdapterRegistry) resolves inside the built bundle.
+          lines.push(`const ${alias} = ${tempVar}.${original};`);
+          lines.push(`exports.${alias} = ${alias};`);
         });
 
       return lines.join("\n");

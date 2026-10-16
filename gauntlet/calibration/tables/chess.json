@@ -1,12 +1,11 @@
 {
-  "format": "playkit-gauntlet-calibration-table/1",
+  "format": "playkit-gauntlet-calibration-table/2",
   "game": {
     "id": "chess",
     "version": "1.0.0",
     "benchmark": true
   },
   "split": "public",
-  "seedsPerTier": 5,
   "baselines": {
     "random": {
       "tiers": {
@@ -124,7 +123,7 @@
             ]
           },
           "solvedFraction": null,
-          "episodes": 1
+          "episodes": 5
         }
       }
     },
@@ -135,33 +134,42 @@
           "rank": 1,
           "scoring": "outcome",
           "score": {
-            "value": null,
-            "ci95": null
+            "value": 0.5,
+            "ci95": [
+              0.1,
+              0.9
+            ]
           },
           "solvedFraction": null,
-          "episodes": 0
+          "episodes": 5
         },
         "wood": {
           "id": "wood",
           "rank": 2,
           "scoring": "outcome",
           "score": {
-            "value": null,
-            "ci95": null
+            "value": 0.3,
+            "ci95": [
+              0.1,
+              0.5
+            ]
           },
           "solvedFraction": null,
-          "episodes": 0
+          "episodes": 5
         },
         "steel": {
           "id": "steel",
           "rank": 3,
           "scoring": "outcome",
           "score": {
-            "value": null,
-            "ci95": null
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
           },
           "solvedFraction": null,
-          "episodes": 0
+          "episodes": 2
         },
         "granite": {
           "id": "granite",

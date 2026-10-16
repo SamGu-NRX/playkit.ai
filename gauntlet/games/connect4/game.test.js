@@ -18,7 +18,7 @@ import {
   legalCols,
 } from './rules.js';
 import { chooseExactMove, chooseMove, solveExact } from './engine.js';
-import game from './index.js';
+import game, { MIN_WIN_PLIES, MAX_WIN_PLIES } from './index.js';
 import { createEngineAgent, createGreedyAgent } from './baselines.js';
 import { runEpisode } from '../../core/runner.js';
 import { runConformance } from '../../core/conformance.js';
@@ -209,7 +209,7 @@ test('game: the tier ladder has ascending engine depths and a forced-win tier', 
       { opponent: 'engine', depth: 4 },
       { opponent: 'engine', depth: 8 },
       { opponent: 'engine', depth: 12 },
-      { opponent: 'engine', depth: 12, exact: true, minWinPlies: 7, maxWinPlies: 15 },
+      { opponent: 'engine', depth: 12, exact: true, minWinPlies: 17, maxWinPlies: 21 },
     ]
   );
   for (const tier of tiers) {
@@ -237,14 +237,19 @@ test('game: forced-win positions are generated, legal, and announced', () => {
     game.spec.tiers.find((t) => t.id === 'forced-win')
   );
   let wins = 0;
-  for (const seed of ['public-0', 'public-1', 'public-2']) {
+  // public-10 and public-56 are the seeds whose first generation pass finds
+  // no position; they exercise the retry pass, which must stay inside the
+  // advertised band.
+  for (const seed of ['public-0', 'public-1', 'public-2', 'public-10', 'public-56']) {
     const state = game.reset(tier, seed);
     assert.equal(state.status, 'playing');
     assert.ok(state.discs >= 18, `too few discs: ${state.discs}`);
     assert.equal(state.toMove, state.agentSeat);
     assert.ok(
-      state.forcedWinPlies !== null && state.forcedWinPlies >= 5 && state.forcedWinPlies <= 21,
-      `win distance out of range: ${state.forcedWinPlies}`
+      state.forcedWinPlies !== null &&
+        state.forcedWinPlies >= tier.params.minWinPlies &&
+        state.forcedWinPlies <= tier.params.maxWinPlies,
+      `win distance out of the advertised band: ${state.forcedWinPlies}`
     );
     const value = solveExact(state);
     assert.equal(value.verdict, 'win');
@@ -255,7 +260,16 @@ test('game: forced-win positions are generated, legal, and announced', () => {
     assert.ok(game.legalActions(state, seat).length > 0);
     wins++;
   }
-  assert.equal(wins, 3);
+  assert.equal(wins, 5);
+});
+
+test('game: the forced-win band constants are the exported tier contract', () => {
+  // The band must never go shallow again: the calibration defect this tier
+  // fixes came from positions weak agents could convert by luck.
+  assert.equal(typeof MIN_WIN_PLIES, 'number');
+  assert.equal(typeof MAX_WIN_PLIES, 'number');
+  assert.ok(MIN_WIN_PLIES >= 13, `band floor must stay deep, got ${MIN_WIN_PLIES}`);
+  assert.ok(MAX_WIN_PLIES >= MIN_WIN_PLIES, `band must be non-empty, got ${MIN_WIN_PLIES}..${MAX_WIN_PLIES}`);
 });
 
 test('game: reset is deterministic per tier and seed', () => {

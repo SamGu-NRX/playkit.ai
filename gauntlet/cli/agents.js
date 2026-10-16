@@ -4,6 +4,14 @@
  *   random                          — the bundled seeded random agent (baseline).
  *   baseline:<game>:<greedy|engine> — that game's bundled baseline, scoped to
  *                                     its own game's episodes in a suite run.
+ *   skill:<p>:<expert-spec>         — the skill dial (agents/skill-dial.js):
+ *                                     the expert degraded toward random play by
+ *                                     a per-turn noise probability p in [0, 1].
+ *                                     <expert-spec> is "random" or any baseline
+ *                                     spec, e.g. `skill:0.25:baseline:sokoban:
+ *                                     engine`. The agent id recorded in
+ *                                     trajectories is the dial's own,
+ *                                     `dial-<expert id>-p<p*100>`.
  *   model:<provider>/<model>        — an official-track model agent through
  *                                     harness/model-agent.js (provider
  *                                     anthropic, openai or openai-chat;
@@ -35,6 +43,7 @@
  */
 
 import { createRandomAgent } from '../agents/random.js';
+import { skillDial } from '../agents/skill-dial.js';
 import { createScriptedAgent } from '../harness/dry-run.js';
 import { createModelAgent } from '../harness/model-agent.js';
 import { getGame } from '../games/index.js';
@@ -229,6 +238,80 @@ export async function parseAgentSpec(text, options = {}) {
     };
   }
 
+  const skillMatch = /^skill:([^:]*):(.*)$/.exec(text);
+  if (skillMatch) {
+    const pRaw = skillMatch[1];
+    const expertSpec = skillMatch[2];
+    const p = Number(pRaw);
+    if (pRaw === '' || !Number.isFinite(p) || p < 0 || p > 1) {
+      throw new Error(
+        `agent spec "${text}": the skill dial's noise probability must be a number in [0, 1], got "${pRaw}"`
+      );
+    }
+    if (
+      options.dryRun ||
+      options.script ||
+      options.prices ||
+      options.maxOutputTokens !== undefined ||
+      options.callTimeoutMs !== undefined ||
+      options.thinkingBudget !== undefined ||
+      options.reasoningEffort !== undefined
+    ) {
+      throw new Error(
+        `agent spec "${text}" takes no --dry-run, --script, --prices, --max-output-tokens, --call-timeout-ms, --thinking-budget or --reasoning-effort flags`
+      );
+    }
+
+    // The dial is a baseline-track agent, so its expert is one too: "random"
+    // or any game packet's bundled baseline. A model spec cannot wrap — the
+    // dial needs the baseline track's legal actions on every turn.
+    if (expertSpec === 'random') {
+      return {
+        text,
+        gameId: null,
+        track: 'baseline',
+        dryRun: false,
+        createForEpisode({ seed }) {
+          return skillDial(createRandomAgent({ episodeSeed: seed, id: 'random' }), p, {
+            episodeSeed: seed,
+          });
+        },
+      };
+    }
+    const expertMatch = /^baseline:([a-z0-9-]+):(greedy|engine)$/.exec(expertSpec);
+    if (!expertMatch) {
+      throw new Error(
+        expertSpec.startsWith('model:')
+          ? `agent spec "${text}": the skill dial plays the baseline track, so its expert must be "random" or a baseline spec, not a model spec`
+          : `agent spec "${text}": the expert must be "random" or "baseline:<game>:<greedy|engine>", got "${expertSpec}"`
+      );
+    }
+    const expertGameId = expertMatch[1];
+    const expertKind = /** @type {'greedy' | 'engine'} */ (expertMatch[2]);
+    getGame(expertGameId); // fail fast on an unknown game id
+    const expertFactory = BASELINE_FACTORIES[expertGameId];
+    if (!expertFactory) {
+      throw new Error(
+        `game "${expertGameId}" ships no baseline agents; games with baselines: ${Object.keys(BASELINE_FACTORIES).join(', ')}`
+      );
+    }
+    return {
+      text,
+      gameId: expertGameId,
+      track: 'baseline',
+      dryRun: false,
+      async createForEpisode(context) {
+        if (context.game.spec.id !== expertGameId) {
+          throw new Error(
+            `agent spec "${text}" only plays game "${expertGameId}", not "${context.game.spec.id}"`
+          );
+        }
+        const expert = await expertFactory(expertKind, context);
+        return skillDial(expert, p, { episodeSeed: context.seed });
+      },
+    };
+  }
+
   const modelMatch = /^model:([a-z0-9-]+)\/(.+)$/.exec(text);
   if (modelMatch) {
     const provider = modelMatch[1];
@@ -411,6 +494,6 @@ export async function parseAgentSpec(text, options = {}) {
   }
 
   throw new Error(
-    `unknown agent spec "${text}"; expected "random", "baseline:<game>:<greedy|engine>" or "model:<provider>/<model>"`
+    `unknown agent spec "${text}"; expected "random", "baseline:<game>:<greedy|engine>", "skill:<p>:<expert-spec>" or "model:<provider>/<model>"`
   );
 }

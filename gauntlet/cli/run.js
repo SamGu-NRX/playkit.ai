@@ -46,6 +46,15 @@ import { parseAgentSpec } from './agents.js';
  *   token cap for live model specs, also recorded in run.json's limits.
  * @property {number} [callTimeoutMs] --call-timeout-ms: per-attempt timeout
  *   for live model specs, also recorded in run.json's limits.
+ * @property {number} [thinkingBudget] --thinking-budget: Anthropic
+ *   extended-thinking budget (budget_tokens), provider "anthropic" specs
+ *   only; rides on top of the reply's output cap, is part of the worst-case
+ *   cost quote, and is recorded in run.json's limits.
+ * @property {'low' | 'medium' | 'high'} [reasoningEffort] --reasoning-effort:
+ *   OpenAI reasoning effort (provider openai: reasoning.effort; provider
+ *   openai-chat: the chat-completions reasoning_effort field, which is how
+ *   Google's Gemini OpenAI-compatible endpoint takes it), recorded in
+ *   run.json's limits.
  * @property {boolean} [resume] Verify existing trajectory files and skip
  *   them; replay only missing or unverifiable ones.
  * @property {AbortSignal} [signal] Abort signal; a signalled run stops after
@@ -107,6 +116,12 @@ export async function runSuite(options) {
     ...(options.callTimeoutMs !== undefined
       ? { callTimeoutMs: options.callTimeoutMs }
       : {}),
+    ...(options.thinkingBudget !== undefined
+      ? { thinkingBudget: options.thinkingBudget }
+      : {}),
+    ...(options.reasoningEffort !== undefined
+      ? { reasoningEffort: options.reasoningEffort }
+      : {}),
   };
   const spec = await parseAgentSpec(options.agentSpecText, specOptions);
   const manifest = deriveManifest(suite, spec.gameId, options.limit);
@@ -136,6 +151,12 @@ export async function runSuite(options) {
       : {}),
     ...(options.callTimeoutMs !== undefined
       ? { callTimeoutMs: options.callTimeoutMs }
+      : {}),
+    ...(options.thinkingBudget !== undefined
+      ? { thinkingBudget: options.thinkingBudget }
+      : {}),
+    ...(options.reasoningEffort !== undefined
+      ? { reasoningEffort: options.reasoningEffort }
       : {}),
     ...(options.resume ? { resume: true } : {}),
     ...(options.signal ? { signal: options.signal } : {}),

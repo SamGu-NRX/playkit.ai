@@ -7,13 +7,14 @@ The official track runs any model through `createModelAgent` in
 |---|---|---|---|---|---|
 | `anthropic` | `<baseUrl>/v1/messages` | optional (default `https://api.anthropic.com`) | required — `ANTHROPIC_API_KEY`, override with `apiKeyEnv` | `usage.input_tokens` / `usage.output_tokens` | `anthropic/<model>` |
 | `openai` | `<baseUrl>/v1/responses` | optional (default `https://api.openai.com`) | required — `OPENAI_API_KEY`, override with `apiKeyEnv` | `usage.input_tokens` / `usage.output_tokens` | `openai/<model>` |
-| `openai-chat` | `<baseUrl>/v1/chat/completions` | **required** | optional (local servers often need none) — env var name set with `apiKeyEnv`; when unset, no `Authorization` header is sent | `usage.prompt_tokens` / `usage.completion_tokens` | `openai-chat/<model>` |
+| `openai-chat` | `<baseUrl>/v1/chat/completions` — a `baseUrl` already ending in `/chat/completions` (e.g. Google's Gemini endpoint `.../v1beta/openai/chat/completions`) is sent through as-is | **required** | optional (local servers often need none) — env var name set with `apiKeyEnv`; when unset, no `Authorization` header is sent | `usage.prompt_tokens` / `usage.completion_tokens` | `openai-chat/<model>` |
 
 Shared options for every provider: `model`, `maxOutputTokens` (default 4096),
 `params` (extra request-body fields; protocol fields win), `prices` (a price
 file keyed `"<provider>/<model>"`), `maxRetries` / `retryBaseDelayMs` (429/5xx
 and network errors retry with backoff; 4xx fails immediately), `fetchImpl`,
-`sleep`, `id`.
+`sleep`, `id`, plus the reasoning settings `thinkingBudget` / `reasoningEffort`
+(see the section below).
 
 Rules that hold for all providers:
 
@@ -39,6 +40,75 @@ Rules that hold for all providers:
   `reply.meta.reasoningChars`.
 - An empty or null reply `content` is treated as the model's reply: the runner
   counts it as an invalid attempt. It is not a transport error and not retried.
+
+## Reasoning settings: thinking budget and reasoning effort
+
+Two flags turn a model's internal reasoning on and keep it auditable: what
+reaches the wire, where the reasoning text goes, what the tokens cost, and
+what the run records.
+
+| Setting | Provider | Wire field | Values |
+|---|---|---|---|
+| `--thinking-budget <n>` | `anthropic` | `thinking: {type: "enabled", budget_tokens: n}` | integer ≥ 1024 |
+| `--reasoning-effort <v>` | `openai` | `reasoning: {effort: v}` | `low` \| `medium` \| `high` |
+| `--reasoning-effort <v>` | `openai-chat` | `reasoning_effort: v` | `low` \| `medium` \| `high` |
+
+Rules that hold for both:
+
+- **The settings are part of the agent's identity.** `--thinking-budget 10240`
+  on `model:anthropic/claude-opus-4-5` makes the agent id
+  `model:anthropic/claude-opus-4-5:thinking-budget=10240`, and `run.json`
+  records the setting in `limits.thinkingBudget` / `limits.reasoningEffort`:
+  the same model with different settings is a different leaderboard entry, not
+  a re-run of the same one. The spec layer accepts the same settings as a
+  suffix — `model:anthropic/claude-opus-4-5:thinking-budget=10240`,
+  `model:openai/gpt-5.2:reasoning-effort=high` — and a trailing segment that
+  matches neither pattern stays part of the model id, so Ollama tags like
+  `model:openai-chat/qwen2.5:7b` keep working. Setting one setting both ways
+  (suffix and flag) is an error.
+- **A reasoning setting never applies to a `--dry-run` rehearsal or a
+  `baseline:` agent**; both are loud parse errors naming the spec.
+- **The provider pairing is validated, not silently ignored.** A thinking
+  budget on a non-Anthropic spec (or an effort on an Anthropic spec) fails at
+  parse time with the spec named in the message.
+
+Anthropic specifics:
+
+- **Thinking tokens spend `max_tokens`, so the client raises it.** Anthropic
+  counts thinking tokens against `max_tokens`; with a budget set, the client
+  sends `max_tokens = maxOutputTokens + thinkingBudget`, keeping the reply's
+  full text budget on top of the thinking budget.
+- **Thinking text never enters the reply text.** `thinking` and
+  `redacted_thinking` content blocks are stripped; the runner parses only
+  visible text. (A redacted block is encrypted server-side and never visible
+  to the client.)
+- **Cut-off reasoning is recorded, not hidden.** A reply that ends before any
+  text — `stop_reason: "max_tokens"` while still thinking — records empty
+  reply text (an invalid attempt for the runner) instead of throwing a
+  transport error, with the usage honestly recorded.
+- **The dollar cap reserves the budget.** The worst-case reservation is the
+  wire `max_tokens` — the text cap plus the thinking budget — so a
+  thinking-heavy reply cannot push realized spend past `--max-usd`.
+
+OpenAI and chat-completions specifics:
+
+- The `reasoning` output item on Responses is stripped from the reply text,
+  same as Anthropic's blocks. A response with `status: "incomplete"` and no
+  message item (cut off mid-reasoning by the output cap) records empty reply
+  text and its usage instead of throwing.
+- Reasoning tokens are inside the reported output total on both providers, and
+  that total is what is billed. The provider's breakdown (Anthropic
+  `usage.output_tokens_details.thinking_tokens`, OpenAI Responses
+  `usage.output_tokens_details.reasoning_tokens`, chat-completions
+  `usage.completion_tokens_details.reasoning_tokens`) is recorded per step as
+  `meta.reasoningTokens` when reported; cost follows the reported totals (see
+  `prices.example.json`).
+
+Deprecation note: Anthropic documents manual thinking-budget mode as
+deprecated on Claude 4.6 and not accepted on later models, which steer
+thinking adaptively instead — use `--thinking-budget` on models that accept
+manual mode, and keep the price file's `checked` date recording what a model
+accepted when the price was verified.
 
 Minimal example (`openai-chat`, no key, local server):
 

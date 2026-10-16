@@ -18,7 +18,9 @@
  *   run --suite <file> --agent <spec> --out <dir> [--limit <n>]
  *        [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]
  *        [--requests-per-minute <n>] [--max-output-tokens <n>]
- *        [--call-timeout-ms <ms>] [--prices <file>] [--dry-run --script <file>]
+ *        [--call-timeout-ms <ms>] [--thinking-budget <n>]
+ *        [--reasoning-effort <low|medium|high>] [--prices <file>]
+ *        [--dry-run --script <file>]
  *                                          Run the agent over the manifest.
  *   leaderboard --suite <file> [--out <dir>] [--scoring-profile <name>]
  *        [--json] <dirs...>
@@ -54,6 +56,21 @@
  *                                   bounds each attempt (a timed-out attempt
  *                                   retries like any transport error); both
  *                                   are recorded in run.json's limits.
+ *                                   --thinking-budget <n> turns on Anthropic
+ *                                   extended thinking with budget_tokens <n>
+ *                                   (provider anthropic only); it rides on top
+ *                                   of the reply's output cap and is part of
+ *                                   the worst-case cost quote. --reasoning-effort
+ *                                   <low|medium|high> sets OpenAI reasoning
+ *                                   effort (provider openai; provider
+ *                                   openai-chat sends it as reasoning_effort,
+ *                                   which is how Google's Gemini
+ *                                   OpenAI-compatible endpoint takes it).
+ *                                   Settings are recorded in run.json's limits
+ *                                   and in the agent's leaderboard label, and
+ *                                   can also be written inline on the spec as a
+ *                                   trailing :thinking-budget=<n> or
+ *                                   :reasoning-effort=<low|medium|high>.
  *
  * Node-only: imports `node:*` freely.
  * @module
@@ -92,7 +109,8 @@ function usage() {
       '       gauntlet run --suite <file> --agent <spec> --out <dir> [--limit <n>]',
       '                      [--max-invalid <n>] [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]',
       '                      [--requests-per-minute <n>] [--max-output-tokens <n>]',
-      '                      [--call-timeout-ms <ms>] [--prices <file>] [--dry-run --script <file>]',
+      '                      [--call-timeout-ms <ms>] [--thinking-budget <n>] [--reasoning-effort low|medium|high]',
+      '                      [--prices <file>] [--dry-run --script <file>]',
       '       gauntlet leaderboard --suite <file> [--out <dir>] [--scoring-profile rhae-v1] [--json] <dirs...>',
       '       gauntlet rate <dirs...> [--ladder <file>] [--json]',
       '       gauntlet serve',
@@ -177,7 +195,7 @@ function finiteNumberFlag(flags, name) {
 
 /**
  * @param {Map<string, string>} flags
- * @returns {{ dryRun: boolean, prices?: string, script?: string, baseUrl?: string, apiKeyEnv?: string, maxOutputTokens?: number, callTimeoutMs?: number }}
+ * @returns {{ dryRun: boolean, prices?: string, script?: string, baseUrl?: string, apiKeyEnv?: string, maxOutputTokens?: number, callTimeoutMs?: number, thinkingBudget?: number, reasoningEffort?: 'low' | 'medium' | 'high' }}
  */
 function modelFlags(flags) {
   return {
@@ -192,7 +210,31 @@ function modelFlags(flags) {
     ...(flags.has('call-timeout-ms')
       ? { callTimeoutMs: numberFlag(flags, 'call-timeout-ms') }
       : {}),
+    ...(flags.has('thinking-budget')
+      ? { thinkingBudget: numberFlag(flags, 'thinking-budget') }
+      : {}),
+    ...(flags.has('reasoning-effort')
+      ? {
+          reasoningEffort: validateReasoningEffort(
+            /** @type {string} */ (flags.get('reasoning-effort'))
+          ),
+        }
+      : {}),
   };
+}
+
+/**
+ * Validate an explicit --reasoning-effort value; the provider pairing is
+ * checked where the spec is parsed (cli/agents.js).
+ *
+ * @param {string} raw
+ * @returns {'low' | 'medium' | 'high'}
+ */
+function validateReasoningEffort(raw) {
+  if (raw !== 'low' && raw !== 'medium' && raw !== 'high') {
+    throw new Error(`--reasoning-effort must be low, medium or high, got ${JSON.stringify(raw)}`);
+  }
+  return raw;
 }
 
 // A closed pipe (e.g. `gauntlet list | head`) must not crash the process.

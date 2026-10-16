@@ -89,7 +89,7 @@ A **suite manifest** (`scoring/suite.js`, format
 `playkit-gauntlet-suite/1`) pins the benchmark: the split, the games, and —
 per tier — the exact seed list an entry must cover. Public suites list public
 seeds; eval suites derive salted seeds from a secret salt and record only the
-salt commitment. The twelve registered games span 42 tiers and 564 public
+salt commitment. The twelve registered games span 43 tiers and 569 public
 seeds; tic-tac-toe is the smoke game (scored, but `benchmark: false`, so it
 excludes entries from the benchmark-score aggregate while still counting
 toward coverage).

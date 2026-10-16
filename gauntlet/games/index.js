@@ -10,6 +10,7 @@ import chess from './chess/index.js';
 import chessEndgames from './chess-endgames/index.js';
 import chessStockfish from './chess-stockfish/index.js';
 import minesweeper from './minesweeper/index.js';
+import nonogram from './nonogram/index.js';
 import twoZeroFourEight from './2048/index.js';
 import sliding from './sliding/index.js';
 import sokoban from './sokoban/index.js';
@@ -34,6 +35,7 @@ export const GAMES = {
   connect4,
   mastermind,
   holdem,
+  nonogram,
 };
 
 /**

@@ -133,6 +133,12 @@ const BASELINE_FACTORIES = {
       ? createGreedyAgent({ episodeSeed: seed })
       : createEngineAgent({ episodeSeed: seed });
   },
+  async nonogram(kind, { seed }) {
+    const { createGreedyAgent, createEngineAgent } = await import('../games/nonogram/baselines.js');
+    return kind === 'greedy'
+      ? createGreedyAgent({ episodeSeed: seed })
+      : createEngineAgent({ episodeSeed: seed });
+  },
   async holdem(kind, { seed, agentSeat }) {
     const { makeBaseline } = await import('../games/holdem/baselines.js');
     return makeBaseline(kind, seed, agentSeat);

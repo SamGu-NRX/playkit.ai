@@ -1,0 +1,50 @@
+{
+  "format": "playkit-gauntlet-run/1",
+  "suite": {
+    "id": "gauntlet-public-model-separation-v2-versus-s12",
+    "split": "public",
+    "manifestSha256": "8e1fb1abe21c7449e9d3819571a35eb2727a400a8bceb89a8bed8174ed3ee157"
+  },
+  "git": {
+    "commit": "f1a6b9c16e748e2a28f0aafc4c53f22c54793aef"
+  },
+  "node": "v20.20.2",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "provider": "openai-chat",
+    "model": "qwen2.5-1.5b-instruct-q4_k_m"
+  },
+  "prices": {
+    "sha256": null
+  },
+  "startedAt": "2026-10-16T14:35:01.031Z",
+  "finishedAt": "2026-10-16T14:44:32.603Z",
+  "concurrency": 1,
+  "limits": {
+    "maxUsd": null,
+    "maxCalls": null,
+    "requestsPerMinute": null,
+    "maxOutputTokens": 256,
+    "callTimeoutMs": 60000,
+    "thinkingBudget": null,
+    "reasoningEffort": null
+  },
+  "spendUsd": 0,
+  "unknownCostSteps": 199,
+  "calls": 199,
+  "counts": {
+    "jobs": 48,
+    "played": 48,
+    "skipped": 0,
+    "replayed": 0,
+    "unplayed": 0,
+    "failed": 0
+  },
+  "skipped": [],
+  "replayed": [],
+  "unplayed": [],
+  "failed": [],
+  "stopped": null,
+  "stopReason": null
+}

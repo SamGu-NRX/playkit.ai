@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-GAUNTLET = HERE / "../.."
+GAUNTLET = HERE / "../../.."
 CALIBRATION = GAUNTLET / "calibration/tables"
 MODELS = ["0.5B", "1.5B", "7B"]
 MODEL_PARAMS = {"0.5B": 0.5, "1.5B": 1.5, "7B": 7}

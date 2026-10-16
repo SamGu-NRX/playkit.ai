@@ -11,7 +11,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { readFileSync, rmSync } from 'node:fs';
 import { once } from 'node:events';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chessStockfish } from './index.js';
@@ -183,11 +185,56 @@ test('wiring: GAUNTLET_STOCKFISH resolves to the fixture and the opponent answer
         assert.equal(reply.text, 'e7e5', `fixture pass ${pass} must answer e7e5`);
         assert.equal(reply.meta.engine, 'FakeFish 1.0');
         assert.equal(reply.meta.nodesBudget, 1_000);
+        assert.equal(reply.meta.binaryPath, FIXTURE);
+        assert.equal(reply.meta.nps, 60_000, 'nps comes from the last info line');
+        assert.deepEqual(reply.meta.score, { cp: 41 });
+        assert.deepEqual(reply.meta.options, {
+          Threads: 1,
+          Hash: 16,
+          MultiPV: 1,
+          Contempt: 0,
+        });
       } finally {
         await opponent.dispose();
       }
     }
   } finally {
+    if (previous === undefined) delete process.env[STOCKFISH_ENV_VAR];
+    else process.env[STOCKFISH_ENV_VAR] = previous;
+  }
+});
+
+test('wiring: the opponent pins exactly the documented setoption lines', async () => {
+  const previous = process.env[STOCKFISH_ENV_VAR];
+  process.env[STOCKFISH_ENV_VAR] = FIXTURE;
+  const record = path.join(
+    tmpdir(),
+    `gauntlet-setoptions-${process.pid}-${Date.now()}.log`
+  );
+  const opponent = createStockfishOpponentAgent({
+    tier: /** @type {TierSpec} */ (chessStockfish.spec.tiers[0]),
+    engineArgs: [`--record=${record}`],
+    idleTimeoutMs: 1_000,
+  });
+  try {
+    await opponent.act(/** @type {never} */ ({
+      observation: { data: { startFen: 'x', moves: [], fen: 'x' } },
+      seat: 1,
+    }));
+    const lines = readFileSync(record, 'utf8')
+      .split('\n')
+      .filter((line) => line.startsWith('setoption'));
+    // Exactly the documented configuration, in order — nothing else, even
+    // though real binaries advertise more (and newer ones fewer).
+    assert.deepEqual(lines, [
+      'setoption name Threads value 1',
+      'setoption name Hash value 16',
+      'setoption name MultiPV value 1',
+      'setoption name Contempt value 0',
+    ]);
+  } finally {
+    await opponent.dispose();
+    rmSync(record, { force: true });
     if (previous === undefined) delete process.env[STOCKFISH_ENV_VAR];
     else process.env[STOCKFISH_ENV_VAR] = previous;
   }
@@ -294,9 +341,20 @@ test('real engine: the opponent records the engine id and search stats', { skip:
   }));
   const meta = /** @type {any} */ (reply.meta);
   assert.match(/** @type {string} */ (meta.engine), /^Stockfish /);
+  assert.equal(meta.binaryPath, /** @type {string} */ (REAL_BINARY));
   assert.equal(meta.nodesBudget, 1_000);
   assert.equal(typeof meta.depth, 'number');
   assert.equal(typeof meta.searchedNodes, 'number');
+  assert.equal(typeof meta.nps, 'number');
+  // From the startpos at 1k nodes the engine reports a centipawn score; keep
+  // the assertion shape-honest rather than pinning the value.
+  assert.ok(meta.score === null || typeof meta.score.cp === 'number');
+  assert.deepEqual(meta.options, {
+    Threads: 1,
+    Hash: 16,
+    MultiPV: 1,
+    Contempt: 0,
+  });
   assert.match(reply.text, /^[a-h][1-8][a-h][1-8][qrbn]?$/);
   await /** @type {any} */ (opponent).dispose();
 });

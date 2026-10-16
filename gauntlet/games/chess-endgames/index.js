@@ -1,318 +1,199 @@
 /**
- * Chess Endgames: conversion tasks scored against a perfect defender. The
- * agent plays White and must convert a won KQK, KRK, KBBK or KBNK position
- * against tablebase-optimal defense; the score is the squared efficiency of
- * the conversion against the tablebase DTM. Pure JS, seeded, deterministic.
+ * Chess Endgames: the agent is White with winning material and must checkmate
+ * a Black king that defends with maximum resistance. Episodes are scored by
+ * efficiency against the exact optimum: the distance-to-mate (DTM) of the
+ * start position, read from the self-built tablebase in `tablebase.js`.
+ *
+ * State is plain JSON (FEN plus history counts), so it survives a round trip
+ * and chess.js is reconstructed from the FEN at every transition. The
+ * observation never reveals the DTM or the par value.
  *
  * @module
  */
 
 import { Chess } from 'chess.js';
 import { GauntletRuleError } from '../../core/errors.js';
-import { nextInt, streamFromSeed } from '../../core/rng.js';
-import { probe } from './tablebase.js';
+import { streamFromSeed } from '../../core/rng.js';
+import {
+  getTablebase,
+  positionFromPlacement,
+} from './tablebase.js';
 
 /** @import { Agent, Game, Observation, ParseResult, TierSpec, TurnContext } from '../../core/types.js' */
 
 /**
- * Game state: plain JSON, so it survives a round trip unchanged. The position
- * lives in `fen` (side to move included); the derived fields track progress.
- *
- * @typedef {object} EndgameState
- * @property {('kqk'|'krk'|'kbbk'|'kbnk')} eg Endgame id.
- * @property {string} fen Full FEN of the current position.
- * @property {number} startDtm Tablebase DTM (White moves to mate) of the
- *   starting position under perfect play by both sides.
- * @property {number} whiteMoves White moves completed so far.
- * @property {'playing' | 'mated' | 'stalemate' | 'bare-kings'} status
+ * @typedef {object} ChessEndgameResult
+ * @property {boolean} solved True when the agent delivered checkmate.
+ * @property {string} reason Why the game ended.
  */
-
-const ENDGAME_TITLES = {
-  kqk: 'K+Q vs K',
-  krk: 'K+R vs K',
-  kbbk: 'K+B+B vs K',
-  kbnk: 'K+B+N vs K',
-};
-
-/** Tier definitions: one per endgame, ordered easy to hard. */
-const TIER_DEFS = [
-  { id: 'kqk', rank: 1, maxActions: 25, band: [4, 10] },
-  { id: 'krk', rank: 2, maxActions: 40, band: [6, 16] },
-  { id: 'kbbk', rank: 3, maxActions: 48, band: [8, 19] },
-  { id: 'kbnk', rank: 4, maxActions: 83, band: [10, 33] },
-];
 
 /**
- * @param {'w' | 'b'} color
- * @returns {number}
+ * @typedef {object} ChessEndgameState
+ * @property {string} kind One of 'kqk' | 'krk' | 'kbbk' | 'kbnk'.
+ * @property {string} tierId Tier id, echoed in observations.
+ * @property {number} maxActions The tier's action budget, for display.
+ * @property {string} fen Current position, clocks maintained by chess.js.
+ * @property {number} par The start position's DTM (agent moves to mate).
+ * @property {Record<string, number>} history Occurrence counts of
+ *   `<placement> <side>` keys, for threefold repetition.
+ * @property {0 | 1} side Side to move: 0 White (agent), 1 Black (defender).
+ * @property {'playing' | 'over'} status
+ * @property {ChessEndgameResult | null} result Set exactly when status is over.
+ * @property {number} agentMoves White moves played so far.
+ * @property {number} ply Half-moves played so far.
  */
-function colorSeat(color) {
-  return color === 'w' ? 0 : 1;
+
+/** Piece letter per type, for building FEN placements. */
+const PIECE_UPPER = { q: 'Q', r: 'R', b: 'B', n: 'N' };
+
+/**
+ * The tier table: bands rise in floor and ceiling and every band maximum is
+ * the published DTM maximum of its ending (10/16/19/33, White to move).
+ *
+ * @param {string} kindId
+ * @returns {{ kind: string, bandMin: number, bandMax: number }}
+ */
+function tierParams(kindId) {
+  /** @type {Record<string, { kind: string, bandMin: number, bandMax: number }>} */
+  const bands = {
+    kqk: { kind: 'kqk', bandMin: 6, bandMax: 10 },
+    krk: { kind: 'krk', bandMin: 10, bandMax: 16 },
+    kbbk: { kind: 'kbbk', bandMin: 12, bandMax: 19 },
+    kbnk: { kind: 'kbnk', bandMin: 20, bandMax: 33 },
+  };
+  const params = bands[kindId];
+  if (!params) throw new Error(`unknown tier kind ${JSON.stringify(kindId)}`);
+  return params;
 }
 
 /**
- * Current side to move as a seat number.
+ * The piece types of a kind, in slot order (slot 0 is the table's first
+ * piece). For kbnk slot 0 is the bishop, matching tablebase.js.
  *
- * @param {string} fen
- * @returns {number}
+ * @param {string} kindId
+ * @returns {('q' | 'r' | 'b' | 'n')[]}
  */
-function seatToMove(fen) {
-  return colorSeat(/** @type {'w' | 'b'} */ (fen.split(' ')[1]));
+function pieceTypes(kindId) {
+  switch (kindId) {
+    case 'kqk':
+      return ['q'];
+    case 'krk':
+      return ['r'];
+    case 'kbbk':
+      return ['b', 'b'];
+    case 'kbnk':
+      return ['b', 'n'];
+    default:
+      throw new Error(`unknown kind ${JSON.stringify(kindId)}`);
+  }
 }
 
 /**
- * Apply a UCI move (from+to; no promotions exist in these endgames) to a FEN,
- * returning the new FEN. The move must be legal.
+ * FEN piece-placement field from squares.
  *
- * @param {string} fen
- * @param {string} from
- * @param {string} to
+ * @param {string} kindId
+ * @param {number} wk
+ * @param {number} bk
+ * @param {number[]} pieces Piece squares in slot order.
  * @returns {string}
  */
-function applyUci(fen, from, to) {
-  const chess = new Chess(fen);
-  chess.move({ from, to });
-  return chess.fen();
+function placementFromSquares(kindId, wk, bk, pieces) {
+  const types = pieceTypes(kindId);
+  /** @type {(string | null)[]} */
+  const grid = new Array(64).fill(null);
+  grid[wk] = 'K';
+  grid[bk] = 'k';
+  pieces.forEach((sq, i) => {
+    grid[sq] = PIECE_UPPER[types[i]];
+  });
+  /** @type {string[]} */
+  const ranks = [];
+  for (let r = 7; r >= 0; r--) {
+    let row = '';
+    let empty = 0;
+    for (let f = 0; f < 8; f++) {
+      const cell = grid[r * 8 + f];
+      if (cell === null) {
+        empty++;
+        continue;
+      }
+      if (empty > 0) {
+        row += String(empty);
+        empty = 0;
+      }
+      row += cell;
+    }
+    if (empty > 0) row += String(empty);
+    ranks.push(row);
+  }
+  return ranks.join('/');
 }
 
 /**
- * Classify a position for the state machine.
- *
- * @param {Chess} chess
- * @returns {EndgameState['status']}
- */
-function classify(chess) {
-  if (chess.isCheckmate()) return 'mated';
-  if (chess.isStalemate()) return 'stalemate';
-  if (chess.isInsufficientMaterial()) return 'bare-kings';
-  return 'playing';
-}
-
-/**
- * Build a state object from a position.
- *
- * @param {Pick<EndgameState, 'eg' | 'startDtm' | 'whiteMoves'>} base Fields carried over.
  * @param {string} fen
- * @returns {EndgameState}
+ * @returns {string} The `<placement> <side>` repetition key.
  */
-function makeState(base, fen) {
-  const status = classify(new Chess(fen));
-  return { ...base, fen, status };
+function repetitionKey(fen) {
+  const fields = fen.split(' ');
+  return `${fields[0]} ${fields[1]}`;
 }
 
 /**
- * Squared efficiency of a conversion that took `used` White moves against a
- * starting DTM of `par`: 1.0 for par-perfect conversion, decaying
- * quadratically as the agent takes extra moves.
- *
- * @param {number} par
- * @param {number} used
- * @returns {number}
+ * @param {string} fen
+ * @returns {number} The half-move clock (fifty-move rule counter).
  */
-function efficiency(par, used) {
-  if (used <= 0) return 0;
-  const ratio = par / used;
-  if (ratio >= 1) return 1;
-  return ratio * ratio;
+function halfmoveClock(fen) {
+  return Number(fen.split(' ')[4]);
 }
 
 /**
- * Generate a starting position for a tier by seeded rejection sampling: kings
- * never touching, Black not in check (White cannot be, with this material),
- * and a tablebase DTM inside the tier band. Deterministic per (tier, seed).
+ * Sample the tier's start position: legal, White to move, DTM inside the
+ * band. Deterministic in (tier, seed) through the core RNG stream.
  *
  * @param {TierSpec} tier
  * @param {string} seed
- * @returns {EndgameState}
+ * @returns {{ wk: number, bk: number, pieces: number[], dtm: number }}
  */
-function deal(tier, seed) {
-  const eg = /** @type {EndgameState['eg']} */ (tier.params.eg);
-  const bandMin = /** @type {number} */ (tier.params.bandMin);
-  const bandMax = /** @type {number} */ (tier.params.bandMax);
-  const stream = streamFromSeed(`${tier.id}/${seed}/deal`);
-  let rngState = stream.getState();
-  const drawSquare = () => {
-    const draw = nextInt(rngState, 0, 63);
-    rngState = draw.state;
-    return draw.value;
-  };
-  for (let attempt = 0; attempt < 20000; attempt++) {
-    const wk = drawSquare();
-    const bk = drawSquare();
-    const a1 = drawSquare();
-    let a2 = -1;
-    if (eg === 'kbbk' || eg === 'kbnk') {
-      a2 = drawSquare();
-    }
-    const squares = [wk, bk, a1, a2];
-    if (new Set(squares).size !== squares.length) continue;
-    if (
-      Math.max(Math.abs((wk >> 3) - (bk >> 3)), Math.abs((wk & 7) - (bk & 7))) <= 1
-    ) {
-      continue; // kings touching
-    }
-    const placement = toPlacement(wk, a1, a2, bk, eg);
-    const fen = `${placement} w - - 0 1`;
-    const chess = new Chess(fen);
-    if (chess.isCheck()) continue; // Black (not to move) may not be in check
-    const value = probe(eg, fen);
-    if (value.draw || value.dtm === null) continue; // not a conversion task
-    if (value.dtm < bandMin || value.dtm > bandMax) continue;
-    return { eg, fen, startDtm: value.dtm, whiteMoves: 0, status: 'playing' };
-  }
-  throw new Error(`no ${eg} start position found for tier ${tier.id} seed ${seed}`);
-}
-
-/**
- * @param {number} wk
- * @param {number} a1
- * @param {number} a2 -1 when the endgame has one attacker.
- * @param {number} bk
- * @param {('kqk'|'krk'|'kbbk'|'kbnk')} eg
- * @returns {string} FEN piece placement rows.
- */
-function toPlacement(wk, a1, a2, bk, eg) {
-  const grid = /** @type {(string | null)[]} */ (new Array(64).fill(null));
-  grid[wk] = 'K';
-  grid[bk] = 'k';
-  // Piece types per endgame; the tablebase parser reorders attacker slots to
-  // its identity order, so placement order does not matter.
-  const pieces = { kqk: ['Q'], krk: ['R'], kbbk: ['B', 'B'], kbnk: ['B', 'N'] }[eg];
-  grid[a1] = pieces[0];
-  if (a2 >= 0) grid[a2] = pieces[1];
-  /** @type {string[]} */
-  const rows = [];
-  for (let r = 7; r >= 0; r--) {
-    let row = '';
-    let run = 0;
-    for (let f = 0; f < 8; f++) {
-      const piece = grid[r * 8 + f];
-      if (piece === null) {
-        run += 1;
-        continue;
+function sampleStart(tier, seed) {
+  const params = tierParams(String(tier.id));
+  const table = getTablebase(params.kind);
+  const types = pieceTypes(params.kind);
+  const rng = streamFromSeed(`${tier.id}/${seed}/start`);
+  const maxAttempts = 1000000;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const wk = rng.nextInt(0, 63);
+    const bk = rng.nextInt(0, 63);
+    if (bk === wk) continue;
+    /** @type {number[]} */
+    const pieces = [];
+    for (let i = 0; i < types.length; i++) {
+      let sq = rng.nextInt(0, 63);
+      while (sq === wk || sq === bk || pieces.includes(sq)) {
+        sq = rng.nextInt(0, 63);
       }
-      if (run > 0) {
-        row += String(run);
-        run = 0;
-      }
-      row += piece;
+      pieces.push(sq);
     }
-    if (run > 0) row += String(run);
-    rows.push(row);
+    const pos = { wk, bk, pieces, side: /** @type {0} */ (0) };
+    const dtm = table.dtm(pos);
+    if (dtm === null || dtm < params.bandMin || dtm > params.bandMax) continue;
+    return { wk, bk, pieces, dtm };
   }
-  return rows.join('/');
-}
-
-/**
- * Legal actions of the seat to move, as sorted UCI from-to strings.
- *
- * @param {string} fen
- * @returns {string[]}
- */
-function legalUci(fen) {
-  const chess = new Chess(fen);
-  return chess
-    .moves({ verbose: true })
-    .map((m) => `${m.from}${m.to}`)
-    .sort();
-}
-
-/**
- * Small rank/file board renderer.
- *
- * @param {string} fen
- * @returns {string}
- */
-function boardText(fen) {
-  const chess = new Chess(fen);
-  const chessBoard = chess.board();
-  /** @type {string[]} */
-  const rows = [];
-  rows.push('    a   b   c   d   e   f   g   h');
-  for (let r = 7; r >= 0; r--) {
-    const cells = chessBoard[r].map((sq) => {
-      if (!sq) return '.';
-      return sq.color === 'w' ? sq.type.toUpperCase() : sq.type;
-    });
-    rows.push(` ${r + 1}  ${cells.join('   ')}`);
-  }
-  return rows.join('\n');
-}
-
-/**
- * Zero-sum outcome pair from the agent's score.
- *
- * @param {number} agentScore
- * @param {Array<'win' | 'loss' | 'draw'> | null} raw
- * @param {string} reason
- * @returns {import('../../core/types.js').Outcome}
- */
-function pairOutcome(agentScore, raw, reason) {
-  const score = Math.min(1, Math.max(0, agentScore));
-  const pair = raw === null ? raw : [raw[0], raw[1]];
-  return {
-    normalized: [score, 1 - score],
-    raw: /** @type {Array<'win' | 'loss' | 'draw'> | null} */ (pair),
-    reason,
-  };
-}
-
-/**
- * The terminal outcome of a finished episode, or null while playing.
- *
- * @param {EndgameState} state
- * @returns {import('../../core/types.js').Outcome | null}
- */
-function terminalOutcome(state) {
-  if (state.status === 'playing') return null;
-  if (state.status === 'mated') {
-    const score = efficiency(state.startDtm, state.whiteMoves);
-    return pairOutcome(
-      score,
-      ['win', 'loss'],
-      `White converted ${ENDGAME_TITLES[state.eg]}: checkmate on move ` +
-        `${state.whiteMoves} against perfect defense ` +
-        `(optimal was ${state.startDtm}); efficiency score ${score.toFixed(4)}`,
-    );
-  }
-  if (state.status === 'stalemate') {
-    return pairOutcome(
-      0,
-      ['loss', 'win'],
-      'conversion failed: White stalemated the defending king',
-    );
-  }
-  return pairOutcome(
-    0,
-    ['loss', 'win'],
-    'conversion failed: the defender captured a piece and the material left is not enough to mate',
+  throw new Error(
+    `could not sample a ${tier.id} start position in DTM band [${params.bandMin}, ${params.bandMax}]`
   );
 }
 
 /**
- * Assess an unfinished position under perfect play from both sides: the
- * agent's would-be score if it converted in the remaining tablebase minimum.
+ * The efficiency score of a solved episode: the agent played at most `par`
+ * moves (par is the proven minimum), so the ratio is at most 1.
  *
- * @param {EndgameState} state
- * @returns {import('../../core/types.js').Outcome}
+ * @param {number} par
+ * @param {number} agentMoves
+ * @returns {number}
  */
-function budgetAssessment(state) {
-  const value = probe(state.eg, state.fen);
-  if (value.draw || value.dtm === null) {
-    return pairOutcome(
-      0,
-      null,
-      'truncated: the position no longer assesses as a forced conversion',
-    );
-  }
-  const remaining = value.dtm;
-  const score = efficiency(state.startDtm, state.whiteMoves + remaining);
-  return pairOutcome(
-    score,
-    null,
-    `truncated: the position still mates in ${remaining} (White moves) under ` +
-      `perfect play; would-be efficiency score ${score.toFixed(4)}`,
-  );
+function efficiencyScore(par, agentMoves) {
+  if (agentMoves <= 0) return 0;
+  return Math.min(1, (par / agentMoves) * (par / agentMoves));
 }
 
 export const chessEndgames = {
@@ -323,119 +204,158 @@ export const chessEndgames = {
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {import('../../core/types.js').InformationMode} */ ('perfect'),
     stochastic: false,
-    tags: /** @type {import('../../core/types.js').GameTag[]} */ ([
-      'adversarial',
-      'planning',
-      'long-horizon',
-      'spatial',
-    ]),
+    tags: /** @type {import('../../core/types.js').GameTag[]} */ (['adversarial', 'planning', 'long-horizon']),
     benchmark: true,
     requires: [],
     rulesText: [
-      'Classical chess king-and-minor endgames: K+Q vs K, K+R vs K, K+B+B vs K and K+B+N vs K.',
-      'You play White (seat 0) and must convert a won position to checkmate; Black (seat 1) is a tablebase-perfect defender that captures any undefended piece and takes the longest resistance otherwise.',
-      'The score is the squared ratio of the optimal conversion length (the tablebase DTM of the starting position) to the White moves you actually used, so converting exactly on optimal schedule scores 1.0 and every extra move costs; stalemating or letting the defender capture a piece scores 0.',
-      'Action grammar: a UCI move <from><to>, e.g. "a1a2" moves the piece on a1 to a2. No promotions or castling exist in these endgames.',
-      'Documented alternates: an optional leading verb ("move a1a2"), uppercase squares, and surrounding quotes or backticks are all accepted.',
-      'Playing an illegal or unknown move is invalid and consumes an action attempt.',
+      'Chess endgames: you are White (seat 0) with winning material — a queen, a rook, two bishops on opposite colours, or bishop and knight — against a lone Black king (seat 1) that defends with maximum resistance.',
+      'You must deliver checkmate within the action budget. Chess rules apply exactly as in standard chess, except there are no pawns, no castling, and no en passant.',
+      'Action grammar: a move as UCI from-to squares, e.g. "d1d2" moves the piece on d1 to d2. Documented alternates: SAN such as "Qd8+", "Kd2" or "Qh8#", an optional leading verb ("move d1d2", "play Qd8"), wrapping quotes or backticks, and any capitalisation.',
+      'The game ends in your favour only by checkmate; every win is scored by efficiency against par, the proven minimum number of White moves needed from the start position (distance-to-mate): score = (par / your move count) squared, capped at 1.',
+      'The game ends unsolved (score 0) on stalemate, insufficient material, threefold repetition, the fifty-move rule (100 half-moves without a capture or pawn move), or exhausting the action budget.',
+      'Invalid or unparseable actions consume action attempts.',
     ].join(' '),
-    tiers: /** @type {import('../../core/types.js').TierSpec[]} */ (
-      TIER_DEFS.map((def) => ({
-        id: def.id,
-        rank: def.rank,
-        scoring: /** @type {import('../../core/types.js').ScoringMode} */ ('outcome'),
-        maxActions: def.maxActions,
-        publicSeeds: 10,
-        params: { eg: def.id, bandMin: def.band[0], bandMax: def.band[1] },
-      }))
-    ),
+    tiers: /** @type {import('../../core/types.js').TierSpec[]} */ ([
+      {
+        id: 'kqk',
+        rank: 1,
+        scoring: 'efficiency',
+        maxActions: 50,
+        publicSeeds: 25,
+        params: { ...tierParams('kqk') },
+        parKind: 'optimal',
+      },
+      {
+        id: 'krk',
+        rank: 2,
+        scoring: 'efficiency',
+        maxActions: 80,
+        publicSeeds: 25,
+        params: { ...tierParams('krk') },
+        parKind: 'optimal',
+      },
+      {
+        id: 'kbbk',
+        rank: 3,
+        scoring: 'efficiency',
+        maxActions: 95,
+        publicSeeds: 25,
+        params: { ...tierParams('kbbk') },
+        parKind: 'optimal',
+      },
+      {
+        id: 'kbnk',
+        rank: 4,
+        scoring: 'efficiency',
+        maxActions: 165,
+        publicSeeds: 25,
+        params: { ...tierParams('kbnk') },
+        parKind: 'optimal',
+      },
+    ]),
   },
 
   /**
+   * Deterministic in (tier, seed): sample a legal start position whose DTM
+   * lies inside the tier's band, White to move.
+   *
    * @param {TierSpec} tier
    * @param {string} seed
-   * @returns {EndgameState}
+   * @returns {ChessEndgameState}
    */
   reset(tier, seed) {
-    return deal(tier, seed);
-  },
-
-  /**
-   * @param {EndgameState} state
-   * @returns {number | null}
-   */
-  toAct(state) {
-    if (state.status !== 'playing') return null;
-    return seatToMove(state.fen);
-  },
-
-  /**
-   * @param {EndgameState} state
-   * @param {number} seat
-   * @returns {Observation}
-   */
-  observe(state, seat) {
-    const eg = state.eg;
-    const tier = /** @type {{ id: string, maxActions: number }} */ (
-      TIER_DEFS.find((t) => t.id === eg)
-    );
-    const you = seat === 0 ? 'White, the converting side' : 'Black, the perfect defender';
-    const turn = seatToMove(state.fen);
-    const statusText =
-      state.status === 'playing'
-        ? `${turn === 0 ? 'White' : 'Black'} to move.`
-        : state.status === 'mated'
-          ? 'Game over: checkmate.'
-          : state.status === 'stalemate'
-            ? 'Game over: stalemate.'
-            : 'Game over: insufficient material.';
-    const budget =
-      seat === 0 && state.status === 'playing'
-        ? `Actions used: ${state.whiteMoves} of at most ${tier.maxActions}.`
-        : `White moves so far: ${state.whiteMoves}.`;
-    const legal =
-      state.status === 'playing' && seat === turn
-        ? legalUci(state.fen)
-        : [];
-    const legalText =
-      legal.length > 0
-        ? `Legal actions (${legal.length}, all listed): ${legal.join(', ')}`
-        : 'Legal actions: none.';
+    const kind = String(tier.id);
+    const params = tierParams(kind);
+    const start = sampleStart(tier, seed);
+    const placement = placementFromSquares(kind, start.wk, start.bk, start.pieces);
+    const fen = `${placement} w - - 0 1`;
+    const key = `${placement} w`;
     return {
-      text: [
-        `Chess Endgames, tier ${tier.id} (${ENDGAME_TITLES[eg]}). You are seat ${seat} (${you}).`,
-        `Optimal conversion from the start: mate in ${state.startDtm} White moves.`,
-        boardText(state.fen),
-        `FEN: ${state.fen}`,
-        statusText,
-        budget,
-        legalText,
-      ].join('\n'),
-      data: {
-        eg: state.eg,
-        fen: state.fen,
-        startDtm: state.startDtm,
-        whiteMoves: state.whiteMoves,
-        status: state.status,
-        you: seat,
-        legal,
-      },
+      kind,
+      tierId: tier.id,
+      maxActions: tier.maxActions,
+      fen,
+      par: start.dtm,
+      history: { [key]: 1 },
+      side: /** @type {0 | 1} */ (0),
+      status: 'playing',
+      result: null,
+      agentMoves: 0,
+      ply: 0,
     };
   },
 
   /**
-   * @param {EndgameState} state
+   * @param {ChessEndgameState} state
+   * @returns {number | null}
+   */
+  toAct(state) {
+    return state.status === 'playing' ? state.side : null;
+  },
+
+  /**
+   * @param {ChessEndgameState} state
+   * @param {number} seat
+   * @returns {Observation}
+   */
+  observe(state, seat) {
+    const chess = new Chess(state.fen);
+    /** @type {string[]} */
+    const rows = ['    a   b   c   d   e   f   g   h'];
+    const board = chess.board();
+    for (let r = 0; r < 8; r++) {
+      const rank = 8 - r;
+      const cells = board[r].map((cell) => (cell === null ? '.' : cell.color === 'w' ? cell.type.toUpperCase() : cell.type));
+      rows.push(` ${rank}  ${cells.join('   ')}`);
+    }
+    const legal = chessEndgames.legalActions(state, seat);
+    const role =
+      seat === 0
+        ? 'White — deliver checkmate efficiently'
+        : 'Black — hold the draw with maximum resistance';
+    const legalText =
+      legal.length > 0
+        ? `Legal actions (${legal.length}, at most 64 so all are listed): ${legal.join(', ')}`
+        : 'Legal actions: none (game over).';
+    const statusText =
+      state.status === 'playing'
+        ? `${state.side === 0 ? 'White' : 'Black'} to move.`
+        : `Game over: ${state.result === null ? 'unknown' : state.result.reason}.`;
+    return {
+      text: [
+        `Chess endgames, tier ${state.tierId} (${state.kind}: ${materialText(state.kind)}). You are seat ${seat}: ${role}.`,
+        rows.join('\n'),
+        `FEN: ${state.fen}`,
+        statusText,
+        `White valid moves made: ${state.agentMoves} of the ${state.maxActions} action budget.`,
+        `Half-move clock: ${halfmoveClock(state.fen)} (the fifty-move rule draws the game at 100).`,
+        legalText,
+      ].join('\n'),
+      data: { ...state, seat },
+    };
+  },
+
+  /**
+   * Sorted UCI actions of the side to move.
+   *
+   * @param {ChessEndgameState} state
    * @param {number} seat
    * @returns {string[]}
    */
   legalActions(state, seat) {
-    if (state.status !== 'playing') return [];
-    if (seat !== seatToMove(state.fen)) return [];
-    return legalUci(state.fen);
+    if (state.status !== 'playing' || seat !== state.side) return [];
+    const chess = new Chess(state.fen);
+    return chess
+      .moves({ verbose: true })
+      .map((m) => m.from + m.to)
+      .sort();
   },
 
   /**
-   * @param {EndgameState} state
+   * Accepts canonical UCI ("d1d2"), SAN alternates ("Qd8+", "Kd2"), optional
+   * verb prefixes, quotes and any capitalisation.
+   *
+   * @param {ChessEndgameState} state
    * @param {number} seat
    * @param {string} text
    * @returns {ParseResult}
@@ -444,7 +364,7 @@ export const chessEndgames = {
     if (state.status !== 'playing') {
       return { ok: false, error: 'the game is over' };
     }
-    if (seat !== seatToMove(state.fen)) {
+    if (seat !== state.side) {
       return { ok: false, error: `it is not seat ${seat}'s turn` };
     }
     let s = String(text).trim();
@@ -456,73 +376,136 @@ export const chessEndgames = {
     ) {
       s = s.slice(1, -1).trim();
     }
-    s = s.toLowerCase();
-    s = s.replace(/^(play|place|move)\s+/, '');
-    const match = /^([a-h][1-8])\s*[-x>]?\s*([a-h][1-8])$/.exec(s);
-    if (!match) {
+    s = s.replace(/^(move|play|make)\s+/i, '');
+    const legal = chessEndgames.legalActions(state, seat);
+    const uciMatch = /^([a-h][1-8])([a-h][1-8])$/.exec(s.toLowerCase());
+    if (uciMatch) {
+      const uci = uciMatch[1] + uciMatch[2];
+      if (legal.includes(uci)) return { ok: true, action: uci };
+      return { ok: false, error: `illegal move ${JSON.stringify(uci)} in this position` };
+    }
+    // SAN alternate, resolved by chess.js.
+    try {
+      const chess = new Chess(state.fen);
+      const move = chess.move(s);
+      const uci = move.from + move.to;
+      if (legal.includes(uci)) return { ok: true, action: uci };
+      return { ok: false, error: `illegal move ${JSON.stringify(s)} in this position` };
+    } catch {
       return {
         ok: false,
-        error: `cannot parse ${JSON.stringify(String(text))} as a UCI move; use <from><to>, e.g. "a1a2"`,
+        error: `cannot parse ${JSON.stringify(String(text))} as a move; use UCI like "d1d2" or SAN like "Qd8+"`,
       };
     }
-    const action = match[1] + match[2];
-    if (!legalUci(state.fen).includes(action)) {
-      return { ok: false, error: `move ${action} is not legal here` };
-    }
-    return { ok: true, action };
   },
 
   /**
-   * @param {EndgameState} state
+   * @param {ChessEndgameState} state
    * @param {number} seat
    * @param {string} action
-   * @returns {EndgameState}
+   * @returns {ChessEndgameState}
    */
   step(state, seat, action) {
     if (state.status !== 'playing') {
       throw new GauntletRuleError('the game is over');
     }
-    if (seat !== seatToMove(state.fen)) {
-      throw new GauntletRuleError(`it is seat ${seatToMove(state.fen)}'s turn, not seat ${seat}'s`);
+    if (seat !== state.side) {
+      throw new GauntletRuleError(`it is seat ${state.side}'s turn, not seat ${seat}'s`);
     }
-    const legal = legalUci(state.fen);
-    if (typeof action !== 'string' || !legal.includes(action)) {
+    const legal = chessEndgames.legalActions(state, seat);
+    if (!legal.includes(action)) {
       throw new GauntletRuleError(`unknown action ${JSON.stringify(action)}`);
     }
-    const fen = applyUci(state.fen, action.slice(0, 2), action.slice(2, 4));
-    const next = makeState(
-      { eg: state.eg, startDtm: state.startDtm, whiteMoves: state.whiteMoves },
-      fen,
-    );
-    if (seat === 0) {
-      next.whiteMoves = state.whiteMoves + 1;
+    const chess = new Chess(state.fen);
+    chess.move({ from: action.slice(0, 2), to: action.slice(2, 4) });
+    const fen = chess.fen();
+    const key = repetitionKey(fen);
+    const history = { ...state.history };
+    history[key] = (history[key] ?? 0) + 1;
+
+    let status = /** @type {ChessEndgameState['status']} */ ('playing');
+    /** @type {ChessEndgameResult | null} */
+    let result = null;
+    if (chess.isCheckmate()) {
+      status = 'over';
+      result = { solved: true, reason: 'checkmate' };
+    } else if (chess.isStalemate()) {
+      status = 'over';
+      result = { solved: false, reason: 'stalemate' };
+    } else if (chess.isInsufficientMaterial()) {
+      status = 'over';
+      result = { solved: false, reason: 'insufficient material' };
+    } else if (history[key] >= 3) {
+      status = 'over';
+      result = { solved: false, reason: 'threefold repetition' };
+    } else if (halfmoveClock(fen) >= 100) {
+      status = 'over';
+      result = { solved: false, reason: 'fifty-move rule' };
     }
-    return next;
+
+    return {
+      ...state,
+      fen,
+      history,
+      side: seat === 0 ? 1 : 0,
+      status,
+      result,
+      agentMoves: seat === 0 ? state.agentMoves + 1 : state.agentMoves,
+      ply: state.ply + 1,
+    };
   },
 
   /**
-   * @param {EndgameState} state
+   * Efficiency outcome. Solved: (par / agentMoves) squared for White, 0 for
+   * Black. Unsolved (the defender held): 0 for White, 1 for Black.
+   *
+   * @param {ChessEndgameState} state
    * @returns {import('../../core/types.js').Outcome | null}
    */
   outcome(state) {
-    return terminalOutcome(state);
+    if (state.status !== 'over' || state.result === null) return null;
+    const { solved } = state.result;
+    const score = solved ? efficiencyScore(state.par, state.agentMoves) : 0;
+    const normalized = solved ? [score, 0] : [0, 1];
+    const efficiency = solved
+      ? `; efficiency ${score.toFixed(4)} (par ${state.par}, ${state.agentMoves} White moves)`
+      : '';
+    return {
+      normalized,
+      raw: null,
+      reason: `${state.result.reason}${efficiency}`,
+      solved,
+      par: state.par,
+    };
   },
 
   /**
-   * @param {EndgameState} state
+   * Required by the Game contract; the runner never calls it on efficiency
+   * tiers (budget exhaustion scores as unsolved there). A truncated finished
+   * state keeps its outcome; an unfinished state assesses as unsolved with
+   * the defender holding.
+   *
+   * @param {ChessEndgameState} state
    * @returns {import('../../core/types.js').Outcome}
    */
   truncate(state) {
-    if (state.status !== 'playing') {
-      return /** @type {import('../../core/types.js').Outcome} */ (terminalOutcome(state));
+    if (state.status === 'over') {
+      return /** @type {import('../../core/types.js').Outcome} */ (chessEndgames.outcome(state));
     }
-    return budgetAssessment(state);
+    return {
+      normalized: [0, 1],
+      raw: null,
+      reason: 'truncated: the action budget ran out with the game unfinished',
+      solved: false,
+      par: state.par,
+    };
   },
 
   /**
-   * The perfect defender: captures any undefended piece (bare kings are a
-   * draw), else prefers tablebase-drawn children, else the longest resistance
-   * (largest child DTM), with seeded tie-breaks among equals.
+   * The defender: maximum resistance. It prefers a move into a drawn
+   * position (including any capture, which leaves insufficient material);
+   * otherwise the move after which White's mate is furthest away. Ties are
+   * broken by the seeded per-turn RNG stream.
    *
    * @param {TierSpec} tier
    * @param {string} seed
@@ -531,55 +514,74 @@ export const chessEndgames = {
    */
   opponent(tier, seed, seat) {
     return {
-      id: 'tablebase-perfect',
+      id: 'tablebase-defender',
       track: 'baseline',
+      /**
+       * @param {TurnContext} ctx
+       * @returns {Promise<{ text: string }>}
+       */
       async act(ctx) {
-        const data = /** @type {EndgameState & { you?: number }} */ (ctx.observation.data);
-        const fen = data.fen;
-        const eg = data.eg;
-        const chess = new Chess(fen);
-        /** @type {{ uci: string, rank: number, draw: boolean }[]} */
-        const choices = [];
-        for (const m of chess.moves({ verbose: true })) {
-          const childFen = applyUci(fen, m.from, m.to);
-          if (m.captured || new Chess(childFen).isInsufficientMaterial()) {
-            choices.push({ uci: `${m.from}${m.to}`, rank: 0, draw: true });
+        const data = /** @type {ChessEndgameState & { seat?: number }} */ (ctx.observation.data);
+        const table = getTablebase(data.kind);
+        const chess = new Chess(data.fen);
+        const verbose = chess.moves({ verbose: true });
+        if (verbose.length === 0) {
+          throw new GauntletRuleError('tablebase defender found no legal move');
+        }
+        /** @type {import('chess.js').Move[]} */
+        const drawn = [];
+        /** @type {{ m: import('chess.js').Move, d: number }[]} */
+        const fight = [];
+        for (const m of verbose) {
+          if (m.captured) {
+            // The capture leaves K vs K (or K+minor vs K): a draw by
+            // insufficient material — the best outcome for Black.
+            drawn.push(m);
             continue;
           }
-          const value = probe(eg, childFen);
-          choices.push({
-            uci: `${m.from}${m.to}`,
-            rank: value.draw ? 0 : /** @type {number} */ (value.dtm) + 1,
-            draw: Boolean(value.draw),
-          });
+          chess.move({ from: m.from, to: m.to });
+          const placement = chess.fen().split(' ')[0];
+          const pos = positionFromPlacement(data.kind, placement, 0);
+          const d = table.dtm(pos);
+          chess.undo();
+          if (d === null) drawn.push(m);
+          else fight.push({ m, d });
         }
-        if (choices.length === 0) {
-          throw new GauntletRuleError('the perfect defender found no legal move');
-        }
-        let best = choices[0];
-        for (const c of choices) {
-          if (c.draw && !best.draw) best = c;
-          else if (c.draw === best.draw && c.rank > best.rank) best = c;
-        }
-        const tied = choices.filter((c) => c.draw === best.draw && c.rank === best.rank);
         const stream = streamFromSeed(`${tier.id}/${seed}/opponent/${seat}/turn${ctx.turn}`);
-        const chosen = tied[nextInt(stream.getState(), 0, tied.length - 1).value];
-        return { text: chosen.uci };
+        if (drawn.length > 0) {
+          const pick = stream.nextInt(0, drawn.length - 1);
+          return { text: drawn[pick].from + drawn[pick].to };
+        }
+        let best = -1;
+        for (const f of fight) best = Math.max(best, f.d);
+        const tied = fight.filter((f) => f.d === best);
+        const pick = stream.nextInt(0, tied.length - 1);
+        return { text: tied[pick].m.from + tied[pick].m.to };
       },
     };
   },
-
-  /**
-   * The agent always converts: seat 0 (White).
-   *
-   * @param {TierSpec} _tier
-   * @param {string} _seed
-   * @returns {number}
-   */
-  agentSeat(_tier, _seed) {
-    return 0;
-  },
 };
 
-/** @type {Game<EndgameState>} */
+/**
+ * Human text for the material of a kind.
+ *
+ * @param {string} kindId
+ * @returns {string}
+ */
+function materialText(kindId) {
+  switch (kindId) {
+    case 'kqk':
+      return 'K+Q vs K';
+    case 'krk':
+      return 'K+R vs K';
+    case 'kbbk':
+      return 'K+B+B vs K';
+    case 'kbnk':
+      return 'K+B+N vs K';
+    default:
+      return kindId;
+  }
+}
+
+/** @type {Game<ChessEndgameState>} */
 export default chessEndgames;

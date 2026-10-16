@@ -1,833 +1,838 @@
 /**
- * Self-built distance-to-mate (DTM) tablebases for the four pawnless endings
- * the chess-endgames game uses: KQK, KRK, KBBK (bishops on opposite colours)
- * and KBNK. DTM is counted in the attacker's (White's) moves, including the
- * mating move: a position where White mates in one has DTM 1; a position with
- * Black to move that is already checkmate has DTM 0.
+ * Self-built distance-to-mate (DTM) tablebases for four pawnless endgames:
+ * KQK, KRK, KBBK (bishops on opposite colours) and KBNK. The tables are built
+ * lazily, once per process, by retrograde analysis and then kept in memory.
+ * Pure JS: no `node:*`, no network, no external tablebases.
  *
- * The tables are built by retrograde analysis, in this module, from scratch:
- * there is no shipped data file and no external service. Positions are
- * indexed by their canonical representative under the 8-fold symmetry group of
- * the board (identity, the two mirror reflections, the two diagonal
- * reflections and the two rotations), so every physical position shares one
- * stored value with its symmetric images. Values live in Uint8Arrays.
+ * DTM counts moves by the attacking side (White): a position with DTM `d` and
+ * White to move is mate in `d` White moves against any defence. Drawn or
+ * unprovable positions report `null`. The published maxima these tables must
+ * reproduce are KQK 10, KRK 16, KBBK 19, KBNK 33 (attacker to move); the
+ * strict tests assert exactly that.
  *
- * Value encoding in `dtm` (indexed by canonicalEncoding * 2 + sideToMove):
- * - 0          Black to move and already checkmated (zero White moves needed).
- * - 1..200     DTM in White moves from here.
- * - 255        No forced mate for White: a draw by best defence (stalemate,
- *              insufficient material after a capture, the defender escaping,
- *              same-coloured bishops in KBBK) or a position that cannot occur
- *              (kings adjacent, overlapping pieces). Both are draws for the
- *              purposes of probing.
+ * Storage uses the 8-fold symmetry of the pawnless board: every position is
+ * stored under its canonical orientation, the one where the white king sits on
+ * the lexicographically smallest square of its symmetry orbit (10 squares).
+ * Each side-to-move table is therefore a dense typed array of
+ * `10 * 64^pieces` bytes; kqk/krk use 40,960 bytes per side, kbbk/kbnk
+ * 2,621,440 per side. Byte encoding: 0 mate, 1..60 DTM in attacker moves,
+ * 254 drawn/unprovable, 255 illegal.
  *
- * The build is lazy and runs once per process per endgame; the value arrays
- * are then kept in memory (about 65 MiB for all four). Pure JS, no `node:*`.
+ * Squares are 0..63 with `square = rank * 8 + file` (a1 = 0, h1 = 7,
+ * a8 = 56, h8 = 63).
  *
  * @module
  */
 
-/** Endgame ids, in tier order. */
-export const ENDGAME_IDS = /** @type {const} */ (['kqk', 'krk', 'kbbk', 'kbnk']);
+const V_DRAW = 254;
+const V_ILLEGAL = 255;
 
 /**
- * Material of each endgame. `attackers` are White's non-king pieces in fixed
- * identity order; `identicalPair` marks KBBK, whose two bishops are the same
- * piece type and therefore get square-sorted in the canonical encoding.
- *
- * @type {Record<string, { attackers: string[], pieces: 3 | 4, identicalPair: boolean }>}
+ * @typedef {'q' | 'r' | 'b' | 'n'} PieceType
  */
-const ENDGAME_SPECS = {
-  kqk: { attackers: ['q'], pieces: 3, identicalPair: false },
-  krk: { attackers: ['r'], pieces: 3, identicalPair: false },
-  kbbk: { attackers: ['b', 'b'], pieces: 4, identicalPair: true },
-  kbnk: { attackers: ['b', 'n'], pieces: 4, identicalPair: false },
+
+/**
+ * @typedef {object} EndgamePosition
+ * @property {number} wk White king square.
+ * @property {number} bk Black king square.
+ * @property {number[]} pieces White non-king piece squares, in the kind's
+ *   piece order (for kbbk the two bishops in any order; values are equal).
+ * @property {0 | 1} side 0 = White (attacker) to move, 1 = Black to move.
+ */
+
+/**
+ * @typedef {object} ProbeMove
+ * @property {number} from
+ * @property {number} to
+ */
+
+/**
+ * @typedef {object} PositionProbe
+ * @property {boolean} legal
+ * @property {boolean} inCheck True when the side to move is in check
+ *   (Black can be in check; White never is in these endings).
+ * @property {ProbeMove[]} moves Legal moves of the side to move.
+ */
+
+/**
+ * @typedef {object} TablebaseStats
+ * @property {number} legalPositions
+ * @property {number} reverseEdges
+ * @property {number} valueBytes
+ * @property {number} buildMs Wall-clock build time, metadata only — it never
+ *   feeds game state.
+ */
+
+/**
+ * @typedef {object} Tablebase
+ * @property {string} kind
+ * @property {number} np Number of white non-king pieces.
+ * @property {number} maxDtm Maximum DTM over legal White-to-move positions.
+ * @property {TablebaseStats} stats
+ * @property {(pos: EndgamePosition) => number | null} dtm DTM in attacker
+ *   moves for the side to move, or null when drawn/unprovable/illegal.
+ */
+
+/**
+ * The four endgames. `pieces` fixes the piece order used for indexing.
+ *
+ * @type {Record<string, { pieces: PieceType[] }>}
+ */
+const KINDS = {
+  kqk: { pieces: ['q'] },
+  krk: { pieces: ['r'] },
+  kbbk: { pieces: ['b', 'b'] },
+  kbnk: { pieces: ['b', 'n'] },
 };
 
 /**
- * @param {string} endgameId
- * @returns {{ attackers: string[], pieces: 3 | 4, identicalPair: boolean }}
+ * @param {string} kindId
+ * @returns {{ pieces: PieceType[], np: number }}
  */
-function specOf(endgameId) {
-  const spec = ENDGAME_SPECS[endgameId];
-  if (!spec) {
-    throw new Error(`unknown endgame "${endgameId}" (known: ${ENDGAME_IDS.join(', ')})`);
-  }
-  return spec;
+function kindOf(kindId) {
+  const kind = KINDS[kindId];
+  if (!kind) throw new Error(`unknown endgame kind "${kindId}"`);
+  return { pieces: kind.pieces, np: kind.pieces.length };
 }
 
-/* ------------------------------------------------------------------ *
- * Geometry: precomputed attack and ray tables over 0..63 squares
- * (a1 = 0, h1 = 7, a8 = 56, h8 = 63; square = rank * 8 + file).
- * ------------------------------------------------------------------ */
+// ---------------------------------------------------------------------------
+// Geometry (shared by all four tables).
+// ---------------------------------------------------------------------------
 
-/** @type {number[][]} King neighbourhoods. */
-const KING_ATT = [];
-/** @type {number[][]} Knight jumps. */
-const KNIGHT_ATT = [];
-/**
- * Rays: RAYS[d][sq] walks outward from sq in direction d until the board edge.
- * Directions 0-3 are orthogonal (rook-like), 4-7 diagonal (bishop-like).
- * @type {number[][][]}
- */
+/** @type {Int32Array[]} */
+const KING_MOVES = [];
+/** @type {Int32Array[]} */
+const KNIGHT_MOVES = [];
+/** RAYS[sq * 8 + dir] lists the squares from `sq` outward along `dir`. */
+/** @type {Int32Array[]} */
 const RAYS = [];
+const KING_ATT = new Uint8Array(64 * 64);
+const KNIGHT_ATT = new Uint8Array(64 * 64);
+const ROOK_ALIGNED = new Uint8Array(64 * 64);
+const BISHOP_ALIGNED = new Uint8Array(64 * 64);
+const QUEEN_ALIGNED = new Uint8Array(64 * 64);
+/** Strictly-between squares of any aligned pair, as a 64-bit-style bitmask
+ *  split into two 32-bit halves (low = squares 0..31). */
+const BETWEEN_LO = new Uint32Array(64 * 64);
+const BETWEEN_HI = new Uint32Array(64 * 64);
 
-(function initGeometry() {
+const DIRS = [
+  [1, 0], [-1, 0], [0, 1], [0, -1], // rook directions
+  [1, 1], [1, -1], [-1, 1], [-1, -1], // bishop directions
+];
+
+(function buildGeometry() {
   for (let sq = 0; sq < 64; sq++) {
-    const r = sq >> 3;
     const f = sq & 7;
+    const r = sq >> 3;
     /** @type {number[]} */
-    const king = [];
+    const km = [];
     /** @type {number[]} */
-    const knight = [];
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let df = -1; df <= 1; df++) {
-        if (dr === 0 && df === 0) continue;
-        const nr = r + dr;
+    const nm = [];
+    for (let df = -1; df <= 1; df++) {
+      for (let dr = -1; dr <= 1; dr++) {
+        if (df === 0 && dr === 0) continue;
         const nf = f + df;
-        if (nr >= 0 && nr < 8 && nf >= 0 && nf < 8) king.push(nr * 8 + nf);
+        const nr = r + dr;
+        if (nf < 0 || nf > 7 || nr < 0 || nr > 7) continue;
+        const t = nr * 8 + nf;
+        km.push(t);
+        KING_ATT[sq * 64 + t] = 1;
       }
     }
-    for (const [dr, df] of [
-      [1, 2],
-      [2, 1],
-      [2, -1],
-      [1, -2],
-      [-1, -2],
-      [-2, -1],
-      [-2, 1],
-      [-1, 2],
-    ]) {
-      const nr = r + dr;
+    const knightDeltas = [
+      [1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2],
+    ];
+    for (const [df, dr] of knightDeltas) {
       const nf = f + df;
-      if (nr >= 0 && nr < 8 && nf >= 0 && nf < 8) knight.push(nr * 8 + nf);
+      const nr = r + dr;
+      if (nf < 0 || nf > 7 || nr < 0 || nr > 7) continue;
+      nm.push(nr * 8 + nf);
+      KNIGHT_ATT[sq * 64 + (nr * 8 + nf)] = 1;
     }
-    KING_ATT.push(king);
-    KNIGHT_ATT.push(knight);
-  }
-  const STEPS = /** @type {const} */ ([
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-    [1, 1],
-    [1, -1],
-    [-1, 1],
-    [-1, -1],
-  ]);
-  for (const [dr, df] of STEPS) {
-    /** @type {number[][]} */
-    const dirRays = [];
-    for (let sq = 0; sq < 64; sq++) {
-      const r = sq >> 3;
-      const f = sq & 7;
+    KING_MOVES.push(Int32Array.from(km));
+    KNIGHT_MOVES.push(Int32Array.from(nm));
+    for (let d = 0; d < 8; d++) {
+      const df = DIRS[d][0];
+      const dr = DIRS[d][1];
       /** @type {number[]} */
       const ray = [];
-      let nr = r + dr;
       let nf = f + df;
-      while (nr >= 0 && nr < 8 && nf >= 0 && nf < 8) {
+      let nr = r + dr;
+      while (nf >= 0 && nf < 8 && nr >= 0 && nr < 8) {
         ray.push(nr * 8 + nf);
-        nr += dr;
         nf += df;
+        nr += dr;
       }
-      dirRays.push(ray);
+      RAYS.push(Int32Array.from(ray));
     }
-    RAYS.push(dirRays);
+  }
+  for (let a = 0; a < 64; a++) {
+    for (let b = 0; b < 64; b++) {
+      if (a === b) continue;
+      const df = (b & 7) - (a & 7);
+      const dr = (b >> 3) - (a >> 3);
+      if (df !== 0 && dr !== 0 && Math.abs(df) !== Math.abs(dr)) continue;
+      const sf = Math.sign(df);
+      const sr = Math.sign(dr);
+      let f = (a & 7) + sf;
+      let r = (a >> 3) + sr;
+      while (f !== (b & 7) || r !== (b >> 3)) {
+        const s = r * 8 + f;
+        if (s < 32) BETWEEN_LO[a * 64 + b] |= 1 << s;
+        else BETWEEN_HI[a * 64 + b] |= 1 << (s - 32);
+        f += sf;
+        r += sr;
+      }
+      QUEEN_ALIGNED[a * 64 + b] = 1;
+      if (df === 0 || dr === 0) ROOK_ALIGNED[a * 64 + b] = 1;
+      else BISHOP_ALIGNED[a * 64 + b] = 1;
+    }
   }
 })();
 
-/**
- * @param {number} a
- * @param {number} b
- * @returns {boolean}
- */
-function squaresAdjacent(a, b) {
-  if (a === b) return false;
-  const dr = Math.abs((a >> 3) - (b >> 3));
-  const df = Math.abs((a & 7) - (b & 7));
-  return dr <= 1 && df <= 1;
-}
+// ---------------------------------------------------------------------------
+// 8-fold symmetry: canonical orientation has the white king on the
+// lexicographically smallest square of its orbit.
+// ---------------------------------------------------------------------------
 
-/**
- * @param {number[]} arr
- * @param {number} sq
- * @returns {boolean}
- */
-function listHas(arr, sq) {
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] === sq) return true;
-  }
-  return false;
-}
+/** @type {((f: number, r: number) => [number, number])[]} */
+const TRANSFORMS = [
+  (f, r) => [f, r],
+  (f, r) => [r, 7 - f],
+  (f, r) => [7 - f, 7 - r],
+  (f, r) => [7 - r, f],
+  (f, r) => [7 - f, r],
+  (f, r) => [f, 7 - r],
+  (f, r) => [r, f],
+  (f, r) => [7 - r, 7 - f],
+];
 
-/**
- * Is `sq` attacked by White in the position (white king `wk`, attackers `a1`
- * of type `t1` and optionally `a2` of type `t2`)? `ignore` removes one
- * attacker square first (the piece Black is about to capture). Sliders are
- * blocked by any standing piece, including the White king.
- *
- * @param {number} sq
- * @param {number} wk
- * @param {number} a1
- * @param {string} t1
- * @param {number} a2 -1 when the endgame has one attacker.
- * @param {string} t2 Ignored when a2 is -1.
- * @param {number} [ignore]
- * @returns {boolean}
- */
-function attackedByWhite(sq, wk, a1, t1, a2, t2, ignore = -1) {
-  if (sq !== wk && listHas(KING_ATT[sq], wk)) return true;
-  const a2Live = a2 >= 0 && a2 !== ignore;
-  for (let d = 0; d < 8; d++) {
-    const ray = RAYS[d][sq];
-    const sliderKind = d < 4 ? 'r' : 'b';
-    for (let i = 0; i < ray.length; i++) {
-      const s = ray[i];
-      if (s === ignore) continue; // captured piece: square is empty, rays pass through
-      if (s === wk) break; // own king blocks (its attack is the adjacency check above)
-      if (s === a1) {
-        if (t1 === 'q' || t1 === sliderKind) return true;
-        break;
-      }
-      if (a2Live && s === a2) {
-        if (t2 === 'q' || t2 === sliderKind) return true;
-        break;
-      }
-    }
-  }
-  if (a1 !== ignore && t1 === 'n' && listHas(KNIGHT_ATT[a1], sq)) return true;
-  if (a2Live && t2 === 'n' && listHas(KNIGHT_ATT[a2], sq)) return true;
-  return false;
-}
-
-/* ------------------------------------------------------------------ *
- * 8-fold symmetry and canonical indexing.
- * ------------------------------------------------------------------ */
-
-/**
- * TRANS[t][sq] = square sq mapped through symmetry t. The group is generated
- * by the file mirror (r,f)->(r,7-f) and the diagonal transpose (r,f)->(f,r):
- * identity, both mirrors, 180-degree rotation, both diagonal reflections and
- * both 90-degree rotations. All eight preserve the moves of every pawnless
- * piece (orthogonals map to orthogonals, diagonals to diagonals).
- * @type {Uint8Array[]}
- */
-const TRANS = [];
-
-(function initTransforms() {
-  for (let t = 0; t < 8; t++) {
-    const map = new Uint8Array(64);
-    for (let sq = 0; sq < 64; sq++) {
-      const r = sq >> 3;
-      const f = sq & 7;
-      let nr = r;
-      let nf = f;
-      if (t & 1) nf = 7 - nf; // file mirror
-      if (t & 2) nr = 7 - nr; // rank mirror
-      if (t & 4) {
-        const tmp = nr;
-        nr = nf; // diagonal transpose
-        nf = tmp;
-      }
-      map[sq] = nr * 8 + nf;
-    }
-    TRANS.push(map);
-  }
-})();
-
-/**
- * Squares that are the minimum of their symmetry orbit: a position whose
- * white king lies anywhere else always has a symmetry image with a smaller
- * packed encoding, so only king squares in this set can begin a canonical
- * representative. Derived from TRANS rather than hand-listed.
- * @type {number[]}
- */
-const KING_CANON_SQUARES = [];
-(function initKingCanonSquares() {
-  const isMin = new Array(64).fill(true);
-  for (let t = 0; t < 8; t++) {
-    for (let sq = 0; sq < 64; sq++) {
-      if (TRANS[t][sq] < sq) isMin[sq] = false;
-    }
-  }
+const SQ_T = new Uint8Array(8 * 64);
+for (let t = 0; t < 8; t++) {
   for (let sq = 0; sq < 64; sq++) {
-    if (isMin[sq]) KING_CANON_SQUARES.push(sq);
+    const tr = TRANSFORMS[t](sq & 7, sq >> 3);
+    SQ_T[t * 64 + sq] = tr[1] * 8 + tr[0];
   }
-})();
+}
+
+const ORBIT_MIN = new Uint8Array(64);
+for (let sq = 0; sq < 64; sq++) {
+  let m = 255;
+  for (let t = 0; t < 8; t++) {
+    const s = SQ_T[t * 64 + sq];
+    if (s < m) m = s;
+  }
+  ORBIT_MIN[sq] = m;
+}
+
+/** Squares that are the minimum of their orbit: exactly 10 representatives. */
+/** @type {number[]} */
+const TRI_SQUARES = [];
+for (let sq = 0; sq < 64; sq++) {
+  if (ORBIT_MIN[sq] === sq) TRI_SQUARES.push(sq);
+}
+if (TRI_SQUARES.length !== 10) {
+  throw new Error(`symmetry broken: ${TRI_SQUARES.length} orbit representatives`);
+}
+
+const TRI_INDEX = new Int8Array(64).fill(-1);
+TRI_SQUARES.forEach((sq, i) => {
+  TRI_INDEX[sq] = i;
+});
+
+/** For each white king square, the transforms that map it to its orbit
+ *  minimum (1 or 2 transforms). Canonicalisation only needs these. */
+/** @type {Int32Array[]} */
+const CANON_TS = [];
+for (let sq = 0; sq < 64; sq++) {
+  /** @type {number[]} */
+  const ts = [];
+  for (let t = 0; t < 8; t++) {
+    if (SQ_T[t * 64 + sq] === ORBIT_MIN[sq]) ts.push(t);
+  }
+  CANON_TS.push(Int32Array.from(ts));
+}
 
 /**
- * Canonical encoding of a 3-piece position: the minimum over the eight
- * symmetries of (wk<<12) | (attacker<<6) | bk.
+ * Canonical packed index of a position's piece placement (no side).
  *
+ * @param {number} np
  * @param {number} wk
- * @param {number} at
  * @param {number} bk
+ * @param {number} p1
+ * @param {number} p2 Second piece square, ignored when np === 1.
  * @returns {number}
  */
-function canon3(wk, at, bk) {
-  let best = 0xffffffff;
-  for (let t = 0; t < 8; t++) {
-    const T = TRANS[t];
-    const e = ((T[wk] << 12) | (T[at] << 6) | T[bk]) >>> 0;
-    if (e < best) best = e;
+function canonicalPieceIndex(np, wk, bk, p1, p2) {
+  const ts = CANON_TS[wk];
+  const tri = TRI_INDEX[ORBIT_MIN[wk]];
+  let best = 0;
+  for (let i = 0; i < ts.length; i++) {
+    const t = ts[i] * 64;
+    const bk2 = SQ_T[t + bk];
+    const a2 = SQ_T[t + p1];
+    const j =
+      np === 1
+        ? (tri * 64 + bk2) * 64 + a2
+        : ((tri * 64 + bk2) * 64 + a2) * 64 + SQ_T[t + p2];
+    if (i === 0 || j < best) best = j;
   }
   return best;
 }
 
 /**
- * Canonical encoding of a 4-piece position: the minimum over the eight
- * symmetries of (wk<<18) | (p<<12) | (q<<6) | bk. With `identicalPair` the
- * two attacker squares are square-sorted after each transform (the pieces are
- * the same type, so either assignment describes the same physical position).
+ * Combined canonical index (side to move included).
  *
+ * @param {number} np
+ * @param {number} sideSize
  * @param {number} wk
- * @param {number} p
+ * @param {number} bk
+ * @param {number} p1
+ * @param {number} p2
+ * @param {0 | 1} side
+ * @returns {number}
+ */
+function canonicalIndex(np, sideSize, wk, bk, p1, p2, side) {
+  return side * sideSize + canonicalPieceIndex(np, wk, bk, p1, p2);
+}
+
+// ---------------------------------------------------------------------------
+// Attack tests.
+// ---------------------------------------------------------------------------
+
+/**
+ * Does a white sliding piece on `q` attack `t`? Blockers are the occupied
+ * squares strictly between (at most the white king and one other white
+ * piece); -1 means absent.
+ *
+ * @param {PieceType} type
  * @param {number} q
- * @param {number} bk
- * @param {boolean} identicalPair
- * @returns {number}
+ * @param {number} t
+ * @param {number} b1
+ * @param {number} b2
+ * @returns {boolean}
  */
-function canon4(wk, p, q, bk, identicalPair) {
-  let best = 0xffffffff;
-  for (let t = 0; t < 8; t++) {
-    const T = TRANS[t];
-    let s1 = T[p];
-    let s2 = T[q];
-    if (identicalPair && s2 < s1) {
-      const tmp = s1;
-      s1 = s2;
-      s2 = tmp;
-    }
-    const e = ((T[wk] << 18) | (s1 << 12) | (s2 << 6) | T[bk]) >>> 0;
-    if (e < best) best = e;
+function sliderAttacks(type, q, t, b1, b2) {
+  const aligned =
+    type === 'r' ? ROOK_ALIGNED : type === 'b' ? BISHOP_ALIGNED : QUEEN_ALIGNED;
+  if (!aligned[q * 64 + t]) return false;
+  let lo = BETWEEN_LO[q * 64 + t];
+  let hi = BETWEEN_HI[q * 64 + t];
+  while (lo !== 0) {
+    const s = 31 - Math.clz32(lo & -lo);
+    if (s === b1 || s === b2) return false;
+    lo ^= lo & -lo;
   }
-  return best;
+  while (hi !== 0) {
+    const s = 32 + (31 - Math.clz32(hi & -hi));
+    if (s === b1 || s === b2) return false;
+    hi ^= hi & -hi;
+  }
+  return true;
 }
 
 /**
- * Plain (non-canonical) encoding of a 3-piece position.
- *
- * @param {number} wk
- * @param {number} at
- * @param {number} bk
- * @returns {number}
- */
-function enc3(wk, at, bk) {
-  return ((wk << 12) | (at << 6) | bk) >>> 0;
-}
-
-/**
- * Plain (non-canonical) encoding of a 4-piece position.
- *
- * @param {number} wk
- * @param {number} p
+ * @param {PieceType} type
  * @param {number} q
- * @param {number} bk
- * @returns {number}
+ * @param {number} t
+ * @param {number} b1
+ * @param {number} b2
+ * @returns {boolean}
  */
-function enc4(wk, p, q, bk) {
-  return ((wk << 18) | (p << 12) | (q << 6) | bk) >>> 0;
-}
-
-/* ------------------------------------------------------------------ *
- * Table construction (retrograde analysis).
- * ------------------------------------------------------------------ */
-
-/**
- * @typedef {object} BuiltTable
- * @property {Uint8Array} dtm Value per canonical index (see module docs).
- * @property {number} maxDTM Highest finite White-to-move value in the table.
- */
-
-/**
- * Reverse moves by White: every White-to-move parent P (as canonical
- * encodings) from which some legal White move produces Q. White cannot
- * capture (Black has only the king), so all reverse moves are quiet. P must
- * be a legal position and, because it is White to move there, Black must not
- * be in check in P.
- *
- * @param {{ attackers: string[], pieces: 3 | 4, identicalPair: boolean }} spec
- * @param {number} qwk
- * @param {number} qa1
- * @param {number} qa2
- * @param {number} qbk
- * @param {Int32Array} out Scratch array to write encodings into.
- * @returns {number} Number of encodings written (not deduplicated).
- */
-function whiteParentEncs(spec, qwk, qa1, qa2, qbk, out) {
-  const [t1, t2] = spec.attackers;
-  let n = 0;
-  // Reverse White king move: the king stood on f and stepped to qwk.
-  const kingMoves = KING_ATT[qwk];
-  for (let i = 0; i < kingMoves.length; i++) {
-    const f = kingMoves[i];
-    if (f === qa1 || f === qa2 || f === qbk) continue;
-    if (squaresAdjacent(f, qbk)) continue; // kings would touch in P
-    if (attackedByWhite(qbk, f, qa1, t1, qa2, t2)) continue; // Black in check with White to move
-    out[n++] = spec.pieces === 3 ? enc3(f, qa1, qbk) : enc4(f, qa1, qa2, qbk);
-  }
-  // Reverse quiet move of attacker 1: it stood on f and moved to qa1.
-  n = reverseAttacker(spec, qwk, qa2, qbk, qa1, t1, t2, out, n, true);
-  // Reverse quiet move of attacker 2 (four-piece endings).
-  if (spec.pieces === 4) {
-    n = reverseAttacker(spec, qwk, qa1, qbk, qa2, t2, t1, out, n, false);
-  }
-  return n;
+function pieceAttacks(type, q, t, b1, b2) {
+  if (type === 'n') return KNIGHT_ATT[q * 64 + t] === 1;
+  return sliderAttacks(type, q, t, b1, b2);
 }
 
 /**
- * Reverse quiet moves of one attacker: candidate from-squares f for a piece
- * of type `t` that moved f -> at, with the OTHER attacker standing at `other`.
+ * Is the black king on `bk` attacked by a white piece (not the white king,
+ * whose adjacency the caller tests)? Captured pieces are marked gone.
  *
- * @param {{ attackers: string[], pieces: 3 | 4, identicalPair: boolean }} spec
- * @param {number} qwk
- * @param {number} other
- * @param {number} qbk
- * @param {number} at
- * @param {string} t
- * @param {string} otherType
- * @param {Int32Array} out
- * @param {number} n
- * @param {boolean} firstSlot True when the moving piece occupies attacker slot
- *   a1 (attacker 1); false when it occupies slot a2 (attacker 2), in which
- *   case its source square must be written into the second slot.
- * @returns {number}
- */
-function reverseAttacker(spec, qwk, other, qbk, at, t, otherType, out, n, firstSlot) {
-  /**
-   * @param {number} f
-   * @returns {void}
-   */
-  const push = (f) => {
-    if (f === qwk || f === other || f === qbk) return; // f must be empty in Q
-    if (attackedByWhite(qbk, qwk, f, t, other, otherType)) return; // Black in check in P
-    out[n++] = spec.pieces === 3
-      ? enc3(qwk, f, qbk)
-      : firstSlot
-        ? enc4(qwk, f, other, qbk)
-        : enc4(qwk, other, f, qbk);
-  };
-  if (t === 'n') {
-    const jumps = KNIGHT_ATT[at];
-    for (let i = 0; i < jumps.length; i++) push(jumps[i]);
-    return n;
-  }
-  const startDir = t === 'r' ? 0 : t === 'b' ? 4 : 0; // queen uses all eight
-  const endDir = t === 'r' ? 4 : t === 'b' ? 8 : 8;
-  for (let d = startDir; d < endDir; d++) {
-    const ray = RAYS[d][at];
-    for (let i = 0; i < ray.length; i++) {
-      const f = ray[i];
-      if (f === qwk || f === other || f === qbk) break; // first blocker: the forward slide could not have passed it
-      push(f);
-    }
-  }
-  return n;
-}
-
-/**
- * Reverse moves by Black: every Black-to-move parent P (canonical encodings)
- * from which some legal Black move produces Q. Only quiet king returns are
- * enumerated: if Black could capture a White piece, P is a draw for White
- * (the capture yields bare kings) and never needs a value, so such parents
- * are deliberately skipped. A quiet king return exists only when Q's Black
- * king stands unattacked (the forward move may not step into check).
- *
- * @param {{ attackers: string[], pieces: 3 | 4, identicalPair: boolean }} spec
- * @param {number} qwk
- * @param {number} qa1
- * @param {number} qa2
- * @param {number} qbk
- * @param {Int32Array} out Scratch array.
- * @returns {number}
- */
-function blackParentEncs(spec, qwk, qa1, qa2, qbk, out) {
-  const [t1, t2] = spec.attackers;
-  if (attackedByWhite(qbk, qwk, qa1, t1, qa2, t2)) return 0; // Black is in check in Q: the last move gave check, so it was not a quiet king move
-  let n = 0;
-  const kingMoves = KING_ATT[qbk];
-  for (let i = 0; i < kingMoves.length; i++) {
-    const f = kingMoves[i];
-    if (f === qwk || f === qa1 || f === qa2) continue;
-    if (squaresAdjacent(f, qwk)) continue; // kings would touch in P
-    out[n++] = spec.pieces === 3 ? enc3(qwk, qa1, f) : enc4(qwk, qa1, qa2, f);
-  }
-  return n;
-}
-
-/**
- * Legal Black king destinations from `bk`: quiet moves (empty square not
- * attacked by White) and captures (attacker square not defended once the
- * captured piece's own attack is removed). Used by the initial pass.
- *
+ * @param {PieceType[]} pieces
  * @param {number} wk
- * @param {number} a1
- * @param {string} t1
- * @param {number} a2
- * @param {string} t2
  * @param {number} bk
- * @returns {{ quiet: number[], captures: number }}
+ * @param {number} p1
+ * @param {number} p2
+ * @param {boolean} p1Gone
+ * @param {boolean} p2Gone
+ * @returns {boolean}
  */
-function blackKingOptions(wk, a1, t1, a2, t2, bk) {
-  /** @type {number[]} */
-  const quiet = [];
-  let captures = 0;
-  const moves = KING_ATT[bk];
-  for (let i = 0; i < moves.length; i++) {
-    const dest = moves[i];
-    if (dest === wk) continue; // may not move onto the White king
-    if (dest === a1 || dest === a2) {
-      if (!attackedByWhite(dest, wk, a1, t1, a2, t2, dest)) captures++;
-      continue;
+function blackKingAttacked(pieces, wk, bk, p1, p2, p1Gone, p2Gone) {
+  const two = pieces.length === 2;
+  if (!p1Gone && pieceAttacks(pieces[0], p1, bk, wk, two && !p2Gone ? p2 : -1)) {
+    return true;
+  }
+  if (two && !p2Gone && pieceAttacks(pieces[1], p2, bk, wk, p1Gone ? -1 : p1)) {
+    return true;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Move generation. `onMove(cwk, cbk, cp1, cp2, captureAll)` receives child
+// tuples; for Black's moves `captureAll` marks a capture of white material,
+// which leaves this endgame's index space and is a terminal draw.
+// ---------------------------------------------------------------------------
+
+/**
+ * @param {{ pieces: PieceType[], np: number }} kind
+ * @param {number} wk
+ * @param {number} bk
+ * @param {number} p1
+ * @param {number} p2 -1 when np === 1.
+ * @param {(cwk: number, cbk: number, cp1: number, cp2: number) => void} onMove
+ */
+function genWhiteMoves(kind, wk, bk, p1, p2, onMove) {
+  const [t1, t2] = kind.pieces;
+  for (let i = 0; i < KING_MOVES[wk].length; i++) {
+    const t = KING_MOVES[wk][i];
+    if (t === bk || t === p1 || t === p2) continue;
+    if (KING_ATT[t * 64 + bk]) continue;
+    onMove(t, bk, p1, p2);
+  }
+  if (t1 === 'n') {
+    const moves = KNIGHT_MOVES[p1];
+    for (let i = 0; i < moves.length; i++) {
+      const t = moves[i];
+      if (t === wk || t === bk || t === p2) continue;
+      onMove(wk, bk, t, p2);
     }
-    if (!attackedByWhite(dest, wk, a1, t1, a2, t2)) quiet.push(dest);
+  } else {
+    const dirs = t1 === 'r' ? 4 : t1 === 'b' ? 4 : 8;
+    const dir0 = t1 === 'b' ? 4 : 0;
+    for (let d = dir0; d < dir0 + dirs; d++) {
+      const ray = RAYS[p1 * 8 + d];
+      for (let i = 0; i < ray.length; i++) {
+        const s = ray[i];
+        if (s === wk || s === p2) break;
+        if (s === bk) break;
+        onMove(wk, bk, s, p2);
+      }
+    }
   }
-  return { quiet, captures };
+  if (kind.np === 2) {
+    if (t2 === 'n') {
+      const moves = KNIGHT_MOVES[p2];
+      for (let i = 0; i < moves.length; i++) {
+        const t = moves[i];
+        if (t === wk || t === bk || t === p1) continue;
+        onMove(wk, bk, p1, t);
+      }
+    } else {
+      // Piece 2 is the second bishop in kbbk, the knight being handled above
+      // only when it is piece 2 in kbnk — bishops slide.
+      for (let d = 4; d < 8; d++) {
+        const ray = RAYS[p2 * 8 + d];
+        for (let i = 0; i < ray.length; i++) {
+          const s = ray[i];
+          if (s === wk || s === p1) break;
+          if (s === bk) break;
+          onMove(wk, bk, p1, s);
+        }
+      }
+    }
+  }
 }
 
 /**
- * Canonical encoding of a position given in raw slot order.
- *
- * @param {{ pieces: 3 | 4, identicalPair: boolean }} spec
- * @param {number} rawEnc
- * @returns {number}
+ * @param {{ pieces: PieceType[], np: number }} kind
+ * @param {number} wk
+ * @param {number} bk
+ * @param {number} p1
+ * @param {number} p2
+ * @param {(cwk: number, cbk: number, cp1: number, cp2: number, captureAll: boolean) => void} onMove
  */
-function canonOfRaw(spec, rawEnc) {
-  if (spec.pieces === 3) {
-    return canon3(rawEnc >>> 12, (rawEnc >>> 6) & 63, rawEnc & 63);
+function genBlackMoves(kind, wk, bk, p1, p2, onMove) {
+  const [t1, t2] = kind.pieces;
+  const two = kind.np === 2;
+  for (let i = 0; i < KING_MOVES[bk].length; i++) {
+    const t = KING_MOVES[bk][i];
+    if (t === wk || KING_ATT[t * 64 + wk]) continue;
+    const c1 = t === p1;
+    const c2 = two && t === p2;
+    const attacked =
+      (!c1 && pieceAttacks(t1, p1, t, wk, c2 || !two ? -1 : p2)) ||
+      (two && !c2 && pieceAttacks(t2, p2, t, wk, c1 ? -1 : p1));
+    if (attacked) continue;
+    onMove(wk, t, c1 ? -1 : p1, c2 ? -1 : p2, c1 || c2);
   }
-  return canon4(rawEnc >>> 18, (rawEnc >>> 12) & 63, (rawEnc >>> 6) & 63, rawEnc & 63, spec.identicalPair);
 }
 
+// ---------------------------------------------------------------------------
+// Retrograde build.
+// ---------------------------------------------------------------------------
+
 /**
- * Build one endgame's table by retrograde analysis.
+ * Build the DTM table for one endgame kind.
  *
- * @param {string} endgameId
- * @returns {BuiltTable}
+ * @param {string} kindId
+ * @returns {Tablebase & { values: Uint8Array, sideSize: number }}
  */
-export function buildTable(endgameId) {
-  const spec = specOf(endgameId);
-  const identical = spec.identicalPair;
-  const four = spec.pieces === 4;
-  const size = four ? 2 ** 25 : 2 ** 19;
-  const dtm = new Uint8Array(size).fill(255);
-  const counts = new Uint8Array(size);
+function buildTablebase(kindId) {
+  const kind = kindOf(kindId);
+  const np = kind.np;
+  const sideSize = np === 1 ? 10 * 64 * 64 : 10 * 64 * 64 * 64;
+  const total = 2 * sideSize;
+  const startedMs = Date.now();
+
+  const values = new Uint8Array(total);
+  const counters = new Uint8Array(total);
+  const revCount = new Uint32Array(total + 1);
   /** @type {number[]} */
-  const queueB0 = [];
+  const mates = [];
+  let legalPositions = 0;
+
+  /** Mutable cursor shared with the move callbacks (no per-call closures). */
+  const cur = { side: 0, wk: 0, bk: 0, p1: 0, p2: -1, moves: 0, combined: 0 };
 
   /**
-   * @param {number} wk
-   * @param {number} a1
-   * @param {number} a2
-   * @param {number} bk
-   * @returns {number}
+   * @param {number} cwk
+   * @param {number} cbk
+   * @param {number} cp1
+   * @param {number} cp2
+   * @param {boolean} [captureAll]
    */
-  const canon = (wk, a1, a2, bk) =>
-    four ? canon4(wk, a1, a2, bk, identical) : canon3(wk, a1, bk);
+  function countCb(cwk, cbk, cp1, cp2, captureAll) {
+    cur.moves++;
+    if (captureAll) return;
+    revCount[canonicalIndex(np, sideSize, cwk, cbk, cp1, cp2, cur.side === 0 ? 1 : 0)]++;
+  }
 
-  // Initial pass: seed checkmates (dtm 0) and set defender child counts.
-  for (const wk of KING_CANON_SQUARES) {
-    for (let a1 = 0; a1 < 64; a1++) {
-      if (a1 === wk) continue;
-      const a2Limit = four ? 64 : 1;
-      for (let a2i = 0; a2i < a2Limit; a2i++) {
-        const a2 = four ? a2i : -1;
-        if (four && (a2 === a1 || a2 === wk)) continue;
-        if (four && identical && a2 < a1) continue; // sorted-pair representative
-        for (let bk = 0; bk < 64; bk++) {
-          if (bk === wk || bk === a1 || bk === a2) continue;
-          if (squaresAdjacent(wk, bk)) continue;
-          const enc = four ? enc4(wk, a1, a2, bk) : enc3(wk, a1, bk);
-          if (canon(wk, a1, a2, bk) !== enc) continue; // not the canonical representative
-          const [t1, t2] = spec.attackers;
-          const idxB = enc * 2 + 1;
-          const { quiet, captures } = blackKingOptions(wk, a1, t1, a2, t2, bk);
-          if (quiet.length === 0 && captures === 0) {
-            // No defence left: checkmate when the king is attacked, stalemate
-            // (a draw, left at 255) when it is not.
-            if (attackedByWhite(bk, wk, a1, t1, a2, t2)) {
-              dtm[idxB] = 0;
-              queueB0.push(idxB);
+  // Pass 1: legality, move counts, mates, reverse-edge counts.
+  for (let side = 0; side <= 1; side++) {
+    cur.side = side;
+    for (let tri = 0; tri < TRI_SQUARES.length; tri++) {
+      const wk = TRI_SQUARES[tri];
+      cur.wk = wk;
+      for (let bk = 0; bk < 64; bk++) {
+        if (KING_ATT[wk * 64 + bk]) continue;
+        cur.bk = bk;
+        for (let p1 = 0; p1 < 64; p1++) {
+          if (p1 === wk || p1 === bk) continue;
+          const p2Max = np === 2 ? 64 : 1;
+          for (let p2 = 0; p2 < p2Max; p2++) {
+            if (np === 2 && (p2 === wk || p2 === bk || p2 === p1)) continue;
+            const pp2 = np === 2 ? p2 : -1;
+            cur.p1 = p1;
+            cur.p2 = pp2;
+            const idx =
+              np === 1
+                ? (tri * 64 + bk) * 64 + p1
+                : ((tri * 64 + bk) * 64 + p1) * 64 + p2;
+            const combined = side * sideSize + idx;
+            if (side === 0 && blackKingAttacked(kind.pieces, wk, bk, p1, pp2, false, false)) {
+              values[combined] = V_ILLEGAL;
+              continue;
             }
-            continue;
-          }
-          // Defender child classes: distinct canonical encodings of quiet
-          // children, plus a permanent sentinel when a capture (a draw) exists.
-          /** @type {number[]} */
-          const childEncs = [];
-          for (const dest of quiet) {
-            const childEnc = canon(wk, a1, a2, dest);
-            let seen = false;
-            for (let i = 0; i < childEncs.length; i++) {
-              if (childEncs[i] === childEnc) {
-                seen = true;
-                break;
-              }
+            legalPositions++;
+            cur.moves = 0;
+            if (side === 0) genWhiteMoves(kind, wk, bk, p1, pp2, countCb);
+            else genBlackMoves(kind, wk, bk, p1, pp2, countCb);
+            counters[combined] = cur.moves;
+            if (side === 1 && cur.moves === 0 && blackKingAttacked(kind.pieces, wk, bk, p1, pp2, false, false)) {
+              values[combined] = 0; // checkmate
+              mates.push(combined);
+              // else stalemate: stays V_DRAW forever, which is correct.
+            } else {
+              values[combined] = V_DRAW;
             }
-            if (!seen) childEncs.push(childEnc);
           }
-          counts[idxB] = childEncs.length + (captures > 0 ? 60 : 0);
         }
       }
     }
   }
 
-  // Retrograde breadth-first search: alternate White-parent expansion (which
-  // sets attacker values to d+1 from defender value d) and defender
-  // child-count exhaustion (which sets defender value d once every child has
-  // entered the attacker side, the last one at d, so the max is exactly d).
-  /** @type {number[]} */
-  let frontier = queueB0;
-  /** @type {number[]} */
-  let scratch = [];
-  let side = /** @type {'B' | 'W'} */ ('B');
-  let d = 0;
-  const parentScratch = new Int32Array(64);
-  const canonScratch = new Int32Array(64);
+  // Prefix sums -> reverse offsets.
+  const revOffsets = new Uint32Array(total + 1);
+  let acc = 0;
+  for (let i = 0; i < total; i++) {
+    revOffsets[i] = acc;
+    acc += revCount[i];
+  }
+  revOffsets[total] = acc;
+  const revEdges = new Int32Array(acc);
+  for (let i = 0; i < total; i++) revCount[i] = revOffsets[i]; // reuse as fill cursor
+
   /**
-   * Canonicalize the raw parent encodings in parentScratch and dedupe them.
-   * @param {number} nRaw
-   * @returns {number} Number of unique canonical encodings in canonScratch.
+   * @param {number} cwk
+   * @param {number} cbk
+   * @param {number} cp1
+   * @param {number} cp2
+   * @param {boolean} [captureAll]
    */
-  const canonicalizeParents = (nRaw) => {
-    let m = 0;
-    for (let i = 0; i < nRaw; i++) {
-      const c = canonOfRaw(spec, parentScratch[i]);
-      let seen = false;
-      for (let j = 0; j < m; j++) {
-        if (canonScratch[j] === c) {
-          seen = true;
-          break;
+  function fillCb(cwk, cbk, cp1, cp2, captureAll) {
+    if (captureAll) return;
+    const child = canonicalIndex(np, sideSize, cwk, cbk, cp1, cp2, cur.side === 0 ? 1 : 0);
+    revEdges[revCount[child]++] = cur.combined;
+  }
+
+  // Pass 2: fill reverse edges.
+  for (let side = 0; side <= 1; side++) {
+    cur.side = side;
+    for (let tri = 0; tri < TRI_SQUARES.length; tri++) {
+      const wk = TRI_SQUARES[tri];
+      cur.wk = wk;
+      for (let bk = 0; bk < 64; bk++) {
+        if (wk === bk || KING_ATT[wk * 64 + bk]) continue;
+        cur.bk = bk;
+        for (let p1 = 0; p1 < 64; p1++) {
+          if (p1 === wk || p1 === bk) continue;
+          const p2Max = np === 2 ? 64 : 1;
+          for (let p2 = 0; p2 < p2Max; p2++) {
+            if (np === 2 && (p2 === wk || p2 === bk || p2 === p1)) continue;
+            const pp2 = np === 2 ? p2 : -1;
+            cur.p1 = p1;
+            cur.p2 = pp2;
+            if (side === 0 && blackKingAttacked(kind.pieces, wk, bk, p1, pp2, false, false)) {
+              continue;
+            }
+            const idx =
+              np === 1
+                ? (tri * 64 + bk) * 64 + p1
+                : ((tri * 64 + bk) * 64 + p1) * 64 + p2;
+            cur.combined = side * sideSize + idx;
+            if (side === 0) genWhiteMoves(kind, wk, bk, p1, pp2, fillCb);
+            else genBlackMoves(kind, wk, bk, p1, pp2, fillCb);
+          }
         }
       }
-      if (!seen) canonScratch[m++] = c;
     }
-    return m;
-  };
-  while (frontier.length > 0) {
+  }
+
+  // Layered retrograde from the mates. White-to-move values finalise on the
+  // first (smallest) finalised defender child; defender values finalise when
+  // the last child finalises, which is the largest.
+  let current = mates;
+  while (current.length > 0) {
     /** @type {number[]} */
     const next = [];
-    if (side === 'B') {
-      for (const qIdx of frontier) {
-        const enc = qIdx >>> 1;
-        const qwk = four ? enc >>> 18 : enc >>> 12;
-        const qa1 = four ? (enc >>> 12) & 63 : (enc >>> 6) & 63;
-        const qa2 = four ? (enc >>> 6) & 63 : -1;
-        const qbk = enc & 63;
-        const nParents = canonicalizeParents(
-          whiteParentEncs(spec, qwk, qa1, qa2, qbk, parentScratch),
-        );
-        for (let i = 0; i < nParents; i++) {
-          const pIdx = canonScratch[i] * 2; // White to move
-          if (dtm[pIdx] === 255) {
-            dtm[pIdx] = d + 1;
-            next.push(pIdx);
-          }
+    for (let i = 0; i < current.length; i++) {
+      const x = current[i];
+      const v = values[x];
+      const from = revOffsets[x];
+      const to = revOffsets[x + 1];
+      if (x >= sideSize) {
+        // Defender position finalised at v: attacker parents get v + 1.
+        for (let e = from; e < to; e++) {
+          const p = revEdges[e];
+          if (values[p] !== V_DRAW) continue;
+          values[p] = v + 1;
+          next.push(p);
         }
-      }
-      side = 'W';
-      d += 1;
-    } else {
-      for (const qIdx of frontier) {
-        const enc = qIdx >>> 1;
-        const qwk = four ? enc >>> 18 : enc >>> 12;
-        const qa1 = four ? (enc >>> 12) & 63 : (enc >>> 6) & 63;
-        const qa2 = four ? (enc >>> 6) & 63 : -1;
-        const qbk = enc & 63;
-        const nParents = canonicalizeParents(
-          blackParentEncs(spec, qwk, qa1, qa2, qbk, parentScratch),
-        );
-        for (let i = 0; i < nParents; i++) {
-          const pIdx = canonScratch[i] * 2 + 1; // Black to move
-          if (dtm[pIdx] === 255 && counts[pIdx] > 0) {
-            counts[pIdx] -= 1;
-            if (counts[pIdx] === 0) {
-              dtm[pIdx] = d;
-              next.push(pIdx);
-            }
-          }
-        }
-      }
-      side = 'B';
-    }
-    frontier = next;
-    scratch = frontier; // keep a reference so large frontiers are not re-created
-    void scratch;
-  }
-
-  // Highest finite attacker-to-move value: the published-table maximum.
-  let maxDTM = 0;
-  for (let idx = 0; idx < size; idx += 2) {
-    const v = dtm[idx];
-    if (v <= 200 && v > maxDTM) maxDTM = v;
-  }
-  return { dtm, maxDTM };
-}
-
-/* ------------------------------------------------------------------ *
- * Lazy per-process caches and probing.
- * ------------------------------------------------------------------ */
-
-/** @type {Map<string, BuiltTable>} */
-const BUILT = new Map();
-
-/**
- * Build (once) and return the table for an endgame.
- *
- * @param {string} endgameId
- * @returns {BuiltTable}
- */
-export function getTable(endgameId) {
-  let table = BUILT.get(endgameId);
-  if (!table) {
-    table = buildTable(endgameId);
-    BUILT.set(endgameId, table);
-  }
-  return table;
-}
-
-/**
- * Parse a FEN piece placement and side to move into squares. Returns null for
- * any position that does not have exactly this endgame's material.
- *
- * @param {string} endgameId
- * @param {string} fen
- * @returns {{ wk: number, a1: number, a2: number, bk: number, whiteToMove: boolean, attackers: string[] } | null}
- */
-export function parseEndgameFen(endgameId, fen) {
-  const spec = specOf(endgameId);
-  const fields = String(fen).trim().split(/\s+/);
-  if (fields.length < 2) return null;
-  const placement = fields[0];
-  const whiteToMove = fields[1] === 'w';
-  const rows = placement.split('/');
-  if (rows.length !== 8) return null;
-  let wk = -1;
-  let bk = -1;
-  /** @type {number[]} */
-  const attackerSquares = [];
-  /** @type {string[]} */
-  const attackerTypes = [];
-  for (let rowIdx = 0; rowIdx < 8; rowIdx++) {
-    const row = rows[rowIdx];
-    const rank = 7 - rowIdx;
-    let file = 0;
-    for (let i = 0; i < row.length; i++) {
-      const ch = row[i];
-      if (ch >= '1' && ch <= '8') {
-        file += Number(ch);
-        continue;
-      }
-      const sq = rank * 8 + file;
-      if (ch === 'K') {
-        if (wk >= 0) return null;
-        wk = sq;
-      } else if (ch === 'k') {
-        if (bk >= 0) return null;
-        bk = sq;
       } else {
-        const lower = ch.toLowerCase();
-        if (ch !== lower) {
-          attackerSquares.push(sq);
-          attackerTypes.push(lower);
-        } else {
-          return null; // unexpected black piece
+        // Attacker position finalised at v: defender parents whose every
+        // child is finalised get v (the last child carries the maximum).
+        for (let e = from; e < to; e++) {
+          const q = revEdges[e];
+          if (values[q] !== V_DRAW) continue;
+          if (--counters[q] === 0) {
+            values[q] = v;
+            next.push(q);
+          }
         }
       }
-      file += 1;
     }
-    if (file !== 8) return null;
+    current = next;
   }
-  if (wk < 0 || bk < 0) return null;
-  if (attackerSquares.length !== spec.attackers.length) return null;
-  // Attacker types must match the endgame's multiset.
-  const expected = [...spec.attackers].sort().join('');
-  const actual = [...attackerTypes].sort().join('');
-  if (expected !== actual) return null;
-  const a1 = attackerSquares[0];
-  const a2 = attackerSquares.length > 1 ? attackerSquares[1] : -1;
-  const t1 = attackerTypes[0];
-  const t2 = attackerTypes.length > 1 ? attackerTypes[1] : '';
-  // Reorder the attacker slots to the spec's identity order.
-  let fa1 = a1;
-  let fa2 = a2;
-  const [e1, e2] = spec.attackers;
-  if (spec.attackers.length === 2 && t1 !== e1) {
-    fa1 = a2;
-    fa2 = a1;
+
+  let maxDtm = 0;
+  for (let i = 0; i < sideSize; i++) {
+    const v = values[i];
+    if (v < 60 && v > maxDtm) maxDtm = v;
   }
-  void e2;
-  void t2;
-  if (squaresAdjacent(wk, bk)) return null; // impossible position
-  if (fa1 === wk || fa1 === bk || fa2 === wk || fa2 === bk) return null;
-  return { wk, a1: fa1, a2: fa2, bk, whiteToMove, attackers: spec.attackers };
-}
 
-/**
- * Probe the table for a position.
- *
- * @param {string} endgameId
- * @param {string} fen
- * @returns {{ dtm: number | null, draw: boolean }}
- *   `dtm` is the distance to mate in White moves with the side to move as the
- *   FEN states it (null when White cannot force mate). `draw` is true for
- *   every no-mate answer, including positions outside this endgame's material.
- */
-export function probe(endgameId, fen) {
-  const parsed = parseEndgameFen(endgameId, fen);
-  if (!parsed) return { dtm: null, draw: true };
-  const table = getTable(endgameId);
-  const { wk, a1, a2, bk, whiteToMove } = parsed;
-  const enc = parsed.attackers.length === 2
-    ? canon4(wk, a1, a2, bk, specOf(endgameId).identicalPair)
-    : canon3(wk, a1, bk);
-  const idx = enc * 2 + (whiteToMove ? 0 : 1);
-  const value = table.dtm[idx];
-  if (value <= 200) return { dtm: value, draw: false };
-  return { dtm: null, draw: true };
-}
-
-/**
- * The table's highest finite DTM with the attacker to move: 10 for KQK,
- * 16 for KRK, 19 for KBBK and 33 for KBNK when the tables are correct.
- *
- * @param {string} endgameId
- * @returns {number}
- */
-export function tableMaxDTM(endgameId) {
-  return getTable(endgameId).maxDTM;
-}
-
-/**
- * Raw position classification from the table's own move generator, for
- * cross-checking against chess.js in tests.
- *
- * @param {string} endgameId
- * @param {string} fen
- * @returns {{ checkmate: boolean, stalemate: boolean, legalMoves: number } | null}
- *   Null when the FEN does not match this endgame's material.
- */
-export function rawFlags(endgameId, fen) {
-  const parsed = parseEndgameFen(endgameId, fen);
-  if (!parsed) return null;
-  const spec = specOf(endgameId);
-  const [t1, t2] = spec.attackers;
-  const { wk, a1, a2, bk, whiteToMove } = parsed;
-  const stmWhite = whiteToMove;
-  // The side to move is the defender (Black) in every position this module
-  // stores side-to-move flags for; classify the defender's situation when
-  // Black is to move, and the attacker's escape options when White is.
-  if (stmWhite) {
-    // White to move: no special flags; count king + attacker moves is not
-    // needed by the game, so only the defender flags are computed below.
-    return { checkmate: false, stalemate: false, legalMoves: -1 };
-  }
-  const inCheck = attackedByWhite(bk, wk, a1, t1, a2, t2);
-  const { quiet, captures } = blackKingOptions(wk, a1, t1, a2, t2, bk);
-  const moves = quiet.length + captures;
   return {
-    checkmate: inCheck && moves === 0,
-    stalemate: !inCheck && moves === 0,
-    legalMoves: moves,
+    kind: kindId,
+    np,
+    maxDtm,
+    values,
+    sideSize,
+    stats: {
+      legalPositions,
+      reverseEdges: acc,
+      valueBytes: total,
+      buildMs: Date.now() - startedMs,
+    },
+    dtm(pos) {
+      return dtmLookup(values, sideSize, np, pos);
+    },
   };
 }
+
+/**
+ * @param {Uint8Array} values
+ * @param {number} sideSize
+ * @param {number} np
+ * @param {EndgamePosition} pos
+ * @returns {number | null}
+ */
+function dtmLookup(values, sideSize, np, pos) {
+  const p1 = pos.pieces[0];
+  const p2 = np === 2 ? (pos.pieces.length > 1 ? pos.pieces[1] : -1) : -1;
+  const combined = canonicalIndex(np, sideSize, pos.wk, pos.bk, p1, p2, pos.side);
+  const v = values[combined];
+  return v >= V_DRAW ? null : v;
+}
+
+/** Built-table cache: lazy, once per process per kind. */
+const cache = new Map();
+
+/**
+ * Get (building on first use) the tablebase for an endgame kind.
+ *
+ * @param {string} kindId 'kqk' | 'krk' | 'kbbk' | 'kbnk'
+ * @returns {Tablebase}
+ */
+export function getTablebase(kindId) {
+  const cached = cache.get(kindId);
+  if (cached) return cached;
+  const built = buildTablebase(kindId);
+  cache.set(kindId, built);
+  return built;
+}
+
+/**
+ * Legal moves and check status of a raw position, without needing a built
+ * table. Used by the strict tests against chess.js.
+ *
+ * @param {string} kindId
+ * @param {EndgamePosition} pos
+ * @returns {PositionProbe}
+ */
+export function probePosition(kindId, pos) {
+  const kind = kindOf(kindId);
+  const np = kind.np;
+  const p1 = pos.pieces[0];
+  const p2 = np === 2 ? (pos.pieces.length > 1 ? pos.pieces[1] : -1) : -1;
+  const { wk, bk, side } = pos;
+  /** @type {ProbeMove[]} */
+  const moves = [];
+  const illegal =
+    p1 < 0 ||
+    p1 > 63 ||
+    wk === bk ||
+    p1 === wk ||
+    p1 === bk ||
+    (np === 2 && (p2 === wk || p2 === bk || p2 === p1)) ||
+    KING_ATT[wk * 64 + bk] === 1 ||
+    (side === 0 && blackKingAttacked(kind.pieces, wk, bk, p1, p2, false, false));
+  if (illegal) {
+    return { legal: false, inCheck: false, moves };
+  }
+  const inCheck = side === 1 && blackKingAttacked(kind.pieces, wk, bk, p1, p2, false, false);
+  if (side === 0) {
+    genWhiteMoves(kind, wk, bk, p1, p2, (cwk, cbk, cp1, cp2) => {
+      if (cwk !== wk) moves.push({ from: wk, to: cwk });
+      else if (cp1 !== p1) moves.push({ from: p1, to: cp1 });
+      else moves.push({ from: p2, to: cp2 });
+      void cbk;
+      void cp1;
+      void cp2;
+    });
+  } else {
+    genBlackMoves(kind, wk, bk, p1, p2, (cwk, cbk, cp1, cp2, captureAll) => {
+      void captureAll;
+      moves.push({ from: bk, to: cbk });
+      void cwk;
+      void cp1;
+      void cp2;
+    });
+  }
+  return { legal: true, inCheck, moves };
+}
+
+// ---------------------------------------------------------------------------
+// Square and FEN helpers (shared by the game, baselines and tests).
+// ---------------------------------------------------------------------------
+
+/**
+ * @param {number} sq
+ * @returns {string}
+ */
+export function squareName(sq) {
+  return String.fromCharCode(97 + (sq & 7)) + String((sq >> 3) + 1);
+}
+
+/**
+ * @param {string} name Two-character algebraic name, e.g. "e4".
+ * @returns {number}
+ */
+export function squareFromName(name) {
+  const file = name.charCodeAt(0) - 97;
+  const rank = name.charCodeAt(1) - 49;
+  if (file < 0 || file > 7 || rank < 0 || rank > 7) {
+    throw new Error(`bad square name ${JSON.stringify(name)}`);
+  }
+  return rank * 8 + file;
+}
+
+/**
+ * Parse a FEN piece-placement field into an endgame position.
+ *
+ * @param {string} kindId
+ * @param {string} placement e.g. "k7/8/1K6/8/8/8/8/7Q".
+ * @param {0 | 1} side
+ * @returns {EndgamePosition}
+ */
+export function positionFromPlacement(kindId, placement, side) {
+  const kind = kindOf(kindId);
+  if (placement.split('/').length !== 8) {
+    throw new Error(`placement must have 8 ranks: ${JSON.stringify(placement)}`);
+  }
+  /** @type {{ sq: number, ch: string }[]} */
+  const typedPieces = [];
+  let wk = -1;
+  let bk = -1;
+  let rank = 7;
+  let file = 0;
+  for (const ch of placement) {
+    if (ch === '/') {
+      rank--;
+      file = 0;
+      continue;
+    }
+    if (ch >= '1' && ch <= '8') {
+      file += Number(ch);
+      continue;
+    }
+    const sq = rank * 8 + file;
+    if (ch === 'K') wk = sq;
+    else if (ch === 'k') bk = sq;
+    else typedPieces.push({ sq, ch: ch.toLowerCase() });
+    file++;
+  }
+  if (wk < 0 || bk < 0 || typedPieces.length !== kind.np) {
+    throw new Error(
+      `not a ${kindId} placement: ${JSON.stringify(placement)}`
+    );
+  }
+  if (kind.np === 2 && kind.pieces[0] !== kind.pieces[1]) {
+    // Mixed piece types: order by the kind's type sequence — the table
+    // indexes slot 0 as `kind.pieces[0]` (e.g. the kbnk bishop).
+    typedPieces.sort(
+      (a, b) =>
+        kind.pieces.indexOf(/** @type {PieceType} */ (a.ch)) -
+        kind.pieces.indexOf(/** @type {PieceType} */ (b.ch))
+    );
+  }
+  return {
+    wk,
+    bk,
+    pieces: typedPieces.map((x) => x.sq),
+    side,
+  };
+}
+
+/**
+ * DTM in attacker moves for the side to move, or null when drawn,
+ * unprovable or illegal.
+ *
+ * @param {Tablebase} table
+ * @param {EndgamePosition} pos
+ * @returns {number | null}
+ */
+export function dtm(table, pos) {
+  return table.dtm(pos);
+}
+

@@ -127,6 +127,15 @@ export function renderReport(input) {
     const kinds = /** @type {const} */ (['random', 'greedy', 'engine']);
     const first = kinds.map((k) => table.baselines[k]).find(Boolean);
     const tiers = first ? Object.values(first.tiers).sort((a, b) => a.rank - b.rank) : [];
+    // A block with no episodes (a cap stopped the worker before that rung
+    // ran) was never checked: gating the pass line on full coverage keeps a
+    // capped partial table from rendering a vacuous "checks pass".
+    const hasEmptyBlocks = tiers.some((tier) =>
+      kinds.some((kind) => {
+        const block = table.baselines[kind]?.tiers[tier.id];
+        return !block || !(block.episodes > 0);
+      })
+    );
     for (const tier of tiers) {
       const cells = kinds.map((kind) => {
         const block = table.baselines[kind]?.tiers[tier.id];
@@ -154,14 +163,21 @@ export function renderReport(input) {
     }
     const gameViolations = violations.filter((v) => v.game === table.game.id && v.severity === 'violation');
     const gameWarnings = violations.filter((v) => v.game === table.game.id && v.severity !== 'violation');
-    if (gameViolations.length === 0) {
+    if (gameViolations.length === 0 && !hasEmptyBlocks) {
       lines.push('✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).');
+      lines.push('');
+    } else if (gameViolations.length === 0) {
+      lines.push('⚠️ ordering checks skipped — cells are empty after the cap (episodes stopped before they could be scored), so nothing was checked there.');
       lines.push('');
     } else {
       for (const violation of gameViolations) {
         lines.push(`❌ **${violation.check}** — ${violation.detail}`);
         lines.push('');
         lines.push(`  _Proposal:_ ${violation.proposal}`);
+        lines.push('');
+      }
+      if (hasEmptyBlocks) {
+        lines.push('⚠️ additional ordering checks skipped — other cells are empty after the cap; nothing was checked there.');
         lines.push('');
       }
     }

@@ -70,6 +70,10 @@ if (seedsLimit !== null && (!Number.isInteger(seedsLimit) || seedsLimit < 1)) {
 const outDir = resolve(typeof args.out === 'string' ? args.out : join(here, 'tables'));
 const reportPath = resolve(typeof args.report === 'string' ? args.report : join(here, 'REPORT.md'));
 const timeCapSec = typeof args['per-game-cap'] === 'string' ? Number(args['per-game-cap']) : 1200;
+if (!Number.isFinite(timeCapSec) || timeCapSec <= 0) {
+  console.error(`run.js: --per-game-cap must be a positive number of seconds (got ${JSON.stringify(args['per-game-cap'])})`);
+  process.exit(1);
+}
 const trajDir = typeof args.trajectories === 'string' ? resolve(args.trajectories) : mkdtempSync('/tmp/gauntlet-calibration-');
 const keepTrajectories = args['keep-trajectories'] === true;
 mkdirSync(outDir, { recursive: true });
@@ -93,6 +97,15 @@ const parentShas = git('git log --format=%P -1 HEAD', '').split(/\s+/).filter(Bo
 
 // Run workers with a pool so the machine's CPUs are used without oversubscribing.
 const concurrency = Math.max(1, Math.min(games.length, availableParallelism() - 1));
+
+// Last-resort parent watchdog: the worker enforces the cap per episode (see
+// worker.js), but a wedged child that never exits would hang the whole run.
+// Kill it past cap + episode grace + this slack and record a failure. Must
+// stay strictly larger than the worker's own episode deadline (cap + grace),
+// which lets a legitimately long final episode finish in grace the way chess
+// did on the first full run (1381.5s against a 1200s cap).
+const EPISODE_GRACE_SEC = Number(process.env.CALIBRATION_EPISODE_GRACE_SEC ?? 900);
+const WATCHDOG_SLACK_SEC = Number(process.env.CALIBRATION_WATCHDOG_SLACK_SEC ?? 120);
 /** @type {RunMeta[]} */
 const metas = [];
 /** @type {string[]} */
@@ -116,13 +129,30 @@ async function drain() {
     });
     const started = Date.now();
     console.error(`[run] ${game.id}: worker started (cap ${timeCapSec}s)`);
+    const watchdogSec = timeCapSec + EPISODE_GRACE_SEC + WATCHDOG_SLACK_SEC;
+    let watchdogFired = false;
     const code = await new Promise((resolvePromise) => {
       const child = spawn(process.execPath, [join(here, 'worker.js'), config], {
         stdio: ['ignore', 'inherit', 'inherit'],
       });
-      child.on('exit', (code) => resolvePromise(code ?? -1));
-      child.on('error', () => resolvePromise(-1));
+      const watchdog = setTimeout(() => {
+        watchdogFired = true;
+        child.kill('SIGKILL');
+      }, watchdogSec * 1000);
+      child.on('exit', (code) => {
+        clearTimeout(watchdog);
+        resolvePromise(code ?? -1);
+      });
+      child.on('error', () => {
+        clearTimeout(watchdog);
+        resolvePromise(-1);
+      });
     });
+    if (watchdogFired) {
+      failures.push(`${game.id}: watchdog killed the worker after ${watchdogSec}s — an episode wedged past the wall cap`);
+      console.error(`[run] ${game.id}: WATCHDOG KILL (no exit within ${watchdogSec}s)`);
+      continue;
+    }
     if (code !== 0 || !existsSync(tablePath)) {
       failures.push(`${game.id}: worker exited ${code} after ${Math.round((Date.now() - started) / 100) / 10}s`);
       console.error(`[run] ${game.id}: FAILED (exit ${code})`);

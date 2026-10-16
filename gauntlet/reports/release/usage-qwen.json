@@ -1,0 +1,465 @@
+{
+  "overall": {
+    "runId": null,
+    "agent": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "calls": 1960,
+    "invalidActions": 142,
+    "invalidRate": 0.072449,
+    "inputTokens": 1487070,
+    "outputTokens": 4444,
+    "msPerCallMean": 4422,
+    "stopReason": null,
+    "counts": {
+      "jobs": 49,
+      "played": 3,
+      "skipped": 46,
+      "replayed": 3,
+      "unplayed": 0,
+      "failed": 0
+    },
+    "caps": {
+      "maxUsd": null,
+      "maxCalls": 2400,
+      "requestsPerMinute": null,
+      "maxOutputTokens": null,
+      "callTimeoutMs": null
+    }
+  },
+  "perGame": [
+    {
+      "gameId": "2048",
+      "episodes": "4/4",
+      "complete": true,
+      "calls": 654,
+      "invalid": 2,
+      "invalidRate": 0.003058,
+      "forfeits": 0,
+      "endReasons": {
+        "terminal": 4
+      },
+      "inputTokens": 366681,
+      "outputTokens": 1308,
+      "inputTokPerCall": 560.674312,
+      "outputTokPerCall": 2,
+      "msPerCall": {
+        "mean": 2343,
+        "p50": 2292,
+        "max": 7873
+      }
+    },
+    {
+      "gameId": "tictactoe",
+      "episodes": "1/1",
+      "complete": true,
+      "calls": 3,
+      "invalid": 0,
+      "invalidRate": 0,
+      "forfeits": 0,
+      "endReasons": {
+        "terminal": 1
+      },
+      "inputTokens": 960,
+      "outputTokens": 9,
+      "inputTokPerCall": 320,
+      "outputTokPerCall": 3,
+      "msPerCall": {
+        "mean": 8114,
+        "p50": 6145,
+        "max": 15505
+      }
+    },
+    {
+      "gameId": "chess",
+      "episodes": "4/4",
+      "complete": true,
+      "calls": 13,
+      "invalid": 12,
+      "invalidRate": 0.923077,
+      "forfeits": 4,
+      "endReasons": {
+        "forfeit-invalid": 4
+      },
+      "inputTokens": 9007,
+      "outputTokens": 39,
+      "inputTokPerCall": 692.846154,
+      "outputTokPerCall": 3,
+      "msPerCall": {
+        "mean": 4095,
+        "p50": 4100,
+        "max": 6241
+      }
+    },
+    {
+      "gameId": "chess-endgames",
+      "episodes": "4/4",
+      "complete": true,
+      "calls": 25,
+      "invalid": 8,
+      "invalidRate": 0.32,
+      "forfeits": 2,
+      "endReasons": {
+        "forfeit-invalid": 2,
+        "terminal": 2
+      },
+      "inputTokens": 16743,
+      "outputTokens": 123,
+      "inputTokPerCall": 669.72,
+      "outputTokPerCall": 4.92,
+      "msPerCall": {
+        "mean": 5144,
+        "p50": 4757,
+        "max": 9668
+      }
+    },
+    {
+      "gameId": "chess-stockfish",
+      "episodes": "5/5",
+      "complete": true,
+      "calls": 26,
+      "invalid": 19,
+      "invalidRate": 0.730769,
+      "forfeits": 5,
+      "endReasons": {
+        "forfeit-invalid": 5
+      },
+      "inputTokens": 18193,
+      "outputTokens": 104,
+      "inputTokPerCall": 699.730769,
+      "outputTokPerCall": 4,
+      "msPerCall": {
+        "mean": 4310,
+        "p50": 3924,
+        "max": 7939
+      }
+    },
+    {
+      "gameId": "chess-puzzles",
+      "episodes": "6/6",
+      "complete": true,
+      "calls": 13,
+      "invalid": 9,
+      "invalidRate": 0.692308,
+      "forfeits": 2,
+      "endReasons": {
+        "forfeit-invalid": 2,
+        "terminal": 4
+      },
+      "inputTokens": 13363,
+      "outputTokens": 61,
+      "inputTokPerCall": 1027.923077,
+      "outputTokPerCall": 4.692308,
+      "msPerCall": {
+        "mean": 6678,
+        "p50": 6274,
+        "max": 10815
+      }
+    },
+    {
+      "gameId": "cube",
+      "episodes": "3/3",
+      "complete": true,
+      "calls": 105,
+      "invalid": 0,
+      "invalidRate": 0,
+      "forfeits": 0,
+      "endReasons": {
+        "budget-exhausted": 3
+      },
+      "inputTokens": 99594,
+      "outputTokens": 315,
+      "inputTokPerCall": 948.514286,
+      "outputTokPerCall": 3,
+      "msPerCall": {
+        "mean": 4041,
+        "p50": 3606,
+        "max": 17901
+      }
+    },
+    {
+      "gameId": "minesweeper",
+      "episodes": "4/4",
+      "complete": true,
+      "calls": 10,
+      "invalid": 9,
+      "invalidRate": 0.9,
+      "forfeits": 3,
+      "endReasons": {
+        "forfeit-invalid": 3,
+        "terminal": 1
+      },
+      "inputTokens": 11368,
+      "outputTokens": 60,
+      "inputTokPerCall": 1136.8,
+      "outputTokPerCall": 6,
+      "msPerCall": {
+        "mean": 6348,
+        "p50": 5535,
+        "max": 9883
+      }
+    },
+    {
+      "gameId": "sliding",
+      "episodes": "4/4",
+      "complete": true,
+      "calls": 93,
+      "invalid": 35,
+      "invalidRate": 0.376344,
+      "forfeits": 4,
+      "endReasons": {
+        "forfeit-invalid": 4
+      },
+      "inputTokens": 52329,
+      "outputTokens": 186,
+      "inputTokPerCall": 562.677419,
+      "outputTokPerCall": 2,
+      "msPerCall": {
+        "mean": 1872,
+        "p50": 1522,
+        "max": 3981
+      }
+    },
+    {
+      "gameId": "sokoban",
+      "episodes": "3/3",
+      "complete": true,
+      "calls": 575,
+      "invalid": 38,
+      "invalidRate": 0.066087,
+      "forfeits": 0,
+      "endReasons": {
+        "budget-exhausted": 3
+      },
+      "inputTokens": 259104,
+      "outputTokens": 1150,
+      "inputTokPerCall": 450.615652,
+      "outputTokPerCall": 2,
+      "msPerCall": {
+        "mean": 2429,
+        "p50": 1455,
+        "max": 12117
+      }
+    },
+    {
+      "gameId": "connect4",
+      "episodes": "5/5",
+      "complete": true,
+      "calls": 21,
+      "invalid": 0,
+      "invalidRate": 0,
+      "forfeits": 0,
+      "endReasons": {
+        "terminal": 5
+      },
+      "inputTokens": 9306,
+      "outputTokens": 42,
+      "inputTokPerCall": 443.142857,
+      "outputTokPerCall": 2,
+      "msPerCall": {
+        "mean": 1121,
+        "p50": 1046,
+        "max": 2009
+      }
+    },
+    {
+      "gameId": "mastermind",
+      "episodes": "3/3",
+      "complete": true,
+      "calls": 16,
+      "invalid": 10,
+      "invalidRate": 0.625,
+      "forfeits": 3,
+      "endReasons": {
+        "forfeit-invalid": 3
+      },
+      "inputTokens": 7905,
+      "outputTokens": 77,
+      "inputTokPerCall": 494.0625,
+      "outputTokPerCall": 4.8125,
+      "msPerCall": {
+        "mean": 2179,
+        "p50": 2059,
+        "max": 3004
+      }
+    },
+    {
+      "gameId": "holdem",
+      "episodes": "3/3",
+      "complete": true,
+      "calls": 406,
+      "invalid": 0,
+      "invalidRate": 0,
+      "forfeits": 0,
+      "endReasons": {
+        "terminal": 3
+      },
+      "inputTokens": 622517,
+      "outputTokens": 970,
+      "inputTokPerCall": 1533.293103,
+      "outputTokPerCall": 2.389163,
+      "msPerCall": {
+        "mean": 11363,
+        "p50": 10477,
+        "max": 37407
+      }
+    }
+  ],
+  "topRejections": [
+    {
+      "count": 63,
+      "text": "up",
+      "where": "sliding/p15-long @ sliding/p15-long/public/0"
+    },
+    {
+      "count": 17,
+      "text": "e5",
+      "where": "chess/granite @ chess/granite/public/0"
+    },
+    {
+      "count": 12,
+      "text": "right",
+      "where": "2048/t256 @ 2048/t256/public/0"
+    },
+    {
+      "count": 9,
+      "text": "h6h5",
+      "where": "chess-puzzles/r1000 @ chess-puzzles/r1000/public/0"
+    },
+    {
+      "count": 9,
+      "text": "reveal 3 4",
+      "where": "minesweeper/beginner @ minesweeper/beginner/public/0"
+    }
+  ],
+  "estimatorJoin": [
+    {
+      "gameId": "2048",
+      "estLowCallsPerEp": null,
+      "estHighCallsPerEp": 1125,
+      "measuredCallsPerEpisode": 163.5,
+      "callErrorVsLowPct": null,
+      "estInputTokPerCall": null,
+      "measuredInputTokPerCall": 560.674312,
+      "inputTokPerCallErrorPct": null
+    },
+    {
+      "gameId": "tictactoe",
+      "estLowCallsPerEp": 5,
+      "estHighCallsPerEp": 20,
+      "measuredCallsPerEpisode": 3,
+      "callErrorVsLowPct": -40,
+      "estInputTokPerCall": 261.45,
+      "measuredInputTokPerCall": 320,
+      "inputTokPerCallErrorPct": 22.394339
+    },
+    {
+      "gameId": "chess",
+      "estLowCallsPerEp": 51.5,
+      "estHighCallsPerEp": 150,
+      "measuredCallsPerEpisode": 3.25,
+      "callErrorVsLowPct": -93.68932,
+      "estInputTokPerCall": 490.293689,
+      "measuredInputTokPerCall": 692.846154,
+      "inputTokPerCallErrorPct": 41.312476
+    },
+    {
+      "gameId": "chess-endgames",
+      "estLowCallsPerEp": 2,
+      "estHighCallsPerEp": 49,
+      "measuredCallsPerEpisode": 6.25,
+      "callErrorVsLowPct": 212.5,
+      "estInputTokPerCall": 463.59375,
+      "measuredInputTokPerCall": 669.72,
+      "inputTokPerCallErrorPct": 44.46269
+    },
+    {
+      "gameId": "chess-stockfish",
+      "estLowCallsPerEp": null,
+      "estHighCallsPerEp": 150,
+      "measuredCallsPerEpisode": 5.2,
+      "callErrorVsLowPct": null,
+      "estInputTokPerCall": null,
+      "measuredInputTokPerCall": 699.730769,
+      "inputTokPerCallErrorPct": null
+    },
+    {
+      "gameId": "chess-puzzles",
+      "estLowCallsPerEp": null,
+      "estHighCallsPerEp": 8,
+      "measuredCallsPerEpisode": 2.166667,
+      "callErrorVsLowPct": null,
+      "estInputTokPerCall": null,
+      "measuredInputTokPerCall": 1027.923077,
+      "inputTokPerCallErrorPct": null
+    },
+    {
+      "gameId": "cube",
+      "estLowCallsPerEp": 7,
+      "estHighCallsPerEp": 35,
+      "measuredCallsPerEpisode": 35,
+      "callErrorVsLowPct": 400,
+      "estInputTokPerCall": 806.25,
+      "measuredInputTokPerCall": 948.514286,
+      "inputTokPerCallErrorPct": 17.645183
+    },
+    {
+      "gameId": "minesweeper",
+      "estLowCallsPerEp": null,
+      "estHighCallsPerEp": 288.25,
+      "measuredCallsPerEpisode": 2.5,
+      "callErrorVsLowPct": null,
+      "estInputTokPerCall": null,
+      "measuredInputTokPerCall": 1136.8,
+      "inputTokPerCallErrorPct": null
+    },
+    {
+      "gameId": "sliding",
+      "estLowCallsPerEp": 27.75,
+      "estHighCallsPerEp": 185,
+      "measuredCallsPerEpisode": 23.25,
+      "callErrorVsLowPct": -16.216216,
+      "estInputTokPerCall": 525.551802,
+      "measuredInputTokPerCall": 562.677419,
+      "inputTokPerCallErrorPct": 7.064121
+    },
+    {
+      "gameId": "sokoban",
+      "estLowCallsPerEp": 12,
+      "estHighCallsPerEp": 191.666667,
+      "measuredCallsPerEpisode": 191.666667,
+      "callErrorVsLowPct": 1497.222225,
+      "estInputTokPerCall": 463.972222,
+      "measuredInputTokPerCall": 450.615652,
+      "inputTokPerCallErrorPct": -2.878743
+    },
+    {
+      "gameId": "connect4",
+      "estLowCallsPerEp": 11.6,
+      "estHighCallsPerEp": 30,
+      "measuredCallsPerEpisode": 4.2,
+      "callErrorVsLowPct": -63.793103,
+      "estInputTokPerCall": 383.672414,
+      "measuredInputTokPerCall": 443.142857,
+      "inputTokPerCallErrorPct": 15.500318
+    },
+    {
+      "gameId": "mastermind",
+      "estLowCallsPerEp": null,
+      "estHighCallsPerEp": 36.666667,
+      "measuredCallsPerEpisode": 5.333333,
+      "callErrorVsLowPct": null,
+      "estInputTokPerCall": null,
+      "measuredInputTokPerCall": 494.0625,
+      "inputTokPerCallErrorPct": null
+    },
+    {
+      "gameId": "holdem",
+      "estLowCallsPerEp": 168.666667,
+      "estHighCallsPerEp": 400,
+      "measuredCallsPerEpisode": 135.333333,
+      "callErrorVsLowPct": -19.762846,
+      "estInputTokPerCall": 1337.687747,
+      "measuredInputTokPerCall": 1533.293103,
+      "inputTokPerCallErrorPct": 14.622647
+    }
+  ]
+}

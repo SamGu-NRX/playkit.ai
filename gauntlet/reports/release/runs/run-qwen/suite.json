@@ -1,0 +1,506 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-first1",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "2048",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "t256",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "2048/t256/public/0"
+          ]
+        },
+        {
+          "id": "t512",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "2048/t512/public/0"
+          ]
+        },
+        {
+          "id": "t1024",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "2048/t1024/public/0"
+          ]
+        },
+        {
+          "id": "t2048",
+          "rank": 4,
+          "scoring": "outcome",
+          "seeds": [
+            "2048/t2048/public/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tictactoe",
+      "version": "1.2.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "perfect-opponent",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "tictactoe/perfect-opponent/public/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chess",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "paper",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/paper/public/0"
+          ]
+        },
+        {
+          "id": "wood",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/wood/public/0"
+          ]
+        },
+        {
+          "id": "steel",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/steel/public/0"
+          ]
+        },
+        {
+          "id": "granite",
+          "rank": 4,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/granite/public/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chess-endgames",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "kqk",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-endgames/kqk/public/0"
+          ]
+        },
+        {
+          "id": "krk",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-endgames/krk/public/0"
+          ]
+        },
+        {
+          "id": "kbbk",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-endgames/kbbk/public/0"
+          ]
+        },
+        {
+          "id": "kbnk",
+          "rank": 4,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-endgames/kbnk/public/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chess-stockfish",
+      "version": "1.0.0",
+      "requires": [
+        "stockfish"
+      ],
+      "tiers": [
+        {
+          "id": "sf-250",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-stockfish/sf-250/public/0"
+          ]
+        },
+        {
+          "id": "sf-1k",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-stockfish/sf-1k/public/0"
+          ]
+        },
+        {
+          "id": "sf-10k",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-stockfish/sf-10k/public/0"
+          ]
+        },
+        {
+          "id": "sf-100k",
+          "rank": 4,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-stockfish/sf-100k/public/0"
+          ]
+        },
+        {
+          "id": "sf-1m",
+          "rank": 5,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-stockfish/sf-1m/public/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chess-puzzles",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "r0400",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-puzzles/r0400/public/0"
+          ]
+        },
+        {
+          "id": "r1000",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-puzzles/r1000/public/0"
+          ]
+        },
+        {
+          "id": "r1400",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-puzzles/r1400/public/0"
+          ]
+        },
+        {
+          "id": "r1800",
+          "rank": 4,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-puzzles/r1800/public/0"
+          ]
+        },
+        {
+          "id": "r2200",
+          "rank": 5,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-puzzles/r2200/public/0"
+          ]
+        },
+        {
+          "id": "r2600",
+          "rank": 6,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-puzzles/r2600/public/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cube",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "cube-5",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "cube/cube-5/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "cube-7",
+          "rank": 2,
+          "scoring": "efficiency",
+          "seeds": [
+            "cube/cube-7/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "cube-9",
+          "rank": 3,
+          "scoring": "efficiency",
+          "seeds": [
+            "cube/cube-9/public/0"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    },
+    {
+      "id": "minesweeper",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "beginner",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/beginner/public/0"
+          ]
+        },
+        {
+          "id": "intermediate",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/intermediate/public/0"
+          ]
+        },
+        {
+          "id": "torus",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/torus/public/0"
+          ]
+        },
+        {
+          "id": "expert",
+          "rank": 4,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/expert/public/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sliding",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "p8",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p8/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p15-short",
+          "rank": 2,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p15-short/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p15-mid",
+          "rank": 3,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p15-mid/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p15-long",
+          "rank": 4,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p15-long/public/0"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    },
+    {
+      "id": "sokoban",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "two-box",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "sokoban/two-box/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "three-box",
+          "rank": 2,
+          "scoring": "efficiency",
+          "seeds": [
+            "sokoban/three-box/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "four-box",
+          "rank": 3,
+          "scoring": "efficiency",
+          "seeds": [
+            "sokoban/four-box/public/0"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    },
+    {
+      "id": "connect4",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "ladder-1",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "connect4/ladder-1/public/0"
+          ]
+        },
+        {
+          "id": "ladder-2",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "connect4/ladder-2/public/0"
+          ]
+        },
+        {
+          "id": "ladder-3",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "connect4/ladder-3/public/0"
+          ]
+        },
+        {
+          "id": "ladder-4",
+          "rank": 4,
+          "scoring": "outcome",
+          "seeds": [
+            "connect4/ladder-4/public/0"
+          ]
+        },
+        {
+          "id": "forced-win",
+          "rank": 5,
+          "scoring": "outcome",
+          "seeds": [
+            "connect4/forced-win/public/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mastermind",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "classic",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "mastermind/classic/public/0"
+          ],
+          "parKind": "reference"
+        },
+        {
+          "id": "wide",
+          "rank": 2,
+          "scoring": "efficiency",
+          "seeds": [
+            "mastermind/wide/public/0"
+          ],
+          "parKind": "reference"
+        },
+        {
+          "id": "deep",
+          "rank": 3,
+          "scoring": "efficiency",
+          "seeds": [
+            "mastermind/deep/public/0"
+          ],
+          "parKind": "reference"
+        }
+      ]
+    },
+    {
+      "id": "holdem",
+      "version": "1.2.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "station",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "holdem/station/public/0"
+          ]
+        },
+        {
+          "id": "rules",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "holdem/rules/public/0"
+          ]
+        },
+        {
+          "id": "equity",
+          "rank": 3,
+          "scoring": "outcome",
+          "seeds": [
+            "holdem/equity/public/0"
+          ]
+        }
+      ]
+    }
+  ]
+}

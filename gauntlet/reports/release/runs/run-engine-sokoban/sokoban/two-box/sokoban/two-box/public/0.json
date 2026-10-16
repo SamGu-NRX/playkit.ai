@@ -1,0 +1,109 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "sokoban",
+    "version": "1.0.0"
+  },
+  "tier": "two-box",
+  "seed": "sokoban/two-box/public/0",
+  "split": "public",
+  "agent": {
+    "id": "sokoban-engine",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "853d3fe4348b9396",
+      "reply": {
+        "text": "right"
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2a17ec692e3d1ac8",
+      "reply": {
+        "text": "right"
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d64d700316d80033",
+      "reply": {
+        "text": "up"
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f776f8dbd625ece8",
+      "reply": {
+        "text": "right"
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5f6a66a339033f76",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "583fda494834b7e4",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1
+      ],
+      "raw": [
+        6,
+        6
+      ],
+      "reason": "solved in 6 actions against par 6",
+      "solved": true,
+      "par": 6
+    },
+    "agentActions": 6,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:20:00.909Z",
+  "finishedAt": "2026-10-16T06:20:00.912Z"
+}

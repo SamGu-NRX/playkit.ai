@@ -368,7 +368,7 @@ test('real engine: the opponent records the engine id and search stats', { skip:
   // engine advertises — apt Stockfish 17.1 dropped Contempt — and never the
   // strength options. Threads and Hash are advertised by every supported
   // binary, so they are always present.
-  const pinned = { Threads: 1, Hash: 16, MultiPV: 1, Contempt: 0 };
+  const pinned = /** @type {Record<string, number>} */ ({ Threads: 1, Hash: 16, MultiPV: 1, Contempt: 0 });
   for (const [name, value] of Object.entries(meta.options)) {
     assert.ok(name in pinned, `unexpected option ${name} in ${JSON.stringify(meta.options)}`);
     assert.equal(value, pinned[name], `${name} must keep its pinned value`);

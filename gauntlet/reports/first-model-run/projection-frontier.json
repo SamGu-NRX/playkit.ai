@@ -1,0 +1,143 @@
+{
+  "method": "floor = estimator low calls (engine/greedy baseline basis) x estimator tokens/call (check-price back-out) at frontier prices. qwen-corrected = floor x per-game measured/floor call ratio where the local run completed the game (median ratio otherwise). Bracket, not point estimate: stronger models survive longer in engine-opponent games, pushing calls above the corrected column; invalid-action forfeits push them below.",
+  "qwenMedianRatio": 0.7,
+  "perGame": [
+    {
+      "gameId": "tictactoe",
+      "episodes": 1,
+      "estCallsLowPerEp": 5,
+      "estCallsHighPerEp": 20,
+      "estTokPerCall": 261,
+      "measuredCallsPerEp": 3,
+      "qwenRatio": 0.6
+    },
+    {
+      "gameId": "cube",
+      "episodes": 3,
+      "estCallsLowPerEp": 7,
+      "estCallsHighPerEp": 35,
+      "estTokPerCall": 782,
+      "measuredCallsPerEp": 35,
+      "qwenRatio": 5
+    },
+    {
+      "gameId": "mastermind",
+      "episodes": 3,
+      "estCallsLowPerEp": null,
+      "estCallsHighPerEp": 36.7,
+      "estTokPerCall": 577,
+      "measuredCallsPerEp": 11,
+      "qwenRatio": 0.7
+    },
+    {
+      "gameId": "connect4",
+      "episodes": 5,
+      "estCallsLowPerEp": 10.2,
+      "estCallsHighPerEp": 30,
+      "estTokPerCall": 381,
+      "measuredCallsPerEp": 3.6,
+      "qwenRatio": 0.35
+    },
+    {
+      "gameId": "chess-endgames",
+      "episodes": 4,
+      "estCallsLowPerEp": 2,
+      "estCallsHighPerEp": 49,
+      "estTokPerCall": 464,
+      "measuredCallsPerEp": 18.5,
+      "qwenRatio": 9.25
+    },
+    {
+      "gameId": "sokoban",
+      "episodes": 3,
+      "estCallsLowPerEp": 12,
+      "estCallsHighPerEp": 191.7,
+      "estTokPerCall": 464,
+      "measuredCallsPerEp": 191.7,
+      "qwenRatio": 15.97
+    },
+    {
+      "gameId": "chess",
+      "episodes": 4,
+      "estCallsLowPerEp": 58.3,
+      "estCallsHighPerEp": 150,
+      "estTokPerCall": 527,
+      "measuredCallsPerEp": 4.3,
+      "qwenRatio": 0.07
+    },
+    {
+      "gameId": "chess-stockfish",
+      "episodes": 4,
+      "estCallsLowPerEp": null,
+      "estCallsHighPerEp": 150,
+      "estTokPerCall": 580,
+      "measuredCallsPerEp": 5.8,
+      "qwenRatio": 0.7
+    },
+    {
+      "gameId": "sliding",
+      "episodes": 4,
+      "estCallsLowPerEp": 27.8,
+      "estCallsHighPerEp": 185,
+      "estTokPerCall": 526,
+      "measuredCallsPerEp": 9,
+      "qwenRatio": 0.32
+    },
+    {
+      "gameId": "minesweeper",
+      "episodes": 4,
+      "estCallsLowPerEp": null,
+      "estCallsHighPerEp": 288.3,
+      "estTokPerCall": 1293,
+      "measuredCallsPerEp": 3.8,
+      "qwenRatio": 0.7
+    },
+    {
+      "gameId": "holdem",
+      "episodes": 3,
+      "estCallsLowPerEp": 118.7,
+      "estCallsHighPerEp": 400,
+      "estTokPerCall": 1279,
+      "measuredCallsPerEp": 95,
+      "qwenRatio": 0.8
+    },
+    {
+      "gameId": "2048",
+      "episodes": 4,
+      "estCallsLowPerEp": null,
+      "estCallsHighPerEp": 1125,
+      "estTokPerCall": 559,
+      "measuredCallsPerEp": 111.8,
+      "qwenRatio": 0.7
+    }
+  ],
+  "projections": [
+    {
+      "model": "anthropic/claude-opus-5-5",
+      "inputPerMTok": 4,
+      "outputPerMTok": 20,
+      "usdFloor": 2.81,
+      "usdQwenCorrected": 3.17,
+      "episodesCovered": 27,
+      "source": "docs.anthropic.com/en/docs/about-claude/pricing, 'Model pricing' table, Claude O…"
+    },
+    {
+      "model": "openai/gpt-6-astra",
+      "inputPerMTok": 10,
+      "outputPerMTok": 50,
+      "usdFloor": 7.03,
+      "usdQwenCorrected": 7.93,
+      "episodesCovered": 27,
+      "source": "openai.com/api/pricing (standard, short context, read 2026-10-15) and developers…"
+    },
+    {
+      "model": "openai-chat/gemini-4-argon",
+      "inputPerMTok": 2,
+      "outputPerMTok": 10,
+      "usdFloor": 1.41,
+      "usdQwenCorrected": 1.59,
+      "episodesCovered": 27,
+      "source": "ai.google.dev/gemini-api/docs/pricing (read 2026-10-15): Gemini 4 Argon standard…"
+    }
+  ]
+}

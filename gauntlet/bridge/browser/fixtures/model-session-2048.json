@@ -1,0 +1,11295 @@
+{
+  "format": "playkit-gauntlet-bridge-log/1",
+  "game": {
+    "id": "2048",
+    "version": "1.0.0"
+  },
+  "agent": {
+    "id": "openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official"
+  },
+  "initialBoard": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      4
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      4,
+      0
+    ]
+  ],
+  "steps": [
+    {
+      "turn": 0,
+      "chosen": "left",
+      "applied": "left",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          4,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "left",
+        "applied": "left",
+        "spawn": {
+          "r": 3,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 1,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 2,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          4,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 3,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 1,
+          "c": 3,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 3,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          4,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          8,
+          4,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 4,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          8,
+          4,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          8,
+          4,
+          4
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 3,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 1,
+          "c": 3,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 5,
+      "chosen": "up",
+      "applied": "right",
+      "diverged": true,
+      "boardBefore": [
+        [
+          0,
+          8,
+          4,
+          4
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          2,
+          8,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "right",
+        "spawn": {
+          "r": 0,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"right\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 6,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          2,
+          8,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 7,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 8,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          2,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 9,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          2,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 3,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 3,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 10,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          2,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 11,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          2,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 12,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          16
+        ],
+        [
+          4,
+          4,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 13,
+      "chosen": "down",
+      "applied": "up",
+      "diverged": true,
+      "boardBefore": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          16
+        ],
+        [
+          4,
+          4,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          2,
+          16
+        ],
+        [
+          2,
+          4,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "up",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"up\" instead of the agent's \"down\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 14,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          2,
+          16
+        ],
+        [
+          2,
+          4,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          16
+        ],
+        [
+          2,
+          4,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 3,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 3,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 15,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          16
+        ],
+        [
+          2,
+          4,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4,
+          2,
+          16
+        ],
+        [
+          2,
+          4,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 16,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4,
+          2,
+          16
+        ],
+        [
+          2,
+          4,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          4,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 3,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 3,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 17,
+      "chosen": "up",
+      "applied": "down",
+      "diverged": true,
+      "boardBefore": [
+        [
+          4,
+          8,
+          4,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          4,
+          8,
+          4,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"down\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 18,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          2,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          4,
+          8,
+          4,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          4,
+          2
+        ],
+        [
+          0,
+          8,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 19,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          4,
+          2
+        ],
+        [
+          0,
+          8,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          4,
+          2
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 20,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          4,
+          2
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          4,
+          2
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 1,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 21,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          4,
+          2
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          4,
+          4,
+          2
+        ],
+        [
+          2,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 22,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          4,
+          4,
+          2
+        ],
+        [
+          2,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          4,
+          4,
+          2
+        ],
+        [
+          4,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 23,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          4,
+          4,
+          2
+        ],
+        [
+          4,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          4,
+          16
+        ],
+        [
+          8,
+          0,
+          8,
+          8
+        ],
+        [
+          2,
+          4,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 24,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          4,
+          16
+        ],
+        [
+          8,
+          0,
+          8,
+          8
+        ],
+        [
+          2,
+          4,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          4,
+          2
+        ],
+        [
+          8,
+          0,
+          8,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          2,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 25,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          4,
+          2
+        ],
+        [
+          8,
+          0,
+          8,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          2,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          2,
+          8,
+          2
+        ],
+        [
+          0,
+          0,
+          16,
+          16
+        ],
+        [
+          4,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 26,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          2,
+          8,
+          2
+        ],
+        [
+          0,
+          0,
+          16,
+          16
+        ],
+        [
+          4,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          8,
+          2
+        ],
+        [
+          0,
+          0,
+          16,
+          16
+        ],
+        [
+          0,
+          4,
+          4,
+          8
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 27,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          8,
+          2
+        ],
+        [
+          0,
+          0,
+          16,
+          16
+        ],
+        [
+          0,
+          4,
+          4,
+          8
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          8,
+          2
+        ],
+        [
+          2,
+          4,
+          16,
+          16
+        ],
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 28,
+      "chosen": "up",
+      "applied": "right",
+      "diverged": true,
+      "boardBefore": [
+        [
+          4,
+          2,
+          8,
+          2
+        ],
+        [
+          2,
+          4,
+          16,
+          16
+        ],
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          8,
+          2
+        ],
+        [
+          0,
+          2,
+          4,
+          32
+        ],
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"right\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 29,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          8,
+          2
+        ],
+        [
+          0,
+          2,
+          4,
+          32
+        ],
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          2,
+          8,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 1,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 30,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          2,
+          8,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          4,
+          16,
+          2
+        ],
+        [
+          2,
+          2,
+          2,
+          32
+        ],
+        [
+          0,
+          2,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 31,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          4,
+          16,
+          2
+        ],
+        [
+          2,
+          2,
+          2,
+          32
+        ],
+        [
+          0,
+          2,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          4,
+          16,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          0,
+          2,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 32,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          4,
+          16,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          0,
+          2,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          8,
+          16,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 33,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          8,
+          16,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          8,
+          16,
+          2
+        ],
+        [
+          0,
+          4,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          0,
+          8
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 34,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          8,
+          16,
+          2
+        ],
+        [
+          0,
+          4,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          0,
+          8
+        ],
+        [
+          2,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          16,
+          2
+        ],
+        [
+          0,
+          4,
+          4,
+          32
+        ],
+        [
+          2,
+          2,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 35,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          16,
+          2
+        ],
+        [
+          0,
+          4,
+          4,
+          32
+        ],
+        [
+          2,
+          2,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          16,
+          2
+        ],
+        [
+          2,
+          4,
+          4,
+          32
+        ],
+        [
+          2,
+          2,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 36,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          16,
+          2
+        ],
+        [
+          2,
+          4,
+          4,
+          32
+        ],
+        [
+          2,
+          2,
+          0,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          2,
+          2
+        ],
+        [
+          0,
+          8,
+          0,
+          32
+        ],
+        [
+          4,
+          4,
+          16,
+          8
+        ],
+        [
+          4,
+          2,
+          4,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 37,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          2,
+          2
+        ],
+        [
+          0,
+          8,
+          0,
+          32
+        ],
+        [
+          4,
+          4,
+          16,
+          8
+        ],
+        [
+          4,
+          2,
+          4,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          8,
+          32
+        ],
+        [
+          2,
+          8,
+          16,
+          8
+        ],
+        [
+          0,
+          4,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 38,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          8,
+          32
+        ],
+        [
+          2,
+          8,
+          16,
+          8
+        ],
+        [
+          0,
+          4,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          8,
+          8,
+          4
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 39,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          8,
+          8,
+          4
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          2,
+          16,
+          4
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 40,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          2,
+          16,
+          4
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          2,
+          0,
+          2
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          2,
+          32,
+          4
+        ],
+        [
+          0,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          2,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          2
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 41,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          2,
+          32,
+          4
+        ],
+        [
+          0,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          2,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          2
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          2,
+          32,
+          4
+        ],
+        [
+          0,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 42,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          2,
+          32,
+          4
+        ],
+        [
+          0,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          32,
+          4
+        ],
+        [
+          0,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 43,
+      "chosen": "right",
+      "applied": "up",
+      "diverged": true,
+      "boardBefore": [
+        [
+          0,
+          4,
+          32,
+          4
+        ],
+        [
+          0,
+          4,
+          2,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          8,
+          32,
+          4
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"up\" instead of the agent's \"right\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 44,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          8,
+          32,
+          4
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          2,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          8,
+          32,
+          4
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          0,
+          4,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 45,
+      "chosen": "right",
+      "applied": "up",
+      "diverged": true,
+      "boardBefore": [
+        [
+          2,
+          8,
+          32,
+          4
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          0,
+          4,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          8,
+          32,
+          4
+        ],
+        [
+          0,
+          0,
+          8,
+          32
+        ],
+        [
+          0,
+          4,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 4
+        },
+        "diverged": true,
+        "reason": "the driver applied \"up\" instead of the agent's \"right\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 46,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          8,
+          32,
+          4
+        ],
+        [
+          0,
+          0,
+          8,
+          32
+        ],
+        [
+          0,
+          4,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          8,
+          32,
+          4
+        ],
+        [
+          2,
+          4,
+          8,
+          32
+        ],
+        [
+          0,
+          0,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 47,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          8,
+          32,
+          4
+        ],
+        [
+          2,
+          4,
+          8,
+          32
+        ],
+        [
+          0,
+          0,
+          0,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          2,
+          32
+        ],
+        [
+          0,
+          8,
+          32,
+          16
+        ],
+        [
+          4,
+          4,
+          8,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 1,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 48,
+      "chosen": "down",
+      "applied": "up",
+      "diverged": true,
+      "boardBefore": [
+        [
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          2,
+          32
+        ],
+        [
+          0,
+          8,
+          32,
+          16
+        ],
+        [
+          4,
+          4,
+          8,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          4,
+          32,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"up\" instead of the agent's \"down\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 49,
+      "chosen": "up",
+      "applied": "right",
+      "diverged": true,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          4,
+          32,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          0,
+          4,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"right\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 50,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          0,
+          4,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          2,
+          4,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 51,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          2,
+          4,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          2,
+          4,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 52,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          2,
+          4,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          4,
+          4,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 53,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          4,
+          4,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          2,
+          8,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          4,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 54,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          2,
+          8,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          4,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          2,
+          16,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 55,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          2,
+          16,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          4,
+          16,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 56,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          4,
+          16,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          4,
+          16,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 57,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          0,
+          4,
+          16,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          4,
+          16,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 58,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          4,
+          16,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          16
+        ],
+        [
+          0,
+          2,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          4,
+          16,
+          64
+        ],
+        [
+          0,
+          4,
+          4,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 59,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          2,
+          4,
+          16,
+          64
+        ],
+        [
+          0,
+          4,
+          4,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          4,
+          8,
+          16,
+          64
+        ],
+        [
+          2,
+          0,
+          4,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 60,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          8,
+          2,
+          4
+        ],
+        [
+          4,
+          8,
+          16,
+          64
+        ],
+        [
+          2,
+          0,
+          4,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          2,
+          4
+        ],
+        [
+          2,
+          0,
+          16,
+          64
+        ],
+        [
+          8,
+          0,
+          4,
+          16
+        ],
+        [
+          2,
+          16,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 61,
+      "chosen": "down",
+      "applied": "up",
+      "diverged": true,
+      "boardBefore": [
+        [
+          0,
+          0,
+          2,
+          4
+        ],
+        [
+          2,
+          0,
+          16,
+          64
+        ],
+        [
+          8,
+          0,
+          4,
+          16
+        ],
+        [
+          2,
+          16,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          16,
+          2,
+          4
+        ],
+        [
+          8,
+          0,
+          16,
+          64
+        ],
+        [
+          2,
+          0,
+          4,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"up\" instead of the agent's \"down\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 62,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          16,
+          2,
+          4
+        ],
+        [
+          8,
+          0,
+          16,
+          64
+        ],
+        [
+          2,
+          0,
+          4,
+          16
+        ],
+        [
+          2,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          16,
+          2,
+          4
+        ],
+        [
+          0,
+          8,
+          16,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          16
+        ],
+        [
+          2,
+          0,
+          4,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 63,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          16,
+          2,
+          4
+        ],
+        [
+          0,
+          8,
+          16,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          16
+        ],
+        [
+          2,
+          0,
+          4,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          16,
+          2,
+          4
+        ],
+        [
+          0,
+          8,
+          16,
+          64
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 64,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          16,
+          2,
+          4
+        ],
+        [
+          0,
+          8,
+          16,
+          64
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          16,
+          2,
+          4
+        ],
+        [
+          2,
+          8,
+          16,
+          64
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 2,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 2,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 65,
+      "chosen": "right",
+      "applied": "down",
+      "diverged": true,
+      "boardBefore": [
+        [
+          4,
+          16,
+          2,
+          4
+        ],
+        [
+          2,
+          8,
+          16,
+          64
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ],
+        [
+          0,
+          0,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          2,
+          2,
+          4
+        ],
+        [
+          0,
+          16,
+          16,
+          64
+        ],
+        [
+          4,
+          8,
+          8,
+          16
+        ],
+        [
+          2,
+          2,
+          2,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"down\" instead of the agent's \"right\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 66,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          2,
+          2,
+          4
+        ],
+        [
+          0,
+          16,
+          16,
+          64
+        ],
+        [
+          4,
+          8,
+          8,
+          16
+        ],
+        [
+          2,
+          2,
+          2,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          4,
+          4
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          16
+        ],
+        [
+          0,
+          2,
+          4,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 1,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 67,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          4,
+          4
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          16
+        ],
+        [
+          0,
+          2,
+          4,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          2,
+          4,
+          4
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          2,
+          2,
+          16,
+          16
+        ],
+        [
+          0,
+          0,
+          4,
+          4
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 68,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          2,
+          4,
+          4
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          2,
+          2,
+          16,
+          16
+        ],
+        [
+          0,
+          0,
+          4,
+          4
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          0,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 69,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          0,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 70,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          2,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 71,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          4,
+          2,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          32
+        ],
+        [
+          0,
+          0,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          4,
+          32
+        ],
+        [
+          0,
+          4,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 1,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 72,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          4,
+          32
+        ],
+        [
+          0,
+          4,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          32
+        ],
+        [
+          0,
+          8,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 1,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 73,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          2,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          4,
+          32
+        ],
+        [
+          0,
+          8,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          2,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          4,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 74,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          4,
+          2,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          4,
+          32
+        ],
+        [
+          0,
+          4,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          2,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          2,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 75,
+      "chosen": "up",
+      "applied": "right",
+      "diverged": true,
+      "boardBefore": [
+        [
+          0,
+          4,
+          2,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          4,
+          32
+        ],
+        [
+          0,
+          2,
+          2,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          2,
+          8
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          32
+        ],
+        [
+          0,
+          0,
+          4,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "right",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"right\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 76,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          4,
+          2,
+          8
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          8,
+          32
+        ],
+        [
+          0,
+          0,
+          4,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          2,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          8,
+          32
+        ],
+        [
+          0,
+          0,
+          4,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 77,
+      "chosen": "up",
+      "applied": "down",
+      "diverged": true,
+      "boardBefore": [
+        [
+          2,
+          4,
+          2,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          8,
+          32
+        ],
+        [
+          0,
+          0,
+          4,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          2,
+          2,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          8,
+          8,
+          32
+        ],
+        [
+          2,
+          4,
+          4,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"down\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 78,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          2,
+          2,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          8,
+          8,
+          32
+        ],
+        [
+          2,
+          4,
+          4,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 79,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          8
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 1,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 80,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          8
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          0,
+          4,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 81,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          0,
+          4,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          4,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 82,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          4,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          4,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 83,
+      "chosen": "up",
+      "applied": "right",
+      "diverged": true,
+      "boardBefore": [
+        [
+          2,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          4,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          4,
+          8
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "right",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"right\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 84,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          4,
+          4,
+          8
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          8,
+          4,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 85,
+      "chosen": "right",
+      "applied": "up",
+      "diverged": true,
+      "boardBefore": [
+        [
+          2,
+          8,
+          4,
+          8
+        ],
+        [
+          0,
+          2,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          8,
+          4,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"up\" instead of the agent's \"right\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 86,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          8,
+          4,
+          8
+        ],
+        [
+          0,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          0,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 87,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 88,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 89,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          8,
+          32,
+          64
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 90,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 91,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 92,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 93,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          2,
+          4,
+          8
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          16,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 94,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          16,
+          32,
+          64
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          16,
+          32,
+          64
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 95,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          2,
+          4,
+          8
+        ],
+        [
+          0,
+          16,
+          32,
+          64
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          2,
+          2,
+          32,
+          64
+        ],
+        [
+          8,
+          16,
+          16,
+          32
+        ],
+        [
+          4,
+          8,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 96,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          4,
+          8
+        ],
+        [
+          2,
+          2,
+          32,
+          64
+        ],
+        [
+          8,
+          16,
+          16,
+          32
+        ],
+        [
+          4,
+          8,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          2,
+          4,
+          8
+        ],
+        [
+          8,
+          16,
+          32,
+          64
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 97,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          2,
+          4,
+          8
+        ],
+        [
+          8,
+          16,
+          32,
+          64
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          4,
+          8
+        ],
+        [
+          8,
+          16,
+          32,
+          64
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 98,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          4,
+          4,
+          8
+        ],
+        [
+          8,
+          16,
+          32,
+          64
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          4,
+          4,
+          8
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 99,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          4,
+          4,
+          8
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          4,
+          4,
+          8
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 100,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          4,
+          4,
+          8
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          4,
+          4,
+          8
+        ],
+        [
+          8,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 101,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          4,
+          4,
+          8
+        ],
+        [
+          8,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          8,
+          8,
+          8
+        ],
+        [
+          8,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 102,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          8,
+          8,
+          8
+        ],
+        [
+          8,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          8,
+          8,
+          8
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 103,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          8,
+          8,
+          8
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          0,
+          16,
+          16
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 104,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          0,
+          16,
+          16
+        ],
+        [
+          4,
+          16,
+          32,
+          64
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          16,
+          16,
+          16
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 105,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          16,
+          16,
+          16
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 106,
+      "chosen": "right",
+      "applied": "up",
+      "diverged": true,
+      "boardBefore": [
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          8,
+          32,
+          64
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          16,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"up\" instead of the agent's \"right\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 107,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          16,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          0,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          32,
+          32
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          2,
+          0,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 108,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          4,
+          32,
+          32
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          2,
+          0,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          0,
+          4,
+          64
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 109,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          0,
+          4,
+          64
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          0,
+          4,
+          64
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 110,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          0,
+          4,
+          64
+        ],
+        [
+          2,
+          4,
+          32,
+          64
+        ],
+        [
+          0,
+          2,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          4,
+          4,
+          128
+        ],
+        [
+          0,
+          2,
+          32,
+          32
+        ],
+        [
+          0,
+          4,
+          16,
+          16
+        ],
+        [
+          0,
+          2,
+          8,
+          0
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 111,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          4,
+          4,
+          128
+        ],
+        [
+          0,
+          2,
+          32,
+          32
+        ],
+        [
+          0,
+          4,
+          16,
+          16
+        ],
+        [
+          0,
+          2,
+          8,
+          0
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          4,
+          2
+        ],
+        [
+          0,
+          2,
+          32,
+          128
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 3,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 3,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 112,
+      "chosen": "down",
+      "applied": "up",
+      "diverged": true,
+      "boardBefore": [
+        [
+          0,
+          4,
+          4,
+          2
+        ],
+        [
+          0,
+          2,
+          32,
+          128
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          4,
+          4,
+          2
+        ],
+        [
+          4,
+          2,
+          32,
+          128
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "up",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": true,
+        "reason": "the driver applied \"up\" instead of the agent's \"down\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 113,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          4,
+          4,
+          2
+        ],
+        [
+          4,
+          2,
+          32,
+          128
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          4,
+          4,
+          2
+        ],
+        [
+          0,
+          2,
+          32,
+          128
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 114,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          4,
+          4,
+          2
+        ],
+        [
+          0,
+          2,
+          32,
+          128
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          4,
+          2
+        ],
+        [
+          0,
+          2,
+          32,
+          128
+        ],
+        [
+          8,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 115,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          4,
+          2
+        ],
+        [
+          0,
+          2,
+          32,
+          128
+        ],
+        [
+          8,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          4,
+          2
+        ],
+        [
+          8,
+          2,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 116,
+      "chosen": "up",
+      "applied": "right",
+      "diverged": true,
+      "boardBefore": [
+        [
+          2,
+          4,
+          4,
+          2
+        ],
+        [
+          8,
+          2,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          2,
+          8,
+          2
+        ],
+        [
+          8,
+          2,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "right",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"right\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 117,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          2,
+          8,
+          2
+        ],
+        [
+          8,
+          2,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          2,
+          8,
+          2
+        ],
+        [
+          8,
+          4,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 118,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          2,
+          8,
+          2
+        ],
+        [
+          8,
+          4,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          2,
+          8,
+          2
+        ],
+        [
+          8,
+          8,
+          32,
+          128
+        ],
+        [
+          2,
+          2,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 119,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          2,
+          8,
+          2
+        ],
+        [
+          8,
+          8,
+          32,
+          128
+        ],
+        [
+          2,
+          2,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          32,
+          128
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 120,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          32,
+          128
+        ],
+        [
+          0,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          16,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 121,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          16,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 122,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          16,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          8,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 123,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          16,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          8,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          8,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 124,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          8,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          8,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 125,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          8,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          8,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 126,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          8,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          32,
+          128
+        ],
+        [
+          8,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 127,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          32,
+          128
+        ],
+        [
+          8,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          16,
+          16,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 128,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          16,
+          16,
+          32,
+          128
+        ],
+        [
+          2,
+          4,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          16,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 129,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          16,
+          16,
+          32,
+          128
+        ],
+        [
+          4,
+          4,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          32,
+          32,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 130,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          32,
+          32,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          32,
+          32,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 131,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          32,
+          32,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          32,
+          32,
+          128
+        ],
+        [
+          0,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 132,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          32,
+          32,
+          128
+        ],
+        [
+          0,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          32,
+          32,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 133,
+      "chosen": "up",
+      "applied": "right",
+      "diverged": true,
+      "boardBefore": [
+        [
+          8,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          32,
+          32,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          4,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"right\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 134,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          4,
+          8,
+          2
+        ],
+        [
+          0,
+          4,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          8,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          4,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 135,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          8,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          4,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          0,
+          8,
+          2
+        ],
+        [
+          8,
+          8,
+          64,
+          128
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 136,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          0,
+          8,
+          2
+        ],
+        [
+          8,
+          8,
+          64,
+          128
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          0,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 1,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 1,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 137,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          0,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 138,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 139,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          4,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 140,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          4,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          8,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 141,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          2,
+          8,
+          16,
+          32
+        ],
+        [
+          2,
+          8,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          16,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 142,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          16,
+          16,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          4,
+          32,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 143,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          4,
+          32,
+          32
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          64,
+          128
+        ],
+        [
+          8,
+          4,
+          32,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 144,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          64,
+          128
+        ],
+        [
+          8,
+          4,
+          32,
+          32
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          8,
+          4,
+          64
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 4
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 4
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 145,
+      "chosen": "up",
+      "applied": "up",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          2,
+          16,
+          64,
+          128
+        ],
+        [
+          4,
+          8,
+          4,
+          64
+        ],
+        [
+          4,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          4,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          0,
+          8,
+          4,
+          64
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 146,
+      "chosen": "down",
+      "applied": "down",
+      "diverged": false,
+      "boardBefore": [
+        [
+          4,
+          4,
+          8,
+          2
+        ],
+        [
+          8,
+          16,
+          64,
+          128
+        ],
+        [
+          0,
+          8,
+          4,
+          64
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          64,
+          128
+        ],
+        [
+          8,
+          8,
+          4,
+          64
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 0,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "down",
+        "applied": "down",
+        "spawn": {
+          "r": 0,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    },
+    {
+      "turn": 147,
+      "chosen": "up",
+      "applied": "right",
+      "diverged": true,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          64,
+          128
+        ],
+        [
+          8,
+          8,
+          4,
+          64
+        ],
+        [
+          2,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          64,
+          128
+        ],
+        [
+          2,
+          16,
+          4,
+          64
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "up",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"right\" instead of the agent's \"up\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 148,
+      "chosen": "right",
+      "applied": "up",
+      "diverged": true,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          16,
+          64,
+          128
+        ],
+        [
+          2,
+          16,
+          4,
+          64
+        ],
+        [
+          0,
+          4,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          32,
+          64,
+          128
+        ],
+        [
+          2,
+          4,
+          4,
+          64
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 3,
+        "c": 1,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "up",
+        "spawn": {
+          "r": 3,
+          "c": 1,
+          "value": 2
+        },
+        "diverged": true,
+        "reason": "the driver applied \"up\" instead of the agent's \"right\" (the chosen direction did not change the board)"
+      }
+    },
+    {
+      "turn": 149,
+      "chosen": "right",
+      "applied": "right",
+      "diverged": false,
+      "boardBefore": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          32,
+          64,
+          128
+        ],
+        [
+          2,
+          4,
+          4,
+          64
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "boardAfter": [
+        [
+          2,
+          4,
+          8,
+          2
+        ],
+        [
+          4,
+          32,
+          64,
+          128
+        ],
+        [
+          2,
+          2,
+          8,
+          64
+        ],
+        [
+          0,
+          2,
+          8,
+          16
+        ]
+      ],
+      "spawn": {
+        "r": 2,
+        "c": 0,
+        "value": 2
+      },
+      "verdict": {
+        "ok": true,
+        "direction": "right",
+        "applied": "right",
+        "spawn": {
+          "r": 2,
+          "c": 0,
+          "value": 2
+        },
+        "diverged": false,
+        "reason": null
+      }
+    }
+  ],
+  "ended": {
+    "reason": "move-cap",
+    "turn": 150
+  },
+  "startedAt": "2026-10-15T20:11:16.586Z",
+  "finishedAt": "2026-10-15T20:14:03.607Z"
+}

@@ -106,7 +106,7 @@ export function findGtpBinary(name = 'gnugo', options = {}) {
  *
  * @typedef {object} GtpResponse
  * @property {boolean} ok
- * @property {number | undefined} id The echoed command id, when present.
+ * @property {number | undefined} [id] The echoed command id, when present.
  * @property {string} payload The text after the marker (and echoed id),
  *   with the trailing blank line removed.
  */
@@ -132,12 +132,14 @@ export function parseGtpBlock(block) {
   const id = m ? Number(m[2]) : undefined;
   const headPayload = m ? m[3].trim() : first.slice(1).trim();
   if (marker === '?') {
+    /** @type {GtpResponse} */
     const failure = { ok: false, payload: headPayload || 'error' };
     if (id !== undefined) failure.id = id;
     return failure;
   }
   const rest = lines.slice(head + 1).filter((line) => line.trim().length > 0);
   const payload = [headPayload, ...rest].join('\n').trim();
+  /** @type {GtpResponse} */
   const response = { ok: true, payload };
   if (id !== undefined) response.id = id;
   return response;

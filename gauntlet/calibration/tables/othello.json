@@ -1,0 +1,191 @@
+{
+  "format": "playkit-gauntlet-calibration-table/2",
+  "game": {
+    "id": "othello",
+    "version": "1.0.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "baselines": {
+    "random": {
+      "tiers": {
+        "ladder-1": {
+          "id": "ladder-1",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.541667,
+            "ci95": [
+              0.25,
+              0.791667
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-2": {
+          "id": "ladder-2",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-3": {
+          "id": "ladder-3",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-4": {
+          "id": "ladder-4",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "ladder-1": {
+          "id": "ladder-1",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.833333,
+            "ci95": [
+              0.583333,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-2": {
+          "id": "ladder-2",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.208333,
+            "ci95": [
+              0,
+              0.458333
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-3": {
+          "id": "ladder-3",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-4": {
+          "id": "ladder-4",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "ladder-1": {
+          "id": "ladder-1",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-2": {
+          "id": "ladder-2",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-3": {
+          "id": "ladder-3",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.916667,
+            "ci95": [
+              0.75,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        },
+        "ladder-4": {
+          "id": "ladder-4",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.541667,
+            "ci95": [
+              0.291667,
+              0.791667
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 12
+        }
+      }
+    }
+  }
+}

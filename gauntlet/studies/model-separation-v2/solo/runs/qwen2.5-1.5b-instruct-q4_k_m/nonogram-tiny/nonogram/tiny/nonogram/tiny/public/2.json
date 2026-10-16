@@ -1,0 +1,116 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "nonogram",
+    "version": "1.0.0"
+  },
+  "tier": "tiny",
+  "seed": "nonogram/tiny/public/2",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "45df910ebff0d2a9",
+      "reply": {
+        "text": "row 1  # . . . . | 1 1 1\nrow 2  # . . . . |   1 3\nrow 3  # . . . . |   1 1\nrow 4  # . . . . |     1\nrow 5  # . . . . |   1 1",
+        "usage": {
+          "inputTokens": 639,
+          "outputTokens": 79,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-naK74WVLdmpBm4N0WOBzwcU8tqgVauip",
+          "reasoningChars": 0
+        }
+      },
+      "action": "row 5  # . . . . |   1 1",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 639,
+        "outputTokens": 79,
+        "costUsd": null
+      },
+      "ms": 3151
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "45df910ebff0d2a9",
+      "reply": {
+        "text": "row 1  # . . . . | 1 1 1\nrow 2  # . . . . |   1 3\nrow 3  # . . . . |   1 1\nrow 4  # . . . . |     1\nrow 5  # . . . . |   1 1",
+        "usage": {
+          "inputTokens": 774,
+          "outputTokens": 79,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-qoWyDBXyowBT4n4nv8xj5niphzsPkkOz",
+          "reasoningChars": 0
+        }
+      },
+      "action": "row 5  # . . . . |   1 1",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 774,
+        "outputTokens": 79,
+        "costUsd": null
+      },
+      "ms": 3417
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "45df910ebff0d2a9",
+      "reply": {
+        "text": "row 1  # . . . . | 1 1 1\nrow 2  # . . . . |   1 3\nrow 3  # . . . . |   1 1\nrow 4  # . . . . |     1\nrow 5  # . . . . |   1 1",
+        "usage": {
+          "inputTokens": 774,
+          "outputTokens": 79,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-LxQBfAMKVNu6HSof6lMzzJjG73gddttX",
+          "reasoningChars": 0
+        }
+      },
+      "action": "row 5  # . . . . |   1 1",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 774,
+        "outputTokens": 79,
+        "costUsd": null
+      },
+      "ms": 2251
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:26:03.612Z",
+  "finishedAt": "2026-10-16T11:26:12.433Z"
+}

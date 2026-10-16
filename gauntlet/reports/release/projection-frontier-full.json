@@ -1,0 +1,169 @@
+{
+  "method": "floor = estimator low calls (engine/greedy baseline basis) x estimator tokens/call (check-price back-out) at frontier prices; corrected = measured qwen calls/episode x tokens/call (covers every game); budget cap = tier maxActions x tokens/call. Full suite scales each game by its public seed count. Bracket, not point estimate: per-game qwen/floor call ratios span 0.06x-15.97x; stronger models survive longer in engine-opponent games, pushing calls above the corrected column; invalid-action forfeits push below.",
+  "qwenMedianRatio": 0.82,
+  "publicEpisodesFullSuite": 929,
+  "perGame": [
+    {
+      "gameId": "2048",
+      "seeds": 80,
+      "estCallsLowPerEp": null,
+      "estCallsHighPerEp": 1125,
+      "estTokPerCall": 0,
+      "measuredCallsPerEp": 163.5,
+      "qwenRatio": 0.82,
+      "inShare": 0.9964455459271082
+    },
+    {
+      "gameId": "tictactoe",
+      "seeds": 8,
+      "estCallsLowPerEp": 5,
+      "estCallsHighPerEp": 20,
+      "estTokPerCall": 261,
+      "measuredCallsPerEp": 3,
+      "qwenRatio": 0.6,
+      "inShare": 0.9907120743034056
+    },
+    {
+      "gameId": "chess",
+      "seeds": 20,
+      "estCallsLowPerEp": 51.5,
+      "estCallsHighPerEp": 150,
+      "estTokPerCall": 490,
+      "measuredCallsPerEp": 3.3,
+      "qwenRatio": 0.06,
+      "inShare": 0.9956887021897659
+    },
+    {
+      "gameId": "chess-endgames",
+      "seeds": 40,
+      "estCallsLowPerEp": 2,
+      "estCallsHighPerEp": 49,
+      "estTokPerCall": 464,
+      "measuredCallsPerEp": 6.3,
+      "qwenRatio": 3.13,
+      "inShare": 0.9927072216293135
+    },
+    {
+      "gameId": "chess-stockfish",
+      "seeds": 25,
+      "estCallsLowPerEp": null,
+      "estCallsHighPerEp": 150,
+      "estTokPerCall": 0,
+      "measuredCallsPerEp": 5.2,
+      "qwenRatio": 0.82,
+      "inShare": 0.9943160080868938
+    },
+    {
+      "gameId": "chess-puzzles",
+      "seeds": 360,
+      "estCallsLowPerEp": null,
+      "estCallsHighPerEp": 8,
+      "estTokPerCall": 0,
+      "measuredCallsPerEp": 2.2,
+      "qwenRatio": 0.82,
+      "inShare": 0.9954558995845293
+    },
+    {
+      "gameId": "cube",
+      "seeds": 18,
+      "estCallsLowPerEp": 7,
+      "estCallsHighPerEp": 35,
+      "estTokPerCall": 806,
+      "measuredCallsPerEp": 35,
+      "qwenRatio": 5,
+      "inShare": 0.9968471308900558
+    },
+    {
+      "gameId": "minesweeper",
+      "seeds": 100,
+      "estCallsLowPerEp": null,
+      "estCallsHighPerEp": 288.25,
+      "estTokPerCall": 0,
+      "measuredCallsPerEp": 2.5,
+      "qwenRatio": 0.82,
+      "inShare": 0.9947497374868743
+    },
+    {
+      "gameId": "sliding",
+      "seeds": 32,
+      "estCallsLowPerEp": 27.75,
+      "estCallsHighPerEp": 185,
+      "estTokPerCall": 526,
+      "measuredCallsPerEp": 23.3,
+      "qwenRatio": 0.84,
+      "inShare": 0.9964581548106849
+    },
+    {
+      "gameId": "sokoban",
+      "seeds": 75,
+      "estCallsLowPerEp": 12,
+      "estCallsHighPerEp": 191.66666666666666,
+      "estTokPerCall": 464,
+      "measuredCallsPerEp": 191.7,
+      "qwenRatio": 15.97,
+      "inShare": 0.9955812398639718
+    },
+    {
+      "gameId": "connect4",
+      "seeds": 60,
+      "estCallsLowPerEp": 11.6,
+      "estCallsHighPerEp": 30,
+      "estTokPerCall": 384,
+      "measuredCallsPerEp": 4.2,
+      "qwenRatio": 0.36,
+      "inShare": 0.9955070603323194
+    },
+    {
+      "gameId": "mastermind",
+      "seeds": 75,
+      "estCallsLowPerEp": null,
+      "estCallsHighPerEp": 36.666666666666664,
+      "estTokPerCall": 0,
+      "measuredCallsPerEp": 5.3,
+      "qwenRatio": 0.82,
+      "inShare": 0.9903532949135555
+    },
+    {
+      "gameId": "holdem",
+      "seeds": 36,
+      "estCallsLowPerEp": 168.66666666666666,
+      "estCallsHighPerEp": 400,
+      "estTokPerCall": 1338,
+      "measuredCallsPerEp": 135.3,
+      "qwenRatio": 0.8,
+      "inShare": 0.9984442335156848
+    }
+  ],
+  "projections": [
+    {
+      "model": "anthropic/claude-opus-5-5",
+      "inputPerMTok": 4,
+      "outputPerMTok": 20,
+      "pilotFloor": 1.14,
+      "pilotCorrected": 1.28,
+      "fullFloor": 40.04,
+      "fullCorrected": 58.07,
+      "fullBudgetCap": 132.1
+    },
+    {
+      "model": "openai/gpt-6-astra",
+      "inputPerMTok": 10,
+      "outputPerMTok": 50,
+      "pilotFloor": 2.86,
+      "pilotCorrected": 3.21,
+      "fullFloor": 100.11,
+      "fullCorrected": 145.17,
+      "fullBudgetCap": 330.25
+    },
+    {
+      "model": "openai-chat/gemini-4-argon",
+      "inputPerMTok": 2,
+      "outputPerMTok": 10,
+      "pilotFloor": 0.57,
+      "pilotCorrected": 0.64,
+      "fullFloor": 20.02,
+      "fullCorrected": 29.03,
+      "fullBudgetCap": 66.05
+    }
+  ]
+}

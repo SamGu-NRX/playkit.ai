@@ -31,7 +31,7 @@
  *   breakdown; replies carry `thinking` and `redacted_thinking` content
  *   blocks that are never part of the reply text.
  * - OpenAI Responses reasoning: https://platform.openai.com/docs/guides/reasoning
- *   — request `reasoning: {effort: "low"|"medium"|"high"}`; max_output_tokens
+ *   — request `reasoning: {effort: "low"|"medium"|"high"|"xhigh"|"max"}`; max_output_tokens
  *   bounds reasoning and answer tokens together; `usage.output_tokens`
  *   includes reasoning tokens and `usage.output_tokens_details
  *   .reasoning_tokens` is the breakdown; an answer cut off mid-reasoning
@@ -89,11 +89,14 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  *   the manual budget mode is deprecated on Claude 4.6 models and not
  *   accepted by later ones, which steer thinking with `effort` instead; pass
  *   `params: { thinking: { type: 'adaptive' }, effort: 'medium' }` for those.
- * @property {'low' | 'medium' | 'high'} [reasoningEffort] OpenAI reasoning
- *   effort: `reasoning: {effort}` for provider "openai", the chat-completions
- *   body field `reasoning_effort` for provider "openai-chat" (Google's Gemini
- *   OpenAI-compatible endpoint maps it to thinking_level / thinking_budget).
- *   Provider "anthropic" rejects it — use thinkingBudget there.
+ * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
+ *   Reasoning effort for every provider: `reasoning: {effort}` for provider
+ *   "openai", the chat-completions body field `reasoning_effort` for provider
+ *   "openai-chat" (Google's Gemini OpenAI-compatible endpoint maps it to
+ *   thinking_level / thinking_budget), and adaptive thinking steered by
+ *   `effort` for provider "anthropic" (per the model docs checked 2026-10-16,
+ *   Claude 4.6 models and later steer thinking with `effort`; the manual
+ *   budget mode is deprecated there, and passing both settings is an error).
  * @property {number} [callTimeoutMs] Per-attempt timeout in milliseconds.
  *   Default: no per-attempt timeout. A timed-out attempt counts as a
  *   transport error and retries with the same backoff as a network failure;
@@ -407,8 +410,9 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  * @property {number} [thinkingBudget] Anthropic extended-thinking budget_tokens;
  *   validated against the provider (anthropic only) and the 1024 minimum, and
  *   with it set the wire max_tokens is maxOutputTokens + thinkingBudget.
- * @property {'low' | 'medium' | 'high'} [reasoningEffort] OpenAI reasoning
- *   effort (openai / openai-chat only); rejected on anthropic.
+ * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
+ *   Reasoning effort for every provider (openai reasoning.effort, openai-chat
+ *   reasoning_effort, anthropic adaptive-thinking effort).
  * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.
  */
 
@@ -446,6 +450,7 @@ async function callAnthropic({
   model,
   maxOutputTokens,
   thinkingBudget,
+  reasoningEffort,
   params,
   userMessage,
   fetchImpl,
@@ -466,6 +471,12 @@ async function callAnthropic({
     max_tokens: maxOutputTokens + (thinkingBudget ?? 0),
     ...(thinkingBudget !== undefined
       ? { thinking: { type: 'enabled', budget_tokens: thinkingBudget } }
+      : {}),
+    ...(reasoningEffort !== undefined
+      ? // Effort-steered thinking, per the model docs (checked 2026-10-16):
+        // Claude 4.6 models and later steer thinking with `effort` instead of
+        // the manual budget mode. Protocol fields win over anything in params.
+        { thinking: { type: 'adaptive' }, effort: reasoningEffort }
       : {}),
     system: OFFICIAL_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: userMessage }],
@@ -594,8 +605,8 @@ async function callOpenAI({
  * @property {number} maxRetries
  * @property {number} retryBaseDelayMs
  * @property {(ms: number) => Promise<void>} sleep
- * @property {'low' | 'medium' | 'high'} [reasoningEffort] OpenAI reasoning
- *   effort, sent as the chat-completions reasoning_effort field.
+ * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
+ *   Reasoning effort, sent as the chat-completions reasoning_effort field.
  * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.
  */
 
@@ -754,14 +765,20 @@ export function createModelAgent({
     }
   }
   if (reasoningEffort !== undefined) {
-    if (provider === 'anthropic') {
+    if (
+      reasoningEffort !== 'low' &&
+      reasoningEffort !== 'medium' &&
+      reasoningEffort !== 'high' &&
+      reasoningEffort !== 'xhigh' &&
+      reasoningEffort !== 'max'
+    ) {
       throw new Error(
-        'createModelAgent: reasoningEffort is the OpenAI reasoning setting and does not apply to provider "anthropic" (pass thinkingBudget for Anthropic extended thinking)'
+        `createModelAgent: reasoningEffort must be "low", "medium", "high", "xhigh" or "max", got ${JSON.stringify(reasoningEffort)}`
       );
     }
-    if (reasoningEffort !== 'low' && reasoningEffort !== 'medium' && reasoningEffort !== 'high') {
+    if (provider === 'anthropic' && thinkingBudget !== undefined) {
       throw new Error(
-        `createModelAgent: reasoningEffort must be "low", "medium" or "high", got ${JSON.stringify(reasoningEffort)}`
+        'createModelAgent: thinkingBudget and reasoningEffort both steer Anthropic thinking — pass one, not both (manual budget mode for pre-4.6 models, adaptive thinking with effort for 4.6 and later)'
       );
     }
   }
@@ -844,6 +861,7 @@ export function createModelAgent({
               model,
               maxOutputTokens: limit,
               ...(thinkingBudget !== undefined ? { thinkingBudget } : {}),
+              ...(reasoningEffort !== undefined ? { reasoningEffort } : {}),
               params,
               userMessage,
               fetchImpl: doFetch,

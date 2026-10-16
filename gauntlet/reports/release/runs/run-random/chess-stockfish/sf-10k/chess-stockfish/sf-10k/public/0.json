@@ -1,0 +1,491 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-stockfish",
+    "version": "1.0.0"
+  },
+  "tier": "sf-10k",
+  "seed": "chess-stockfish/sf-10k/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 1
+  },
+  "opponents": [
+    {
+      "seat": 0,
+      "id": "chess-stockfish-sf-10k"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "3caa20289a61fa9b",
+      "reply": {
+        "text": "g7g5"
+      },
+      "action": "g7g5",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "6d6e608d167bf339",
+      "reply": {
+        "text": "f3g5",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 13,
+          "searchedNodes": 10007
+        }
+      },
+      "action": "f3g5",
+      "invalid": false,
+      "usage": null,
+      "ms": 278
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "ed5a588e364dce8e",
+      "reply": {
+        "text": "c8g4"
+      },
+      "action": "c8g4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "f55d969f3abb9f38",
+      "reply": {
+        "text": "h3g4",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 14,
+          "searchedNodes": 10001
+        }
+      },
+      "action": "h3g4",
+      "invalid": false,
+      "usage": null,
+      "ms": 8
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "d6d785c2406a791a",
+      "reply": {
+        "text": "c6d4"
+      },
+      "action": "c6d4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "ceba76f75ba644d0",
+      "reply": {
+        "text": "c3d4",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 15,
+          "searchedNodes": 10001
+        }
+      },
+      "action": "c3d4",
+      "invalid": false,
+      "usage": null,
+      "ms": 7
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "08f31cfcdc7a6b78",
+      "reply": {
+        "text": "d8c8"
+      },
+      "action": "d8c8",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "a030af50abb22187",
+      "reply": {
+        "text": "d2d3",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 15,
+          "searchedNodes": 10002
+        }
+      },
+      "action": "d2d3",
+      "invalid": false,
+      "usage": null,
+      "ms": 6
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "1e443e24ef055d01",
+      "reply": {
+        "text": "a8b8"
+      },
+      "action": "a8b8",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "7b73a277a9dea347",
+      "reply": {
+        "text": "g5h3",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 14,
+          "searchedNodes": 10017
+        }
+      },
+      "action": "g5h3",
+      "invalid": false,
+      "usage": null,
+      "ms": 6
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "e3d3036f89d2b962",
+      "reply": {
+        "text": "b8b7"
+      },
+      "action": "b8b7",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "3020331398e4ab25",
+      "reply": {
+        "text": "g4g5",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 15,
+          "searchedNodes": 10007
+        }
+      },
+      "action": "g4g5",
+      "invalid": false,
+      "usage": null,
+      "ms": 7
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "961fce8c29b136e6",
+      "reply": {
+        "text": "f6g4"
+      },
+      "action": "f6g4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "c8b32c351d8a5cc2",
+      "reply": {
+        "text": "f2f3",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 14,
+          "searchedNodes": 10010
+        }
+      },
+      "action": "f2f3",
+      "invalid": false,
+      "usage": null,
+      "ms": 6
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "f3a1949246ee7bca",
+      "reply": {
+        "text": "b7b6"
+      },
+      "action": "b7b6",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "355c5900f42a304c",
+      "reply": {
+        "text": "e1f1",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 15,
+          "searchedNodes": 10002
+        }
+      },
+      "action": "e1f1",
+      "invalid": false,
+      "usage": null,
+      "ms": 6
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "eb162865f7720c0b",
+      "reply": {
+        "text": "e7d8"
+      },
+      "action": "e7d8",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "23373f98d3ad3086",
+      "reply": {
+        "text": "f3g4",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 15,
+          "searchedNodes": 10009
+        }
+      },
+      "action": "f3g4",
+      "invalid": false,
+      "usage": null,
+      "ms": 5
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "b621bd1c9d877b58",
+      "reply": {
+        "text": "c8g4"
+      },
+      "action": "c8g4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "a7e28abba365bbcc",
+      "reply": {
+        "text": "d1g4",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 16,
+          "searchedNodes": 10025
+        }
+      },
+      "action": "d1g4",
+      "invalid": false,
+      "usage": null,
+      "ms": 6
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "fd5973fc08759960",
+      "reply": {
+        "text": "d6d5"
+      },
+      "action": "d6d5",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "7ea64f35aa3b34c0",
+      "reply": {
+        "text": "c1d2",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 15,
+          "searchedNodes": 10004
+        }
+      },
+      "action": "c1d2",
+      "invalid": false,
+      "usage": null,
+      "ms": 6
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "bb7932e509439a48",
+      "reply": {
+        "text": "b6b7"
+      },
+      "action": "b6b7",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "7ca403669ac33cba",
+      "reply": {
+        "text": "b1c3",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 16,
+          "searchedNodes": 10007
+        }
+      },
+      "action": "b1c3",
+      "invalid": false,
+      "usage": null,
+      "ms": 6
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "28508ffa4088b68b",
+      "reply": {
+        "text": "b7b8"
+      },
+      "action": "b7b8",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "d8c3d8c38f391661",
+      "reply": {
+        "text": "f1d1",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 14,
+          "searchedNodes": 10006
+        }
+      },
+      "action": "f1d1",
+      "invalid": false,
+      "usage": null,
+      "ms": 5
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "aae62383c9fb8611",
+      "reply": {
+        "text": "h7h6"
+      },
+      "action": "h7h6",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "edfc3f721b617dc5",
+      "reply": {
+        "text": "g5h6",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 33,
+          "searchedNodes": 10004
+        }
+      },
+      "action": "g5h6",
+      "invalid": false,
+      "usage": null,
+      "ms": 3
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "94aa538c0b1fd6aa",
+      "reply": {
+        "text": "g8h7"
+      },
+      "action": "g8h7",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "84283f73439f5151",
+      "reply": {
+        "text": "g4g7",
+        "meta": {
+          "engine": "Stockfish 17.1",
+          "nodesBudget": 10000,
+          "depth": 218,
+          "searchedNodes": 10006
+        }
+      },
+      "action": "g4g7",
+      "invalid": false,
+      "usage": null,
+      "ms": 3
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1,
+        0
+      ],
+      "raw": [
+        "win",
+        "loss"
+      ],
+      "reason": "white wins by checkmate"
+    },
+    "agentActions": 15,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:18:39.760Z",
+  "finishedAt": "2026-10-16T06:18:40.140Z"
+}

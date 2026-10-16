@@ -23,7 +23,7 @@ scoring and wire-protocol packets can land in parallel.
 | `core/conformance.js`| The checks every registered game must pass.                      |
 | `agents/random.js`  | Baseline random agent, seeded from episode seed + agent id.       |
 | `agents/sliding-solver.js` | Optimal sliding-puzzle reference solver (IDA*).            |
-| `games/`            | Explicit registry (`games/index.js`) plus the fifteen games.         |
+| `games/`            | Explicit registry (`games/index.js`) plus the eighteen games.     |
 | `harness/`          | Official-track prompts, model clients, dry-run/replay agents.     |
 | `runs/`             | Suite-run orchestration: bounded workers, budget caps, rate       |
 |                     | limiting, resumable bundles, provenance (`run.json`), estimates.  |
@@ -89,7 +89,7 @@ A **suite manifest** (`scoring/suite.js`, format
 `playkit-gauntlet-suite/1`) pins the benchmark: the split, the games, and —
 per tier — the exact seed list an entry must cover. Public suites list public
 seeds; eval suites derive salted seeds from a secret salt and record only the
-salt commitment. The fifteen registered games span 64 tiers and 1198 public
+salt commitment. The eighteen registered games span 76 tiers and 1426 public
 seeds; tic-tac-toe is the smoke game (scored, but `benchmark: false`, so it
 excludes entries from the benchmark-score aggregate while still counting
 toward coverage).
@@ -225,7 +225,7 @@ npm run typecheck
 ```
 
 Integration tests live in `test/integration/`: registry-wide conformance for
-all fifteen games, a CLI end-to-end run (suite build → random run → bundle
+all eighteen games, a CLI end-to-end run (suite build → random run → bundle
 verify → verify → leaderboard rank → dry-run model entry flagged unranked),
 an engine-backed CLI run against a local OpenAI-compatible stub server
 (live provider run → budget stop → resume → tamper detection → priced

@@ -1,0 +1,27 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-msep-v2-qwen2.5-7b-instruct-q4_k_m-sokoban-one-box-4",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "sokoban",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "one-box",
+          "rank": 1,
+          "scoring": "efficiency",
+          "parKind": "optimal",
+          "seeds": [
+            "sokoban/one-box/public/0",
+            "sokoban/one-box/public/1",
+            "sokoban/one-box/public/2",
+            "sokoban/one-box/public/3"
+          ]
+        }
+      ]
+    }
+  ]
+}

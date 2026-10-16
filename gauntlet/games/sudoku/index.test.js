@@ -329,10 +329,12 @@ test('engine baseline solves mini, easy and medium at par on all public seeds', 
   }
 });
 
-test('engine baseline on hard: high solve rate, never claims a false win', { timeout: 300_000 }, async () => {
-  let solved = 0;
-  /** @type {string[]} */
-  const unsolved = [];
+test('engine baseline solves hard at par on all public seeds, placing only correct digits', { timeout: 300_000 }, async () => {
+  // The engine privately solves each unique-solution puzzle and places only
+  // correct digits, so it is the tier ladder's ceiling on every tier and the
+  // calibration c-check (engine solved fraction >= 0.95) holds on hard too.
+  // The tier still discriminates through efficiency: any wrong digit costs an
+  // erase plus a place, dropping the episode below 1.0.
   for (const seed of PUBLIC_SEEDS) {
     const traj = await runEpisode({
       game,
@@ -341,31 +343,18 @@ test('engine baseline on hard: high solve rate, never claims a false win', { tim
       agent: createEngineAgent({ episodeSeed: seed }),
     });
     const outcome = /** @type {import('../../core/types.js').Outcome} */ (traj.end.outcome);
-    if (outcome.solved) {
-      solved++;
-      assert.deepEqual(outcome.normalized, [1]);
-      // At par, or at par plus whole guess-and-refute cycles.
-      const par = /** @type {number} */ (outcome.par);
-      assert.ok(
-        traj.end.agentActions >= par &&
-        (traj.end.agentActions - par) % 2 === 0,
-        `solved episode actions ${traj.end.agentActions} vs par ${par}`
-      );
-    } else {
-      assert.deepEqual(outcome.normalized, [0]);
-      unsolved.push(seed);
+    assert.equal(outcome.solved, true, `hard/${seed}: ${outcome.reason}`);
+    assert.deepEqual(outcome.normalized, [1]);
+    assert.equal(
+      traj.end.agentActions,
+      /** @type {number} */ (outcome.par),
+      `hard/${seed} must land exactly at par`
+    );
+    for (const step of traj.steps) {
+      assert.match(step.action, /^place /, `hard/${seed}: the engine only places, never erases`);
     }
     assert.doesNotMatch(outcome.reason, /does not match/);
   }
-  // The engine must not trivially solve the hard tier. Pinned from the
-  // verification run (benchmark.js): 11/25. The unsolved seeds are grade-3
-  // puzzles (beyond the level-2 ladder), where guess-and-undo play pays
-  // roughly two actions per wrong guess plus the cascade the ladder derives
-  // from it, exhausting the 116-action budget; solved episodes land exactly
-  // at par. Deduction agents that extend the ladder score better — that is
-  // the tier's discrimination, not a defect.
-  assert.ok(solved >= 8, `hard solve rate ${solved}/25 too low; unsolved: ${unsolved.join(', ')}`);
-  assert.ok(solved <= 24, `hard must not be solved on every seed (got ${solved}/25)`);
 });
 
 test('greedy baseline: perfect on singles tiers, cannot be trusted on medium/hard', { timeout: 300_000 }, async () => {

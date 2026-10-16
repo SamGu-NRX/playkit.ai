@@ -3,7 +3,10 @@
  * token-bucket rate limit, a hard dollar cap and a hard call cap, atomic
  * per-episode trajectory files, resume without replaying finished episodes,
  * and a `run.json` provenance record that makes the results bundle verifiable
- * by anyone with the games and the manifest.
+ * by anyone with the games and the manifest. The record's per-invocation fields
+ * describe the invocation that wrote it; its `total` block sums every
+ * trajectory in the run directory, so after a `--resume` the bundle still
+ * describes the whole run.
  *
  * Node-only (`node:*` imports; the games it plays stay browser-safe).
  *
@@ -27,7 +30,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runEpisode } from '../core/runner.js';
@@ -90,6 +93,80 @@ export class UnknownCostError extends Error {
  */
 function errorMessage(err) {
   return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Display label for one episode job. A job key is `<game>/<tier>/<seed>` and
+ * the seed itself is `<game>/<tier>/<split>/<i>`, so the raw key repeats the
+ * game and tier prefix (`chess/wood/chess/wood/public/0`); stop details and
+ * error messages are for people, so they show the seed alone. Machine-read
+ * key fields in the record (skipped, replayed, unplayed, failed) keep the
+ * full stable key.
+ *
+ * @param {Job} job
+ * @returns {string}
+ */
+function jobLabel(job) {
+  return job.seed.startsWith(`${job.gameId}/${job.tierId}/`) ? job.seed : job.key;
+}
+
+/**
+ * Whole-bundle totals: walk the run directory, sum every trajectory that
+ * parses, and fold each step's usage — the same whole-bundle basis as the
+ * estimate-vs-actual comparison, so `run.json`'s `total` block and the
+ * `--against` comparison agree by construction. Steps without a parsed
+ * `usage` object contribute nothing on any side (engine moves are not model
+ * calls); steps with usage but no finite costUsd are counted in
+ * `unknownCostSteps` rather than silently averaged into zero.
+ *
+ * @param {string} outDir
+ * @returns {Promise<RunTotals>}
+ */
+export async function sumRunDirectory(outDir) {
+  /** @type {RunTotals} */
+  const totals = {
+    episodes: 0,
+    calls: 0,
+    tokens: { input: 0, output: 0 },
+    spendUsd: 0,
+    unknownCostSteps: 0,
+  };
+  const stack = [outDir];
+  for (;;) {
+    const dir = stack.pop();
+    if (!dir) break;
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const filePath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(filePath);
+        continue;
+      }
+      if (!entry.name.endsWith('.json')) continue;
+      // Top-level records (run.json, suite.json, prices.json) do not parse
+      // as trajectories, so the format check below skips them.
+      const parsed = await readJsonFile(filePath);
+      const t = /** @type {any} */ (parsed.ok ? parsed.value : null);
+      if (!t || t.format !== TRAJECTORY_FORMAT || !Array.isArray(t.steps)) continue;
+      totals.episodes += 1;
+      for (const step of t.steps) {
+        const usage = step?.usage;
+        if (!usage) continue;
+        totals.calls += 1;
+        if (typeof usage.inputTokens === 'number' && Number.isFinite(usage.inputTokens)) {
+          totals.tokens.input += usage.inputTokens;
+        }
+        if (typeof usage.outputTokens === 'number' && Number.isFinite(usage.outputTokens)) {
+          totals.tokens.output += usage.outputTokens;
+        }
+        if (typeof usage.costUsd === 'number' && Number.isFinite(usage.costUsd)) {
+          totals.spendUsd += usage.costUsd;
+        } else {
+          totals.unknownCostSteps += 1;
+        }
+      }
+    }
+  }
+  return totals;
 }
 
 /**
@@ -190,6 +267,18 @@ function gitCommit() {
  */
 
 /**
+ * Whole-bundle totals behind run.json's `total` block: what the results
+ * bundle holds, as opposed to what one invocation played.
+ *
+ * @typedef {object} RunTotals
+ * @property {number} episodes Trajectory files in the run directory that parse as trajectories.
+ * @property {number} calls Agent calls recorded across those episodes (the steps that reported usage).
+ * @property {{ input: number, output: number }} tokens Summed reported input/output tokens. A step whose provider reported no token count adds 0 on that side; its unpriced cost shows in unknownCostSteps.
+ * @property {number} spendUsd Summed finite step costs. A step that reported usage without a finite costUsd counts here as 0 and separately in unknownCostSteps — unknown stays unknown, it is never folded into 0 (same semantics as the per-invocation spendUsd).
+ * @property {number} unknownCostSteps Steps that reported usage with a null (or non-finite) costUsd.
+ */
+
+/**
  * @typedef {object} RunRecord
  * @property {'playkit-gauntlet-run/1'} format
  * @property {{ id: string, split: string, manifestSha256: string }} suite
@@ -208,6 +297,11 @@ function gitCommit() {
  *   null (or non-finite) costUsd: usage was reported, so the cost is unknown,
  *   not zero.
  * @property {number} calls
+ * @property {RunTotals} total Whole-bundle totals summed from every trajectory
+ *   in the run directory and recomputed on each invocation; after a
+ *   `--resume` it covers episodes played and verified by earlier invocations
+ *   too, where the per-invocation fields above describe only the invocation
+ *   that wrote this record.
  * @property {RunCounts} counts
  * @property {string[]} skipped
  * @property {string[]} replayed
@@ -241,7 +335,7 @@ function gitCommit() {
  *   provenance; the Anthropic extended-thinking budget itself is applied by
  *   the agent layer (thinking.budget_tokens; the wire max_tokens is the reply
  *   cap plus this budget) and the worst-case cost quote includes it.
- * @property {'low' | 'medium' | 'high'} [reasoningEffort] Recorded in
+ * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort] Recorded in
  *   run.json's limits for provenance; the OpenAI reasoning effort itself is
  *   applied by the agent layer (reasoning.effort / reasoning_effort).
  * @property {boolean} [resume] Verify existing trajectory files and skip the
@@ -353,10 +447,12 @@ export async function runSuite({
     reasoningEffort !== undefined &&
     reasoningEffort !== 'low' &&
     reasoningEffort !== 'medium' &&
-    reasoningEffort !== 'high'
+    reasoningEffort !== 'high' &&
+    reasoningEffort !== 'xhigh' &&
+    reasoningEffort !== 'max'
   ) {
     throw new Error(
-      `[gauntlet/runs/run.js] reasoningEffort: must be "low", "medium" or "high", got ${JSON.stringify(reasoningEffort)}`
+      `[gauntlet/runs/run.js] reasoningEffort: must be "low", "medium", "high", "xhigh" or "max", got ${JSON.stringify(reasoningEffort)}`
     );
   }
 
@@ -472,13 +568,13 @@ export async function runSuite({
         }
         if (signal?.aborted) {
           stopped.reason = stopped.reason ?? 'cancelled';
-          stopped.detail = stopped.detail ?? `${job.key}: aborted by signal`;
-          throw new RunAbortedError('cancelled', `run aborted by signal at ${job.key}`);
+          stopped.detail = stopped.detail ?? `${jobLabel(job)}: aborted by signal`;
+          throw new RunAbortedError('cancelled', `run aborted by signal at ${jobLabel(job)}`);
         }
         if (maxCalls !== undefined && calls >= maxCalls) {
           stopped.reason = stopped.reason ?? 'calls';
-          stopped.detail = stopped.detail ?? `${job.key}: maxCalls ${maxCalls} reached`;
-          throw new RunAbortedError('calls', `maxCalls ${maxCalls} reached at ${job.key}`);
+          stopped.detail = stopped.detail ?? `${jobLabel(job)}: maxCalls ${maxCalls} reached`;
+          throw new RunAbortedError('calls', `maxCalls ${maxCalls} reached at ${jobLabel(job)}`);
         }
         // Worst-case admission for the dollar cap: a quote-carrying agent
         // reserves its next call's upper-bound cost, so concurrent in-flight
@@ -495,10 +591,10 @@ export async function runSuite({
             stopped.reason = stopped.reason ?? 'budget';
             stopped.detail =
               stopped.detail ??
-              `${job.key}: maxUsd ${maxUsd} reached (settled ${spendUsd}, reserved ${reservedUsd}, next-call worst case ${quote ?? 'unknown'})`;
+              `${jobLabel(job)}: maxUsd ${maxUsd} reached (settled ${spendUsd}, reserved ${reservedUsd}, next-call worst case ${quote ?? 'unknown'})`;
             throw new RunAbortedError(
               'budget',
-              `maxUsd ${maxUsd} would be exceeded at ${job.key} (settled ${spendUsd}, reserved ${reservedUsd}, next-call worst case ${quote ?? 'unknown'})`
+              `maxUsd ${maxUsd} would be exceeded at ${jobLabel(job)} (settled ${spendUsd}, reserved ${reservedUsd}, next-call worst case ${quote ?? 'unknown'})`
             );
           }
         }
@@ -510,7 +606,7 @@ export async function runSuite({
           const cost = reply?.usage?.costUsd;
           if (maxUsd !== undefined && !(typeof cost === 'number' && Number.isFinite(cost))) {
             const message =
-              `[gauntlet/runs/run.js] budget: episode ${job.key} step returned costUsd ` +
+              `[gauntlet/runs/run.js] budget: episode ${jobLabel(job)} step returned costUsd ` +
               `${JSON.stringify(cost === undefined ? null : cost)} with maxUsd ${maxUsd} set; the cap cannot be ` +
               `enforced without a price entry for ${base.id ?? 'this agent'} — add the provider/model to the ` +
               'prices file, or run without maxUsd';
@@ -561,7 +657,7 @@ export async function runSuite({
       try {
         const base = await agentFactory(job);
         if (!base || typeof base.act !== 'function') {
-          throw new Error(`agentFactory returned no Agent for ${job.key}`);
+          throw new Error(`agentFactory returned no Agent for ${jobLabel(job)}`);
         }
         const game = /** @type {Game<*>} */ (gameMap.get(job.gameId));
         const trajectory = await runEpisode({
@@ -584,7 +680,7 @@ export async function runSuite({
         }
         if (err instanceof RunAbortedError) {
           stopped.reason = stopped.reason ?? err.reason;
-          stopped.detail = stopped.detail ?? `${job.key}: ${err.message}`;
+          stopped.detail = stopped.detail ?? `${jobLabel(job)}: ${err.message}`;
           return;
         }
         // Agent or game error on one episode: record it and keep going; the
@@ -642,6 +738,7 @@ export async function runSuite({
     spendUsd,
     unknownCostSteps,
     calls,
+    total: await sumRunDirectory(outDir),
     counts: {
       jobs: jobs.length,
       played: written.size,

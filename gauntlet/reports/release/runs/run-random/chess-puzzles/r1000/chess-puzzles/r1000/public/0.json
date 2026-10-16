@@ -1,0 +1,46 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-puzzles",
+    "version": "1.0.0"
+  },
+  "tier": "r1000",
+  "seed": "chess-puzzles/r1000/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "87ce3ce2ffd7d9e8",
+      "reply": {
+        "text": "h1h5"
+      },
+      "action": "h1h5",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": [
+        "loss"
+      ],
+      "reason": "puzzle RviML failed: played h1h5, the line expects h1h6"
+    },
+    "agentActions": 1,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:18:47.253Z",
+  "finishedAt": "2026-10-16T06:18:47.254Z"
+}

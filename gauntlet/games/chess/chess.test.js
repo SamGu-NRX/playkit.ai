@@ -26,7 +26,7 @@ const SLOW = process.env.GAUNTLET_SLOW === '1';
 
 /** @import { TierSpec } from '../../core/types.js' */
 
-const PAPER = /** @type {TierSpec} */ (game.spec.tiers[0]);
+const PAPER = /** @type {TierSpec} */ (game.spec.tiers.find((t) => t.id === 'paper'));
 
 test('registration: chess is registered and resolves from the registry', () => {
   assert.equal(game.spec.id, 'chess');
@@ -36,28 +36,35 @@ test('registration: chess is registered and resolves from the registry', () => {
   assert.ok(ids.includes('tictactoe'), 'tictactoe should still be registered');
 });
 
-test('spec shape: four engine tiers, 150-action budgets, perft FENs', () => {
-  assert.equal(game.spec.version, '1.1.0');
+test('spec shape: sand plus four engine tiers, 150-action budgets, perft FENs', () => {
+  assert.equal(game.spec.version, '1.2.0');
   assert.equal(game.spec.seats, 2);
   assert.equal(game.spec.information, 'perfect');
   assert.equal(game.spec.stochastic, false);
   assert.equal(game.spec.benchmark, true);
   assert.deepEqual(
     game.spec.tiers.map((tier) => tier.id),
-    ['paper', 'wood', 'steel', 'granite']
+    ['sand', 'paper', 'wood', 'steel', 'granite']
   );
   assert.deepEqual(
     game.spec.tiers.map((tier) => tier.rank),
-    [1, 2, 3, 4]
+    [1, 2, 3, 4, 5]
   );
   for (const tier of game.spec.tiers) {
     assert.equal(tier.maxActions, 150, `tier ${tier.id} maxActions must be 150`);
     assert.equal(tier.scoring, 'outcome');
+    if (tier.id === 'sand') {
+      // The random-opponent tier carries no engine params.
+      assert.deepEqual(tier.params, {});
+      continue;
+    }
     const params = /** @type {{ depth: number, nodeBudget: number }} */ (tier.params);
     assert.ok(Number.isInteger(params.depth) && params.depth >= 2, 'tier engine depth');
     assert.ok(params.nodeBudget > 0, 'tier engine node budget');
   }
-  const depths = game.spec.tiers.map((tier) => /** @type {{ depth: number }} */ (tier.params).depth);
+  const depths = game.spec.tiers
+    .filter((tier) => tier.id !== 'sand')
+    .map((tier) => /** @type {{ depth: number }} */ (tier.params).depth);
   assert.deepEqual(
     [...depths].sort((a, b) => a - b),
     depths,
@@ -259,6 +266,18 @@ test('parseAction: invalid inputs return a diagnostic error', () => {
   const illegal = game.parseAction(state, 0, 'e2e5');
   assert.equal(illegal.ok, false);
   assert.ok(String(illegal.error).includes('not legal'));
+  // SAN-shaped strings that chess.move() rejects are reported as illegal
+  // (they are grammatical — a pawn push to an occupied square or a blocked
+  // piece move — not parse failures).
+  const sanIllegal = game.parseAction(state, 0, 'e5');
+  assert.equal(sanIllegal.ok, false, 'e5 is illegal from the start position');
+  assert.ok(String(sanIllegal.error).includes('not legal'), String(sanIllegal.error));
+  const blocked = game.parseAction(stateFromFen(PERFT_FENS.start), 0, 'Nf3');
+  assert.equal(blocked.ok, true, 'Nf3 is legal from the start');
+  // Truly ungrammatical strings keep the cannot-parse diagnostic.
+  const garbage = game.parseAction(state, 0, 'king takes queen');
+  assert.equal(garbage.ok, false);
+  assert.ok(String(garbage.error).includes('cannot parse'), String(garbage.error));
 });
 
 test('turn enforcement: wrong-seat step throws, wrong-seat parse fails', () => {
@@ -438,11 +457,72 @@ test('baselines complete episodes with zero invalid actions', async () => {
   assert.ok(agentActions >= 2, `episode ended after only ${agentActions} agent actions`);
 });
 
+test('sand opponent: seeded, legal, and completes an episode against greedy', async () => {
+  const SAND = /** @type {TierSpec} */ (game.spec.tiers[0]);
+  assert.equal(SAND.id, 'sand');
+  const seed = 'sand-determinism-seed';
+  const seatAgent = game.agentSeat(SAND, seed);
+  const seatOpp = seatAgent === 0 ? 1 : 0;
+  // Same construction must replay identically: same reply per turn.
+  const a = game.opponent(SAND, seed, seatOpp);
+  const b = game.opponent(SAND, seed, seatOpp);
+  let state = game.reset(SAND, seed);
+  let ply = 0;
+  for (;;) {
+    const seat = game.toAct(state);
+    if (seat === null || seat === seatOpp || ply >= 8) break;
+    state = game.step(state, seat, game.legalActions(state, seat)[0]);
+    ply++;
+  }
+  assert.equal(game.toAct(state), seatOpp, 'setup must reach the opponent seat');
+  const legalOpp = game.legalActions(state, seatOpp);
+  assert.ok(legalOpp.length > 0);
+  const context = /** @type {import('../../core/types.js').TurnContext} */ (
+    { observation: game.observe(state, seatOpp), legalActions: legalOpp, turn: ply }
+  );
+  const replyA = await a.act(context);
+  const replyB = await b.act(context);
+  assert.equal(replyA.text, replyB.text);
+  assert.ok(legalOpp.includes(String(replyA.text)), 'sand reply must be legal');
+  // Different turn, same position family: the stream must advance (not the
+  // same draw every turn).
+  const later = /** @type {import('../../core/types.js').TurnContext} */ (
+    { observation: context.observation, legalActions: legalOpp, turn: ply + 1 }
+  );
+  const replyLater = await a.act(later);
+  assert.ok(legalOpp.includes(String(replyLater.text)));
+
+  // Full episode: sand opponent vs the greedy agent, zero invalid actions.
+  const opponent = game.opponent(SAND, seed, seatOpp);
+  const greedy = createGreedyBaselineAgent({ id: 'greedy-sand', episodeSeed: seed });
+  let episodeState = game.reset(SAND, seed);
+  let agentActions = 0;
+  for (let turn = 0; turn < 2 * SAND.maxActions; turn++) {
+    const seat = game.toAct(episodeState);
+    if (seat === null) break;
+    if (seat === seatAgent) {
+      agentActions++;
+      if (agentActions > SAND.maxActions) break;
+    }
+    const agent = seat === seatAgent ? greedy : opponent;
+    const legal = game.legalActions(episodeState, seat);
+    const observation = game.observe(episodeState, seat);
+    const result = await agent.act(
+      /** @type {import('../../core/types.js').TurnContext} */ ({ observation, legalActions: legal, turn })
+    );
+    assert.ok(legal.includes(result.text), `${agent.id} played invalid ${result.text}`);
+    episodeState = game.step(episodeState, seat, result.text);
+  }
+  assert.ok(agentActions >= 2, `episode ended after only ${agentActions} agent actions`);
+});
+
 test('conformance kit passes across the tiers', async () => {
-  // The kit replays history per ply, so the full four-tier run is expensive:
+  // The kit replays history per ply, so the full five-tier run is expensive:
   // by default only the paper tier runs (1 seed); GAUNTLET_SLOW=1 runs all
-  // four tiers with the full seed budget.
-  const target = SLOW ? game : { ...game, spec: { ...game.spec, tiers: [PAPER] } };
+  // five tiers with the full seed budget.
+  const target = SLOW
+    ? game
+    : { ...game, spec: { ...game.spec, tiers: [{ ...PAPER, rank: 1 }] } };
   const report = await runConformance(target, { seedsPerTier: SLOW ? 3 : 1 });
   assert.equal(report.ok, true);
   assert.equal(report.game, 'chess');

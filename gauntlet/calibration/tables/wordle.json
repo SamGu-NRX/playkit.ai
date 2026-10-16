@@ -1,0 +1,149 @@
+{
+  "format": "playkit-gauntlet-calibration-table/2",
+  "game": {
+    "id": "wordle",
+    "version": "1.1.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "baselines": {
+    "random": {
+      "tiers": {
+        "four-letter-10": {
+          "id": "four-letter-10",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 25
+        },
+        "classic": {
+          "id": "classic",
+          "rank": 2,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 25
+        },
+        "hard-mode": {
+          "id": "hard-mode",
+          "rank": 3,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 25
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "four-letter-10": {
+          "id": "four-letter-10",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.551427,
+            "ci95": [
+              0.419326,
+              0.696334
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
+        "classic": {
+          "id": "classic",
+          "rank": 2,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.688956,
+            "ci95": [
+              0.568032,
+              0.813659
+            ]
+          },
+          "solvedFraction": 0.96,
+          "episodes": 25
+        },
+        "hard-mode": {
+          "id": "hard-mode",
+          "rank": 3,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.817978,
+            "ci95": [
+              0.6897,
+              0.940083
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "four-letter-10": {
+          "id": "four-letter-10",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
+        "classic": {
+          "id": "classic",
+          "rank": 2,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
+        "hard-mode": {
+          "id": "hard-mode",
+          "rank": 3,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        }
+      }
+    }
+  }
+}

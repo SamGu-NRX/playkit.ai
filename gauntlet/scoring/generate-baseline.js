@@ -9,6 +9,10 @@
  * SHA-256 of every source table so a regenerated file is auditable back to
  * the run that produced it.
  *
+ * A table whose game version differs from the registered game's version is
+ * refused: the tier means encode the old rules' outcome distribution, so a
+ * baseline built from it would rescale current play against stale numbers.
+ *
  * Usage from `gauntlet/`:
  *
  *   node scoring/generate-baseline.js [--tables=calibration/tables] [--out=scoring/baselines/random-public.json]
@@ -27,6 +31,7 @@ import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 
 import { BASELINE_FORMAT } from './profiles.js';
+import { GAMES } from '../games/index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const gauntletRoot = resolve(here, '..');
@@ -72,6 +77,21 @@ for (const file of tableFiles) {
     console.error(`generate-baseline: ${file} is not a calibration table (missing game.id/version)`);
     process.exit(1);
   }
+
+  // A table calibrated under a different game version cannot baseline the
+  // installed game: the tier means encode the old rules' outcome
+  // distribution, and the chance-adjusted profile would rescale current
+  // play against them. Refuse by name instead of baking a stale baseline.
+  const registered = GAMES[gameId];
+  if (!registered) {
+    console.error(`generate-baseline: ${file} is for game "${gameId}", which is not registered in games/index.js; delete the stale table or register the game`);
+    process.exit(1);
+  }
+  if (table.game.version !== registered.spec.version) {
+    console.error(`generate-baseline: ${file} was calibrated on game version ${table.game.version} but the installed game is version ${registered.spec.version}; a table from a different game version cannot baseline this one — regenerate it with node calibration/run.js --games=${gameId}`);
+    process.exit(1);
+  }
+
   sourceTables.push({
     gameId,
     path: relative(gauntletRoot, join(tablesDir, file)).replaceAll('\\', '/'),

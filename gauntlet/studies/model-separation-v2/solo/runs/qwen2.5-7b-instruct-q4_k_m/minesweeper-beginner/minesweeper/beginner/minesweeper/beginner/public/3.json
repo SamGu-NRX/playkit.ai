@@ -1,0 +1,90 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/3",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b538ff8d32f9032c",
+      "reply": {
+        "text": "reveal 4 3",
+        "usage": {
+          "inputTokens": 732,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-GgIQlrxEFwRO2qy73uCPOhqb3gkTtCEt",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 4 3",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 732,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 4300
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "303d0d06514d9772",
+      "reply": {
+        "text": "reveal 5 5",
+        "usage": {
+          "inputTokens": 736,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Y4JMYgoTIA7Som3rUPyQNjunHowRg8cM",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 5 5",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 736,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 5233
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.6197183098591549
+      ],
+      "raw": [
+        44
+      ],
+      "reason": "mine revealed at row 5, column 5 — episode ends with 44 of 71 safe cells revealed"
+    },
+    "agentActions": 2,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:40:52.406Z",
+  "finishedAt": "2026-10-16T11:41:01.940Z"
+}

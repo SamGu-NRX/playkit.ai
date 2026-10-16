@@ -3,8 +3,11 @@
  * episode seed fixes a hidden answer word; every guess receives per-letter
  * feedback — `G` right letter right place, `Y` right letter wrong place, `.`
  * letter absent or exhausted — following standard duplicate-letter counting.
- * Invalid guesses (not in the tier's word list, or in hard mode not reusing
- * the revealed hints) are invalid actions with a helpful error.
+ * Invalid guesses (not in the tier's word list) are invalid actions with a
+ * helpful error. Hard-mode hint violations are legal guesses applied with
+ * their normal feedback; the tier scores binding discipline at the outcome
+ * instead of enforcing it by rejection, so the legal set never narrows and
+ * uniform play cannot have the deduction done for it.
  *
  * Efficiency-scored: par is the guess count of the bundled entropy-greedy
  * reference strategy (`reference.js`) for this answer, capped like every
@@ -13,8 +16,9 @@
  * Tiers:
  * - `four-letter-10` — on-ramp: a 4-letter word list, 10 guesses.
  * - `classic` — 5-letter word list, 6 guesses.
- * - `hard-mode` — 6 guesses on the same 5-letter list, and every revealed
- *   hint must be reused in every later guess.
+ * - `hard-mode` — 6 guesses on the same 5-letter list; every revealed hint
+ *   must be reused in every later guess, and a solved episode whose history
+ *   broke a hint counts as unsolved (score 0).
  *
  * @module
  */
@@ -79,25 +83,22 @@ function isListedGuess(word, wordLength) {
 
 /**
  * The canonical legal actions for a playing state, in sorted order (the word
- * lists are sorted, and the hard-mode filter preserves that order).
+ * lists are sorted). Legality is word-list membership on every tier,
+ * hard-mode included: hint-binding is scored at the outcome, not enforced by
+ * rejection, so the legal set never narrows and uniform play cannot have the
+ * deduction done for it.
  *
  * @param {WordleState} state
  * @returns {string[]}
  */
 function legalActionsFor(state) {
-  const guesses = guessesFor(state.wordLength);
-  if (!state.hardMode || state.guesses.length === 0) {
-    return guesses.map((guess) => `guess ${guess}`);
-  }
-  return guesses
-    .filter((guess) => hardModeViolation(guess, state.guesses) === null)
-    .map((guess) => `guess ${guess}`);
+  return guessesFor(state.wordLength).map((guess) => `guess ${guess}`);
 }
 
 export const wordle = {
   spec: {
     id: 'wordle',
-    version: '1.0.0',
+    version: '1.1.0',
     title: 'Wordle',
     seats: /** @type {1 | 2} */ (1),
     information: /** @type {InformationMode} */ ('hidden'),
@@ -119,6 +120,7 @@ export const wordle = {
       'Documented alternates: the bare word ("CRANE"), lowercase letters, a verb ("try CRANE", "play CRANE"), spaces between letters ("C R A N E"), and surrounding quotes or backticks are all accepted.',
       'A guess with the wrong length, or a word not in the tier\'s word list, is invalid and consumes an action attempt.',
       'On tier hard-mode only: every revealed hint must be reused in every later guess — letters marked G must stay in their revealed positions, and every letter marked G or Y must appear as many times as it was revealed in that feedback.',
+      'Hard mode is scored, not blocked: a guess that breaks a revealed hint is accepted with its normal feedback, but an episode whose guess history breaks the hard-mode rule at any point counts as unsolved (score 0) even if the answer was found.',
     ].join(' '),
     tiers: /** @type {TierSpec[]} */ (
       TIER_DEFS.map((def, index) => ({
@@ -149,6 +151,7 @@ export const wordle = {
       hardMode,
       answer: answers[pick],
       guesses: [],
+      bindingBroken: false,
       status: 'playing',
     };
   },
@@ -180,7 +183,7 @@ export const wordle = {
     ];
     if (state.hardMode) {
       lines.push(
-        'Hard mode: every revealed hint must be reused — letters marked G stay in their positions, and every letter marked G or Y must appear as many times as it was revealed.'
+        'Hard mode: every revealed hint must be reused — letters marked G stay in their positions, and every letter marked G or Y must appear as many times as it was revealed. A guess that breaks a revealed hint is accepted with its normal feedback, but an episode whose history breaks the hard-mode rule counts as unsolved (score 0) even if the answer is found.'
       );
     }
     if (state.guesses.length === 0) {
@@ -218,9 +221,9 @@ export const wordle = {
   },
 
   /**
-   * Every word on the tier's guess list that respects the hard-mode
-   * constraint is always legal. The list is far larger than 64 entries, so
-   * observations do not list it.
+   * Every word on the tier's guess list is legal on every tier, hard-mode
+   * included: binding is scored at the outcome, not enforced by rejection.
+   * The list is far larger than 64 entries, so observations do not list it.
    *
    * @param {WordleState} state
    * @param {number} seat
@@ -244,15 +247,13 @@ export const wordle = {
     if (seat !== 0) {
       return { ok: false, error: `unknown seat ${seat}` };
     }
-    // Fast path: already-canonical action. State-dependent legality
-    // (hard-mode constraints) applies here exactly as on the slow path.
+    // Fast path: already-canonical action.
     const word = text.slice(6);
     if (
       text.length === 6 + state.wordLength &&
       text.startsWith('guess ') &&
       isListedGuess(word, state.wordLength) &&
-      guessesFor(state.wordLength).includes(word) &&
-      !(state.hardMode && hardModeViolation(word, state.guesses) !== null)
+      guessesFor(state.wordLength).includes(word)
     ) {
       return { ok: true, action: canonicalAction(word) };
     }
@@ -285,10 +286,6 @@ export const wordle = {
         error: `"${s}" is not in the ${state.wordLength}-letter word list`,
       };
     }
-    const violation = state.hardMode ? hardModeViolation(s, state.guesses) : null;
-    if (violation) {
-      return { ok: false, error: violation };
-    }
     return { ok: true, action: canonicalAction(s) };
   },
 
@@ -309,21 +306,26 @@ export const wordle = {
       typeof action !== 'string' ||
       action.length !== 6 + state.wordLength ||
       !action.startsWith('guess ') ||
-      !guessesFor(state.wordLength).includes(action.slice(6)) ||
-      (state.hardMode && hardModeViolation(action.slice(6), state.guesses) !== null)
+      !guessesFor(state.wordLength).includes(action.slice(6))
     ) {
       throw new GauntletRuleError(`unknown action ${JSON.stringify(action)}`);
     }
     const guess = action.slice(6);
     const pattern = feedbackFor(guess, state.answer);
     const guesses = state.guesses.concat([{ guess, pattern }]);
+    // Hard-mode binding is scored, not blocked: a guess that breaks a
+    // revealed hint is applied with its normal feedback and marks the
+    // episode, and a solve on a marked episode counts as unsolved.
+    const bindingBroken =
+      state.bindingBroken ||
+      (state.hardMode && hardModeViolation(guess, state.guesses) !== null);
     let status = /** @type {WordleState['status']} */ ('playing');
     if (pattern === 'G'.repeat(state.wordLength)) {
       status = 'won';
     } else if (guesses.length >= state.maxGuesses) {
       status = 'lost';
     }
-    return { ...state, guesses, status };
+    return { ...state, guesses, status, bindingBroken };
   },
 
   /**
@@ -375,6 +377,15 @@ function terminalOutcome(state) {
   const par = parOf(state);
   const actions = state.guesses.length;
   if (state.status === 'won') {
+    if (state.bindingBroken) {
+      return {
+        normalized: [0],
+        raw: [actions],
+        reason: `solved but unscored: the answer was found in ${actions} guess(es), but hard mode was broken — a revealed hint was not reused in a later guess (reference par ${par})`,
+        solved: false,
+        par,
+      };
+    }
     // In-range view of the efficiency score min(1.15, (par/actions)^2); the
     // scoring layer computes the capped episode score from solved, par and
     // the agent's action count.
@@ -406,6 +417,8 @@ function terminalOutcome(state) {
  * @property {boolean} hardMode Whether revealed hints must be reused.
  * @property {string} answer The hidden answer; never observed.
  * @property {WordleHistoryEntry[]} guesses Guesses so far, in order.
+ * @property {boolean} bindingBroken Hard-mode tiers only: a revealed hint was
+ *   broken at some point, so a solve counts as unsolved.
  * @property {'playing' | 'won' | 'lost'} status
  */
 

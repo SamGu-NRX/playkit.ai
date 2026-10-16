@@ -10,7 +10,7 @@
     },
     "chessSpec": {
       "id": "chess",
-      "version": "1.1.0"
+      "version": "1.2.0"
     },
     "chessStockfishSpec": {
       "id": "chess-stockfish",
@@ -20,11 +20,24 @@
       "binaryPath": "/usr/games/stockfish",
       "id": "Stockfish 17.1"
     },
-    "git": {
-      "baseCommit": "4f7ef3e2c6642b14206717e4088c3ff7cb2414c0",
-      "branch": "obv/burst7-playkit-integration-2"
+    "mergedFrom": {
+      "path": "rating/ladder-results.json",
+      "finishedAt": "2026-10-16T05:19:15.600Z",
+      "chessSpecVersion": "1.1.0",
+      "carriedPairs": [
+        "paper-vs-wood",
+        "wood-vs-sf-250",
+        "sf-250-vs-sf-1k",
+        "sf-1k-vs-sf-10k",
+        "sf-10k-vs-sf-100k",
+        "skip-paper-vs-sf-1k"
+      ]
     },
-    "finishedAt": "2026-10-16T05:19:15.600Z"
+    "git": {
+      "baseCommit": "d016791384c5f9fa18db0ae4aa9193162131a59a",
+      "branch": "obv/burst11-playkit-chess-first-rating"
+    },
+    "finishedAt": "2026-10-16T08:25:47.466Z"
   },
   "pairs": {
     "paper-vs-wood": {
@@ -2012,30 +2025,363 @@
         "score": 0,
         "n": 40
       }
+    },
+    "sand-vs-paper": {
+      "pairId": "sand-vs-paper",
+      "agentRung": "chess-sand",
+      "opponentRung": "chess-paper",
+      "games": [
+        {
+          "seed": "rating/sand-vs-paper/0",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 22,
+          "steps": 44
+        },
+        {
+          "seed": "rating/sand-vs-paper/1",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 9,
+          "steps": 18
+        },
+        {
+          "seed": "rating/sand-vs-paper/2",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 15,
+          "steps": 31
+        },
+        {
+          "seed": "rating/sand-vs-paper/3",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 10,
+          "steps": 20
+        },
+        {
+          "seed": "rating/sand-vs-paper/4",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 23,
+          "steps": 46
+        },
+        {
+          "seed": "rating/sand-vs-paper/5",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 10,
+          "steps": 21
+        },
+        {
+          "seed": "rating/sand-vs-paper/6",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 16,
+          "steps": 32
+        },
+        {
+          "seed": "rating/sand-vs-paper/7",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 15,
+          "steps": 30
+        },
+        {
+          "seed": "rating/sand-vs-paper/8",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 40,
+          "steps": 81
+        },
+        {
+          "seed": "rating/sand-vs-paper/9",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 19,
+          "steps": 39
+        },
+        {
+          "seed": "rating/sand-vs-paper/10",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 17,
+          "steps": 35
+        },
+        {
+          "seed": "rating/sand-vs-paper/11",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 8,
+          "steps": 16
+        },
+        {
+          "seed": "rating/sand-vs-paper/12",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 10,
+          "steps": 21
+        },
+        {
+          "seed": "rating/sand-vs-paper/13",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 14,
+          "steps": 28
+        },
+        {
+          "seed": "rating/sand-vs-paper/14",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 16,
+          "steps": 33
+        },
+        {
+          "seed": "rating/sand-vs-paper/15",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 10,
+          "steps": 21
+        },
+        {
+          "seed": "rating/sand-vs-paper/16",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 12,
+          "steps": 24
+        },
+        {
+          "seed": "rating/sand-vs-paper/17",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 12,
+          "steps": 25
+        },
+        {
+          "seed": "rating/sand-vs-paper/18",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 11,
+          "steps": 23
+        },
+        {
+          "seed": "rating/sand-vs-paper/19",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 20,
+          "steps": 40
+        },
+        {
+          "seed": "rating/sand-vs-paper/20",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 24,
+          "steps": 49
+        },
+        {
+          "seed": "rating/sand-vs-paper/21",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 6,
+          "steps": 12
+        },
+        {
+          "seed": "rating/sand-vs-paper/22",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 11,
+          "steps": 22
+        },
+        {
+          "seed": "rating/sand-vs-paper/23",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 17,
+          "steps": 34
+        },
+        {
+          "seed": "rating/sand-vs-paper/24",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 17,
+          "steps": 35
+        },
+        {
+          "seed": "rating/sand-vs-paper/25",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 25,
+          "steps": 51
+        },
+        {
+          "seed": "rating/sand-vs-paper/26",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 18,
+          "steps": 37
+        },
+        {
+          "seed": "rating/sand-vs-paper/27",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 18,
+          "steps": 37
+        },
+        {
+          "seed": "rating/sand-vs-paper/28",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 17,
+          "steps": 34
+        },
+        {
+          "seed": "rating/sand-vs-paper/29",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 16,
+          "steps": 33
+        },
+        {
+          "seed": "rating/sand-vs-paper/30",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 14,
+          "steps": 29
+        },
+        {
+          "seed": "rating/sand-vs-paper/31",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 26,
+          "steps": 52
+        },
+        {
+          "seed": "rating/sand-vs-paper/32",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 28,
+          "steps": 57
+        },
+        {
+          "seed": "rating/sand-vs-paper/33",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 6,
+          "steps": 13
+        },
+        {
+          "seed": "rating/sand-vs-paper/34",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 29,
+          "steps": 59
+        },
+        {
+          "seed": "rating/sand-vs-paper/35",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 12,
+          "steps": 25
+        },
+        {
+          "seed": "rating/sand-vs-paper/36",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 26,
+          "steps": 53
+        },
+        {
+          "seed": "rating/sand-vs-paper/37",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 20,
+          "steps": 40
+        },
+        {
+          "seed": "rating/sand-vs-paper/38",
+          "seat": 1,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 23,
+          "steps": 47
+        },
+        {
+          "seed": "rating/sand-vs-paper/39",
+          "seat": 0,
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 20,
+          "steps": 41
+        }
+      ],
+      "rawScore": {
+        "score": 0,
+        "n": 40
+      }
     }
   },
   "rawScores": {
     "chess-wood": 43.5,
-    "chess-paper": 4.5,
+    "chess-paper": 44.5,
     "chess-stockfish-sf-250": 33.5,
     "chess-stockfish-sf-1k": 79.5,
     "chess-stockfish-sf-10k": 41,
-    "chess-stockfish-sf-100k": 38
+    "chess-stockfish-sf-100k": 38,
+    "chess-sand": 0
   },
   "fit": {
     "ratings": {
-      "chess-wood": 1360.8525441242361,
+      "chess-wood": 1360.8525441242489,
       "chess-paper": 1000,
-      "chess-stockfish-sf-250": 1602.9504083025786,
-      "chess-stockfish-sf-1k": 2172.4190324666056,
-      "chess-stockfish-sf-10k": 2808.8448752772047,
-      "chess-stockfish-sf-100k": 3320.3463156583366
+      "chess-stockfish-sf-250": 1602.9504083025993,
+      "chess-stockfish-sf-1k": 2172.4190324803744,
+      "chess-stockfish-sf-10k": 2808.8448752909744,
+      "chess-stockfish-sf-100k": 3320.3463156721054,
+      "chess-sand": -3743.0803893177685
     },
     "intervals": {
       "chess-wood": {
-        "low": 1266.3117600541736,
-        "high": 1519.7354543094525,
-        "mean": 1368.496551183834
+        "low": 1263.4826195695143,
+        "high": 1502.0233387809062,
+        "mean": 1369.3894709422682
       },
       "chess-paper": {
         "low": 1000,
@@ -2043,29 +2389,34 @@
         "mean": 1000
       },
       "chess-stockfish-sf-250": {
-        "low": 1464.200950639241,
-        "high": 1805.322242056487,
-        "mean": 1617.370622435712
+        "low": 1468.9779773918856,
+        "high": 1804.4789478327004,
+        "mean": 1618.2467804455791
       },
       "chess-stockfish-sf-1k": {
-        "low": 1979.6578248142946,
-        "high": 2459.760815200961,
-        "mean": 2203.1084854353417
+        "low": 1970.062206725322,
+        "high": 2463.9877096673144,
+        "mean": 2203.369035163301
       },
       "chess-stockfish-sf-10k": {
-        "low": 2546.0451525088783,
-        "high": 3156.6926676567555,
-        "mean": 2840.323220911008
+        "low": 2544.351862571839,
+        "high": 3162.4951833921045,
+        "mean": 2838.9240875922846
       },
       "chess-stockfish-sf-100k": {
-        "low": 3014.5129792408056,
-        "high": 3766.439934791553,
-        "mean": 3371.5920371690713
+        "low": 3019.360150906424,
+        "high": 3771.6215354575465,
+        "mean": 3371.9393105395866
+      },
+      "chess-sand": {
+        "low": -3824.7828640716457,
+        "high": -3619.713964246911,
+        "mean": -3727.437729962315
       }
     },
     "meta": {
-      "iterations": 16,
-      "gradientInfNorm": 1.1452772280887147e-10,
+      "iterations": 28,
+      "gradientInfNorm": 5.550843947209793e-11,
       "replicates": 1999,
       "divergentReplicates": 1
     },

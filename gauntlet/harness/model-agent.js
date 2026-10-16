@@ -95,7 +95,12 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  *   OPENAI_API_KEY. Required for "anthropic" and "openai"; optional for
  *   "openai-chat" (some local servers need no key) — when unset, no
  *   Authorization header is sent.
- * @property {number} [maxOutputTokens] Per-reply cap. Default 4096. For
+ * @property {number} [maxOutputTokens] Per-reply cap. Default: the model
+ *   capability row's documented default on the adaptive-thinking Claude
+ *   models (16384 — thinking rides inside max_tokens there, so a small
+ *   default truncates the reply mid-thought; the row records the reason and
+ *   the doc pages), else 4096. A wire max_tokens above the documented
+ *   non-streaming ceiling (16384) streams the reply. For
  *   "anthropic": on models whose capability row keeps manual thinking mode
  *   (the 4.6 generation and earlier) this caps the reply's text and the
  *   request's max_tokens is maxOutputTokens + thinkingBudget (thinking tokens
@@ -159,6 +164,14 @@ const DEFAULT_API_KEY_ENVS = /** @type {Record<string, string>} */ ({
   'openai-chat': 'OPENAI_API_KEY',
 });
 const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
+// Anthropic guidance on how large a whole-reply cap a non-streaming request
+// may carry (checked 2026-10-16): thinking tokens count toward max_tokens and
+// a cap around 16,000 keeps a non-streaming reply under HTTP timeouts, while
+// larger caps (up to 128K on current models) need streaming
+// (https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking).
+// 16384 sits inside "around 16,000", so the row defaults below stay on the
+// simple non-streaming path; anything larger streams (see parseAnthropicSse).
+const ANTHROPIC_NON_STREAMING_MAX_TOKENS = 16384;
 const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_RETRY_BASE_DELAY_MS = 500;
 const ERROR_EXCERPT_CHARS = 500;
@@ -217,9 +230,22 @@ const UNPARSEABLE_BODY_EXCERPT_CHARS = 200;
  *   API default effort; null when effortLevels is null.
  * @property {boolean} samplingFieldsAllowed False only where the docs state
  *   that non-default temperature/top_p/top_k return HTTP 400.
+ * @property {number | null} [defaultMaxOutputTokens] The output cap the harness
+ *   applies when the caller passes no maxOutputTokens (adaptive-thinking rows
+ *   only: thinking rides inside max_tokens there, so a small default
+ *   truncates the reply mid-thought). Null keeps the legacy 4096 default.
+ * @property {string | null} [outputCapSource] Why this default and where it is
+ *   documented (page + date checked); null when defaultMaxOutputTokens is.
  * @property {string} docs The page(s) the row was verified against.
  * @property {string} checked ISO date of the last doc check.
  */
+
+/**
+ * Why the adaptive rows default their output cap to 16384 and where that is
+ * documented, recorded on every row that carries the default.
+ */
+const ADAPTIVE_OUTPUT_CAP_SOURCE =
+  'Anthropic thinking docs, checked 2026-10-16: thinking tokens count toward max_tokens (https://platform.claude.com/docs/en/build-with-claude/thinking), so the legacy 4096 default cut whole replies off mid-thought; around 16,000 is the documented ceiling that keeps a non-streaming reply under HTTP timeouts (https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking). Pass an explicit larger cap for xhigh/max-effort runs (the docs recommend starting around 64,000 there; https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence: only 2 of ~14,000 turns exceeded it). A cap above 16384 streams.';
 
 /** @type {Array<AnthropicModelCapability>} */
 export const ANTHROPIC_CAPABILITIES = [
@@ -230,6 +256,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'medium',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: false,
     docs: 'https://platform.claude.com/docs/en/models/opus-5-5/migration-guide and https://platform.claude.com/docs/en/build-with-claude/effort',
     checked: '2026-10-16',
@@ -241,6 +269,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: false,
     docs: 'https://platform.claude.com/docs/en/models/sonnet-5-5/overview and https://platform.claude.com/docs/en/build-with-claude/effort',
     checked: '2026-10-16',
@@ -252,6 +282,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'medium',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: false,
     docs: 'https://platform.claude.com/docs/en/models/haiku-5-5/overview and https://platform.claude.com/docs/en/build-with-claude/effort',
     checked: '2026-10-16',
@@ -263,6 +295,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: true,
     docs: 'https://platform.claude.com/docs/en/models/fable-5-1/overview and https://platform.claude.com/docs/en/build-with-claude/effort (sampling: docs silent in the pages checked)',
     checked: '2026-10-16',
@@ -274,6 +308,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: true,
     docs: 'https://platform.claude.com/docs/en/models/fable-5/overview and https://platform.claude.com/docs/en/build-with-claude/effort (sampling: docs silent in the pages checked)',
     checked: '2026-10-16',
@@ -285,6 +321,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: true,
     docs: 'https://platform.claude.com/docs/en/models/opus-5/overview and https://platform.claude.com/docs/en/build-with-claude/effort (sampling: docs silent in the pages checked)',
     checked: '2026-10-16',
@@ -296,6 +334,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: true,
     docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/models/overview (sampling: docs silent in the pages checked)',
     checked: '2026-10-16',
@@ -307,6 +347,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: true,
     docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/models/overview (sampling: docs silent in the pages checked)',
     checked: '2026-10-16',
@@ -318,6 +360,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: true,
     docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/models/overview (sampling: docs silent in the pages checked)',
     checked: '2026-10-16',
@@ -329,6 +373,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: true,
     effortLevels: ['low', 'medium', 'high', 'max'],
     defaultEffort: 'high',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: true,
     docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/build-with-claude/extended-thinking (manual budget deprecated)',
     checked: '2026-10-16',
@@ -340,6 +386,8 @@ export const ANTHROPIC_CAPABILITIES = [
     manualBudgetAccepted: true,
     effortLevels: ['low', 'medium', 'high', 'max'],
     defaultEffort: 'high',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: ADAPTIVE_OUTPUT_CAP_SOURCE,
     samplingFieldsAllowed: true,
     docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/build-with-claude/extended-thinking (manual budget deprecated)',
     checked: '2026-10-16',
@@ -533,6 +581,11 @@ async function responseExcerpt(response) {
  * @param {string} [options.model] For timeout error messages only.
  * @param {number} [options.callTimeoutMs] Per-attempt timeout in ms; absent
  *   for no timeout.
+ * @param {(raw: string) => *} [options.parseBody] Body parser for a 2xx
+ *   response. Default JSON.parse, whose failure is a final (non-retried)
+ *   unparseable-body error. Supplied by streaming callers (SSE), whose parse
+ *   failures are transport errors: a stream that broke before completing
+ *   never produced an answer, so it retries like a network failure.
  * @returns {Promise<{ json: *, retries: number }>}
  */
 async function requestWithRetries({
@@ -546,6 +599,7 @@ async function requestWithRetries({
   provider,
   model,
   callTimeoutMs,
+  parseBody,
 }) {
   let retries = 0;
   for (;;) {
@@ -596,8 +650,22 @@ async function requestWithRetries({
       }
       let json;
       try {
-        json = JSON.parse(raw);
-      } catch {
+        json = parseBody ? parseBody(raw) : JSON.parse(raw);
+      } catch (err) {
+        if (parseBody) {
+          // A streamed reply that broke before completing (a truncated SSE
+          // body, a mid-stream error event) is a transport failure, retried
+          // like any network error: the attempt never produced an answer.
+          if (retries >= maxRetries) {
+            throw retryError(
+              `model agent: ${provider} stream failed before completing after ${retries} retr${retries === 1 ? 'y' : 'ies'}: ${err instanceof Error ? err.message : String(err)}`,
+              retries
+            );
+          }
+          retries += 1;
+          await sleep(retryBaseDelayMs * 2 ** (retries - 1));
+          continue;
+        }
         const excerpt =
           raw.length > UNPARSEABLE_BODY_EXCERPT_CHARS
             ? `${raw.slice(0, UNPARSEABLE_BODY_EXCERPT_CHARS)}…`
@@ -702,7 +770,109 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  *   per-model values are validated at construction. Absent when the run
  *   leaves the provider default in place.
  * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.
+ * @property {boolean} [stream] Anthropic only: send `stream: true` and parse
+ *   the reply out of server-sent events instead of a JSON body. Used when the
+ *   whole-reply cap exceeds what a non-streaming request should carry.
  */
+
+/**
+ * Parse an Anthropic Messages server-sent-event stream into the same message
+ * shape the non-streaming endpoint returns, so the reply extraction below is
+ * shared. Event shapes per
+ * https://platform.claude.com/docs/en/build-with-claude/streaming (checked
+ * 2026-10-16): `message_start` carries the Message skeleton with the input
+ * usage; each content block opens with `content_block_start`, accumulates
+ * `content_block_delta` events (`text_delta` / `thinking_delta`), and closes
+ * with `content_block_stop`; `message_delta` carries the final `stop_reason`
+ * and the cumulative output usage; `message_stop` ends the stream. `ping`
+ * events and unknown event types are ignored (the docs require handling
+ * unknown types gracefully); an `error` event (e.g. `overloaded_error`,
+ * HTTP 529 in the non-streaming world) throws and retries as a transport
+ * error. The body is buffered whole before parsing: the request still
+ * streams from the server's side (the response headers arrive immediately,
+ * which is what keeps a large generation under HTTP timeouts) and the reply
+ * is bounded by max_tokens, so buffering costs no meaningful memory.
+ *
+ * @param {string} raw The full response body.
+ * @returns {*} A message-shaped object ({id, content, stop_reason, usage}).
+ */
+function parseAnthropicSse(raw) {
+  /** @type {*} */
+  const message = {
+    id: undefined,
+    content: [],
+    stop_reason: undefined,
+    usage: {},
+  };
+  for (const event of raw.split(/\r?\n\r?\n/)) {
+    const dataLines = event
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.slice(5).trimStart());
+    if (dataLines.length === 0) continue;
+    /** @type {*} */
+    let data;
+    try {
+      data = JSON.parse(dataLines.join('\n'));
+    } catch {
+      throw new Error(
+        `unparseable SSE event data: ${dataLines.join('\n').slice(0, UNPARSEABLE_BODY_EXCERPT_CHARS)}`
+      );
+    }
+    switch (data?.type) {
+      case 'message_start': {
+        const started = data.message ?? {};
+        if (typeof started.id === 'string') message.id = started.id;
+        if (started.usage && typeof started.usage === 'object') {
+          message.usage = { ...message.usage, ...started.usage };
+        }
+        break;
+      }
+      case 'content_block_start': {
+        const index =
+          typeof data.index === 'number' ? data.index : message.content.length;
+        message.content[index] = { ...(data.content_block ?? {}) };
+        break;
+      }
+      case 'content_block_delta': {
+        const index = typeof data.index === 'number' ? data.index : 0;
+        const block = message.content[index] ?? {};
+        const delta = data.delta ?? {};
+        if (delta.type === 'text_delta' && typeof delta.text === 'string') {
+          block.text =
+            (typeof block.text === 'string' ? block.text : '') + delta.text;
+        } else if (
+          delta.type === 'thinking_delta' &&
+          typeof delta.thinking === 'string'
+        ) {
+          block.thinking =
+            (typeof block.thinking === 'string' ? block.thinking : '') +
+            delta.thinking;
+        }
+        message.content[index] = block;
+        break;
+      }
+      case 'message_delta': {
+        if (data.delta && data.delta.stop_reason !== undefined) {
+          message.stop_reason = data.delta.stop_reason;
+        }
+        if (data.usage && typeof data.usage === 'object') {
+          message.usage = { ...message.usage, ...data.usage };
+        }
+        break;
+      }
+      case 'message_stop':
+        return message;
+      case 'error':
+        throw new Error(
+          `stream error event: ${data.error?.type ?? 'unknown'}: ${data.error?.message ?? 'no message'}`
+        );
+      default:
+        break; // ping and unknown event types: handled gracefully
+    }
+  }
+  throw new Error('SSE stream ended without a message_stop event');
+}
 
 /**
  * One successful provider turn, as the agent records it. `reasoningChars` is
@@ -733,6 +903,13 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  * @property {number} [reasoningTokens]
  * @property {{category: string | null, explanation: string | null}} [refusal]
  *   Set when the reply arrived as `stop_reason: "refusal"`.
+ * @property {{stopReason: string, outputTokens: number | null}} [truncated]
+ *   Set when the reply was cut off by the output cap (`stop_reason:
+ *   "max_tokens"`): generation hit the wire limit, often mid-thinking, so the
+ *   reply is incomplete. The reply still takes the ordinary invalid-reply
+ *   path — this record is what makes the cap, not the model, visible in the
+ *   trajectory. Provider-neutral shape: other providers record their own
+ *   cut-off marker in `stopReason`.
  */
 
 /**
@@ -749,6 +926,7 @@ async function callAnthropic({
   thinkingBudget,
   adaptiveThinking,
   reasoningEffort,
+  stream,
   params,
   userMessage,
   fetchImpl,
@@ -771,6 +949,7 @@ async function callAnthropic({
     ...(params ?? {}),
     model,
     max_tokens: maxOutputTokens + (thinkingBudget ?? 0),
+    ...(stream ? { stream: true } : {}),
     ...(thinkingBudget !== undefined
       ? { thinking: { type: 'enabled', budget_tokens: thinkingBudget } }
       : adaptiveThinking
@@ -798,6 +977,7 @@ async function callAnthropic({
     provider: 'anthropic',
     model,
     callTimeoutMs,
+    ...(stream ? { parseBody: parseAnthropicSse } : {}),
   });
   const blocks = Array.isArray(/** @type {*} */ (json)?.content)
     ? /** @type {Array<any>} */ (json.content)
@@ -819,6 +999,17 @@ async function callAnthropic({
     isRefusal && json?.stop_details && typeof json.stop_details === 'object'
       ? /** @type {{category?: unknown, explanation?: unknown}} */ (json.stop_details)
       : null;
+  // A reply cut off by the output cap (stop_reason "max_tokens", often
+  // mid-thinking) keeps the ordinary invalid-reply path — empty or partial
+  // text, honest usage — and additionally records WHY it is invalid, so a
+  // paid run shows the cap it measured instead of hiding it.
+  const truncated =
+    !isRefusal && json?.stop_reason === 'max_tokens'
+      ? {
+          stopReason: /** @type {string} */ (json.stop_reason),
+          outputTokens: tokenCount(json?.usage?.output_tokens),
+        }
+      : null;
   return {
     text,
     inputTokens: tokenCount(json?.usage?.input_tokens),
@@ -826,6 +1017,7 @@ async function callAnthropic({
     retries,
     responseId: typeof json?.id === 'string' ? json.id : null,
     ...(thinkingTokens !== null ? { reasoningTokens: thinkingTokens } : {}),
+    ...(truncated ? { truncated } : {}),
     ...(isRefusal
       ? {
           refusal: {
@@ -1190,10 +1382,19 @@ export function createModelAgent({
     );
   }
   const keyEnv = apiKeyEnv ?? DEFAULT_API_KEY_ENVS[provider];
+  // On the adaptive-thinking rows the row's documented default replaces the
+  // legacy 4096 when the caller passes no maxOutputTokens: thinking rides
+  // inside max_tokens there, so a small default truncates the reply
+  // mid-thought (see ADAPTIVE_OUTPUT_CAP_SOURCE on the rows). An explicit
+  // maxOutputTokens always wins; every other row keeps 4096.
+  const rowDefaultCap =
+    capability && capability.adaptiveThinking && capability.defaultMaxOutputTokens
+      ? capability.defaultMaxOutputTokens
+      : null;
   const limit =
     typeof maxOutputTokens === 'number' && maxOutputTokens > 0
       ? maxOutputTokens
-      : DEFAULT_MAX_OUTPUT_TOKENS;
+      : rowDefaultCap ?? DEFAULT_MAX_OUTPUT_TOKENS;
   const timeoutMs =
     typeof callTimeoutMs === 'number' &&
     Number.isFinite(callTimeoutMs) &&
@@ -1274,6 +1475,12 @@ export function createModelAgent({
               apiKey: /** @type {string} */ (apiKey),
               model,
               maxOutputTokens: limit,
+              // Above the documented non-streaming ceiling the request
+              // streams: thinking tokens count toward max_tokens, so a large
+              // whole-reply cap is exactly the case the streaming docs gate.
+              stream:
+                limit + (thinkingBudget ?? 0) >
+                ANTHROPIC_NON_STREAMING_MAX_TOKENS,
               ...(thinkingBudget !== undefined ? { thinkingBudget } : {}),
               adaptiveThinking: thinkingMode === 'adaptive',
               ...(wireEffort !== undefined ? { reasoningEffort: wireEffort } : {}),
@@ -1351,6 +1558,7 @@ export function createModelAgent({
             ? { reasoningTokens: result.reasoningTokens }
             : {}),
           ...(result.refusal ? { refusal: result.refusal } : {}),
+          ...(result.truncated ? { truncated: result.truncated } : {}),
         },
       };
       return reply;

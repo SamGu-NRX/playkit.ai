@@ -10,19 +10,39 @@
       "sha256": "9dcea95b25dd4837a4fa58626142d4084ccaa8aac3a9b9f08d680c74acb644ef"
     },
     {
+      "gameId": "chess-endgames",
+      "path": "calibration/tables/chess-endgames.json",
+      "sha256": "1c719f4cc0ee1795dedab9b02f7725d91cfd50debbfb14f73213168a63d57563"
+    },
+    {
+      "gameId": "chess-puzzles",
+      "path": "calibration/tables/chess-puzzles.json",
+      "sha256": "f9cec7418f2effd26db086ef6107c88b9e5906321c4ba39419ccd869ee6a0a1d"
+    },
+    {
+      "gameId": "chess-stockfish",
+      "path": "calibration/tables/chess-stockfish.json",
+      "sha256": "cfb329cb01050f5dae4be77b9d7f4f4f938179dede3e9426854cb4b863283359"
+    },
+    {
       "gameId": "chess",
       "path": "calibration/tables/chess.json",
-      "sha256": "ceb8f85ef8ad98e23aa789a582643125f3e1cbdbb83a010561e8eec20123f10d"
+      "sha256": "9529c90032d447e68c6ea46fe3efe0e9ba74550b481c6e6a8999ef90dc846e0d"
     },
     {
       "gameId": "connect4",
       "path": "calibration/tables/connect4.json",
-      "sha256": "9251a45e63ef5ac79734ac5db73cd1b7cfd233ebde670ff8475a19f84da11d4e"
+      "sha256": "6030c826dd13e2902c1e40fcd2612a08759bfb57d0fc7e4e47c6e0249751fce8"
+    },
+    {
+      "gameId": "cube",
+      "path": "calibration/tables/cube.json",
+      "sha256": "162ca11c59389659caa190d79f92df60f516cd7b05448147e602df6502ef811d"
     },
     {
       "gameId": "holdem",
       "path": "calibration/tables/holdem.json",
-      "sha256": "f1fc68bf94f21837c66ba3bbf4721c170d0a676175b53698f3b79f6585feb354"
+      "sha256": "8babf36f369b8240c34cd50288649b813648cb04d8ee05ab93cd790fad0a4825"
     },
     {
       "gameId": "mastermind",
@@ -32,12 +52,12 @@
     {
       "gameId": "minesweeper",
       "path": "calibration/tables/minesweeper.json",
-      "sha256": "45a8f900dc35ffec8b27ad8e555b1aef17b062887c9486f60fdb5ddc7700ca84"
+      "sha256": "f3984d09e415fcb6ad77271dcceae7701ead3015ec21620aab1495e69420e6c7"
     },
     {
       "gameId": "sliding",
       "path": "calibration/tables/sliding.json",
-      "sha256": "b4a432aa893af10519cfff330e8c8a0443578e5fa75ae048645348ed3f87b9ab"
+      "sha256": "8370c23500e654664087889f8be000fd1aa4eb146cfd4cb6fb50a6caa32c53b0"
     },
     {
       "gameId": "sokoban",
@@ -47,7 +67,7 @@
     {
       "gameId": "tictactoe",
       "path": "calibration/tables/tictactoe.json",
-      "sha256": "66142e303ef379e0874d0cbc8008b198ca87d3714dbfaa5458212b0c94ba319f"
+      "sha256": "95604d975a099efe60beb4ce1adabf05e0f22cd7012cc06fd863c16830febfaf"
     }
   ],
   "games": {
@@ -94,9 +114,165 @@
         }
       }
     },
+    "chess-endgames": {
+      "id": "chess-endgames",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "kqk": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 10
+        },
+        "krk": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 10
+        },
+        "kbbk": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 10
+        },
+        "kbnk": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 10
+        }
+      }
+    },
+    "chess-puzzles": {
+      "id": "chess-puzzles",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "r0400": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 60
+        },
+        "r1000": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 60
+        },
+        "r1400": {
+          "scoring": "outcome",
+          "mean": 0.016667,
+          "ci95": [
+            0,
+            0.05
+          ],
+          "episodes": 60
+        },
+        "r1800": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 60
+        },
+        "r2200": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 60
+        },
+        "r2600": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 60
+        }
+      }
+    },
+    "chess-stockfish": {
+      "id": "chess-stockfish",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "sf-250": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 5
+        },
+        "sf-1k": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 5
+        },
+        "sf-10k": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 5
+        },
+        "sf-100k": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 5
+        },
+        "sf-1m": {
+          "scoring": "outcome",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 5
+        }
+      }
+    },
     "chess": {
       "id": "chess",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "benchmark": true,
       "tiers": {
         "paper": {
@@ -139,7 +315,7 @@
     },
     "connect4": {
       "id": "connect4",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "benchmark": true,
       "tiers": {
         "ladder-1": {
@@ -189,9 +365,43 @@
         }
       }
     },
+    "cube": {
+      "id": "cube",
+      "version": "1.0.0",
+      "benchmark": true,
+      "tiers": {
+        "cube-5": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 6
+        },
+        "cube-7": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 6
+        },
+        "cube-9": {
+          "scoring": "efficiency",
+          "mean": 0,
+          "ci95": [
+            0,
+            0
+          ],
+          "episodes": 6
+        }
+      }
+    },
     "holdem": {
       "id": "holdem",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "benchmark": true,
       "tiers": {
         "station": {
@@ -205,10 +415,10 @@
         },
         "rules": {
           "scoring": "outcome",
-          "mean": 0.449807,
+          "mean": 0.013184,
           "ci95": [
-            0.340518,
-            0.565427
+            0.003354,
+            0.029461
           ],
           "episodes": 12
         },
@@ -259,7 +469,7 @@
     },
     "minesweeper": {
       "id": "minesweeper",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "benchmark": true,
       "tiers": {
         "beginner": {
@@ -280,21 +490,21 @@
           ],
           "episodes": 25
         },
+        "torus": {
+          "scoring": "outcome",
+          "mean": 0.187527,
+          "ci95": [
+            0.156129,
+            0.223446
+          ],
+          "episodes": 25
+        },
         "expert": {
           "scoring": "outcome",
           "mean": 0.135118,
           "ci95": [
-            0.101837,
-            0.173438
-          ],
-          "episodes": 25
-        },
-        "torus": {
-          "scoring": "outcome",
-          "mean": 0.412222,
-          "ci95": [
-            0.355,
-            0.471301
+            0.102045,
+            0.173123
           ],
           "episodes": 25
         }
@@ -302,7 +512,7 @@
     },
     "sliding": {
       "id": "sliding",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "benchmark": true,
       "tiers": {
         "p8": {
@@ -379,7 +589,7 @@
     },
     "tictactoe": {
       "id": "tictactoe",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "benchmark": false,
       "tiers": {
         "perfect-opponent": {

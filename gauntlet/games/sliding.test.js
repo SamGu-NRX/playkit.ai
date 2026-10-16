@@ -484,17 +484,18 @@ test('every public seed par is the proven-optimal solve length', () => {
   // self-referential at base — reset and solve shared the buggy solver — so
   // the golden pin is what actually fails on the old code.
   const shortTier = game.spec.tiers.find((t) => t.id === 'p15-short');
+  assert.ok(shortTier, 'p15-short tier exists');
   const corrected = game.reset(shortTier, publicSeed('sliding', 'p15-short', 7));
   const correctedSolve = solve(corrected.board);
   assert.equal(correctedSolve.status, 'solved');
   assert.equal(corrected.par, 26, 'p15-short seed 7 keeps its corrected par');
   assert.equal(correctedSolve.moves.length, 26);
-  let cur = corrected.board.map((row) => row.slice());
+  let cur = corrected.board.map((/** @type {number[]} */ row) => row.slice());
   for (const move of correctedSolve.moves) {
     cur = applyTileMove(cur, move);
     assert.ok(cur, 'the corrected plan replays legally');
   }
-  assert.ok(isSolved({ size: corrected.size, board: cur }), 'the corrected plan reaches the goal');
+  assert.ok(isSolved(cur), 'the corrected plan reaches the goal');
 
   for (const tier of game.spec.tiers) {
     for (let i = 0; i < tier.publicSeeds; i++) {

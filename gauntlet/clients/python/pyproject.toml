@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "playkit-gauntlet"
+version = "0.1.0"
+description = "Python client for the PlayKit Gauntlet wire protocol (standard library only)."
+requires-python = ">=3.10"
+readme = "README.md"
+
+[tool.setuptools]
+packages = ["playkit_gauntlet"]

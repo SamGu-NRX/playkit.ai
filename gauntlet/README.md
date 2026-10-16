@@ -1,8 +1,10 @@
 # PlayKit Gauntlet — core
 
 Gauntlet is PlayKit's benchmark of difficult, popular games for frontier AI
-agents: chess against an engine ladder, Minesweeper, 2048, Sokoban, and more.
-This package is the foundation those game packets build on. It is deliberately
+agents: chess against an engine ladder plus a chess-endgames tablebase ladder
+and a Stockfish-strength ladder, Minesweeper, 2048, sliding puzzles, Sokoban,
+Connect Four, Mastermind, heads-up limit hold'em, tic-tac-toe, and Rubik's
+Cube. This package is the foundation those game packets build on. It is
 its own package: its dependencies (including `chess.js` 1.4.0) stay out of the
 browser-extension bundle, and its contract is fixed so game, agent-harness,
 scoring and wire-protocol packets can land in parallel.
@@ -20,8 +22,16 @@ scoring and wire-protocol packets can land in parallel.
 | `core/trajectory.js`| `playkit-gauntlet-trajectory/1` format + replay verifier.         |
 | `core/conformance.js`| The checks every registered game must pass.                      |
 | `agents/random.js`  | Baseline random agent, seeded from episode seed + agent id.       |
-| `games/`            | Explicit registry (`games/index.js`) plus the registered games.   |
-| `cli/gauntlet.js`   | `list`, `play`, `verify` (in `cli/` because root ignores `bin/`). |
+| `agents/sliding-solver.js` | Optimal sliding-puzzle reference solver (IDA*).            |
+| `games/`            | Explicit registry (`games/index.js`) plus the nine games.         |
+| `harness/`          | Official-track prompts, model clients, dry-run/replay agents.     |
+| `runs/`             | Suite-run orchestration: bounded workers, budget caps, rate       |
+|                     | limiting, resumable bundles, provenance (`run.json`), estimates.  |
+| `scoring/`          | Suite manifests, entry scoring, and the leaderboard.              |
+| `protocol/`         | JSON-Lines wire protocol over stdin/stdout (`serve`).             |
+| `clients/python/`   | The `playkit_gauntlet` Python client for the wire protocol.       |
+| `cli/`              | The `gauntlet` CLI (in `cli/` because root ignores `bin/`).       |
+| `test/integration/` | Registry conformance, CLI end-to-end, Python-serve integration.   |
 
 ## The contract in one screen
 
@@ -55,14 +65,15 @@ hashes, counts, or the outcome.
   invalid-action feedback when present, then the current state. Bounded so a
   turn's message stays within size limits.
 - `model-agent.js` — provider-backed agents for Anthropic Messages, OpenAI
-  Responses, and OpenAI-compatible chat completions (`openai-chat`, the
-  provider behind the local-server browser sessions in `bridge/browser` — see
+  Responses, and any OpenAI-compatible chat-completions server (`openai-chat`,
+  pointed at `--base-url`) over global `fetch` (no SDKs) — the same provider
+  behind the local-server browser sessions in `bridge/browser` (see
   `harness/PROVIDERS.md` for the per-provider request shape and serve
-  commands) over global `fetch` (no SDKs). Keys are read from the environment
-  at call time and never logged; 429/5xx/network errors retry with exponential
-  backoff and surface the retry count in the reply's metadata; token usage is
-  recorded, and costs are computed only from a caller-supplied, sourced price
-  file (`prices.example.json` shows the shape).
+  commands). Keys are read from the environment at call time and never logged;
+  429/5xx/network errors retry with exponential backoff and surface the retry
+  count in the reply's metadata; token usage is recorded, and costs are
+  computed only from a caller-supplied, sourced price file
+  (`prices.example.json` shows the shape).
 - `dry-run.js` — offline agents: a scripted agent (static list or function)
   and a replay agent that re-plays a recorded trajectory against the same
   `(game, tier, seed)`, refusing on an observation-hash mismatch. Both record
@@ -72,25 +83,132 @@ hashes, counts, or the outcome.
 Model-client tests run offline against a local `node:http` stub on
 `127.0.0.1`; no paid API calls.
 
-## Browser rule
+## Suites, scoring, and the leaderboard
 
-Game and core code must not import `node:*` — the overlay will later load
-games in a browser. The only Node-only files are `core/seeds-node.js` and
-`cli/gauntlet.js`.
+A **suite manifest** (`scoring/suite.js`, format
+`playkit-gauntlet-suite/1`) pins the benchmark: the split, the games, and —
+per tier — the exact seed list an entry must cover. Public suites list public
+seeds; eval suites derive salted seeds from a secret salt and record only the
+salt commitment. The twelve registered games span 42 tiers and 564 public
+seeds; tic-tac-toe is the smoke game (scored, but `benchmark: false`, so it
+excludes entries from the benchmark-score aggregate while still counting
+toward coverage).
 
-## CLI
+`scoring/score.js` scores one agent's trajectories against a manifest: episode
+scores (outcome tiers use `outcome.normalized[agentSeat]`; efficiency tiers
+use `min(1, (par/agentActions)²)` when solved, 0 otherwise), weighted into a
+per-game score `G`, averaged over benchmark games into the **benchmark
+score**. An entry is **ranked** only when it covers every manifest episode
+with no dry-run trajectory — partial or offline runs stay listed but
+unranked, with the reason recorded.
+
+`scoring/leaderboard.js` groups entries into `official` (live model runs),
+`community` (recorded/bridged agents), and `baseline` (bundled agents)
+tracks, ranks ranked entries by benchmark score, and renders both the JSON
+leaderboard (`playkit-gauntlet-leaderboard/1`) and a Markdown table, including
+a score-vs-cost view when a sourced price file provided costs.
+
+## The CLI
 
 ```sh
 node cli/gauntlet.js list
+# List registered games, tiers, scoring kind, budgets, public-seed counts.
+
+# One episode, any agent spec; --out writes the trajectory JSON.
 node cli/gauntlet.js play --game tictactoe --tier perfect-opponent \
   --seed tictactoe/perfect-opponent/public/0 --agent random --out /tmp/t.json
-node cli/gauntlet.js verify /tmp/t.json
+node cli/gauntlet.js verify /tmp/t.json            # replay one trajectory
+node cli/gauntlet.js verify /tmp/run-dir/          # or a whole run directory
+
+# Suites: public, or eval (salt from a file; only the commitment is stored).
+node cli/gauntlet.js suite build --split public --out suite.public.json
+node cli/gauntlet.js suite build --split eval --salt-file /path/to/salt --out suite.eval.json
+# Optional filters: --seeds-per-tier 1 (smoke suites), --games chess,2048.
+
+# Estimate a suite before spending anything: calls (low/high) and USD when a
+# price entry covers the agent. Probe episodes stay local; no API calls.
+node cli/gauntlet.js estimate --suite suite.public.json \
+  --agent model:anthropic/claude-sonnet-4-5 --prices prices.json
+node cli/gauntlet.js estimate --suite suite.public.json --agent random --out estimate-dir/ --json
+
+# Run an agent over a manifest through gauntlet/runs/ (bounded workers,
+# budget caps, rate limiting, resumable, run.json provenance). --limit caps
+# episodes per (game, tier); SIGINT/SIGTERM stop gracefully after calls in
+# flight; a capped or signalled run exits 1 and stays resumable.
+node cli/gauntlet.js run --suite suite.public.json --agent random \
+  --out results/random/ --limit 1 --concurrency 4 \
+  --max-usd 5 --max-calls 500 --requests-per-minute 30
+node cli/gauntlet.js run --suite suite.public.json --agent random \
+  --out results/random/ --resume   # re-verify written episodes, play the rest
+
+# Verify a run directory as a bundle: trajectories re-verified, manifest hash
+# matched, stray files listed, score recomputed. Exit 1 on any failure.
+node cli/gauntlet.js bundle verify results/random/
+
+# Verify and rank: JSON + Markdown written to --out (or printed with --json).
+node cli/gauntlet.js verify results/random/
+node cli/gauntlet.js leaderboard --suite suite.public.json --out lb/ results/random/
+
+# The wire protocol (JSON Lines over stdin/stdout) for out-of-process clients.
+node cli/gauntlet.js serve
 ```
+
+### Agent specs
+
+- `random` — the bundled seeded random agent (baseline track).
+- `baseline:<game>:<greedy|engine>` — that game packet's bundled baseline
+  (e.g. `baseline:chess:engine` plays the tier's engine-ladder opponent as the
+  agent). A suite run with a baseline spec covers that game only.
+- `model:<provider>/<model>` — an official-track model agent (`provider` is
+  `anthropic`, `openai`, or `openai-chat` for any OpenAI-compatible
+  chat-completions server). `openai-chat` requires `--base-url <url>` (the
+  request goes to `<base-url>/v1/chat/completions`); every provider reads its
+  key from the environment variable named by `--api-key-env <VAR>` (read at
+  call time, never logged). Live runs need `--prices <file>` for cost
+  accounting; without a matching price entry costs stay unknown and a
+  `--max-usd` cap refuses to run. `--dry-run --script <file>` rehearses
+  offline: the script default-exports an array of replies or a function of
+  the turn context; trajectories carry `dryRun: true`, so the leaderboard
+  flags and unranked them.
+
+Run outputs: a results bundle under `--out` — nested trajectory files
+(`<game>/<tier>/<seed>.json`), a `suite.json` copy, and `run.json`, the
+`playkit-gauntlet-run/1` provenance record (manifest hash, counts, calls,
+spend, stop reason). `verify`, `bundle verify`, and `leaderboard` read that
+layout recursively and skip the metadata; a flat legacy directory of
+trajectory files still verifies and scores.
+
+Before committing to a big run, `estimate` reports calls (low/high) per game
+and totals: low from each game's bundled baseline/par, high from tier
+budgets. USD appears only when a price file prices `<provider>/<model>`;
+unknown costs stay `null`, and a `--max-usd` cap on `run` refuses to start
+when trajectories would carry unknown costs.
+
+## Python client
+
+`clients/python/playkit_gauntlet` speaks the wire protocol (`reset`, `act`,
+`list_games`, `trajectory`); `example_random.py` is a runnable tour. The CLI
+integration test plays a full episode through `gauntlet serve` with the
+Python client and replay-verifies the resulting trajectory under the JS CLI.
+
+## Browser rule
+
+Game and core code must not import `node:*` — the overlay will later load
+games in a browser. The Node-only files are `core/seeds-node.js`,
+`scoring/suite.js` (salt commitments via `seeds-node.js`), `protocol/`,
+`clients/python/`, and `cli/`.
 
 ## Developing
 
 ```sh
 npm ci
-npm test        # node --test over colocated *.test.js files
+npm test        # node --test: packet suites, scoring, protocol, integration
 npm run typecheck
 ```
+
+Integration tests live in `test/integration/`: registry-wide conformance for
+all nine games, a CLI end-to-end run (suite build → random run → bundle
+verify → verify → leaderboard rank → dry-run model entry flagged unranked),
+an engine-backed CLI run against a local OpenAI-compatible stub server
+(live provider run → budget stop → resume → tamper detection → priced
+estimate → leaderboard), and the Python-client-over-serve episode.

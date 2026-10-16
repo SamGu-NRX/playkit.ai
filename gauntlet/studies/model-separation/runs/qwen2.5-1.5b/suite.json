@@ -1,0 +1,138 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-model-separation-first4",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "tictactoe",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "perfect-opponent",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "tictactoe/perfect-opponent/public/0",
+            "tictactoe/perfect-opponent/public/1",
+            "tictactoe/perfect-opponent/public/2",
+            "tictactoe/perfect-opponent/public/3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mastermind",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "classic",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "mastermind/classic/public/0",
+            "mastermind/classic/public/1",
+            "mastermind/classic/public/2",
+            "mastermind/classic/public/3"
+          ],
+          "parKind": "reference"
+        }
+      ]
+    },
+    {
+      "id": "connect4",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "ladder-1",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "connect4/ladder-1/public/0",
+            "connect4/ladder-1/public/1",
+            "connect4/ladder-1/public/2",
+            "connect4/ladder-1/public/3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sliding",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "p8",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p8/public/0",
+            "sliding/p8/public/1",
+            "sliding/p8/public/2",
+            "sliding/p8/public/3"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    },
+    {
+      "id": "sokoban",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "two-box",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "sokoban/two-box/public/0",
+            "sokoban/two-box/public/1",
+            "sokoban/two-box/public/2",
+            "sokoban/two-box/public/3"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    },
+    {
+      "id": "minesweeper",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "beginner",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/beginner/public/0",
+            "minesweeper/beginner/public/1",
+            "minesweeper/beginner/public/2",
+            "minesweeper/beginner/public/3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cube",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "cube-5",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "cube/cube-5/public/0",
+            "cube/cube-5/public/1",
+            "cube/cube-5/public/2",
+            "cube/cube-5/public/3"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    }
+  ]
+}

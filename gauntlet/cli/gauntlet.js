@@ -314,6 +314,13 @@ async function main(argv) {
     // still writes its run.json provenance record, so the bundle stays
     // resumable; only the in-flight episodes are lost.
     const controller = new AbortController();
+    if (flags.has('max-usd') && !flags.has('prices')) {
+      console.error(
+        'error: --max-usd requires --prices (a spend cap needs the price table to convert calls into dollars); pass --prices <file.json>'
+      );
+      process.exitCode = 1;
+      return;
+    }
     const stop = () => {
       controller.abort();
     };

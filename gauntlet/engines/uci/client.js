@@ -187,6 +187,73 @@ function numberOrNull(text) {
 }
 
 /**
+ * One engine-advertised UCI option.
+ *
+ * @typedef {object} UciOption
+ * @property {string} name Option name (may contain spaces).
+ * @property {string} type UCI type: check, spin, combo, button, string.
+ * @property {string | null} defaultValue Raw default from the engine.
+ * @property {number | null} min Spin minimum.
+ * @property {number | null} max Spin maximum.
+ * @property {string[]} vars Combo choices, in advertisement order.
+ */
+
+/**
+ * Parse one `option name <name> type <type> [default v] [min n] [max n]
+ * [var x]...` line. Option names may contain spaces: every token between the
+ * `name` keyword and the `type` keyword belongs to the name. Returns null
+ * for anything that is not a well-formed option line.
+ *
+ * @param {string} line
+ * @returns {UciOption | null}
+ */
+export function parseOptionLine(line) {
+  if (!line.startsWith('option ')) return null;
+  const tokens = line.split(/\s+/);
+  if (tokens[1] !== 'name') return null;
+  let i = 2;
+  const nameParts = [];
+  while (i < tokens.length && tokens[i] !== 'type') {
+    nameParts.push(tokens[i]);
+    i++;
+  }
+  if (i >= tokens.length || nameParts.length === 0) return null;
+  i++; // skip 'type'
+  const type = tokens[i];
+  if (type === undefined) return null;
+  i++;
+  /** @type {UciOption} */
+  const option = {
+    name: nameParts.join(' '),
+    type,
+    defaultValue: null,
+    min: null,
+    max: null,
+    vars: [],
+  };
+  while (i < tokens.length) {
+    const keyword = tokens[i];
+    i++;
+    if (keyword === 'default' || keyword === 'min' || keyword === 'max') {
+      const value = tokens[i];
+      if (value === undefined) return null;
+      i++;
+      if (keyword === 'default') option.defaultValue = value;
+      else if (keyword === 'min') option.min = Number(value);
+      else option.max = Number(value);
+    } else if (keyword === 'var') {
+      const value = tokens[i];
+      if (value === undefined) return null;
+      i++;
+      option.vars.push(value);
+    } else {
+      return null;
+    }
+  }
+  return option;
+}
+
+/**
  * Locate an engine binary. For Stockfish lookups (the default name)
  * `GAUNTLET_STOCKFISH` wins when set and must exist; the override is
  * deliberately scoped to the Stockfish name so one shared env var cannot
@@ -387,6 +454,14 @@ export class UciEngine {
     this.#idleTimeoutMs = options.idleTimeoutMs ?? 60000;
   }
 
+  /** Engine-advertised UCI options from the handshake, keyed by option name. */
+  #options = /** @type {Map<string, UciOption>} */ (new Map());
+
+  /** Engine-advertised UCI options, keyed by option name. */
+  get options() {
+    return this.#options;
+  }
+
   /** The engine's self-reported `id name` line, captured during the handshake. */
   get idName() {
     return this.#idName;
@@ -442,7 +517,18 @@ export class UciEngine {
       liveChildren.delete(child);
       this.#failPending(this.#exitError());
     });
-    await this.#request('uci', (line) => line === 'uciok', this.#commandTimeoutMs);
+    const uciReply = await this.#request(
+      'uci',
+      (line) => line === 'uciok',
+      this.#commandTimeoutMs
+    );
+    // Remember what the engine advertises so callers can pin options only
+    // where they exist (Stockfish builds differ: e.g. Contempt was removed).
+    this.#options = new Map();
+    for (const line of uciReply.lines) {
+      const option = parseOptionLine(line);
+      if (option) this.#options.set(option.name, option);
+    }
     await this.#request('isready', (line) => line === 'readyok', this.#commandTimeoutMs);
     this.#armIdleTimer();
     return this;

@@ -19,6 +19,7 @@ import {
   parseBestmove,
   parseIdName,
   parseInfoLine,
+  parseOptionLine,
   probeEngineIdSync,
 } from './client.js';
 
@@ -174,6 +175,43 @@ test('findEngineBinary finds /usr/games/stockfish when PATH omits it', { skip: e
     if (previousEnv === undefined) delete process.env[STOCKFISH_ENV_VAR];
     else process.env[STOCKFISH_ENV_VAR] = previousEnv;
   }
+});
+
+test('parseOptionLine reads spin, check, combo and multi-word option names', () => {
+  assert.deepEqual(parseOptionLine('option name Hash type spin default 16 min 1 max 33554432'), {
+    name: 'Hash',
+    type: 'spin',
+    defaultValue: '16',
+    min: 1,
+    max: 33554432,
+    vars: [],
+  });
+  assert.deepEqual(parseOptionLine('option name Nullmove Protocol type check default false'), {
+    name: 'Nullmove Protocol',
+    type: 'check',
+    defaultValue: 'false',
+    min: null,
+    max: null,
+    vars: [],
+  });
+  assert.deepEqual(parseOptionLine('option name Style type combo default Normal var Normal var Aggressive'), {
+    name: 'Style',
+    type: 'combo',
+    defaultValue: 'Normal',
+    min: null,
+    max: null,
+    vars: ['Normal', 'Aggressive'],
+  });
+  assert.deepEqual(parseOptionLine('option name Clear Hash type button'), {
+    name: 'Clear Hash',
+    type: 'button',
+    defaultValue: null,
+    min: null,
+    max: null,
+    vars: [],
+  });
+  assert.equal(parseOptionLine('info depth 8 multipv 1'), null);
+  assert.equal(parseOptionLine('option type spin'), null);
 });
 
 test('probeEngineIdSync reads the fixture id name', () => {

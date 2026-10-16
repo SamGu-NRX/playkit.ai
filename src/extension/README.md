@@ -17,7 +17,7 @@ Load as an unpacked extension
 
 Parity & performance notes
 - Shared runtime: bookmarklet (`dist/2048-hud.min.js`) and MV3 content script originate from the same source modules, preventing logic drift.
-- Runtime size: `dist/extension/content.js` is ~121 KB uncompressed (~22 KB gzipped) and has no third-party dependencies or network calls.
+- Runtime size: `dist/extension/content.js` is ~165 KB uncompressed (~31 KB gzipped) and has no third-party dependencies or network calls.
 - Host scope: content scripts are limited to URLs that contain “2048” plus the explicit target hosts. Adjust `manifest.json` if you need broader detection.
 - WASM solver: run `node scripts/build-wasm.js --release` to compile the C++ solver (requires `emcc`). The generated `solver.mjs`/`solver.wasm` land in `src/extension/wasm/` and are copied into the MV3 package on the next `build-phase0` run.
 

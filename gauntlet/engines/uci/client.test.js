@@ -5,6 +5,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+import { mkdtemp, rm, symlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -16,6 +19,7 @@ import {
   parseBestmove,
   parseIdName,
   parseInfoLine,
+  parseOptionLine,
   probeEngineIdSync,
 } from './client.js';
 
@@ -115,7 +119,106 @@ test('findEngineBinary throws when GAUNTLET_STOCKFISH points nowhere', () => {
 });
 
 test('findEngineBinary returns null for an unknown PATH name', () => {
-  assert.equal(findEngineBinary('definitely-not-an-engine-xyz'), null);
+  // Hermetic even when GAUNTLET_STOCKFISH is ambient (the documented setup
+  // step exports it suite-wide): clear it for the lookup, restore after.
+  const previous = process.env[STOCKFISH_ENV_VAR];
+  delete process.env[STOCKFISH_ENV_VAR];
+  try {
+    assert.equal(findEngineBinary('definitely-not-an-engine-xyz'), null);
+  } finally {
+    if (previous === undefined) delete process.env[STOCKFISH_ENV_VAR];
+    else process.env[STOCKFISH_ENV_VAR] = previous;
+  }
+});
+
+test('findEngineBinary keeps GAUNTLET_STOCKFISH scoped to the stockfish name', () => {
+  const previous = process.env[STOCKFISH_ENV_VAR];
+  process.env[STOCKFISH_ENV_VAR] = FIXTURE;
+  try {
+    // Stockfish lookups: the override wins.
+    assert.equal(findEngineBinary(), FIXTURE);
+    assert.equal(findEngineBinary('stockfish'), FIXTURE);
+    // Any other requested name is looked up on its own merits.
+    assert.equal(findEngineBinary('definitely-not-an-engine-xyz'), null);
+  } finally {
+    if (previous === undefined) delete process.env[STOCKFISH_ENV_VAR];
+    else process.env[STOCKFISH_ENV_VAR] = previous;
+  }
+});
+
+test('findEngineBinary probes the extra game directories after PATH', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'gauntlet-engine-'));
+  const previousPath = process.env.PATH;
+  const previousEngine = process.env[STOCKFISH_ENV_VAR];
+  process.env.PATH = '';
+  delete process.env[STOCKFISH_ENV_VAR];
+  try {
+    const link = path.join(dir, 'stockfish');
+    await symlink(FIXTURE, link);
+    assert.equal(findEngineBinary('stockfish', { searchDirs: [dir] }), link);
+    assert.equal(findEngineBinary('other-name-here', { searchDirs: [dir] }), null);
+    // An empty search universe finds nothing, hermetically, even on a
+    // machine whose extra game directories hold a real stockfish.
+    assert.equal(findEngineBinary('stockfish', { searchDirs: [] }), null);
+  } finally {
+    process.env.PATH = previousPath;
+    if (previousEngine === undefined) delete process.env[STOCKFISH_ENV_VAR];
+    else process.env[STOCKFISH_ENV_VAR] = previousEngine;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('findEngineBinary finds /usr/games/stockfish when PATH omits it', { skip: existsSync('/usr/games/stockfish') ? false : '/usr/games/stockfish is not installed here' }, () => {
+  // The Debian/CI layout the README documents: apt installs to /usr/games
+  // and a non-interactive PATH does not include it.
+  const previousPath = process.env.PATH;
+  const previousEnv = process.env[STOCKFISH_ENV_VAR];
+  process.env.PATH = '/bin';
+  delete process.env[STOCKFISH_ENV_VAR];
+  try {
+    assert.equal(findEngineBinary(), '/usr/games/stockfish');
+  } finally {
+    process.env.PATH = previousPath;
+    if (previousEnv === undefined) delete process.env[STOCKFISH_ENV_VAR];
+    else process.env[STOCKFISH_ENV_VAR] = previousEnv;
+  }
+});
+
+test('parseOptionLine reads spin, check, combo and multi-word option names', () => {
+  assert.deepEqual(parseOptionLine('option name Hash type spin default 16 min 1 max 33554432'), {
+    name: 'Hash',
+    type: 'spin',
+    defaultValue: '16',
+    min: 1,
+    max: 33554432,
+    vars: [],
+  });
+  assert.deepEqual(parseOptionLine('option name Nullmove Protocol type check default false'), {
+    name: 'Nullmove Protocol',
+    type: 'check',
+    defaultValue: 'false',
+    min: null,
+    max: null,
+    vars: [],
+  });
+  assert.deepEqual(parseOptionLine('option name Style type combo default Normal var Normal var Aggressive'), {
+    name: 'Style',
+    type: 'combo',
+    defaultValue: 'Normal',
+    min: null,
+    max: null,
+    vars: ['Normal', 'Aggressive'],
+  });
+  assert.deepEqual(parseOptionLine('option name Clear Hash type button'), {
+    name: 'Clear Hash',
+    type: 'button',
+    defaultValue: null,
+    min: null,
+    max: null,
+    vars: [],
+  });
+  assert.equal(parseOptionLine('info depth 8 multipv 1'), null);
+  assert.equal(parseOptionLine('option type spin'), null);
 });
 
 test('probeEngineIdSync reads the fixture id name', () => {

@@ -254,6 +254,9 @@ function gitCommit() {
  * @property {string} track
  * @property {string} [provider]
  * @property {string} [model]
+ * @property {string} [thinking] The agent's thinking mode (model agents on
+ *   provider "anthropic": "adaptive", "enabled", "off" or
+ *   "provider-default"), so a run says whether thinking was on.
  */
 
 /**
@@ -706,6 +709,7 @@ export async function runSuite({
         track: String(probe.track),
         ...(probe.provider !== undefined ? { provider: probe.provider } : {}),
         ...(probe.model !== undefined ? { model: probe.model } : {}),
+        ...(typeof probe.thinking === 'string' ? { thinking: probe.thinking } : {}),
       };
     }
   } catch {

@@ -188,6 +188,9 @@
  * @property {(ctx: TurnContext) => Promise<AgentReply>} act
  * @property {string} [model]
  * @property {string} [provider]
+ * @property {string} [thinking] Thinking mode a model agent's requests run
+ *   with (see createModelAgent in harness/model-agent.js); recorded in
+ *   run.json's agent record.
  * @property {boolean} [dryRun] True for harness shakedowns that must not hit
  *   paid APIs.
  * @property {(ctx: TurnContext) => number | null} [quoteWorstCaseUsd] Upper

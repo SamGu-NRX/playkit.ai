@@ -31,9 +31,16 @@
  *   adaptive-thinking models (the 5.5 generation, Claude Fable 5/5.1, and
  *   Claude Opus 5/4.8/4.7/Sonnet 5) manual budgets
  *   (`thinking: {type: "enabled", budget_tokens: N}`) are not accepted —
- *   HTTP 400 — and no `thinking` field is sent at all. On models whose rows
- *   keep manual mode (the 4.6 generation and earlier) the budget rides on
- *   top of the text cap as before. Thinking tokens count toward max_tokens
+ *   HTTP 400. Every model that accepts adaptive thinking (those plus Opus 4.6
+ *   and Sonnet 4.6) is sent `thinking: {type: "adaptive"}` unless a manual
+ *   budget is set: on Opus 4.8/4.7/4.6 and Sonnet 4.6 a request with no
+ *   `thinking` field runs without thinking, while on the 5.x models omitting
+ *   it already runs adaptive (Anthropic model-migration guide, Opus 4.7, 4.8
+ *   and Opus 5 sections, as bundled in the Claude API skill and read
+ *   2026-10-16; live page:
+ *   https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking). On models whose rows keep manual mode (the 4.6
+ *   generation and earlier) the budget rides on top of the text cap as
+ *   before. Thinking tokens count toward max_tokens
  *   and are billed as output tokens;
  *   `usage.output_tokens_details.thinking_tokens` is the breakdown; replies
  *   carry `thinking` and `redacted_thinking` content blocks that are never
@@ -197,6 +204,12 @@ const UNPARSEABLE_BODY_EXCERPT_CHARS = 200;
  *   "enabled", budget_tokens}` is accepted; false = the model steers thinking
  *   adaptively via output_config.effort and rejects manual budgets with
  *   HTTP 400.
+ * @property {boolean} adaptiveThinking Whether the model accepts `thinking:
+ *   {type: "adaptive"}` (the 4.6 generation and later). When true the harness
+ *   sends it on every request without a manual budget: on Opus 4.8/4.7/4.6
+ *   and Sonnet 4.6 a request with no `thinking` field runs without thinking,
+ *   and on the 5.x models the explicit field is the documented equivalent of
+ *   omitting it.
  * @property {Array<'low' | 'medium' | 'high' | 'xhigh' | 'max'> | null} effortLevels
  *   The documented effort levels; null = effort is not documented for the
  *   model, so reasoningEffort is refused rather than guessed.
@@ -213,6 +226,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-opus-5-5(?:-\d{8})?$/,
     name: 'Claude Opus 5.5',
+    adaptiveThinking: true,
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'medium',
@@ -223,6 +237,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-sonnet-5-5(?:-\d{8})?$/,
     name: 'Claude Sonnet 5.5',
+    adaptiveThinking: true,
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
@@ -233,6 +248,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-haiku-5-5(?:-\d{8})?$/,
     name: 'Claude Haiku 5.5',
+    adaptiveThinking: true,
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'medium',
@@ -243,6 +259,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-fable-5-1(?:-\d{8})?$/,
     name: 'Claude Fable 5.1',
+    adaptiveThinking: true,
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
@@ -253,6 +270,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-fable-5(?:-\d{8})?$/,
     name: 'Claude Fable 5',
+    adaptiveThinking: true,
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
@@ -263,6 +281,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-opus-5(?:-\d{8})?$/,
     name: 'Claude Opus 5',
+    adaptiveThinking: true,
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
@@ -273,6 +292,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-opus-4-8(?:-\d{8})?$/,
     name: 'Claude Opus 4.8',
+    adaptiveThinking: true,
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
@@ -283,6 +303,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-opus-4-7(?:-\d{8})?$/,
     name: 'Claude Opus 4.7',
+    adaptiveThinking: true,
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
@@ -293,6 +314,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-sonnet-5(?:-\d{8})?$/,
     name: 'Claude Sonnet 5',
+    adaptiveThinking: true,
     manualBudgetAccepted: false,
     effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     defaultEffort: 'high',
@@ -303,6 +325,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-opus-4-6(?:-\d{8})?$/,
     name: 'Claude Opus 4.6',
+    adaptiveThinking: true,
     manualBudgetAccepted: true,
     effortLevels: ['low', 'medium', 'high', 'max'],
     defaultEffort: 'high',
@@ -313,6 +336,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-sonnet-4-6(?:-\d{8})?$/,
     name: 'Claude Sonnet 4.6',
+    adaptiveThinking: true,
     manualBudgetAccepted: true,
     effortLevels: ['low', 'medium', 'high', 'max'],
     defaultEffort: 'high',
@@ -323,6 +347,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-opus-4-5(?:-\d{8})?$/,
     name: 'Claude Opus 4.5',
+    adaptiveThinking: false,
     manualBudgetAccepted: true,
     effortLevels: null,
     defaultEffort: null,
@@ -333,6 +358,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-haiku-4-5(?:-\d{8})?$/,
     name: 'Claude Haiku 4.5',
+    adaptiveThinking: false,
     manualBudgetAccepted: true,
     effortLevels: null,
     defaultEffort: null,
@@ -343,6 +369,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-3-7(?:-\d{8})?/,
     name: 'Claude 3.7 (manual extended thinking)',
+    adaptiveThinking: false,
     manualBudgetAccepted: true,
     effortLevels: null,
     defaultEffort: null,
@@ -353,6 +380,7 @@ export const ANTHROPIC_CAPABILITIES = [
   {
     pattern: /^claude-(?:[0-9]|instant)/,
     name: 'Claude legacy (pre-thinking model ids)',
+    adaptiveThinking: false,
     manualBudgetAccepted: false,
     effortLevels: null,
     defaultEffort: null,
@@ -666,6 +694,8 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  *   only on models whose capability row accepts manual mode (checked at
  *   construction); with it set the wire max_tokens is maxOutputTokens +
  *   thinkingBudget.
+ * @property {boolean} [adaptiveThinking] Anthropic only: send `thinking:
+ *   {type: "adaptive"}`. A set thinkingBudget takes precedence.
  * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
  *   Anthropic (output_config.effort) or OpenAI Responses (reasoning.effort)
  *   reasoning effort — the provider unions coincide at all five levels and
@@ -717,6 +747,7 @@ async function callAnthropic({
   model,
   maxOutputTokens,
   thinkingBudget,
+  adaptiveThinking,
   reasoningEffort,
   params,
   userMessage,
@@ -742,10 +773,11 @@ async function callAnthropic({
     max_tokens: maxOutputTokens + (thinkingBudget ?? 0),
     ...(thinkingBudget !== undefined
       ? { thinking: { type: 'enabled', budget_tokens: thinkingBudget } }
-      : {}),
-    // Effort is the only thinking control on the adaptive-thinking models: no
-    // `thinking` field is sent, and the provider default applies when unset.
-    // Required protocol fields win over params.
+      : adaptiveThinking
+        ? { thinking: { type: 'adaptive' } }
+        : {}),
+    // Effort steers how much an adaptive model thinks; the provider default
+    // applies when unset. Required protocol fields win over params.
     ...(reasoningEffort !== undefined ? { output_config: { effort: reasoningEffort } } : {}),
     system: OFFICIAL_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: userMessage }],
@@ -1012,11 +1044,14 @@ async function callOpenAIChat({
  *   reasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' |
  *     'provider-default',
  *   reasoningEffortDefault?: string | null,
+ *   thinking?: 'enabled' | 'adaptive' | 'off' | 'provider-default',
  * }} The core Agent plus the effective-effort identity: reasoningEffort is the
  *   run's effort, or the literal "provider-default" when an effort-capable
  *   model runs unset; reasoningEffortDefault is the model row's documented
  *   default (null when the row documents none). Both stay absent on rows
- *   without documented effort levels.
+ *   without documented effort levels. thinking is the Anthropic thinking
+ *   mode the requests run with (absent on other providers); run.json records
+ *   it in its agent record.
  */
 export function createModelAgent({
   provider,
@@ -1125,6 +1160,24 @@ export function createModelAgent({
       : capability && capability.effortLevels
         ? 'provider-default'
         : undefined;
+  // The thinking mode the requests run with, recorded on the agent so a run
+  // says whether thinking was on: "enabled" (manual budget_tokens),
+  // "adaptive" (thinking: {type: "adaptive"} sent), "off" (a Claude model
+  // without adaptive support and no budget: no thinking field, which the docs
+  // define as no thinking), or "provider-default" (a non-Claude id on
+  // provider "anthropic", such as a proxy, where no field is sent and the
+  // server decides). Absent on the other providers.
+  /** @type {'enabled' | 'adaptive' | 'off' | 'provider-default' | undefined} */
+  const thinkingMode =
+    provider !== 'anthropic'
+      ? undefined
+      : thinkingBudget !== undefined
+        ? 'enabled'
+        : !capability
+          ? 'provider-default'
+          : capability.adaptiveThinking
+            ? 'adaptive'
+            : 'off';
   // The wire effort: undefined leaves the provider default in place.
   const wireEffort =
     effectiveEffort !== undefined && effectiveEffort !== 'provider-default'
@@ -1180,6 +1233,7 @@ export function createModelAgent({
           reasoningEffortDefault: capability ? capability.defaultEffort : null,
         }
       : {}),
+    ...(thinkingMode !== undefined ? { thinking: thinkingMode } : {}),
     quoteWorstCaseUsd(ctx) {
       // Upper bound on one act() call's USD cost, computable before the call
       // starts: the request text is priced at a conservative token estimate
@@ -1221,6 +1275,7 @@ export function createModelAgent({
               model,
               maxOutputTokens: limit,
               ...(thinkingBudget !== undefined ? { thinkingBudget } : {}),
+              adaptiveThinking: thinkingMode === 'adaptive',
               ...(wireEffort !== undefined ? { reasoningEffort: wireEffort } : {}),
               params,
               userMessage,

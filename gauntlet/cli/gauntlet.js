@@ -18,9 +18,18 @@
  *   run --suite <file> --agent <spec> --out <dir> [--limit <n>]
  *        [--max-invalid <n>] [--prices <file>] [--dry-run --script <file>]
  *                                          Run the agent over the manifest.
- *   leaderboard --suite <file> [--out <dir>] [--json] <dirs...>
+ *   leaderboard --suite <file> [--out <dir>] [--scoring-profile <name>]
+ *        [--json] <dirs...>
  *                                          Score run directories, render JSON
  *                                          and Markdown through gauntlet/scoring.
+ *                                          --scoring-profile is one of rhae-v1
+ *                                          (default), chance-adjusted,
+ *                                          squared-outcome.
+ *   rate <dirs...> [--ladder <file>] [--json]
+ *                                          Elo-rate chess trajectories against
+ *                                          the ladder fitted by rating/ladder.js;
+ *                                          off-ladder trajectories are skipped
+ *                                          and reported per agent.
  *   serve                                  Serve the JSON-Lines wire protocol
  *                                          on stdin/stdout (protocol/server.js).
  *
@@ -52,6 +61,8 @@ import { buildSuiteManifest } from './suite.js';
 import { runSuite, printRunSummary } from './run.js';
 import { verifyPath } from './verify.js';
 import { buildLeaderboard } from './leaderboard.js';
+import { rateRunDirs } from './rate.js';
+import { resolveProfile } from '../scoring/profiles.js';
 import { buildEstimate } from './estimate.js';
 import { printBundleVerify } from './bundle.js';
 import { parseAgentSpec } from './agents.js';
@@ -73,7 +84,8 @@ function usage() {
       '                      [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]',
       '       gauntlet run --suite <file> --agent <spec> --out <dir> [--limit <n>]',
       '                      [--max-invalid <n>] [--prices <file>] [--dry-run --script <file>]',
-      '       gauntlet leaderboard --suite <file> [--out <dir>] [--json] <dirs...>',
+      '       gauntlet leaderboard --suite <file> [--out <dir>] [--scoring-profile rhae-v1] [--json] <dirs...>',
+      '       gauntlet rate <dirs...> [--ladder <file>] [--json]',
       '       gauntlet serve',
       '',
       'agent specs: random | baseline:<game>:<greedy|engine> | model:<provider>/<model>',
@@ -332,10 +344,24 @@ async function main(argv) {
   if (command === 'leaderboard') {
     const suitePath = flags.get('suite');
     if (!suitePath || positionals.length === 0) usage();
+    // resolveProfile refuses an unknown name naming the selectable profiles;
+    // the catch below prints that and exits 1.
+    const profileFlag = flags.get('scoring-profile');
     await buildLeaderboard({
       suitePath,
       dirs: positionals,
+      ...(profileFlag !== undefined ? { profile: resolveProfile(profileFlag) } : {}),
       ...(flags.has('out') ? { outDir: /** @type {string} */ (flags.get('out')) } : {}),
+      ...(flags.has('json') ? { json: true } : {}),
+    });
+    return;
+  }
+
+  if (command === 'rate') {
+    if (positionals.length === 0) usage();
+    rateRunDirs({
+      dirs: positionals,
+      ...(flags.has('ladder') ? { ladderPath: /** @type {string} */ (flags.get('ladder')) } : {}),
       ...(flags.has('json') ? { json: true } : {}),
     });
     return;

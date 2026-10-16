@@ -45,6 +45,39 @@ export function collectJsonFiles(root, out) {
 }
 
 /**
+ * Load every trajectory file from the given directories, in order. Traversal
+ * is recursive — both the legacy flat layout and the engine-written bundle
+ * layout (`<game>/<tier>/<seed>.json`) work — and skips bundle metadata
+ * (`run.json`, `suite.json`) and `_`-prefixed run summaries. Shared by
+ * `leaderboard` and `rate`, which read the same run directories.
+ *
+ * @param {string[]} dirs
+ * @returns {Trajectory[]}
+ */
+export function loadTrajectories(dirs) {
+  /** @type {Trajectory[]} */
+  const trajectories = [];
+  for (const dir of dirs) {
+    /** @type {string[]} */
+    const paths = [];
+    collectJsonFiles(dir, paths);
+    if (paths.length === 0) {
+      throw new Error(
+        `"${dir}" holds no trajectory files (*.json, excluding run.json/suite.json and _-prefixed summaries)`
+      );
+    }
+    for (const path of paths) {
+      const parsed = /** @type {*} */ (JSON.parse(readFileSync(path, 'utf8')));
+      if (!parsed || !parsed.game || typeof parsed.game.id !== 'string' || !Array.isArray(parsed.steps)) {
+        throw new Error(`${path} is not a gauntlet trajectory`);
+      }
+      trajectories.push(/** @type {Trajectory} */ (parsed));
+    }
+  }
+  return trajectories;
+}
+
+/**
  * @param {string} raw
  * @returns {Trajectory}
  */

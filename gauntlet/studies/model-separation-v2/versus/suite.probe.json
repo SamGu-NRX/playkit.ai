@@ -1,0 +1,54 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-model-separation-v2-versus-s1",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "tictactoe",
+      "version": "1.2.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "random-opponent",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "tictactoe/random-opponent/public/0"
+          ]
+        },
+        {
+          "id": "blunder-opponent",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "tictactoe/blunder-opponent/public/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connect4",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "ladder-1",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "connect4/ladder-1/public/0"
+          ]
+        },
+        {
+          "id": "ladder-0",
+          "rank": 2,
+          "scoring": "outcome",
+          "seeds": [
+            "connect4/ladder-0/public/0"
+          ]
+        }
+      ]
+    }
+  ]
+}

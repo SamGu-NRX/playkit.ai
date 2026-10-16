@@ -1,0 +1,235 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "connect4",
+    "version": "1.1.0"
+  },
+  "tier": "ladder-0",
+  "seed": "connect4/ladder-0/public/8",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "engine-d2"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d4a31619c704b253",
+      "reply": {
+        "text": "7",
+        "usage": {
+          "inputTokens": 443,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-LkLUZTpOesay5neORkdRN8SjgkNmLJf3",
+          "reasoningChars": 0
+        }
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 443,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 466
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "591a2b9d73e6f327",
+      "reply": {
+        "text": "4"
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f4db42e2133226a5",
+      "reply": {
+        "text": "7",
+        "usage": {
+          "inputTokens": 443,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-U4Z5m1W7MoGrrtmNPzOLoFbOsdYp3SEH",
+          "reasoningChars": 0
+        }
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 443,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 508
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "5b34ef5bd5b1a82e",
+      "reply": {
+        "text": "7"
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "464788571a6bdea7",
+      "reply": {
+        "text": "7",
+        "usage": {
+          "inputTokens": 445,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-QEZsp97B7KIuODuuBhuKwamgQlwVD2B6",
+          "reasoningChars": 0
+        }
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 445,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 263
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "ab4b43dba3a00065",
+      "reply": {
+        "text": "4"
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "fd72d47cfd084f96",
+      "reply": {
+        "text": "7",
+        "usage": {
+          "inputTokens": 446,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-nugWEIYFKKa7WUD6Vd571zBCCitj9BsM",
+          "reasoningChars": 0
+        }
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 446,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 293
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "7ae96f01e16cab66",
+      "reply": {
+        "text": "4"
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "0fb0322cab5a68ad",
+      "reply": {
+        "text": "7",
+        "usage": {
+          "inputTokens": 447,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-76enMvLQxAs66iqgM0h2zpSic0u43geb",
+          "reasoningChars": 0
+        }
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 447,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 360
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "3c7de513020559da",
+      "reply": {
+        "text": "4"
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0,
+        1
+      ],
+      "raw": [
+        "loss",
+        "win"
+      ],
+      "reason": "seat 1 (O) connected four after 12 discs"
+    },
+    "agentActions": 5,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T14:44:25.731Z",
+  "finishedAt": "2026-10-16T14:44:27.623Z"
+}

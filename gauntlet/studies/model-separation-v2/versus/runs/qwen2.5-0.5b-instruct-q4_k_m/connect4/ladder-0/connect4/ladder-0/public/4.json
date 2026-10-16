@@ -1,0 +1,274 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "connect4",
+    "version": "1.1.0"
+  },
+  "tier": "ladder-0",
+  "seed": "connect4/ladder-0/public/4",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-0.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "engine-d2"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "88cb5add61933622",
+      "reply": {
+        "text": "place 4",
+        "usage": {
+          "inputTokens": 443,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-0plhLl4d7PHfp6Y3OuE1Y2xkGbve8tnf",
+          "reasoningChars": 0
+        }
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 443,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 296
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "ccd33110a2376c6f",
+      "reply": {
+        "text": "3"
+      },
+      "action": "3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "65f38dce745e6298",
+      "reply": {
+        "text": "place 4",
+        "usage": {
+          "inputTokens": 444,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-7FrC6tEvn2VPgcu4hudNXS0o1Fl8Nvg8",
+          "reasoningChars": 0
+        }
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 444,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 277
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "11da6786d336bc0a",
+      "reply": {
+        "text": "4"
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7136f497c97a9f36",
+      "reply": {
+        "text": "place 4",
+        "usage": {
+          "inputTokens": 444,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-GXbFCTejgTzmXLyvJaigneuFL7ofITpv",
+          "reasoningChars": 0
+        }
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 444,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 158
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "6a0c9e0ed9744454",
+      "reply": {
+        "text": "6"
+      },
+      "action": "6",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "dcbc8a2abcef88c3",
+      "reply": {
+        "text": "place 4",
+        "usage": {
+          "inputTokens": 444,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-0zKRklgGrRnYjFePxoCUkANc0snRnTIF",
+          "reasoningChars": 0
+        }
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 444,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 152
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "c80691a502459f97",
+      "reply": {
+        "text": "4"
+      },
+      "action": "4",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "68cda64005eb308e",
+      "reply": {
+        "text": "place 4",
+        "usage": {
+          "inputTokens": 441,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-e17i61x7U6Gal4k1BKslkc2bT2F8cuJL",
+          "reasoningChars": 0
+        }
+      },
+      "action": "place 4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 441,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 168
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "68cda64005eb308e",
+      "reply": {
+        "text": "place 4",
+        "usage": {
+          "inputTokens": 453,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-uq2WdpXwmXBwkdYAiQEe1ATXmvSOPClS",
+          "reasoningChars": 0
+        }
+      },
+      "action": "place 4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 453,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 278
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "68cda64005eb308e",
+      "reply": {
+        "text": "place 4",
+        "usage": {
+          "inputTokens": 453,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-hhGIb4vl3bRip5B8wAifIVTDyKU5A0Fe",
+          "reasoningChars": 0
+        }
+      },
+      "action": "place 4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 453,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 46
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0,
+        1
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 7,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T14:53:28.839Z",
+  "finishedAt": "2026-10-16T14:53:30.216Z"
+}

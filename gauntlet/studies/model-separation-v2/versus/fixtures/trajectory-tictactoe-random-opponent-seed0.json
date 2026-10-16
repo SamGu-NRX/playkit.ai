@@ -1,0 +1,185 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "tictactoe",
+    "version": "1.2.0"
+  },
+  "tier": "random-opponent",
+  "seed": "tictactoe/random-opponent/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "random-opponent"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6f8dcfa582b8b7fe",
+      "reply": {
+        "text": "a1",
+        "usage": {
+          "inputTokens": 326,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-IoZKGzoZuDoY2s1lSoXZMKbIbgwHiyI5",
+          "reasoningChars": 0
+        }
+      },
+      "action": "a1",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 326,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 5950
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "beeafceba9735a4a",
+      "reply": {
+        "text": "a2"
+      },
+      "action": "a2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "17559e4c4d8e6535",
+      "reply": {
+        "text": "c3",
+        "usage": {
+          "inputTokens": 320,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-n3IZIRiTypJYQFJu4DX5znPrn0Y2BYjf",
+          "reasoningChars": 0
+        }
+      },
+      "action": "c3",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 320,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 2125
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "cd741a33c2f95e33",
+      "reply": {
+        "text": "c2"
+      },
+      "action": "c2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ca9aacc669636b16",
+      "reply": {
+        "text": "b1",
+        "usage": {
+          "inputTokens": 316,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-j7ealvC9PeQFnfRJ5V8bKUcKNrRz28aD",
+          "reasoningChars": 0
+        }
+      },
+      "action": "b1",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 316,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 2046
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "8143a7b05ab4e321",
+      "reply": {
+        "text": "c1"
+      },
+      "action": "c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e96d52a1d6b81cd7",
+      "reply": {
+        "text": "b2",
+        "usage": {
+          "inputTokens": 311,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-nTdx6XevMUrBAQN15QipmJoHBiwHpRDu",
+          "reasoningChars": 0
+        }
+      },
+      "action": "b2",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 311,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 1929
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1,
+        0
+      ],
+      "raw": [
+        "win",
+        "loss"
+      ],
+      "reason": "seat 0 (X) won with three in a row"
+    },
+    "agentActions": 4,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T10:42:37.556Z",
+  "finishedAt": "2026-10-16T10:42:49.610Z"
+}

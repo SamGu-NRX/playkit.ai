@@ -1,0 +1,133 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "tictactoe",
+    "version": "1.2.0"
+  },
+  "tier": "random-opponent",
+  "seed": "tictactoe/random-opponent/public/1",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 1,
+    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [
+    {
+      "seat": 0,
+      "id": "random-opponent"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "6f8dcfa582b8b7fe",
+      "reply": {
+        "text": "c1"
+      },
+      "action": "c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "3d03f304c0521eac",
+      "reply": {
+        "text": "c2",
+        "usage": {
+          "inputTokens": 324,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-FV7Gc5aQL0Ix3diYfuNPBr9pBJjXbGQx",
+          "reasoningChars": 0
+        }
+      },
+      "action": "c2",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 324,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 1789
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "a7499ec00a289aa9",
+      "reply": {
+        "text": "a1"
+      },
+      "action": "a1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "ccb9af9d7f839ca1",
+      "reply": {
+        "text": "b3",
+        "usage": {
+          "inputTokens": 319,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-LpsN8kiLAYOSPDi1Y9ZkLKVN5Ezmzgeu",
+          "reasoningChars": 0
+        }
+      },
+      "action": "b3",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 319,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 1608
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "979a77d997cf3026",
+      "reply": {
+        "text": "b1"
+      },
+      "action": "b1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1,
+        0
+      ],
+      "raw": [
+        "win",
+        "loss"
+      ],
+      "reason": "seat 0 (X) won with three in a row"
+    },
+    "agentActions": 2,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T12:03:05.075Z",
+  "finishedAt": "2026-10-16T12:03:08.474Z"
+}

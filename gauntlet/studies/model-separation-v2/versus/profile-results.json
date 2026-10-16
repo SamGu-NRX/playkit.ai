@@ -1,0 +1,682 @@
+{
+ "format": "playkit-gauntlet-study-model-separation-v2-versus-profile-results/1",
+ "baseline": {
+  "agent": "random",
+  "sha256": "38729617686075d494b95b581a073e4628ff46b351a6ffe9567e9ff7197cec07",
+  "path": "studies/model-separation-v2/versus/baseline-random.json"
+ },
+ "groups": [
+  {
+   "model": "0.5B",
+   "game": "connect4",
+   "tier": "ladder-0",
+   "scoring": "outcome",
+   "seeds": [
+    "connect4/ladder-0/public/0",
+    "connect4/ladder-0/public/1",
+    "connect4/ladder-0/public/10",
+    "connect4/ladder-0/public/11",
+    "connect4/ladder-0/public/2",
+    "connect4/ladder-0/public/3",
+    "connect4/ladder-0/public/4",
+    "connect4/ladder-0/public/5",
+    "connect4/ladder-0/public/6",
+    "connect4/ladder-0/public/7",
+    "connect4/ladder-0/public/8",
+    "connect4/ladder-0/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0,
+    "chance-adjusted": 0,
+    "squared-outcome": 0
+   }
+  },
+  {
+   "model": "1.5B",
+   "game": "connect4",
+   "tier": "ladder-0",
+   "scoring": "outcome",
+   "seeds": [
+    "connect4/ladder-0/public/0",
+    "connect4/ladder-0/public/1",
+    "connect4/ladder-0/public/10",
+    "connect4/ladder-0/public/11",
+    "connect4/ladder-0/public/2",
+    "connect4/ladder-0/public/3",
+    "connect4/ladder-0/public/4",
+    "connect4/ladder-0/public/5",
+    "connect4/ladder-0/public/6",
+    "connect4/ladder-0/public/7",
+    "connect4/ladder-0/public/8",
+    "connect4/ladder-0/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0,
+    "chance-adjusted": 0,
+    "squared-outcome": 0
+   }
+  },
+  {
+   "model": "7B",
+   "game": "connect4",
+   "tier": "ladder-0",
+   "scoring": "outcome",
+   "seeds": [
+    "connect4/ladder-0/public/0",
+    "connect4/ladder-0/public/1",
+    "connect4/ladder-0/public/10",
+    "connect4/ladder-0/public/11",
+    "connect4/ladder-0/public/2",
+    "connect4/ladder-0/public/3",
+    "connect4/ladder-0/public/4",
+    "connect4/ladder-0/public/5",
+    "connect4/ladder-0/public/6",
+    "connect4/ladder-0/public/7",
+    "connect4/ladder-0/public/8",
+    "connect4/ladder-0/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0,
+    "chance-adjusted": 0,
+    "squared-outcome": 0
+   }
+  },
+  {
+   "model": "0.5B",
+   "game": "connect4",
+   "tier": "ladder-1",
+   "scoring": "outcome",
+   "seeds": [
+    "connect4/ladder-1/public/0",
+    "connect4/ladder-1/public/1",
+    "connect4/ladder-1/public/10",
+    "connect4/ladder-1/public/11",
+    "connect4/ladder-1/public/2",
+    "connect4/ladder-1/public/3",
+    "connect4/ladder-1/public/4",
+    "connect4/ladder-1/public/5",
+    "connect4/ladder-1/public/6",
+    "connect4/ladder-1/public/7",
+    "connect4/ladder-1/public/8",
+    "connect4/ladder-1/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0.916667,
+     "ci95": [
+      0.75,
+      1
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0.916667,
+     "ci95": [
+      0.75,
+      1
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0.916667,
+     "ci95": [
+      0.75,
+      1
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0.916667,
+    "chance-adjusted": 0.916667,
+    "squared-outcome": 0.916667
+   }
+  },
+  {
+   "model": "1.5B",
+   "game": "connect4",
+   "tier": "ladder-1",
+   "scoring": "outcome",
+   "seeds": [
+    "connect4/ladder-1/public/0",
+    "connect4/ladder-1/public/1",
+    "connect4/ladder-1/public/10",
+    "connect4/ladder-1/public/11",
+    "connect4/ladder-1/public/2",
+    "connect4/ladder-1/public/3",
+    "connect4/ladder-1/public/4",
+    "connect4/ladder-1/public/5",
+    "connect4/ladder-1/public/6",
+    "connect4/ladder-1/public/7",
+    "connect4/ladder-1/public/8",
+    "connect4/ladder-1/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0.75,
+     "ci95": [
+      0.5,
+      1
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0.75,
+     "ci95": [
+      0.5,
+      1
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0.75,
+     "ci95": [
+      0.5,
+      1
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0.75,
+    "chance-adjusted": 0.75,
+    "squared-outcome": 0.75
+   }
+  },
+  {
+   "model": "7B",
+   "game": "connect4",
+   "tier": "ladder-1",
+   "scoring": "outcome",
+   "seeds": [
+    "connect4/ladder-1/public/0",
+    "connect4/ladder-1/public/1",
+    "connect4/ladder-1/public/10",
+    "connect4/ladder-1/public/11",
+    "connect4/ladder-1/public/2",
+    "connect4/ladder-1/public/3",
+    "connect4/ladder-1/public/4",
+    "connect4/ladder-1/public/5",
+    "connect4/ladder-1/public/6",
+    "connect4/ladder-1/public/7",
+    "connect4/ladder-1/public/8",
+    "connect4/ladder-1/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0.75,
+     "ci95": [
+      0.5,
+      1
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0.75,
+     "ci95": [
+      0.5,
+      1
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0.75,
+     "ci95": [
+      0.5,
+      1
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0.75,
+    "chance-adjusted": 0.75,
+    "squared-outcome": 0.75
+   }
+  },
+  {
+   "model": "0.5B",
+   "game": "tictactoe",
+   "tier": "blunder-opponent",
+   "scoring": "outcome",
+   "seeds": [
+    "tictactoe/blunder-opponent/public/0",
+    "tictactoe/blunder-opponent/public/1",
+    "tictactoe/blunder-opponent/public/10",
+    "tictactoe/blunder-opponent/public/11",
+    "tictactoe/blunder-opponent/public/2",
+    "tictactoe/blunder-opponent/public/3",
+    "tictactoe/blunder-opponent/public/4",
+    "tictactoe/blunder-opponent/public/5",
+    "tictactoe/blunder-opponent/public/6",
+    "tictactoe/blunder-opponent/public/7",
+    "tictactoe/blunder-opponent/public/8",
+    "tictactoe/blunder-opponent/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0.083333,
+     "ci95": [
+      0,
+      0.25
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0.083333,
+     "ci95": [
+      0,
+      0.25
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0.083333,
+     "ci95": [
+      0,
+      0.25
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0.083333,
+    "chance-adjusted": 0.083333,
+    "squared-outcome": 0.083333
+   }
+  },
+  {
+   "model": "1.5B",
+   "game": "tictactoe",
+   "tier": "blunder-opponent",
+   "scoring": "outcome",
+   "seeds": [
+    "tictactoe/blunder-opponent/public/0",
+    "tictactoe/blunder-opponent/public/1",
+    "tictactoe/blunder-opponent/public/10",
+    "tictactoe/blunder-opponent/public/11",
+    "tictactoe/blunder-opponent/public/2",
+    "tictactoe/blunder-opponent/public/3",
+    "tictactoe/blunder-opponent/public/4",
+    "tictactoe/blunder-opponent/public/5",
+    "tictactoe/blunder-opponent/public/6",
+    "tictactoe/blunder-opponent/public/7",
+    "tictactoe/blunder-opponent/public/8",
+    "tictactoe/blunder-opponent/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0.208333,
+     "ci95": [
+      0,
+      0.458333
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0.198718,
+     "ci95": [
+      0,
+      0.429487
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0.1875,
+     "ci95": [
+      0,
+      0.416667
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0.208333,
+    "chance-adjusted": 0.198718,
+    "squared-outcome": 0.1875
+   }
+  },
+  {
+   "model": "7B",
+   "game": "tictactoe",
+   "tier": "blunder-opponent",
+   "scoring": "outcome",
+   "seeds": [
+    "tictactoe/blunder-opponent/public/0",
+    "tictactoe/blunder-opponent/public/1",
+    "tictactoe/blunder-opponent/public/10",
+    "tictactoe/blunder-opponent/public/11",
+    "tictactoe/blunder-opponent/public/2",
+    "tictactoe/blunder-opponent/public/3",
+    "tictactoe/blunder-opponent/public/4",
+    "tictactoe/blunder-opponent/public/5",
+    "tictactoe/blunder-opponent/public/6",
+    "tictactoe/blunder-opponent/public/7",
+    "tictactoe/blunder-opponent/public/8",
+    "tictactoe/blunder-opponent/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0.291667,
+     "ci95": [
+      0.083333,
+      0.541667
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0.282051,
+     "ci95": [
+      0.064103,
+      0.532051
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0.270833,
+     "ci95": [
+      0.041667,
+      0.520833
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0.291667,
+    "chance-adjusted": 0.282051,
+    "squared-outcome": 0.270833
+   }
+  },
+  {
+   "model": "0.5B",
+   "game": "tictactoe",
+   "tier": "random-opponent",
+   "scoring": "outcome",
+   "seeds": [
+    "tictactoe/random-opponent/public/0",
+    "tictactoe/random-opponent/public/1",
+    "tictactoe/random-opponent/public/10",
+    "tictactoe/random-opponent/public/11",
+    "tictactoe/random-opponent/public/2",
+    "tictactoe/random-opponent/public/3",
+    "tictactoe/random-opponent/public/4",
+    "tictactoe/random-opponent/public/5",
+    "tictactoe/random-opponent/public/6",
+    "tictactoe/random-opponent/public/7",
+    "tictactoe/random-opponent/public/8",
+    "tictactoe/random-opponent/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0.375,
+     "ci95": [
+      0.125,
+      0.625
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0.338235,
+     "ci95": [
+      0.088235,
+      0.588235
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0.354167,
+     "ci95": [
+      0.104167,
+      0.604167
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0.375,
+    "chance-adjusted": 0.338235,
+    "squared-outcome": 0.354167
+   }
+  },
+  {
+   "model": "1.5B",
+   "game": "tictactoe",
+   "tier": "random-opponent",
+   "scoring": "outcome",
+   "seeds": [
+    "tictactoe/random-opponent/public/0",
+    "tictactoe/random-opponent/public/1",
+    "tictactoe/random-opponent/public/10",
+    "tictactoe/random-opponent/public/11",
+    "tictactoe/random-opponent/public/2",
+    "tictactoe/random-opponent/public/3",
+    "tictactoe/random-opponent/public/4",
+    "tictactoe/random-opponent/public/5",
+    "tictactoe/random-opponent/public/6",
+    "tictactoe/random-opponent/public/7",
+    "tictactoe/random-opponent/public/8",
+    "tictactoe/random-opponent/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0.291667,
+     "ci95": [
+      0.083333,
+      0.541667
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0.254902,
+     "ci95": [
+      0.009804,
+      0.504902
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0.270833,
+     "ci95": [
+      0.041667,
+      0.520833
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0.291667,
+    "chance-adjusted": 0.254902,
+    "squared-outcome": 0.270833
+   }
+  },
+  {
+   "model": "7B",
+   "game": "tictactoe",
+   "tier": "random-opponent",
+   "scoring": "outcome",
+   "seeds": [
+    "tictactoe/random-opponent/public/0",
+    "tictactoe/random-opponent/public/1",
+    "tictactoe/random-opponent/public/10",
+    "tictactoe/random-opponent/public/11",
+    "tictactoe/random-opponent/public/2",
+    "tictactoe/random-opponent/public/3",
+    "tictactoe/random-opponent/public/4",
+    "tictactoe/random-opponent/public/5",
+    "tictactoe/random-opponent/public/6",
+    "tictactoe/random-opponent/public/7",
+    "tictactoe/random-opponent/public/8",
+    "tictactoe/random-opponent/public/9"
+   ],
+   "nScored": 12,
+   "nErrors": 0,
+   "errorMessages": [],
+   "ranked": false,
+   "unrankedReason": "missing episodes: tictactoe/random-opponent/tictactoe/random-opponent/public/12, tictactoe/random-opponent/tictactoe/random-opponent/public/13, tictactoe/random-opponent/tictactoe/random-opponent/public/14 (+9 more)",
+   "scores": {
+    "rhae-v1": {
+     "value": 0.291667,
+     "ci95": [
+      0.083333,
+      0.541667
+     ],
+     "refusal": null
+    },
+    "chance-adjusted": {
+     "value": 0.254902,
+     "ci95": [
+      0.009804,
+      0.504902
+     ],
+     "refusal": null
+    },
+    "squared-outcome": {
+     "value": 0.270833,
+     "ci95": [
+      0.041667,
+      0.520833
+     ],
+     "refusal": null
+    }
+   },
+   "mirrorMean": {
+    "rhae-v1": 0.291667,
+    "chance-adjusted": 0.254902,
+    "squared-outcome": 0.270833
+   }
+  }
+ ]
+}

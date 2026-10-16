@@ -1,0 +1,530 @@
+{
+ "format": "playkit-gauntlet-study-model-separation-v2-versus-stats/1",
+ "models": [
+  "0.5B",
+  "1.5B",
+  "7B"
+ ],
+ "modelParamsB": {
+  "0.5B": 0.5,
+  "1.5B": 1.5,
+  "7B": 7
+ },
+ "baseline": {
+  "agent": "random",
+  "sha256": "38729617686075d494b95b581a073e4628ff46b351a6ffe9567e9ff7197cec07",
+  "path": "studies/model-separation-v2/versus/baseline-random.json"
+ },
+ "tiers": [
+  {
+   "game": "tictactoe",
+   "tier": "random-opponent",
+   "random": {
+    "mean": 0.46875,
+    "ci95": [
+     0.25,
+     0.6875
+    ],
+    "episodes": 16,
+    "gameVersion": "1.2.0"
+   },
+   "models": {
+    "0.5B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0.375,
+     "ci95": [
+      0.125,
+      0.625
+     ],
+     "meanSquared": 0.354167,
+     "ci95Squared": [
+      0.104167,
+      0.604167
+     ],
+     "meanChanceAdjusted": 0.338235,
+     "ci95ChanceAdjusted": [
+      0.088235,
+      0.588235
+     ],
+     "invalidRate": 0.381818,
+     "secPerCall": 0.203218,
+     "tokensPerCall": 325.163636,
+     "refusals": {}
+    },
+    "1.5B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0.291667,
+     "ci95": [
+      0.083333,
+      0.541667
+     ],
+     "meanSquared": 0.270833,
+     "ci95Squared": [
+      0.041667,
+      0.520833
+     ],
+     "meanChanceAdjusted": 0.254902,
+     "ci95ChanceAdjusted": [
+      0.009804,
+      0.504902
+     ],
+     "invalidRate": 0.0,
+     "secPerCall": 0.379222,
+     "tokensPerCall": 319.822222,
+     "refusals": {}
+    },
+    "7B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0.291667,
+     "ci95": [
+      0.083333,
+      0.541667
+     ],
+     "meanSquared": 0.270833,
+     "ci95Squared": [
+      0.041667,
+      0.520833
+     ],
+     "meanChanceAdjusted": 0.254902,
+     "ci95ChanceAdjusted": [
+      0.009804,
+      0.504902
+     ],
+     "invalidRate": 0.0,
+     "secPerCall": 73.859533,
+     "tokensPerCall": 320.088889,
+     "refusals": {}
+    }
+   },
+   "beatsRandom": {
+    "0.5B": {
+     "separated": false,
+     "above": false
+    },
+    "1.5B": {
+     "separated": false,
+     "above": false
+    },
+    "7B": {
+     "separated": false,
+     "above": false
+    }
+   },
+   "sizeOrderMonotone": false,
+   "spearmanSizeVsScore": -0.625,
+   "pairedDiff": {
+    "1.5B-minus-0.5B": {
+     "nPairs": 12,
+     "mean": -0.083333,
+     "ci95": [
+      -0.458333,
+      0.291667
+     ],
+     "separated": false
+    },
+    "7B-minus-1.5B": {
+     "nPairs": 12,
+     "mean": 0.0,
+     "ci95": [
+      -0.208333,
+      0.166667
+     ],
+     "separated": false
+    }
+   }
+  },
+  {
+   "game": "tictactoe",
+   "tier": "blunder-opponent",
+   "random": {
+    "mean": 0.1875,
+    "ci95": [
+     0.0625,
+     0.34375
+    ],
+    "episodes": 16,
+    "gameVersion": "1.2.0"
+   },
+   "models": {
+    "0.5B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0.083333,
+     "ci95": [
+      0,
+      0.25
+     ],
+     "meanSquared": 0.083333,
+     "ci95Squared": [
+      0,
+      0.25
+     ],
+     "meanChanceAdjusted": 0.083333,
+     "ci95ChanceAdjusted": [
+      0,
+      0.25
+     ],
+     "invalidRate": 0.431818,
+     "secPerCall": 0.214409,
+     "tokensPerCall": 328.340909,
+     "refusals": {}
+    },
+    "1.5B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0.208333,
+     "ci95": [
+      0,
+      0.458333
+     ],
+     "meanSquared": 0.1875,
+     "ci95Squared": [
+      0,
+      0.416667
+     ],
+     "meanChanceAdjusted": 0.198718,
+     "ci95ChanceAdjusted": [
+      0,
+      0.429487
+     ],
+     "invalidRate": 0.0,
+     "secPerCall": 0.364514,
+     "tokensPerCall": 322.6,
+     "refusals": {}
+    },
+    "7B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0.291667,
+     "ci95": [
+      0.083333,
+      0.541667
+     ],
+     "meanSquared": 0.270833,
+     "ci95Squared": [
+      0.041667,
+      0.520833
+     ],
+     "meanChanceAdjusted": 0.282051,
+     "ci95ChanceAdjusted": [
+      0.064103,
+      0.532051
+     ],
+     "invalidRate": 0.0,
+     "secPerCall": 1.469632,
+     "tokensPerCall": 322.184211,
+     "refusals": {}
+    }
+   },
+   "beatsRandom": {
+    "0.5B": {
+     "separated": false,
+     "above": false
+    },
+    "1.5B": {
+     "separated": false,
+     "above": false
+    },
+    "7B": {
+     "separated": false,
+     "above": false
+    }
+   },
+   "sizeOrderMonotone": true,
+   "spearmanSizeVsScore": 1.0,
+   "pairedDiff": {
+    "1.5B-minus-0.5B": {
+     "nPairs": 12,
+     "mean": 0.125,
+     "ci95": [
+      0.0,
+      0.291667
+     ],
+     "separated": false
+    },
+    "7B-minus-1.5B": {
+     "nPairs": 12,
+     "mean": 0.083333,
+     "ci95": [
+      0.0,
+      0.25
+     ],
+     "separated": false
+    }
+   }
+  },
+  {
+   "game": "connect4",
+   "tier": "ladder-1",
+   "random": {
+    "mean": 0.416667,
+    "ci95": [
+     0.166667,
+     0.666667
+    ],
+    "episodes": 12,
+    "gameVersion": "1.1.0"
+   },
+   "models": {
+    "0.5B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0.916667,
+     "ci95": [
+      0.75,
+      1
+     ],
+     "meanSquared": 0.916667,
+     "ci95Squared": [
+      0.75,
+      1
+     ],
+     "meanChanceAdjusted": 0.916667,
+     "ci95ChanceAdjusted": [
+      0.75,
+      1
+     ],
+     "invalidRate": 0.058824,
+     "secPerCall": 9.85549,
+     "tokensPerCall": 448.960784,
+     "refusals": {}
+    },
+    "1.5B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0.75,
+     "ci95": [
+      0.5,
+      1
+     ],
+     "meanSquared": 0.75,
+     "ci95Squared": [
+      0.5,
+      1
+     ],
+     "meanChanceAdjusted": 0.75,
+     "ci95ChanceAdjusted": [
+      0.5,
+      1
+     ],
+     "invalidRate": 0.0,
+     "secPerCall": 7.045689,
+     "tokensPerCall": 444.608108,
+     "refusals": {}
+    },
+    "7B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0.75,
+     "ci95": [
+      0.5,
+      1
+     ],
+     "meanSquared": 0.75,
+     "ci95Squared": [
+      0.5,
+      1
+     ],
+     "meanChanceAdjusted": 0.75,
+     "ci95ChanceAdjusted": [
+      0.5,
+      1
+     ],
+     "invalidRate": 0.0,
+     "secPerCall": 84.053492,
+     "tokensPerCall": 444.901639,
+     "refusals": {}
+    }
+   },
+   "beatsRandom": {
+    "0.5B": {
+     "separated": true,
+     "above": true
+    },
+    "1.5B": {
+     "separated": false,
+     "above": false
+    },
+    "7B": {
+     "separated": false,
+     "above": false
+    }
+   },
+   "sizeOrderMonotone": false,
+   "spearmanSizeVsScore": -0.625,
+   "pairedDiff": {
+    "1.5B-minus-0.5B": {
+     "nPairs": 12,
+     "mean": -0.166667,
+     "ci95": [
+      -0.416667,
+      0.0
+     ],
+     "separated": false
+    },
+    "7B-minus-1.5B": {
+     "nPairs": 12,
+     "mean": 0.0,
+     "ci95": [
+      -0.25,
+      0.25
+     ],
+     "separated": false
+    }
+   }
+  },
+  {
+   "game": "connect4",
+   "tier": "ladder-0",
+   "random": {
+    "mean": 0,
+    "ci95": [
+     0,
+     0
+    ],
+    "episodes": 16,
+    "gameVersion": "1.1.0"
+   },
+   "models": {
+    "0.5B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "meanSquared": 0,
+     "ci95Squared": [
+      0,
+      0
+     ],
+     "meanChanceAdjusted": 0,
+     "ci95ChanceAdjusted": [
+      0,
+      0
+     ],
+     "invalidRate": 0.413793,
+     "secPerCall": 0.21869,
+     "tokensPerCall": 449.948276,
+     "refusals": {}
+    },
+    "1.5B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "meanSquared": 0,
+     "ci95Squared": [
+      0,
+      0
+     ],
+     "meanChanceAdjusted": 0,
+     "ci95ChanceAdjusted": [
+      0,
+      0
+     ],
+     "invalidRate": 0.0,
+     "secPerCall": 0.434511,
+     "tokensPerCall": 444.733333,
+     "refusals": {}
+    },
+    "7B": {
+     "episodes": 12,
+     "errors": 0,
+     "mean": 0,
+     "ci95": [
+      0,
+      0
+     ],
+     "meanSquared": 0,
+     "ci95Squared": [
+      0,
+      0
+     ],
+     "meanChanceAdjusted": 0,
+     "ci95ChanceAdjusted": [
+      0,
+      0
+     ],
+     "invalidRate": 0.0,
+     "secPerCall": 8.789667,
+     "tokensPerCall": 443.84058,
+     "refusals": {}
+    }
+   },
+   "beatsRandom": {
+    "0.5B": {
+     "separated": false,
+     "above": false
+    },
+    "1.5B": {
+     "separated": false,
+     "above": false
+    },
+    "7B": {
+     "separated": false,
+     "above": false
+    }
+   },
+   "sizeOrderMonotone": false,
+   "spearmanSizeVsScore": null,
+   "pairedDiff": {
+    "1.5B-minus-0.5B": {
+     "nPairs": 12,
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "separated": false
+    },
+    "7B-minus-1.5B": {
+     "nPairs": 12,
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "separated": false
+    }
+   }
+  }
+ ],
+ "pooled": {
+  "models": {
+   "0.5B": {
+    "episodes": 48,
+    "mean": 0.34375,
+    "ci95": [
+     0.21875,
+     0.479167
+    ]
+   },
+   "1.5B": {
+    "episodes": 48,
+    "mean": 0.3125,
+    "ci95": [
+     0.1875,
+     0.447917
+    ]
+   },
+   "7B": {
+    "episodes": 48,
+    "mean": 0.333333,
+    "ci95": [
+     0.208333,
+     0.46875
+    ]
+   }
+  },
+  "sizeOrderMonotone": false,
+  "spearmanSizeVsScore": -0.5
+ }
+}

@@ -1,0 +1,197 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "tictactoe",
+    "version": "1.2.0"
+  },
+  "tier": "blunder-opponent",
+  "seed": "tictactoe/blunder-opponent/public/2",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "minimax-blunder"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "64eacd535abb3b51",
+      "reply": {
+        "text": "a1",
+        "usage": {
+          "inputTokens": 327,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-JeE6YiSx6xbe66QW8qQtKi8EcBXILa1I",
+          "reasoningChars": 0
+        }
+      },
+      "action": "a1",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 327,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 422
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "6636dc95287a1381",
+      "reply": {
+        "text": "a3"
+      },
+      "action": "a3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "56d48d41464e349b",
+      "reply": {
+        "text": "c2",
+        "usage": {
+          "inputTokens": 321,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-YJFItHUXq6c6wDiAhzSfjmduaAf7lABA",
+          "reasoningChars": 0
+        }
+      },
+      "action": "c2",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 321,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 378
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "d6119df0550982ac",
+      "reply": {
+        "text": "c3"
+      },
+      "action": "c3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "27612338ed71d84a",
+      "reply": {
+        "text": "a2",
+        "usage": {
+          "inputTokens": 317,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-0p9ZBoEMCOjrdACCJkMJ9eBX1pJsXXdM",
+          "reasoningChars": 0
+        }
+      },
+      "action": "a2",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 317,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 348
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "607e59e946ecf95f",
+      "reply": {
+        "text": "b2"
+      },
+      "action": "b2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6abd2860fa3fba21",
+      "reply": {
+        "text": "b1",
+        "usage": {
+          "inputTokens": 311,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-S94yB2X9ZDDrN6PlcyNxhb8DKoc6DH8H",
+          "reasoningChars": 0
+        }
+      },
+      "action": "b1",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 311,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 327
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "3d3c9a6f71da7ac2",
+      "reply": {
+        "text": "c1"
+      },
+      "action": "c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0,
+        1
+      ],
+      "raw": [
+        "loss",
+        "win"
+      ],
+      "reason": "seat 1 (O) won with three in a row"
+    },
+    "agentActions": 4,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T14:35:20.476Z",
+  "finishedAt": "2026-10-16T14:35:21.952Z"
+}

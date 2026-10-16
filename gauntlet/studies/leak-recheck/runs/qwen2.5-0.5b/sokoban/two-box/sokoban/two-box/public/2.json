@@ -1,0 +1,115 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "sokoban",
+    "version": "1.0.0"
+  },
+  "tier": "two-box",
+  "seed": "sokoban/two-box/public/2",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-0.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3bb75e3d9c9fa176",
+      "reply": {
+        "text": "undo",
+        "usage": {
+          "inputTokens": 443,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-rhHaN4TsFF5AnwmakQCkfMEddSSZZLXO",
+          "reasoningChars": 0
+        }
+      },
+      "action": "undo",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 443,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 198
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3bb75e3d9c9fa176",
+      "reply": {
+        "text": "undo",
+        "usage": {
+          "inputTokens": 452,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-6fHcxwQ9K1MKKCg9fcFr1BhBAa6rytOr",
+          "reasoningChars": 0
+        }
+      },
+      "action": "undo",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 452,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 180
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3bb75e3d9c9fa176",
+      "reply": {
+        "text": "undo",
+        "usage": {
+          "inputTokens": 452,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-VtpfNyaYpjQqih4mYGwmuWMqZkORsJHp",
+          "reasoningChars": 0
+        }
+      },
+      "action": "undo",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 452,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 27
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3
+  },
+  "startedAt": "2026-10-16T05:52:21.533Z",
+  "finishedAt": "2026-10-16T05:52:21.938Z"
+}

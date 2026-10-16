@@ -30,6 +30,21 @@
  *        [--reasoning-effort <low|medium|high>] [--prices <file>]
  *        [--dry-run --script <file>]
  *                                          Run the agent over the manifest.
+ *   page --agent <spec> --out <dir> [--base-url <url>] [--api-key-env <var>]
+ *        [--moves <n>] [--seed <s>] [--timeout-ms <ms>]
+ *                                          Attach the agent to the vendored
+ *                                          2048 page through the overlay's
+ *                                          own injection path, one move at a
+ *                                          time under the bridge referee, and
+ *                                          write page/<seed>.json (a
+ *                                          refereed bridge-session log) plus
+ *                                          page/run.json (provenance and
+ *                                          turn accounting) into the bundle;
+ *                                          `verify <dir>` and `bundle verify`
+ *                                          replay it. Exit status is non-zero
+ *                                          when the referee flags a move.
+ *                                          Needs Playwright from the nested
+ *                                          gauntlet/bridge/browser package.
  *   leaderboard --suite <file> [--out <dir>] [--scoring-profile <name>]
  *        [--json] <dirs...>
  *                                          Score run directories, render JSON
@@ -106,6 +121,7 @@ import { rateRunDirs } from './rate.js';
 import { resolveProfile } from '../scoring/profiles.js';
 import { buildEstimate } from './estimate.js';
 import { printBundleVerify } from './bundle.js';
+import { runPageSubcommand } from './page.js';
 import { parseAgentSpec } from './agents.js';
 
 /**
@@ -130,6 +146,8 @@ function usage() {
       '                      [--requests-per-minute <n>] [--max-output-tokens <n>]',
       '                      [--call-timeout-ms <ms>] [--thinking-budget <n>] [--reasoning-effort low|medium|high]',
       '                      [--prices <file>] [--dry-run --script <file>]',
+      '       gauntlet page --agent <spec> --out <dir> [--base-url <url>] [--api-key-env <var>]',
+      '                      [--moves <n>] [--seed <s>] [--timeout-ms <ms>]',
       '       gauntlet leaderboard --suite <file> [--out <dir>] [--scoring-profile rhae-v1] [--json] <dirs...>',
       '       gauntlet rate <dirs...> [--ladder <file>] [--json]',
       '       gauntlet serve',
@@ -328,6 +346,25 @@ async function main(argv) {
     if (positionals.length !== 1) usage();
     const report = await verifyPath(positionals[0]);
     if (report.failures.length > 0) process.exitCode = 1;
+    return;
+  }
+
+  if (command === 'page') {
+    const agentSpecText = flags.get('agent');
+    const outDir = flags.get('out');
+    if (!agentSpecText || !outDir) usage();
+    const result = await runPageSubcommand({
+      agentSpecText: /** @type {string} */ (agentSpecText),
+      outDir: /** @type {string} */ (outDir),
+      ...(flags.has('moves') ? { maxMoves: numberFlag(flags, 'moves') } : {}),
+      ...(flags.has('seed') ? { seed: numberFlag(flags, 'seed') } : {}),
+      ...(flags.has('timeout-ms') ? { timeoutMs: numberFlag(flags, 'timeout-ms') } : {}),
+      ...(flags.has('url-path') ? { urlPath: /** @type {string} */ (flags.get('url-path')) } : {}),
+      ...modelFlags(flags),
+    });
+    // A referee-flagged move fails the command: the bundle is written for the
+    // audit, but the exit status says the session did not verify.
+    if (!result.verified.ok) process.exitCode = 1;
     return;
   }
 

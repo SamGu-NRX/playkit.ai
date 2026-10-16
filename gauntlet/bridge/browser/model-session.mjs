@@ -44,10 +44,11 @@ const thisDir = fileURLToPath(new URL('.', import.meta.url));
  * @property {number | null} outputTokens usage.completion_tokens as reported;
  *   null when unknown, same rule as inputTokens.
  * @property {number | null} retries Transport retries the provider client
- *   needed; null means unknown — a provider call that failed after retries
- *   throws a plain Error carrying no retry metadata, so a failed turn cannot
- *   honestly report a count (surfacing the count on the throw belongs with
- *   the provider client).
+ *   needed; null means unknown. The client attaches the count it performed to
+ *   every throw (retryError in harness/model-agent.js), so a failed turn
+ *   records the real count — 0 when the first answer was not retryable, the
+ *   exhausted count when retries ran out — and null only when a throw carries
+ *   no count at all.
  * @property {string | null} responseId The server's response id, when sent.
  * @property {number} reasoningChars Reasoning delivered separately (count only).
  * @property {number} replyChars Length of the reply text the runner parses.
@@ -179,12 +180,16 @@ export async function runBrowserModelSession(setup) {
         // continues instead of dying on transport.
         const ms = performance.now() - t0;
         const reason = err instanceof Error ? err.message : String(err);
-        // The provider throw carries no retry metadata, so the count is
-        // unknown — recording 0 would undercount retries exactly on failing
-        // turns, the one place the count matters. Surfacing the real count on
-        // the thrown error belongs with the provider client.
-        modelTurns.push({ turn, ms, inputTokens: null, outputTokens: null, retries: null, responseId: null, reasoningChars: 0, replyChars: 0, error: reason });
-        return { text: '', usage: null, meta: { retries: null } };
+        // The provider throw carries the retries it performed (retryError in
+        // harness/model-agent.js) — record the real count. Recording 0 would
+        // undercount retries exactly on failing turns, the one place the
+        // count matters; null would waste the metadata the client now sends.
+        const errRetries =
+          err !== null && typeof err === 'object' && typeof /** @type {*} */ (err).retries === 'number'
+            ? /** @type {*} */ (err).retries
+            : null;
+        modelTurns.push({ turn, ms, inputTokens: null, outputTokens: null, retries: errRetries, responseId: null, reasoningChars: 0, replyChars: 0, error: reason });
+        return { text: '', usage: null, meta: { retries: errRetries } };
       }
     });
 

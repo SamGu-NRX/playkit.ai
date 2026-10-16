@@ -125,6 +125,15 @@ process with its latency and token usage (`modelTurns`, `modelLatencyMs`,
 `totalPromptTokens` / `totalCompletionTokens` on the report). A model call
 that fails after retries is recorded and becomes an empty reply — the driver
 falls back, the step is logged with `chosen: null`, and the session continues.
+The failed turn records `retries: null` ("unknown"): the provider client's
+throw carries no retry metadata, so the report never undercounts by claiming
+zero.
+
+The session timeout (`timeoutMs`, default 600000) is enforced from Node, not
+from the page: the session-driving `page.evaluate` runs detached and is raced
+against the report channel and the timeout, so a model endpoint that stalls
+forever settles the caller at `timeoutMs` (the stub-server test below pins
+this) and cleanup still closes the wedged page.
 
 Accounting on every report: `fallbacks` counts moves the driver played that
 the model did not choose (`chosen === null` steps); `diverged` counts steps
@@ -134,7 +143,10 @@ board). Both live in the session log, so `verifyBridgeLog` audits them like
 everything else.
 
 Tests: an offline fixture test replays a recorded real-model session log
-(`fixtures/model-session-2048.json`) through `verifyBridgeLog`; the live
-tests are opt-in — skipped with a named reason unless
+(`fixtures/model-session-2048.json`) through `verifyBridgeLog`; the pure
+report reductions and the full Playwright path are exercised by the default
+suite against local stub servers (one stalled endpoint pinning the timeout
+contract, one always-failing endpoint pinning error-turn recording); the
+live-model tests are opt-in — skipped with a named reason unless
 `GAUNTLET_LOCAL_CHAT_URL` and `GAUNTLET_LOCAL_CHAT_MODEL` name the model
 server (serve commands in `harness/PROVIDERS.md`).

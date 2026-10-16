@@ -39,7 +39,11 @@ const thisDir = fileURLToPath(new URL('.', import.meta.url));
  * @property {number} ms Wall time of the model call in this Node process.
  * @property {number} inputTokens usage.prompt_tokens as the server reported.
  * @property {number} outputTokens usage.completion_tokens as reported.
- * @property {number} retries Transport retries the provider client needed.
+ * @property {number | null} retries Transport retries the provider client
+ *   needed; null means unknown — a provider call that failed after retries
+ *   throws a plain Error carrying no retry metadata, so a failed turn cannot
+ *   honestly report a count (surfacing the count on the throw belongs with
+ *   the provider client).
  * @property {string | null} responseId The server's response id, when sent.
  * @property {number} reasoningChars Reasoning delivered separately (count only).
  * @property {number} replyChars Length of the reply text the runner parses.
@@ -168,8 +172,12 @@ export async function runBrowserModelSession(setup) {
         // continues instead of dying on transport.
         const ms = performance.now() - t0;
         const reason = err instanceof Error ? err.message : String(err);
-        modelTurns.push({ turn, ms, inputTokens: 0, outputTokens: 0, retries: 0, responseId: null, reasoningChars: 0, replyChars: 0, error: reason });
-        return { text: '', usage: null, meta: { retries: 0 } };
+        // The provider throw carries no retry metadata, so the count is
+        // unknown — recording 0 would undercount retries exactly on failing
+        // turns, the one place the count matters. Surfacing the real count on
+        // the thrown error belongs with the provider client.
+        modelTurns.push({ turn, ms, inputTokens: 0, outputTokens: 0, retries: null, responseId: null, reasoningChars: 0, replyChars: 0, error: reason });
+        return { text: '', usage: null, meta: { retries: null } };
       }
     });
 
@@ -203,7 +211,17 @@ export async function runBrowserModelSession(setup) {
 
     const attachInfo = await takeoverRuntime(page);
 
-    await page.evaluate(
+    // The session-driving evaluate is awaited detached, never directly. When
+    // the model endpoint stalls, playBridgeSession awaits the proxy agent,
+    // which awaits the provider fetch — and that fetch has no deadline of its
+    // own — so the evaluate can wedge forever. Awaiting it directly would
+    // never reach the timeout race below, and the timeout rejection would die
+    // in the eager catch: the caller would hang past timeoutMs indefinitely.
+    // Raced instead, the timeout settles the caller at timeoutMs; the finally
+    // closes the context, and closing the context kills the wedged page. A
+    // genuine evaluate failure (page crash, script error) still propagates:
+    // the race rejects with it.
+    const evalPromise = page.evaluate(
       async ({ agentId, moves }) => {
         const rt = /** @type {*} */ (window).ai2048Runtime;
         const { playBridgeSession } = await import('/gauntlet/bridge/session.js');
@@ -253,27 +271,45 @@ export async function runBrowserModelSession(setup) {
       },
       { agentId: nodeAgent.id, moves: maxMoves },
     );
-
-    const report = await reportPromise;
+    evalPromise.catch(() => {});
+    // The race is what makes timeoutMs real: the timeout promise was armed at
+    // the top of the try, and this is the first await that can deliver its
+    // rejection to the caller while the session may still be wedged.
+    const report = await Promise.race([reportPromise, evalPromise]);
     const steps = report.log.steps;
     const fallbacks = steps.filter((s) => s.chosen === null).length;
-    const completed = modelTurns.filter((t) => t.error === undefined);
     return {
       ...report,
       preMoves: attachInfo.preMoves,
       adapterName: attachInfo.adapterName,
       fallbacks,
-      errorTurns: modelTurns.length - completed.length,
+      ...summarizeModelTurns(modelTurns),
       modelAgent: { provider: 'openai-chat', model, baseUrl },
       modelTurns,
-      modelLatencyMs: latencyStats(completed.map((t) => t.ms)),
-      totalPromptTokens: modelTurns.reduce((a, t) => a + t.inputTokens, 0),
-      totalCompletionTokens: modelTurns.reduce((a, t) => a + t.outputTokens, 0),
     };
   } finally {
     if (sessionTimer !== undefined) clearTimeout(sessionTimer);
     await context.close();
   }
+}
+
+/**
+ * Pure reduction over the recorded model turns: error accounting, latency
+ * over the calls that completed, and token totals over every call. Exported
+ * so the default suite can test the report logic offline — the Playwright
+ * path itself is exercised by the stub-server tests in the suite.
+ *
+ * @param {ModelTurnRecord[]} modelTurns
+ * @returns {{ errorTurns: number, modelLatencyMs: { mean: number, p50: number, p95: number, max: number }, totalPromptTokens: number, totalCompletionTokens: number }}
+ */
+export function summarizeModelTurns(modelTurns) {
+  const completed = modelTurns.filter((t) => t.error === undefined);
+  return {
+    errorTurns: modelTurns.length - completed.length,
+    modelLatencyMs: latencyStats(completed.map((t) => t.ms)),
+    totalPromptTokens: modelTurns.reduce((a, t) => a + t.inputTokens, 0),
+    totalCompletionTokens: modelTurns.reduce((a, t) => a + t.outputTokens, 0),
+  };
 }
 
 /**

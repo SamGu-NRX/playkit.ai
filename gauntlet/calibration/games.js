@@ -27,6 +27,13 @@
  * - chess-puzzles: `greedy`/`engine` = the chess packet's greedy and
  *   fixed-strength engine agents (the pairing the puzzles packet reports).
  * - chess-endgames and cube: packet-native baseline factories used directly.
+ * - othello: `engine` = the ladder's ceiling node budget (32000, the ladder-4
+ *   opponent's own budget) as the agent, so the a-order check asks whether the
+ *   strongest local engine still beats uniform and greedy play against every
+ *   opponent rung.
+ * - sudoku, nonogram, wordle: packet-native greedy/engine factories used
+ *   directly (wordle's `engine` is the packet's cached entropy-greedy
+ *   reference).
  *
  * @module
  */
@@ -51,6 +58,18 @@ import { greedyAgent as sokobanGreedy, engineAgent as sokobanEngine } from '../g
 
 import connect4 from '../games/connect4/index.js';
 import { createGreedyAgent as c4Greedy, createEngineAgent as c4Engine } from '../games/connect4/baselines.js';
+
+import sudoku from '../games/sudoku/index.js';
+import { createGreedyAgent as sudokuGreedy, createEngineAgent as sudokuEngine } from '../games/sudoku/baselines.js';
+
+import nonogram from '../games/nonogram/index.js';
+import { createGreedyAgent as nonogramGreedy, createEngineAgent as nonogramEngine } from '../games/nonogram/baselines.js';
+
+import othello from '../games/othello/index.js';
+import { createGreedyAgent as othelloGreedy, createEngineAgent as othelloEngine } from '../games/othello/baselines.js';
+
+import wordle from '../games/wordle/index.js';
+import { createGreedyAgent as wordleGreedy, createEngineAgent as wordleEngine } from '../games/wordle/baselines.js';
 
 import mastermind from '../games/mastermind/index.js';
 import { createGreedyAgent as mastermindGreedy, createEngineAgent as mastermindEngine } from '../games/mastermind/baselines.js';
@@ -411,6 +430,40 @@ export const CALIBRATION_GAMES = [
       const ceiling = chessStockfish.spec.tiers.find((t) => t.id === 'sf-1m');
       if (!ceiling) throw new Error('chess-stockfish is missing its sf-1m ceiling tier');
       return wrap(kind, createStockfishOpponentAgent({ tier: ceiling, seed: episodeSeed, seat, id: kind }));
+    },
+  },
+  {
+    id: 'sudoku',
+    game: sudoku,
+    makeAgent(kind, { episodeSeed }) {
+      return kind === 'greedy'
+        ? wrap(kind, sudokuGreedy({ episodeSeed, id: kind }))
+        : wrap(kind, sudokuEngine({ episodeSeed, id: kind }));
+    },
+  },
+  {
+    id: 'nonogram',
+    game: nonogram,
+    makeAgent(kind) {
+      return kind === 'greedy' ? wrap(kind, nonogramGreedy()) : wrap(kind, nonogramEngine());
+    },
+  },
+  {
+    id: 'othello',
+    game: othello,
+    makeAgent(kind) {
+      // engine = the ceiling node budget (the ladder-4 opponent's own budget),
+      // the chess-stockfish convention: the strongest local play as the agent.
+      return kind === 'greedy' ? wrap(kind, othelloGreedy()) : wrap(kind, othelloEngine(32000));
+    },
+  },
+  {
+    id: 'wordle',
+    game: wordle,
+    makeAgent(kind, { episodeSeed }) {
+      return kind === 'greedy'
+        ? wrap(kind, wordleGreedy({ episodeSeed }))
+        : wrap(kind, wordleEngine({ episodeSeed }));
     },
   },
 ];

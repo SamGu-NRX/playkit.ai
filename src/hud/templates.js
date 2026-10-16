@@ -192,7 +192,6 @@ export function getHUDCSS() {
       .setting-hint {
         margin: 4px 0 0;
         font-size: 12px;
-        opacity: 0.8;
       }
 
       .hud-live-region {
@@ -259,7 +258,7 @@ export function getHUDHTML() {
       <style>
         ${getHUDCSS()}
       </style>
-      <div class="hud-panel" data-collapsed="false">
+      <div class="hud-panel" role="region" aria-label="AI 2048 Solver" data-collapsed="false">
         <div class="hud-header">
           <div class="hud-title">
             <span class="hud-icon">🎯</span>

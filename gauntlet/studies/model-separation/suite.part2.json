@@ -1,0 +1,45 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-model-separation-first4-part2",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "minesweeper",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "beginner",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/beginner/public/0",
+            "minesweeper/beginner/public/1",
+            "minesweeper/beginner/public/2",
+            "minesweeper/beginner/public/3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cube",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "cube-5",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "cube/cube-5/public/0",
+            "cube/cube-5/public/1",
+            "cube/cube-5/public/2",
+            "cube/cube-5/public/3"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    }
+  ]
+}

@@ -155,10 +155,17 @@
 /**
  * Token/cost accounting for one agent reply.
  *
+ * Changed 2026-10-15: inputTokens/outputTokens became `number | null` because
+ * a provider that omits a count did not measure it — null (unknown), not 0,
+ * which made unreported usage look measured and billed a priced run at $0.
+ *
  * @typedef {object} Usage
- * @property {number} inputTokens
- * @property {number} outputTokens
- * @property {number | null} costUsd Number, or null when unknown.
+ * @property {number | null} inputTokens Reported input token count, or null
+ *   when the provider did not report one.
+ * @property {number | null} outputTokens Reported output token count, or null
+ *   when the provider did not report one.
+ * @property {number | null} costUsd Number, or null when unknown — always
+ *   null whenever either token count is null.
  */
 
 /**

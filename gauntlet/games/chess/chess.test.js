@@ -18,8 +18,11 @@ import chess, {
   TRUNCATION_WIN_CP,
 } from './index.js';
 import { OPENINGS } from './openings.js';
-import { bestMove, legalUcis, quiescenceWhite, replayUci } from './engine.js';
+import { bestMove, evaluateWhite, internals, legalUcis, MATE, quiescenceWhite, replayUci, START_FEN } from './engine.js';
 import { createGreedyBaselineAgent } from './baselines.js';
+
+/** Deep perft and the full four-tier conformance run only under GAUNTLET_SLOW=1. */
+const SLOW = process.env.GAUNTLET_SLOW === '1';
 
 /** @import { TierSpec } from '../../core/types.js' */
 
@@ -34,7 +37,7 @@ test('registration: chess is registered and resolves from the registry', () => {
 });
 
 test('spec shape: four engine tiers, 150-action budgets, perft FENs', () => {
-  assert.equal(game.spec.version, '1.0.0');
+  assert.equal(game.spec.version, '1.1.0');
   assert.equal(game.spec.seats, 2);
   assert.equal(game.spec.information, 'perfect');
   assert.equal(game.spec.stochastic, false);
@@ -135,6 +138,26 @@ test('perft through the public contract: position 3, 14/191/2812', () => {
   assert.equal(perft(state, 1), 14);
   assert.equal(perft(state, 2), 191);
   assert.equal(perft(state, 3), 2812);
+});
+
+test('quiescence detects checkmate behind pseudo-legal captures', () => {
+  // Regression: the in-check mate probe used to run only when the side in
+  // check had NO pseudo-legal captures, so a mated side whose captures are
+  // all illegal (here: contact check by a defended queen, so every rook and
+  // pawn capture leaves the king in check) fell through to stand-pat. The
+  // root already handled bare mates exactly; this exercises the inner
+  // quiescence reached from a capture: Qxe7 delivers a position where black
+  // is checkmated (0 legal moves) yet still has 3 pseudo-legal captures.
+  const before = stateFromFen('4k3/3pn3/3BPQ2/3Ppr2/8/8/8/K7 w - - 0 1');
+  const after = stateToChess(before);
+  after.move({ from: 'f6', to: 'e7' });
+  assert.equal(after.isCheckmate(), true, 'the fixture must be mate after Qxe7');
+  assert.equal(after.moves().length, 0);
+  assert.ok(internals(after)._moves({ legal: false }).filter((/** @type {any} */ m) => m.captured || m.promotion).length > 0);
+  const score = quiescenceWhite(stateToChess(before), { nodeBudget: 20000 });
+  assert.ok(score > MATE - 100, `mate found through a capture must score near MATE, got ${score}`);
+  // The bare mated position itself scores exactly MATE at the root.
+  assert.equal(quiescenceWhite(after, { nodeBudget: 20000 }), MATE);
 });
 
 test('env steps agree with public chess.js moves over a middlegame line', () => {
@@ -369,6 +392,21 @@ test('engine: deterministic, legal, and finds the unique mate in one', () => {
   assert.deepEqual(after.termination, { type: 'checkmate', winner: 'w' });
 });
 
+test('step() does not mutate its input state and caches agree with replays', () => {
+  // The per-state caches must behave exactly like fresh replays: a state
+  // stepped twice gives identical children, and the parent state still
+  // replays to its own position after its child was built.
+  let state = game.reset(PAPER, 'cache-consistency-seed');
+  const before = JSON.stringify(state);
+  const seat = /** @type {number} */ (game.toAct(state));
+  const childA = game.step(state, seat, game.legalActions(state, seat)[0]);
+  const childB = game.step(state, seat, game.legalActions(state, seat)[0]);
+  assert.deepEqual(childA, childB, 'stepping the same state twice must give identical children');
+  assert.equal(JSON.stringify(state), before, 'step must not mutate the parent state');
+  const replayed = replayUci(state.startFen, state.moves).fen();
+  assert.equal(replayed, state.fen, 'parent position must still match a fresh replay');
+});
+
 test('baselines complete episodes with zero invalid actions', async () => {
   const seed = 'baseline-e2e-seed';
   const seatAgent = game.agentSeat(PAPER, seed);
@@ -400,9 +438,84 @@ test('baselines complete episodes with zero invalid actions', async () => {
   assert.ok(agentActions >= 2, `episode ended after only ${agentActions} agent actions`);
 });
 
-test('conformance kit passes across all four tiers', async () => {
-  const report = await runConformance(game, { seedsPerTier: 3 });
+test('conformance kit passes across the tiers', async () => {
+  // The kit replays history per ply, so the full four-tier run is expensive:
+  // by default only the paper tier runs (1 seed); GAUNTLET_SLOW=1 runs all
+  // four tiers with the full seed budget.
+  const target = SLOW ? game : { ...game, spec: { ...game.spec, tiers: [PAPER] } };
+  const report = await runConformance(target, { seedsPerTier: SLOW ? 3 : 1 });
   assert.equal(report.ok, true);
   assert.equal(report.game, 'chess');
   assert.ok(report.checks > 0);
 });
+
+test('truncation referee: a mover capture crossing the win band stays in the draw band', () => {
+  // Black to move can win the hanging white queen with Nxd4, so the honest
+  // quiescence value is about -320 for white: inside the draw band. A root
+  // that maximizes from white's perspective over black's options instead
+  // returns white's best case (+575) and flips a draw to a white win.
+  const blackToMove = new Chess('4k3/8/2n5/8/3Q4/8/8/4K3 b - - 0 1');
+  const score = quiescenceWhite(blackToMove, {
+    nodeBudget: 20000,
+    quiescenceMaxPlies: 10,
+  });
+  assert.ok(
+    Math.abs(score) < TRUNCATION_WIN_CP,
+    `black-to-move hanging-queen quiescence must stay inside the draw band, got ${score}`
+  );
+  // Control: white to move, Rxd8 Kxd8 is a dead-equal capture chain.
+  const whiteToMove = new Chess('3qk3/8/8/8/8/8/3R4/4K3 w - - 0 1');
+  assert.equal(
+    quiescenceWhite(whiteToMove, { nodeBudget: 20000, quiescenceMaxPlies: 10 }),
+    0,
+    'dead-equal white-to-move capture chain must quiesce to 0'
+  );
+});
+
+test('evaluation symmetry: the start position evaluates to 0 and mirrored FENs cancel', () => {
+  // Mirrors a FEN across the horizontal axis with colours swapped, so
+  // evaluateWhite(mirror(fen)) === -evaluateWhite(fen) iff the evaluation is
+  // colour-symmetric. A king table picked from partially accumulated material
+  // breaks this (the black king is scanned first and misread the phase).
+  /** @param {string} fen @returns {string} */
+  const mirrorFen = (fen) => {
+    const [board, side, castling, ep, half, full] = fen.split(' ');
+    /** @param {string} s @returns {string} */
+    const swapCase = (s) =>
+      s.replace(/[A-Za-z]/g, (ch) => (ch >= 'a' ? ch.toUpperCase() : ch.toLowerCase()));
+    const flipped = board
+      .split('/')
+      .reverse()
+      .map((rank) => swapCase(rank))
+      .join('/');
+    const rights = castling === '-' ? '' : swapCase(castling);
+    const mirroredCastling = ['K', 'Q', 'k', 'q'].filter((c) => rights.includes(c)).join('') || '-';
+    const mirroredEp = ep === '-' ? '-' : swapCase(ep);
+    return [flipped, side === 'w' ? 'b' : 'w', mirroredCastling, mirroredEp, half, full].join(' ');
+  };
+  assert.equal(evaluateWhite(new Chess(START_FEN)), 0, 'the mirrored start position must evaluate to 0');
+  const positions = [
+    START_FEN,
+    PERFT_FENS.kiwipete,
+    'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4',
+  ];
+  for (const fen of positions) {
+    const mirrored = evaluateWhite(new Chess(mirrorFen(fen)));
+    const original = evaluateWhite(new Chess(fen));
+    // -0 and 0 compare unequal under Object.is; cancellation means the sum
+    // of the two signed evaluations is zero.
+    assert.equal(mirrored + original, 0, `mirrored FEN must cancel for ${fen}`);
+  }
+});
+
+test('opening book: every named line is legal from the start position', () => {
+  assert.ok(OPENINGS.length > 0, 'the opening book must not be empty');
+  for (const opening of OPENINGS) {
+    const line = new Chess();
+    for (const san of opening.san) {
+      const move = line.move(san);
+      assert.ok(move, `opening "${opening.name}": ${san} is illegal`);
+    }
+  }
+});
+

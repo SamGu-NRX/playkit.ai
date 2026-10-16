@@ -1,9 +1,17 @@
 /**
  * The deterministic built-in chess engine: iterative-deepening alpha-beta with
  * a capture-only quiescence step, material + piece-square-table evaluation,
- * MVV-LVA move ordering, and seeded root tie-breaking. Runs on chess.js 1.4.0
- * internals through one cast helper: the public `move()` path is an order of
- * magnitude slower, which is fatal inside a search.
+ * MVV-LVA move ordering, a bounded transposition table, and seeded root
+ * tie-breaking. Runs on chess.js 1.4.0 internals through one cast helper.
+ *
+ * Speed: the search generates pseudo-legal moves (`legal: false`) and checks
+ * king safety lazily with `_isKingAttacked` only for moves it actually makes,
+ * instead of chess.js's eager legality filter that make/unmakes every
+ * pseudo-legal move at every node. Quiescence generates pseudo-legal captures
+ * directly. Ordering scores sort one index array per node instead of a
+ * decorated object array. The transposition table is keyed by FEN and only
+ * holds non-mate scores with depth >= 2, so it cannot change a mate line; it
+ * is created fresh per `bestMove` call and capped in size.
  *
  * No `node:*` imports. All functions are pure in the gauntlet sense: they may
  * mutate the passed chess.js instance while computing (and undo every change),
@@ -43,6 +51,7 @@ export const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0
  * @property {(move: InternalMove) => void} _makeMove
  * @property {() => InternalMove | null} _undoMove
  * @property {(move: InternalMove, moves: InternalMove[]) => string} _moveToSan
+ * @property {(color: string) => boolean} _isKingAttacked
  * @property {number} _halfMoves
  * @property {Array<{ type: string, color: string } | undefined>} _board
  * @property {'w' | 'b'} _turn
@@ -107,15 +116,23 @@ export function legalUcis(chess) {
 }
 
 /**
- * Find the legal internal move matching a UCI string, or null.
+ * Find the legal internal move matching a UCI string, or null. Scans the
+ * pseudo-legal list for a coordinate match first and king-safety-checks only
+ * the candidates that match, instead of fully legal-filtering every move.
  *
  * @param {Chess} chess
  * @param {string} uci
  * @returns {InternalMove | null}
  */
 export function matchUci(chess, uci) {
-  for (const move of internals(chess)._moves({ legal: true })) {
-    if (moveToUci(move) === uci) return move;
+  const fast = internals(chess);
+  const mover = fast._turn;
+  for (const move of fast._moves({ legal: false })) {
+    if (moveToUci(move) !== uci) continue;
+    fast._makeMove(move);
+    const legal = !fast._isKingAttacked(mover);
+    fast._undoMove();
+    if (legal) return move;
   }
   return null;
 }
@@ -131,10 +148,10 @@ export function matchUci(chess, uci) {
  */
 export function replayUci(startFen, uciMoves) {
   const chess = createPosition(startFen);
-  for (const uci of uciMoves) {
-    const move = matchUci(chess, uci);
+  for (let i = 0; i < uciMoves.length; i++) {
+    const move = matchUci(chess, uciMoves[i]);
     if (!move) {
-      throw new Error(`illegal move "${uci}" after ${uciMoves.indexOf(uci)} plies of ${startFen}`);
+      throw new Error(`illegal move "${uciMoves[i]}" after ${i} plies of ${startFen}`);
     }
     internals(chess)._makeMove(move);
   }
@@ -228,7 +245,9 @@ const KING_END = [
 const ENDGAME_MATERIAL = 2400;
 
 /**
- * White-perspective static evaluation in centipawns (material + PSTs).
+ * White-perspective static evaluation in centipawns (material + PSTs). The
+ * king's game-phase table is chosen from a complete material pre-pass, so a
+ * position and its colour mirror always evaluate to exact negations.
  *
  * @param {Chess} chess
  * @returns {number}
@@ -236,8 +255,19 @@ const ENDGAME_MATERIAL = 2400;
 export function evaluateWhite(chess) {
   const fast = internals(chess);
   const board = fast._board;
-  let whiteMaterial = 0;
-  let blackMaterial = 0;
+  // Material pre-pass: the king-table choice must see all non-pawn material,
+  // not the partially accumulated value at the moment a king is reached.
+  let nonPawnMaterial = 0;
+  for (let square = 0; square <= 119; square++) {
+    if (square & 0x88) {
+      square += 7;
+      continue;
+    }
+    const piece = board[square];
+    if (!piece || piece.type === 'p' || piece.type === 'k') continue;
+    nonPawnMaterial += PIECE_VALUES[piece.type];
+  }
+  const kingTable = nonPawnMaterial <= ENDGAME_MATERIAL ? KING_END : KING_MIDDLE;
   let score = 0;
   for (let square = 0; square <= 119; square++) {
     if (square & 0x88) {
@@ -252,14 +282,7 @@ export function evaluateWhite(chess) {
     // Black pieces mirror the table vertically.
     const index = white ? row * 8 + file : (7 - row) * 8 + file;
     const value = PIECE_VALUES[piece.type];
-    let table = piece.type === 'k' ? KING_MIDDLE : PSTS[piece.type];
-    if (piece.type !== 'p' && piece.type !== 'k') {
-      if (white) whiteMaterial += value;
-      else blackMaterial += value;
-    }
-    if (piece.type === 'k') {
-      table = whiteMaterial + blackMaterial <= ENDGAME_MATERIAL ? KING_END : KING_MIDDLE;
-    }
+    const table = piece.type === 'k' ? kingTable : PSTS[piece.type];
     score += white ? value + table[index] : -(value + table[index]);
   }
   return score;
@@ -272,11 +295,14 @@ export function evaluateWhite(chess) {
 /** Mate scores are distance-adjusted: mate in one ply from the root is exactly MATE. */
 export const MATE = 999999;
 
+/** Scores at or beyond this magnitude are mate scores, kept out of the TT. */
+const MATE_BOUND = MATE - 1000;
+
 /**
  * Search limits. The node budget makes the engine deterministic under the
  * sandbox CPU quota: when the budget runs out mid-iteration, the best move
- * from the last completed depth is kept. `depth` is unused by the plain
- * quiescence evaluator.
+ * from the last completed depth is kept. `depth` is the iterative-deepening
+ * maximum.
  *
  * @typedef {object} EngineParams
  * @property {number} [depth] Iterative-deepening maximum depth.
@@ -300,13 +326,23 @@ export const MATE = 999999;
  */
 
 /**
+ * One transposition-table slot.
+ *
+ * @typedef {object} TtEntry
+ * @property {number} depth Remaining depth of the stored score.
+ * @property {number} score Stored score, side-to-move perspective.
+ * @property {'exact' | 'lower' | 'upper'} flag Bound type.
+ */
+
+/**
  * MVV-LVA-ish ordering score: captures by victim value minus attacker value,
  * promotions first. Deterministic.
  *
  * @param {InternalMove} move
+ * @param {number[][] | null} [history] Quiet-move cutoff history; null skips it.
  * @returns {number}
  */
-function orderScore(move) {
+function orderScore(move, history) {
   let score = 0;
   if (move.captured) {
     score += 10 * PIECE_VALUES[move.captured] - PIECE_VALUES[move.piece];
@@ -314,18 +350,30 @@ function orderScore(move) {
   if (move.promotion) {
     score += PIECE_VALUES[move.promotion];
   }
+  if (history && !move.captured) {
+    // Quiet-move history: how often this from-to pair has caused a beta
+    // cutoff. 0x88 squares compact to 0..63.
+    score += history[(move.from >> 4) * 8 + (move.from & 7)][(move.to >> 4) * 8 + (move.to & 7)];
+  }
   return score;
 }
 
 /**
+ * Order moves by descending MVV-LVA score, stable on generation order for
+ * ties. Sorts one index array instead of decorating every move with an
+ * object (the old path allocated two intermediate arrays per node).
+ *
  * @param {InternalMove[]} moves
+ * @param {number[][] | null} [history] Quiet-move cutoff history; null skips it.
  * @returns {InternalMove[]}
  */
-function orderMoves(moves) {
-  return moves
-    .map((move, index) => ({ move, key: orderScore(move), index }))
-    .sort((a, b) => b.key - a.key || a.index - b.index)
-    .map((entry) => entry.move);
+function orderMoves(moves, history) {
+  if (moves.length < 2) return moves;
+  const keys = new Array(moves.length);
+  for (let i = 0; i < moves.length; i++) keys[i] = orderScore(moves[i], history);
+  const indices = keys.map((_, i) => i);
+  indices.sort((a, b) => keys[b] - keys[a] || a - b);
+  return indices.map((i) => moves[i]);
 }
 
 /**
@@ -337,34 +385,73 @@ function newBudget(limit) {
 }
 
 /**
- * Capture-only quiescence with stand-pat. Side-to-move perspective.
+ * Is there any legal move? Early-exits on the first one. Only called when
+ * the side to move is in check and no capture was available, so the cost is
+ * confined to the rare nodes where it changes the score.
+ *
+ * @param {FastChess} fast
+ * @returns {boolean}
+ */
+function hasLegalMove(fast) {
+  const mover = fast._turn;
+  const moves = fast._moves({ legal: false });
+  for (const move of moves) {
+    fast._makeMove(move);
+    const legal = !fast._isKingAttacked(mover);
+    fast._undoMove();
+    if (legal) return true;
+  }
+  return false;
+}
+
+/**
+ * Capture-only quiescence with stand-pat. Side-to-move perspective. Moves
+ * are generated pseudo-legally and king-safety is checked only for the
+ * captures actually made. Mate is detected at nodes in check with no
+ * capture to try (the only place it is cheap and changes the score).
  *
  * @param {Chess} chess
  * @param {number} alpha
  * @param {number} beta
  * @param {number} pliesLeft
+ * @param {number} ply Ply from the search root (for mate-distance scores).
  * @param {SearchBudget} budget
  * @returns {number}
  */
-function quiescence(chess, alpha, beta, pliesLeft, budget) {
+function quiescence(chess, alpha, beta, pliesLeft, ply, budget) {
   budget.nodes++;
   if (budget.nodes > budget.limit) {
     budget.aborted = true;
     return evaluateSideToMove(chess);
   }
+  const fast = internals(chess);
+  const inCheck = fast.isCheck();
+  const captures = orderMoves(
+    fast
+      ._moves({ legal: false })
+      .filter((move) => move.captured || move.promotion),
+    null
+  );
+  if (inCheck && !hasLegalMove(fast)) {
+    // Every in-check node reaches here cheaply, and the check is required
+    // for correctness: a side in check whose pseudo-legal captures are all
+    // illegal (pins, or any non-queen-capture move against a contact check)
+    // is checkmated, not stand-patted.
+    return -(MATE - ply + 1);
+  }
   const stand = evaluateSideToMove(chess);
   if (pliesLeft <= 0 || stand >= beta) return stand;
   if (stand > alpha) alpha = stand;
-  const captures = orderMoves(
-    internals(chess)
-      ._moves({ legal: true })
-      .filter((move) => move.captured || move.promotion)
-  );
   let best = stand;
+  const mover = fast._turn;
   for (const move of captures) {
-    internals(chess)._makeMove(move);
-    const score = -quiescence(chess, -beta, -alpha, pliesLeft - 1, budget);
-    internals(chess)._undoMove();
+    fast._makeMove(move);
+    if (fast._isKingAttacked(mover)) {
+      fast._undoMove();
+      continue;
+    }
+    const score = -quiescence(chess, -beta, -alpha, pliesLeft - 1, ply + 1, budget);
+    fast._undoMove();
     if (budget.aborted) return best;
     if (score > best) best = score;
     if (best > alpha) alpha = best;
@@ -385,10 +472,11 @@ function evaluateSideToMove(chess) {
 }
 
 /**
- * Negamax alpha-beta over the full legal move list. Terminal checks inside
- * the tree are deliberately cheap: no repetition or insufficient-material
- * probes (the node budget makes them moot; game-level adjudication owns the
- * endings).
+ * Negamax alpha-beta over pseudo-legal moves with lazy king-safety checks.
+ * Terminal checks inside the tree are deliberately cheap: no repetition or
+ * insufficient-material probes (the node budget makes them moot; game-level
+ * adjudication owns the endings). A bounded transposition table keyed by FEN
+ * caches depth >= 2 non-mate scores.
  *
  * @param {Chess} chess
  * @param {number} depth
@@ -397,30 +485,98 @@ function evaluateSideToMove(chess) {
  * @param {number} ply
  * @param {SearchBudget} budget
  * @param {number} qPlies
+ * @param {Map<string, TtEntry> | null} tt Transposition table (null to disable).
+ * @param {number[][]} history Quiet-move cutoff history, [from][to] compact indices.
  * @returns {number}
  */
-function negamax(chess, depth, alpha, beta, ply, budget, qPlies) {
+function negamax(chess, depth, alpha, beta, ply, budget, qPlies, tt, history) {
   budget.nodes++;
   if (budget.nodes > budget.limit) {
     budget.aborted = true;
     return evaluateSideToMove(chess);
   }
-  const moves = internals(chess)._moves({ legal: true });
-  if (moves.length === 0) {
-    return chess.isCheck() ? -(MATE - ply + 1) : 0;
+  const alphaOrig = alpha;
+  const fast = internals(chess);
+  if (tt && depth >= 2) {
+    const entry = tt.get(fast.fen());
+    if (entry && entry.depth >= depth) {
+      if (entry.flag === 'exact') return entry.score;
+      if (entry.flag === 'lower' && entry.score >= beta) return entry.score;
+      if (entry.flag === 'upper' && entry.score <= alpha) return entry.score;
+    }
   }
-  if (depth <= 0) {
-    return quiescence(chess, alpha, beta, qPlies, budget);
-  }
+  const moves = fast._moves({ legal: false });
+  const mover = fast._turn;
   let best = -Infinity;
-  for (const move of orderMoves(moves)) {
-    internals(chess)._makeMove(move);
-    const score = -negamax(chess, depth - 1, -beta, -alpha, ply + 1, budget, qPlies);
-    internals(chess)._undoMove();
-    if (budget.aborted) return best === -Infinity ? evaluateSideToMove(chess) : best;
+  let firstChild = true;
+  let legalCount = 0;
+  for (const move of orderMoves(moves, history)) {
+    if (depth <= 0) {
+      // No legality filter was needed to discover there are captures to
+      // try; the leaf value comes from quiescence either way.
+      best = quiescence(chess, alpha, beta, qPlies, ply, budget);
+      break;
+    }
+    fast._makeMove(move);
+    if (fast._isKingAttacked(mover)) {
+      fast._undoMove();
+      continue;
+    }
+    // Principal-variation search: the first child gets the full window;
+    // the rest get a zero window and re-search only on a cutoff fail-high.
+    let score;
+    if (firstChild) {
+      firstChild = false;
+      score = -negamax(chess, depth - 1, -beta, -alpha, ply + 1, budget, qPlies, tt, history);
+    } else {
+      // Late-move reduction: quiet moves beyond the first few are searched
+      // one ply shallower first, and re-searched at full depth only when
+      // they beat alpha.
+      let reduction = 0;
+      if (depth >= 3 && !move.captured && !move.promotion && legalCount > 3) {
+        reduction = 1;
+        if (depth >= 5 && legalCount > 10) {
+          reduction = 2;
+        }
+      }
+      score = -negamax(chess, depth - 1 - reduction, -alpha - 1, -alpha, ply + 1, budget, qPlies, tt, history);
+      if (!budget.aborted && score > alpha && reduction > 0) {
+        score = -negamax(chess, depth - 1, -alpha - 1, -alpha, ply + 1, budget, qPlies, tt, history);
+      }
+      if (!budget.aborted && score > alpha && score < beta) {
+        score = -negamax(chess, depth - 1, -beta, -alpha, ply + 1, budget, qPlies, tt, history);
+      }
+    }
+    fast._undoMove();
+    if (budget.aborted) break;
+    legalCount++;
     if (score > best) best = score;
-    if (best > alpha) alpha = best;
-    if (alpha >= beta) break;
+    if (best > alpha) {
+      alpha = best;
+      if (alpha >= beta) {
+        // Beta cutoff: credit the quiet move that caused it so ordering
+        // prefers it at siblings and later nodes.
+        if (!move.captured) {
+          const from = (move.from >> 4) * 8 + (move.from & 7);
+          const to = (move.to >> 4) * 8 + (move.to & 7);
+          history[from][to] += depth * depth;
+        }
+        break;
+      }
+    }
+  }
+  if (best === -Infinity) {
+    // No legal move was found (or the budget aborted before one was).
+    if (budget.aborted) return evaluateSideToMove(chess);
+    return fast.isCheck() ? -(MATE - ply + 1) : 0;
+  }
+  if (tt && depth >= 2 && !budget.aborted && best > -MATE_BOUND && best < MATE_BOUND) {
+    if (tt.size > 200000) tt.clear();
+    tt.set(fast.fen(), {
+      depth,
+      score: best,
+      flag: best <= alphaOrig ? 'upper' : best >= beta ? 'lower' : 'exact',
+    });
   }
   return best;
 }
@@ -445,6 +601,8 @@ export function bestMove(chess, params, rngState) {
   const shuffled = shuffle(rngState, rootMoves).value;
   const qPlies = params.quiescenceMaxPlies ?? 8;
   const budget = newBudget(params.nodeBudget);
+  const tt = new Map();
+  const history = Array.from({ length: 64 }, () => new Array(64).fill(0));
   /** @type {EngineResult} */
   let best = { uci: moveToUci(shuffled[0]), score: -Infinity, depth: 0, nodes: 0 };
   for (let depthIter = 1; depthIter <= depth; depthIter++) {
@@ -453,12 +611,35 @@ export function bestMove(chess, params, rngState) {
     /** @type {InternalMove | null} */
     let iterBest = null;
     let iterScore = -Infinity;
+    let firstRoot = true;
+    let rootLegalCount = 0;
     for (const move of shuffled) {
       if (budget.aborted) break;
       fast._makeMove(move);
-      const score = -negamax(chess, depthIter - 1, -Infinity, -alpha, 1, budget, qPlies);
+      // Root PVS: full window for the first move (the previous iteration's
+      // best), zero window plus re-search for the rest.
+      let score;
+      if (firstRoot) {
+        firstRoot = false;
+        score = -negamax(chess, depthIter - 1, -Infinity, -alpha, 1, budget, qPlies, tt, history);
+      } else {
+        // Root LMR mirrors the interior: shallow zero-window probe for late
+        // quiet moves, then full-depth and full-window re-search on fail-high.
+        let reduction = 0;
+        if (depthIter >= 4 && !move.captured && !move.promotion && rootLegalCount > 3) {
+          reduction = 1;
+        }
+        score = -negamax(chess, depthIter - 1 - reduction, -alpha - 1, -alpha, 1, budget, qPlies, tt, history);
+        if (!budget.aborted && score > alpha && reduction > 0) {
+          score = -negamax(chess, depthIter - 1, -alpha - 1, -alpha, 1, budget, qPlies, tt, history);
+        }
+        if (!budget.aborted && score > alpha) {
+          score = -negamax(chess, depthIter - 1, -Infinity, -alpha, 1, budget, qPlies, tt, history);
+        }
+      }
       fast._undoMove();
       if (budget.aborted) break;
+      rootLegalCount++;
       if (score > iterScore) {
         iterScore = score;
         iterBest = move;
@@ -475,7 +656,10 @@ export function bestMove(chess, params, rngState) {
 
 /**
  * White-perspective quiescence evaluation in centipawns: the truncation
- * adjudicator. Budgeted so a long capture chain cannot spin.
+ * adjudicator. The root maximum runs in the side-to-move's perspective and
+ * converts to white's exactly once at the return, so the referee scores the
+ * position for the side that must actually move. Budgeted so a long capture
+ * chain cannot spin.
  *
  * @param {Chess} chess
  * @param {EngineParams} [params]
@@ -492,17 +676,20 @@ export function quiescenceWhite(chess, params) {
     // convert to white's perspective.
     return chess.isCheck() ? -MATE * sign : 0;
   }
-  const scored = orderMoves(moves.filter((move) => move.captured || move.promotion));
+  const scored = orderMoves(
+    moves.filter((move) => move.captured || move.promotion),
+    null
+  );
+  // Side-to-move perspective throughout; single sign flip at the return.
+  let best = evaluateSideToMove(chess);
   let alpha = -Infinity;
-  let best = evaluateSideToMove(chess) * sign;
   for (const move of scored) {
     fast._makeMove(move);
-    const score = -quiescence(chess, -Infinity, -alpha, qPlies - 1, budget);
+    const score = -quiescence(chess, -Infinity, -alpha, qPlies - 1, 1, budget);
     fast._undoMove();
-    const whiteScore = score * sign;
-    if (whiteScore > best) best = whiteScore;
+    if (score > best) best = score;
     if (best > alpha) alpha = best;
     if (budget.aborted) break;
   }
-  return best;
+  return best * sign;
 }

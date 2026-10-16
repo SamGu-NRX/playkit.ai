@@ -28,6 +28,7 @@ async function main() {
     // Initialize runtime with extension-appropriate settings
     const runtime = await initRuntime({
       autoInit: false, // Don't auto-start in extension mode
+      autoDetectRetry: true, // Re-detect on DOM changes until an adapter attaches (detection only)
       enableHUD: true,
       enableVisibilityHandling: true,
       enableMutationObserver: true,

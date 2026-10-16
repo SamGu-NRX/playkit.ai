@@ -7,6 +7,7 @@ export {
   GameMutationObserver,
   createGameObserver,
 } from "./mutation-observer.js";
+export { DetectionWatcher } from "./detection-watcher.js";
 export {
   VisibilityHandler,
   getVisibilityHandler,

@@ -1,0 +1,63 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-puzzles",
+    "version": "1.0.0"
+  },
+  "tier": "r1400",
+  "seed": "chess-puzzles/r1400/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3490765f26bbc259",
+      "reply": {
+        "text": "b4a2",
+        "usage": {
+          "inputTokens": 874,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-m535ePjFeYrhF5nrRXSr2S1EzpeUlkg6",
+          "reasoningChars": 0
+        }
+      },
+      "action": "b4a2",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 874,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 6271
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": [
+        "loss"
+      ],
+      "reason": "puzzle 4ZVjH failed: played b4a2, the line expects b4d3"
+    },
+    "agentActions": 1,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T05:44:43.773Z",
+  "finishedAt": "2026-10-16T05:44:50.047Z"
+}

@@ -1118,3 +1118,37 @@ test('end to end: a provider that omits usage records null usage on every step a
     await close();
   }
 });
+
+test('provider anthropic sends reasoningEffort as adaptive thinking plus effort', async () => {
+  const stub = await anthropicStub([ANTHROPIC_OK]);
+  try {
+    const agent = createModelAgent({
+      provider: 'anthropic',
+      model: 'claude-opus-4-5',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      reasoningEffort: 'xhigh',
+    });
+    const reply = await agent.act(CTX);
+    assert.equal(reply.text, 'I play the center.\naction: b2');
+    assert.deepEqual(stub.requests[0].body.thinking, { type: 'adaptive' });
+    assert.equal(stub.requests[0].body.effort, 'xhigh');
+  } finally {
+    await stub.close();
+  }
+});
+
+test('thinkingBudget and reasoningEffort together are refused on anthropic', () => {
+  assert.throws(
+    () =>
+      createModelAgent({
+        provider: 'anthropic',
+        model: 'claude-opus-4-5',
+        apiKeyEnv: 'GAUNTLET_TEST_KEY',
+        thinkingBudget: 1024,
+        reasoningEffort: 'high',
+      }),
+    /both steer Anthropic thinking/
+  );
+});
+

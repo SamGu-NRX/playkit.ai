@@ -355,6 +355,8 @@ test('the tracked REPORT.md matches the committed tables', () => {
     .sort();
   assert.deepEqual(reported, expectedErrors);
   assert.deepEqual(reportedWarnings, expectedWarnings);
+});
+
 // ---------------------------------------------------------------------------
 // Review pins (PR #30 independent review): each assertion below pins a fix and
 // was demonstrated to fail against the pre-fix source.

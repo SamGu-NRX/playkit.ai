@@ -1,0 +1,60 @@
+run-engine-2048: episodes 4 invalid 0 (0.0%) forfeits 0
+  2048: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+run-engine-chess: episodes 4 invalid 0 (0.0%) forfeits 0
+  chess: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+run-engine-connect4: episodes 5 invalid 0 (0.0%) forfeits 0
+  connect4: 5 eps, invalid 0 (0.0%), solved 0/5, ends {'terminal': 5}
+run-engine-holdem: episodes 3 invalid 0 (0.0%) forfeits 0
+  holdem: 3 eps, invalid 0 (0.0%), solved 0/3, ends {'terminal': 3}
+run-engine-mastermind: episodes 3 invalid 0 (0.0%) forfeits 0
+  mastermind: 3 eps, invalid 0 (0.0%), solved 3/3, ends {'terminal': 3} eff-invalid 0/18
+run-engine-minesweeper: episodes 4 invalid 0 (0.0%) forfeits 0
+  minesweeper: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+run-engine-sliding: episodes 4 invalid 0 (0.0%) forfeits 0
+  sliding: 4 eps, invalid 0 (0.0%), solved 4/4, ends {'terminal': 4} eff-invalid 0/111
+run-engine-sokoban: episodes 3 invalid 0 (0.0%) forfeits 0
+  sokoban: 3 eps, invalid 0 (0.0%), solved 3/3, ends {'terminal': 3} eff-invalid 0/36
+run-greedy-2048: episodes 4 invalid 0 (0.0%) forfeits 0
+  2048: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+run-greedy-chess: episodes 4 invalid 0 (0.0%) forfeits 0
+  chess: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+run-greedy-connect4: episodes 5 invalid 0 (0.0%) forfeits 0
+  connect4: 5 eps, invalid 0 (0.0%), solved 0/5, ends {'terminal': 5}
+run-greedy-holdem: episodes 3 invalid 0 (0.0%) forfeits 0
+  holdem: 3 eps, invalid 0 (0.0%), solved 0/3, ends {'terminal': 3}
+run-greedy-mastermind: episodes 3 invalid 0 (0.0%) forfeits 0
+  mastermind: 3 eps, invalid 0 (0.0%), solved 3/3, ends {'terminal': 3} eff-invalid 0/17
+run-greedy-minesweeper: episodes 4 invalid 0 (0.0%) forfeits 0
+  minesweeper: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+run-greedy-sliding: episodes 4 invalid 0 (0.0%) forfeits 0
+  sliding: 4 eps, invalid 0 (0.0%), solved 4/4, ends {'terminal': 4} eff-invalid 0/111
+run-greedy-sokoban: episodes 3 invalid 0 (0.0%) forfeits 0
+  sokoban: 3 eps, invalid 0 (0.0%), solved 0/3, ends {'budget-exhausted': 3} eff-invalid 0/575
+run-qwen: episodes 49 invalid 142 (7.2%) forfeits 23
+  2048: 4 eps, invalid 2 (0.3%), solved 0/4, ends {'terminal': 4}
+  chess: 4 eps, invalid 12 (92.3%), solved 0/4, ends {'forfeit-invalid': 4}
+  chess-endgames: 4 eps, invalid 8 (32.0%), solved 0/4, ends {'forfeit-invalid': 2, 'terminal': 2}
+  chess-puzzles: 6 eps, invalid 9 (69.2%), solved 0/6, ends {'forfeit-invalid': 2, 'terminal': 4}
+  chess-stockfish: 5 eps, invalid 19 (73.1%), solved 0/5, ends {'forfeit-invalid': 5}
+  connect4: 5 eps, invalid 0 (0.0%), solved 0/5, ends {'terminal': 5}
+  cube: 3 eps, invalid 0 (0.0%), solved 0/3, ends {'budget-exhausted': 3} eff-invalid 0/105
+  holdem: 3 eps, invalid 0 (0.0%), solved 0/3, ends {'terminal': 3}
+  mastermind: 3 eps, invalid 10 (62.5%), solved 0/3, ends {'forfeit-invalid': 3} eff-invalid 10/16
+  minesweeper: 4 eps, invalid 9 (90.0%), solved 0/4, ends {'forfeit-invalid': 3, 'terminal': 1}
+  sliding: 4 eps, invalid 35 (37.6%), solved 0/4, ends {'forfeit-invalid': 4} eff-invalid 35/93
+  sokoban: 3 eps, invalid 38 (6.6%), solved 0/3, ends {'budget-exhausted': 3} eff-invalid 38/575
+  tictactoe: 1 eps, invalid 0 (0.0%), solved 0/1, ends {'terminal': 1}
+run-random: episodes 49 invalid 0 (0.0%) forfeits 0
+  2048: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+  chess: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+  chess-endgames: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+  chess-puzzles: 6 eps, invalid 0 (0.0%), solved 0/6, ends {'terminal': 6}
+  chess-stockfish: 5 eps, invalid 0 (0.0%), solved 0/5, ends {'terminal': 5}
+  connect4: 5 eps, invalid 0 (0.0%), solved 0/5, ends {'terminal': 5}
+  cube: 3 eps, invalid 0 (0.0%), solved 0/3, ends {'budget-exhausted': 3} eff-invalid 0/105
+  holdem: 3 eps, invalid 0 (0.0%), solved 0/3, ends {'terminal': 3}
+  mastermind: 3 eps, invalid 0 (0.0%), solved 0/3, ends {'terminal': 3} eff-invalid 0/110
+  minesweeper: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'terminal': 4}
+  sliding: 4 eps, invalid 0 (0.0%), solved 0/4, ends {'budget-exhausted': 4} eff-invalid 0/740
+  sokoban: 3 eps, invalid 0 (0.0%), solved 0/3, ends {'budget-exhausted': 3} eff-invalid 0/575
+  tictactoe: 1 eps, invalid 0 (0.0%), solved 0/1, ends {'terminal': 1}

@@ -2,7 +2,7 @@
   "format": "playkit-gauntlet-trajectory/1",
   "game": {
     "id": "tictactoe",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "tier": "perfect-opponent",
   "seed": "tictactoe/perfect-opponent/public/0",
@@ -29,24 +29,24 @@
       "reply": {
         "text": "a1",
         "usage": {
-          "inputTokens": 325,
+          "inputTokens": 326,
           "outputTokens": 3,
           "costUsd": 0
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-Yc4eM8LZyWdCIQ99WZhD1CL2GfzsiBnx",
+          "responseId": "chatcmpl-esaRCjPaSxViWohz6GHtzMpV5yXoAEtJ",
           "reasoningChars": 0
         }
       },
       "action": "a1",
       "invalid": false,
       "usage": {
-        "inputTokens": 325,
+        "inputTokens": 326,
         "outputTokens": 3,
         "costUsd": 0
       },
-      "ms": 2150
+      "ms": 15505
     },
     {
       "seat": 1,
@@ -58,7 +58,7 @@
       "action": "b2",
       "invalid": false,
       "usage": null,
-      "ms": 41
+      "ms": 42
     },
     {
       "seat": 0,
@@ -73,7 +73,7 @@
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-0rm8AXF8XfAxYF5l9KJzE3oNmH2PMSSp",
+          "responseId": "chatcmpl-GkURF76z26I6pyjzclQjKd9olbKU9qwS",
           "reasoningChars": 0
         }
       },
@@ -84,7 +84,7 @@
         "outputTokens": 3,
         "costUsd": 0
       },
-      "ms": 3952
+      "ms": 6145
     },
     {
       "seat": 1,
@@ -111,7 +111,7 @@
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-fkQp3TbWyPAn7ysrzGQzjuvyWCGI7Jde",
+          "responseId": "chatcmpl-ytLIMG84n1Zt1x5wSLYJ1iH1ok80IkJX",
           "reasoningChars": 0
         }
       },
@@ -122,7 +122,7 @@
         "outputTokens": 3,
         "costUsd": 0
       },
-      "ms": 2050
+      "ms": 2692
     },
     {
       "seat": 1,
@@ -134,7 +134,7 @@
       "action": "c1",
       "invalid": false,
       "usage": null,
-      "ms": 1
+      "ms": 0
     }
   ],
   "end": {
@@ -151,8 +151,9 @@
       "reason": "seat 1 (O) won with three in a row"
     },
     "agentActions": 3,
-    "invalidActions": 0
+    "invalidActions": 0,
+    "forfeitThreshold": 3
   },
-  "startedAt": "2026-10-16T05:41:46.979Z",
-  "finishedAt": "2026-10-16T05:41:55.175Z"
+  "startedAt": "2026-10-16T08:04:47.062Z",
+  "finishedAt": "2026-10-16T08:05:11.449Z"
 }

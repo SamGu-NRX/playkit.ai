@@ -1,0 +1,100 @@
+{
+  "format": "playkit-gauntlet-run/1",
+  "suite": {
+    "id": "gauntlet-public-first1",
+    "split": "public",
+    "manifestSha256": "8881f6d8b3d63b9a2f7f6ac9d90aba656941be00af05fc42c77f860781fe8550"
+  },
+  "git": {
+    "commit": "9e502fd93ea405469698731f7ff160d235f480d2"
+  },
+  "node": "v20.20.2",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "provider": "openai-chat",
+    "model": "qwen2.5-1.5b-instruct-q4_k_m"
+  },
+  "prices": {
+    "sha256": "69f3c14eff0ed18fcaac02c03430c0481e30cc30c7bdc21d4a0c16bdaccec5d0",
+    "path": "reports/first-model-run/prices.local.json"
+  },
+  "startedAt": "2026-10-16T08:27:34.555Z",
+  "finishedAt": "2026-10-16T08:54:20.335Z",
+  "concurrency": 3,
+  "limits": {
+    "maxUsd": null,
+    "maxCalls": 2400,
+    "requestsPerMinute": null,
+    "maxOutputTokens": null,
+    "callTimeoutMs": null
+  },
+  "spendUsd": 0,
+  "unknownCostSteps": 0,
+  "calls": 406,
+  "counts": {
+    "jobs": 49,
+    "played": 3,
+    "skipped": 46,
+    "replayed": 3,
+    "unplayed": 0,
+    "failed": 0
+  },
+  "skipped": [
+    "2048/t256/2048/t256/public/0",
+    "2048/t512/2048/t512/public/0",
+    "2048/t1024/2048/t1024/public/0",
+    "2048/t2048/2048/t2048/public/0",
+    "tictactoe/perfect-opponent/tictactoe/perfect-opponent/public/0",
+    "chess/paper/chess/paper/public/0",
+    "chess/wood/chess/wood/public/0",
+    "chess/steel/chess/steel/public/0",
+    "chess/granite/chess/granite/public/0",
+    "chess-endgames/kqk/chess-endgames/kqk/public/0",
+    "chess-endgames/krk/chess-endgames/krk/public/0",
+    "chess-endgames/kbbk/chess-endgames/kbbk/public/0",
+    "chess-endgames/kbnk/chess-endgames/kbnk/public/0",
+    "chess-stockfish/sf-250/chess-stockfish/sf-250/public/0",
+    "chess-stockfish/sf-1k/chess-stockfish/sf-1k/public/0",
+    "chess-stockfish/sf-10k/chess-stockfish/sf-10k/public/0",
+    "chess-stockfish/sf-100k/chess-stockfish/sf-100k/public/0",
+    "chess-stockfish/sf-1m/chess-stockfish/sf-1m/public/0",
+    "chess-puzzles/r0400/chess-puzzles/r0400/public/0",
+    "chess-puzzles/r1000/chess-puzzles/r1000/public/0",
+    "chess-puzzles/r1400/chess-puzzles/r1400/public/0",
+    "chess-puzzles/r1800/chess-puzzles/r1800/public/0",
+    "chess-puzzles/r2200/chess-puzzles/r2200/public/0",
+    "chess-puzzles/r2600/chess-puzzles/r2600/public/0",
+    "cube/cube-5/cube/cube-5/public/0",
+    "cube/cube-7/cube/cube-7/public/0",
+    "cube/cube-9/cube/cube-9/public/0",
+    "minesweeper/beginner/minesweeper/beginner/public/0",
+    "minesweeper/intermediate/minesweeper/intermediate/public/0",
+    "minesweeper/torus/minesweeper/torus/public/0",
+    "minesweeper/expert/minesweeper/expert/public/0",
+    "sliding/p8/sliding/p8/public/0",
+    "sliding/p15-short/sliding/p15-short/public/0",
+    "sliding/p15-mid/sliding/p15-mid/public/0",
+    "sliding/p15-long/sliding/p15-long/public/0",
+    "sokoban/two-box/sokoban/two-box/public/0",
+    "sokoban/three-box/sokoban/three-box/public/0",
+    "sokoban/four-box/sokoban/four-box/public/0",
+    "connect4/ladder-1/connect4/ladder-1/public/0",
+    "connect4/ladder-2/connect4/ladder-2/public/0",
+    "connect4/ladder-3/connect4/ladder-3/public/0",
+    "connect4/ladder-4/connect4/ladder-4/public/0",
+    "connect4/forced-win/connect4/forced-win/public/0",
+    "mastermind/classic/mastermind/classic/public/0",
+    "mastermind/wide/mastermind/wide/public/0",
+    "mastermind/deep/mastermind/deep/public/0"
+  ],
+  "replayed": [
+    "holdem/station/holdem/station/public/0",
+    "holdem/rules/holdem/rules/public/0",
+    "holdem/equity/holdem/equity/public/0"
+  ],
+  "unplayed": [],
+  "failed": [],
+  "stopped": null,
+  "stopReason": null
+}

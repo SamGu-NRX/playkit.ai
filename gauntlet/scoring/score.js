@@ -383,6 +383,15 @@ export async function score(suite, trajectories, games, options = {}) {
       'profile "chance-adjusted" requires a scoring baseline (options.baseline), e.g. the parsed scoring/baselines/random-public.json'
     );
   }
+  if (profile === 'chance-adjusted') {
+    const baselineAgent = /** @type {ScoringBaseline} */ (options.baseline).agent;
+    if (baselineAgent !== 'random') {
+      refuse(
+        'chance-baseline-agent',
+        `profile "chance-adjusted" rescales against random-baseline means but the provided baseline records agent ${JSON.stringify(baselineAgent)}; build the baseline from the random agent (scoring/generate-baseline.js) — rescaling against any other agent's means would silently mislabel the scale`
+      );
+    }
+  }
   const gameMap = toGameMap(games, suite);
 
   const agent = options.agent ?? trajectories[0]?.agent ?? null;

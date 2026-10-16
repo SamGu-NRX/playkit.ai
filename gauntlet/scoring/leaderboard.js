@@ -224,6 +224,37 @@ export async function leaderboard(suite, entries, games, options = {}) {
     }
   }
 
+  // One board, one baseline. chance-adjusted scores depend on the baseline
+  // file's random-mean vector (it sets the denominator and clamp per tier),
+  // so two entries scored against different baseline files are on different
+  // scales even under the same profile name — exactly what the profile check
+  // above exists to prevent. Only entries whose result names a baseline
+  // participate: chance-adjusted always carries a scoring block, while the
+  // baseline-reading-free profiles (rhae-v1, squared-outcome) never read one,
+  // so a differing sha there is provenance noise, not a scale difference.
+  if (boardProfile === 'chance-adjusted') {
+    /** @type {string | undefined} */
+    let boardBaselineSha256;
+    /** @type {string | undefined} */
+    let boardBaselineEntryId;
+    for (const entry of scored) {
+      const sha = entry.scoring?.baselineSha256;
+      if (sha === undefined) continue;
+      if (boardBaselineSha256 === undefined) {
+        boardBaselineSha256 = sha;
+        boardBaselineEntryId = entry.agent.id;
+        continue;
+      }
+      if (boardBaselineSha256 !== sha) {
+        throw new GauntletRefusalError(
+          'leaderboard.js',
+          'baseline-mismatch',
+          `cannot rank entry "${entry.agent.id}" scored against baseline ${sha.slice(0, 12)} together with entry "${boardBaselineEntryId}" scored against baseline ${boardBaselineSha256.slice(0, 12)}; chance-adjusted scores depend on the baseline's random-mean vector — build one leaderboard per baseline file`
+        );
+      }
+    }
+  }
+
   /** @type {Record<string, LeaderboardEntry[]>} */
   const tracks = { official: [], community: [], baseline: [] };
   for (const track of TRACKS) {
@@ -271,7 +302,10 @@ export async function leaderboard(suite, entries, games, options = {}) {
   if (options.profile !== undefined || boardProfile !== DEFAULT_PROFILE) {
     /** @type {{ profile: string, baselineSha256?: string }} */
     const scoring = { profile: boardProfile };
-    const sha = options.baselineSha256;
+    // Provenance names the baseline the entries were actually scored against:
+    // the entries' consensus when they carry their own baselines, falling
+    // back to the board-level option.
+    const sha = scored.find((e) => e.scoring?.baselineSha256)?.scoring?.baselineSha256 ?? options.baselineSha256;
     if (typeof sha === 'string') scoring.baselineSha256 = sha;
     board.scoring = scoring;
   }

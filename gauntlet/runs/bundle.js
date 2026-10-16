@@ -13,6 +13,7 @@ import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import { verifyTrajectory, TRAJECTORY_FORMAT } from '../core/trajectory.js';
+import { verifyBridgeLog } from '../bridge/session-log.js';
 import { score } from '../scoring/score.js';
 import { SUITE_FORMAT } from '../scoring/suite.js';
 
@@ -67,6 +68,60 @@ async function listFiles(dir, prefix = '') {
  * @property {string} [reason] Why the verdict failed.
  */
 
+/** Format of a `page/*.json` session log (see bridge/session-log.js). */
+const BRIDGE_LOG_FORMAT = 'playkit-gauntlet-bridge-log/1';
+
+/**
+ * @typedef {object} PageSessionVerdict
+ * @property {string} file Bundle-relative path, e.g. `page/11111.json`.
+ * @property {boolean} ok
+ * @property {number} [steps] Recorded steps, when the log verified.
+ * @property {string} [reason] Why the verdict failed.
+ */
+
+/**
+ * Verify every page session in a bundle: each `page/*.json` must be a
+ * `playkit-gauntlet-bridge-log/1` log, and `verifyBridgeLog` must replay it.
+ * `page/run.json` is the session-run provenance (written by `gauntlet page`),
+ * not a session log, and is skipped; an unreadable or unknown-format JSON
+ * under `page/` is a loud failure, never a silent skip.
+ *
+ * @param {string} outDir
+ * @returns {Promise<PageSessionVerdict[]>}
+ */
+async function verifyPageSessions(outDir) {
+  const pageDir = path.join(outDir, 'page');
+  let entries;
+  try {
+    entries = await readdir(pageDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  /** @type {PageSessionVerdict[]} */
+  const verdicts = [];
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.json') || entry.name === 'run.json') continue;
+    const rel = `page/${entry.name}`;
+    const parsed = await readJsonFile(path.join(pageDir, entry.name));
+    if (!parsed.ok) {
+      verdicts.push({ file: rel, ok: false, reason: `unreadable page session: ${parsed.error}` });
+      continue;
+    }
+    const value = /** @type {any} */ (parsed.value);
+    if (!value || value.format !== BRIDGE_LOG_FORMAT) {
+      verdicts.push({ file: rel, ok: false, reason: `not a ${BRIDGE_LOG_FORMAT} log` });
+      continue;
+    }
+    const checked = verifyBridgeLog(value);
+    if (checked.ok) {
+      verdicts.push({ file: rel, ok: true, steps: value.steps.length });
+    } else {
+      verdicts.push({ file: rel, ok: false, reason: `verifyBridgeLog (step ${checked.index}): ${checked.reason}` });
+    }
+  }
+  return verdicts;
+}
+
 /**
  * @typedef {object} BundleReport
  * @property {boolean} ok True when every check passed.
@@ -75,6 +130,11 @@ async function listFiles(dir, prefix = '') {
  * @property {{ recorded: string | null, actual: string, ok: boolean }} manifestHash
  * @property {Record<string, *> | null} run The parsed run.json.
  * @property {TrajectoryVerdict[]} trajectories One verdict per planned job.
+ * @property {PageSessionVerdict[]} pageSessions One verdict per `page/*.json`
+ *   session log, verified with `verifyBridgeLog` — reported separately from
+ *   trajectories (a live page is unseeded and never scores).
+ * @property {boolean} pageOnly True when the bundle holds page sessions but
+ *   no suite manifest/run provenance — a standalone `gauntlet page` bundle.
  * @property {string[]} stray Trajectory-format JSON files in the bundle that
  *   no planned job owns.
  * @property {Record<string, *> | null} score The recomputed entry score, or
@@ -97,6 +157,35 @@ export async function verifyBundle(outDir, games) {
   }
   const suiteParsed = await readJsonFile(path.join(outDir, 'suite.json'));
   if (!suiteParsed.ok) {
+    // No suite.json: a standalone `gauntlet page` bundle (page sessions plus
+    // page/run.json, no run manifest) is still verifiable — page sessions
+    // only, nothing else to check. Without any page session this is just not
+    // a run bundle.
+    const pageSessions = await verifyPageSessions(outDir);
+    if (pageSessions.length > 0) {
+      const strayPageOnly = [];
+      for (const rel of await listFiles(outDir)) {
+        if (rel.startsWith('page/')) continue;
+        if (!rel.endsWith('.json')) continue;
+        const parsed = await readJsonFile(path.join(outDir, rel));
+        if (parsed.ok && /** @type {any} */ (parsed.value)?.format === TRAJECTORY_FORMAT) {
+          strayPageOnly.push(rel);
+        }
+      }
+      return {
+        ok: pageSessions.every((v) => v.ok) && strayPageOnly.length === 0,
+        outDir,
+        suite: { id: '', split: '', manifestSha256: '' },
+        manifestHash: { recorded: null, actual: '', ok: true },
+        run: null,
+        trajectories: [],
+        pageSessions,
+        pageOnly: true,
+        stray: strayPageOnly,
+        score: null,
+        scoreError: null,
+      };
+    }
     refuse('suite', `no readable suite.json in ${outDir} (${suiteParsed.error}); not a run bundle`);
   }
   const suite = /** @type {SuiteManifest} */ (suiteParsed.value);
@@ -155,6 +244,11 @@ export async function verifyBundle(outDir, games) {
     }
   }
 
+  // Page sessions live beside trajectories in a full bundle (a `gauntlet run`
+  // bundle `gauntlet page` wrote into); they never score and are reported
+  // separately.
+  const pageSessions = await verifyPageSessions(outDir);
+
   // Trajectory-format JSON files in the bundle that no planned job owns. A
   // non-trajectory JSON (estimate.json, run.json, suite.json) is not stray —
   // the bundle itself owns those.
@@ -200,7 +294,7 @@ export async function verifyBundle(outDir, games) {
   }
 
   const ok =
-    manifestHashOk && verdicts.every((v) => v.ok) && stray.length === 0 && scoreError === null;
+    manifestHashOk && verdicts.every((v) => v.ok) && pageSessions.every((v) => v.ok) && stray.length === 0 && scoreError === null;
 
   return {
     ok,
@@ -209,6 +303,8 @@ export async function verifyBundle(outDir, games) {
     manifestHash: { recorded: recordedHash, actual: actualHash, ok: manifestHashOk },
     run,
     trajectories: verdicts,
+    pageSessions,
+    pageOnly: false,
     stray,
     score: scoreResult,
     scoreError,

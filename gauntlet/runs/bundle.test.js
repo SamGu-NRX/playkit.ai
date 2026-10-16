@@ -1,17 +1,20 @@
 /**
  * Bundle verification tests: run a real fixture suite into a temp directory,
  * then verify the bundle as a third party would — happy path, tampered
- * trajectory, manifest-hash mismatch, missing episode, and a stray
- * trajectory-format file.
+ * trajectory, manifest-hash mismatch, missing episode, a stray
+ * trajectory-format file, and page sessions (`gauntlet page` output), both
+ * beside trajectories and as a standalone bundle. Page-session cases replay a
+ * recorded real bridge-log fixture, so they stay offline.
  *
  * @module
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { buildSuite } from '../scoring/suite.js';
 import { takeOrPass } from '../scoring/fixtures.js';
@@ -163,6 +166,99 @@ test('verifyBundle refuses a directory with no suite.json', async () => {
   const outDir = await tempDir('empty');
   try {
     await assert.rejects(verifyBundle(outDir, [takeOrPass]), /no readable suite\.json/);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+// Page sessions (`gauntlet page` output) — verified from the recorded
+// model-session fixture, a real bridge log, so these cases stay offline.
+
+const FIXTURE_LOG = fileURLToPath(new URL('../bridge/browser/fixtures/model-session-2048.json', import.meta.url));
+
+/** @param {string} label */
+async function tempPageDir(label) {
+  return mkdtemp(path.join(tmpdir(), `gauntlet-bundle-page-${label}-`));
+}
+
+/** Writes page/<seed>.json plus page/run.json (the `gauntlet page`
+ * provenance record, which is not itself a session log).
+ *
+ * @param {string} outDir
+ * @param {((log: any) => void) | undefined} [tamper] Receives the parsed log
+ *   before it is written.
+ */
+async function writePageSession(outDir, tamper) {
+  await mkdir(path.join(outDir, 'page'), { recursive: true });
+  const log = JSON.parse(await readFile(FIXTURE_LOG, 'utf8'));
+  if (tamper) tamper(log);
+  await writeFile(path.join(outDir, 'page', '11111.json'), JSON.stringify(log, null, 2) + '\n');
+  await writeFile(
+    path.join(outDir, 'page', 'run.json'),
+    JSON.stringify({
+      format: 'playkit-gauntlet-page-run/1',
+      agent: { spec: 'model:openai-chat/stub', id: log.agent.id, track: log.agent.track },
+      seed: 11111,
+      logFile: 'page/11111.json',
+      verify: { ok: true },
+    }) + '\n'
+  );
+}
+
+test('page sessions in a run bundle verify alongside trajectories without affecting scoring', async () => {
+  const outDir = await tempPageDir('mixed');
+  try {
+    await runSuite({ suite: SUITE, games: [takeOrPass], agentFactory: takeFactory(), outDir });
+    await writePageSession(outDir);
+
+    const bundle = await verifyBundle(outDir, [takeOrPass]);
+    assert.equal(bundle.pageOnly, false);
+    assert.equal(bundle.pageSessions.length, 1, 'page/run.json is provenance, not a session log');
+    assert.equal(bundle.pageSessions[0].file, 'page/11111.json');
+    assert.equal(bundle.pageSessions[0].ok, true);
+    assert.equal(bundle.pageSessions[0].steps, 150);
+    assert.equal(bundle.ok, true);
+    // Scoring is trajectory business: page sessions ride along, un-scored.
+    assert.ok(bundle.score);
+    assert.equal(bundle.score.ranked, true);
+    assert.equal(bundle.score.episodes, 2);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a standalone page-session bundle verifies with no suite manifest at all', async () => {
+  const outDir = await tempPageDir('standalone');
+  try {
+    await writePageSession(outDir);
+
+    const bundle = await verifyBundle(outDir, [takeOrPass]);
+    assert.equal(bundle.pageOnly, true);
+    assert.equal(bundle.pageSessions.length, 1);
+    assert.equal(bundle.pageSessions[0].ok, true);
+    assert.equal(bundle.ok, true);
+    assert.equal(bundle.run, null);
+    assert.deepEqual(bundle.stray, []);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a tampered page session fails verification at the offending step', async () => {
+  const outDir = await tempPageDir('tamper');
+  try {
+    await writePageSession(outDir, (log) => {
+      // Flip one boardBefore cell of the first step: the replay starts from
+      // the log's own start board and must refuse the mismatch at step 0.
+      log.steps[0].boardBefore[0][0] = log.steps[0].boardBefore[0][0] === 0 ? 2 : 0;
+    });
+
+    const bundle = await verifyBundle(outDir, [takeOrPass]);
+    assert.equal(bundle.ok, false);
+    assert.equal(bundle.pageSessions.length, 1);
+    const verdict = bundle.pageSessions[0];
+    assert.equal(verdict.ok, false);
+    assert.match(String(verdict.reason), /verifyBridgeLog \(step 0\)/);
   } finally {
     await rm(outDir, { recursive: true, force: true });
   }

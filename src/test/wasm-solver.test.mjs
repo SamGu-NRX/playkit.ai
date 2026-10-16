@@ -6,13 +6,17 @@
  *   node --test src/test/wasm-solver.test.mjs
  *
  * The engine is exercised against a fake solver module served as a data: URL
- * and against tiny local HTTP servers for the artifact pre-flight check, so
- * the tests are hermetic and never load the real Emscripten binary.
+ * and against tiny local HTTP servers for the artifact pre-flight check. One
+ * end-to-end test loads the REAL committed Emscripten binary over HTTP and
+ * skips when the artifacts are not present (e.g. a stripped checkout).
  */
 
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
   WASMSolverEngine,
@@ -331,5 +335,69 @@ test("SolverManager falls back with a clean lastError when the artifact is missi
     );
   } finally {
     await assets.close();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Real WASM binary end-to-end (skipped when the artifacts are absent)
+// ---------------------------------------------------------------------------
+
+const realWasmDir = new URL("../extension/wasm/", import.meta.url);
+
+test("real WASM binary solves a position end to end", { skip: !existsSync(new URL("solver.wasm", realWasmDir)) }, async () => {
+  const server = createServer(async (req, res) => {
+    const name =
+      req.url === "/solver.mjs" ? "solver.mjs" :
+      req.url === "/solver.wasm" ? "solver.wasm" : null;
+    if (!name) {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("not found");
+      return;
+    }
+    try {
+      const body = await readFile(new URL(name, realWasmDir));
+      res.writeHead(200, {
+        "Content-Type": name === "solver.wasm" ? "application/wasm" : "text/javascript",
+        "Access-Control-Allow-Origin": "*",
+      });
+      res.end(body);
+    } catch {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("missing");
+    }
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  const manager = new SolverManager({
+    // Node cannot import() an http URL, so load the real glue from disk; the
+    // engine routes solver.wasm through the locateFile option, which points at
+    // the HTTP server (Node fetch handles http, not file://).
+    moduleUrl: pathToFileURL(fileURLToPath(new URL("solver.mjs", realWasmDir))).href,
+    wasmUrl: `http://127.0.0.1:${server.address().port}/solver.wasm`,
+  });
+
+  try {
+    await manager.initialize();
+    assert.equal(manager.isWasmActive(), true, "real solver.wasm should activate");
+
+    // The exact path that regressed under -sNO_DYNAMIC_EXECUTION=1: a plain JS
+    // array must reach boardFromArray through an explicit IntVector (embind's
+    // array auto-conversion lives in the dynamic invoker, which the CSP-safe
+    // build removes).
+    const board = [
+      [2, 0, 0, 0],
+      [0, 4, 0, 0],
+      [0, 0, 2, 0],
+      [0, 0, 0, 8],
+    ];
+    const order = await manager.getMoveOrder(board);
+    assert.ok(Array.isArray(order), "getMoveOrder returns an order array");
+    assert.ok(order.length > 0, "at least one move is valid on a non-full board");
+    for (const direction of order) {
+      assert.ok(direction >= 0 && direction <= 3, "directions are 0..3");
+    }
+  } finally {
+    server.close();
+    server.closeAllConnections();
   }
 });

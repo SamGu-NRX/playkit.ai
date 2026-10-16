@@ -138,6 +138,10 @@ emccArgs.push(
   "-sWASM_BIGINT=1",
   "-sSUPPORT_LONGJMP=0",
   "-sDISABLE_EXCEPTION_CATCHING=1",
+  // MV3 content-script CSP forbids 'unsafe-eval'; embind's dynamic invokers
+  // build functions with `new Function(...)`. This flag makes embind emit
+  // fixed-arity invokers so the glue never evaluates strings.
+  "-sNO_DYNAMIC_EXECUTION=1",
   "-sEXPORTED_RUNTIME_METHODS=['cwrap','ccall']",
   "-sEXPORT_NAME=createSolverModule",
   "-I",

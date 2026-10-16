@@ -222,7 +222,22 @@ export class WASMSolverEngine {
     }
 
     const exponents = BoardEncoder.toExponentArray(board);
-    const boardValue = this.module.boardFromArray(exponents);
+
+    // Pass an explicit IntVector: embind's array -> std::vector auto-conversion
+    // lives in the dynamic invoker, which -sNO_DYNAMIC_EXECUTION=1 removes (the
+    // MV3 content-script CSP forbids string evaluation). The registered vector
+    // binding exposes only the default constructor under fixed-arity invokers,
+    // so build it with push_back and free it after the call.
+    const tiles = new this.module.IntVector();
+    let boardValue;
+    try {
+      for (const exponent of exponents) {
+        tiles.push_back(exponent);
+      }
+      boardValue = this.module.boardFromArray(tiles);
+    } finally {
+      tiles.delete();
+    }
 
     let preferred = 0;
     try {

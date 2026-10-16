@@ -52,10 +52,14 @@ export class HUDView {
     this._suppressSolverEvents = false;
     this.announcementTimeout = null;
 
+    // Pointer Events cover mouse and touch with one code path: a mousedown-only
+    // header could never be moved by a finger on a phone, where repositioning
+    // the HUD is the only way to uncover the board.
     this.boundHandlers = {
-      headerMouseDown: this.handleHeaderMouseDown.bind(this),
-      documentMouseMove: this.handleDocumentMouseMove.bind(this),
-      documentMouseUp: this.handleDocumentMouseUp.bind(this),
+      headerPointerDown: this.handleHeaderPointerDown.bind(this),
+      documentPointerMove: this.handleDocumentPointerMove.bind(this),
+      documentPointerUp: this.handleDocumentPointerUp.bind(this),
+      documentPointerCancel: this.handleDocumentPointerCancel.bind(this),
       detectClick: this.forwardCallback("onDetect"),
       autoSolveClick: this.forwardCallback("onAutoSolve"),
       stepClick: this.forwardCallback("onStep"),
@@ -148,10 +152,11 @@ export class HUDView {
     }
 
     const header = this.shadowRoot.querySelector(".hud-header");
-    header?.addEventListener("mousedown", this.boundHandlers.headerMouseDown);
+    header?.addEventListener("pointerdown", this.boundHandlers.headerPointerDown);
 
-    document.addEventListener("mousemove", this.boundHandlers.documentMouseMove);
-    document.addEventListener("mouseup", this.boundHandlers.documentMouseUp);
+    document.addEventListener("pointermove", this.boundHandlers.documentPointerMove);
+    document.addEventListener("pointerup", this.boundHandlers.documentPointerUp);
+    document.addEventListener("pointercancel", this.boundHandlers.documentPointerCancel);
 
     this.elements.detectBtn?.addEventListener("click", this.boundHandlers.detectClick);
     this.elements.autoSolveBtn?.addEventListener(
@@ -186,10 +191,11 @@ export class HUDView {
     }
 
     const header = this.shadowRoot.querySelector(".hud-header");
-    header?.removeEventListener("mousedown", this.boundHandlers.headerMouseDown);
+    header?.removeEventListener("pointerdown", this.boundHandlers.headerPointerDown);
 
-    document.removeEventListener("mousemove", this.boundHandlers.documentMouseMove);
-    document.removeEventListener("mouseup", this.boundHandlers.documentMouseUp);
+    document.removeEventListener("pointermove", this.boundHandlers.documentPointerMove);
+    document.removeEventListener("pointerup", this.boundHandlers.documentPointerUp);
+    document.removeEventListener("pointercancel", this.boundHandlers.documentPointerCancel);
 
     this.elements.detectBtn?.removeEventListener("click", this.boundHandlers.detectClick);
     this.elements.autoSolveBtn?.removeEventListener(
@@ -232,11 +238,11 @@ export class HUDView {
   }
 
   /**
-   * Handle drag start from the HUD header.
-   * @param {MouseEvent} event
+   * Handle drag start from the HUD header (mouse or finger via Pointer Events).
+   * @param {PointerEvent} event
    * @private
    */
-  handleHeaderMouseDown(event) {
+  handleHeaderPointerDown(event) {
     if (event.target.closest(".hud-btn")) {
       return;
     }
@@ -256,11 +262,11 @@ export class HUDView {
   }
 
   /**
-   * Handle mouse move while dragging.
-   * @param {MouseEvent} event
+   * Handle pointer move while dragging.
+   * @param {PointerEvent} event
    * @private
    */
-  handleDocumentMouseMove(event) {
+  handleDocumentPointerMove(event) {
     if (!this.isDragging) {
       return;
     }
@@ -271,10 +277,26 @@ export class HUDView {
   }
 
   /**
-   * Handle mouse up to finish dragging.
+   * Handle pointer up to finish dragging.
+   * @param {PointerEvent} event
    * @private
    */
-  handleDocumentMouseUp() {
+  handleDocumentPointerUp(event) {
+    if (!this.isDragging || !this.panel) {
+      return;
+    }
+
+    this.isDragging = false;
+    this.panel.classList.remove("dragging");
+  }
+
+  /**
+   * Handle pointercancel: a touch takeover (e.g. the browser scrolling) must
+   * not leave the panel stuck in dragging state.
+   * @param {PointerEvent} event
+   * @private
+   */
+  handleDocumentPointerCancel(event) {
     if (!this.isDragging || !this.panel) {
       return;
     }

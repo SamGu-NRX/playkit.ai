@@ -77,16 +77,27 @@ export class Play2048Adapter extends Adapter {
    * @param {0|1|2|3} dir Direction to move
    */
   sendMove(dir) {
+    // Deliver exactly one move request per call. Touch-capable browsers
+    // (phones, phone device emulation) bind BOTH the keyboard and touch
+    // handlers on the page, so firing a keyboard event and then a synthetic
+    // swipe moved the board twice per sendMove() — the solver's chosen move
+    // applied against a stale board every tick. The touch path stays as a
+    // fallback for environments where keyboard delivery is impossible.
     try {
-      // First try keyboard event
       this._dispatchKeyboardEvent(dir);
-
-      // Small delay then try touch simulation as fallback
-      setTimeout(() => {
-        this._simulateTouch(dir);
-      }, 10);
     } catch (error) {
-      console.warn("Play2048Adapter: Failed to send move:", error);
+      console.warn(
+        "Play2048Adapter: keyboard move failed, falling back to touch:",
+        error
+      );
+      try {
+        this._simulateTouch(dir);
+      } catch (touchError) {
+        console.warn(
+          "Play2048Adapter: Failed to send move:",
+          touchError
+        );
+      }
     }
   }
 

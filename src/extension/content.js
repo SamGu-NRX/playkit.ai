@@ -1316,16 +1316,27 @@
        * @param {0|1|2|3} dir Direction to move
        */
       sendMove(dir) {
+        // Deliver exactly one move request per call. Touch-capable browsers
+        // (phones, phone device emulation) bind BOTH the keyboard and touch
+        // handlers on the page, so firing a keyboard event and then a synthetic
+        // swipe moved the board twice per sendMove() — the solver's chosen move
+        // applied against a stale board every tick. The touch path stays as a
+        // fallback for environments where keyboard delivery is impossible.
         try {
-          // First try keyboard event
           this._dispatchKeyboardEvent(dir);
-    
-          // Small delay then try touch simulation as fallback
-          setTimeout(() => {
-            this._simulateTouch(dir);
-          }, 10);
         } catch (error) {
-          console.warn("Play2048Adapter: Failed to send move:", error);
+          console.warn(
+            "Play2048Adapter: keyboard move failed, falling back to touch:",
+            error
+          );
+          try {
+            this._simulateTouch(dir);
+          } catch (touchError) {
+            console.warn(
+              "Play2048Adapter: Failed to send move:",
+              touchError
+            );
+          }
         }
       }
     
@@ -3097,6 +3108,52 @@
             transition: none;
             cursor: grabbing;
           }
+    
+          /* Phone-sized screens and coarse (touch) pointers: fix only what breaks
+           * on a phone — the desktop layout above is untouched. The fixed 300 px
+           * panel covered most of a 390 px-wide board and its settings ran past
+           * the bottom of a landscape phone with no way to reach them. */
+          @media (max-width: 480px), (pointer: coarse) {
+            .hud-panel {
+              width: min(300px, calc(100vw - 16px));
+              max-height: calc(100vh - 16px);
+              display: flex;
+              flex-direction: column;
+            }
+    
+            .hud-content {
+              flex: 1 1 auto;
+              min-height: 0;
+              overflow-y: auto;
+              -webkit-overflow-scrolling: touch;
+            }
+    
+            .hud-panel[data-collapsed="true"] {
+              height: 60px;
+            }
+    
+            .hud-btn {
+              min-height: 44px;
+              min-width: 44px;
+            }
+    
+            .hud-btn-collapse {
+              width: 44px;
+              height: 44px;
+            }
+    
+            /* iOS Safari zooms the page when a form control smaller than 16px
+             * receives focus. */
+            .setting-select,
+            .setting-input {
+              font-size: 16px;
+            }
+    
+            .hud-header {
+              /* Finger-dragging the header must not scroll the page instead. */
+              touch-action: none;
+            }
+          }
         `;
     }
     
@@ -3252,10 +3309,14 @@
         this._suppressSolverEvents = false;
         this.announcementTimeout = null;
     
+        // Pointer Events cover mouse and touch with one code path: a mousedown-only
+        // header could never be moved by a finger on a phone, where repositioning
+        // the HUD is the only way to uncover the board.
         this.boundHandlers = {
-          headerMouseDown: this.handleHeaderMouseDown.bind(this),
-          documentMouseMove: this.handleDocumentMouseMove.bind(this),
-          documentMouseUp: this.handleDocumentMouseUp.bind(this),
+          headerPointerDown: this.handleHeaderPointerDown.bind(this),
+          documentPointerMove: this.handleDocumentPointerMove.bind(this),
+          documentPointerUp: this.handleDocumentPointerUp.bind(this),
+          documentPointerCancel: this.handleDocumentPointerCancel.bind(this),
           detectClick: this.forwardCallback("onDetect"),
           autoSolveClick: this.forwardCallback("onAutoSolve"),
           stepClick: this.forwardCallback("onStep"),
@@ -3348,10 +3409,11 @@
         }
     
         const header = this.shadowRoot.querySelector(".hud-header");
-        header?.addEventListener("mousedown", this.boundHandlers.headerMouseDown);
+        header?.addEventListener("pointerdown", this.boundHandlers.headerPointerDown);
     
-        document.addEventListener("mousemove", this.boundHandlers.documentMouseMove);
-        document.addEventListener("mouseup", this.boundHandlers.documentMouseUp);
+        document.addEventListener("pointermove", this.boundHandlers.documentPointerMove);
+        document.addEventListener("pointerup", this.boundHandlers.documentPointerUp);
+        document.addEventListener("pointercancel", this.boundHandlers.documentPointerCancel);
     
         this.elements.detectBtn?.addEventListener("click", this.boundHandlers.detectClick);
         this.elements.autoSolveBtn?.addEventListener(
@@ -3386,10 +3448,11 @@
         }
     
         const header = this.shadowRoot.querySelector(".hud-header");
-        header?.removeEventListener("mousedown", this.boundHandlers.headerMouseDown);
+        header?.removeEventListener("pointerdown", this.boundHandlers.headerPointerDown);
     
-        document.removeEventListener("mousemove", this.boundHandlers.documentMouseMove);
-        document.removeEventListener("mouseup", this.boundHandlers.documentMouseUp);
+        document.removeEventListener("pointermove", this.boundHandlers.documentPointerMove);
+        document.removeEventListener("pointerup", this.boundHandlers.documentPointerUp);
+        document.removeEventListener("pointercancel", this.boundHandlers.documentPointerCancel);
     
         this.elements.detectBtn?.removeEventListener("click", this.boundHandlers.detectClick);
         this.elements.autoSolveBtn?.removeEventListener(
@@ -3432,11 +3495,11 @@
       }
     
       /**
-       * Handle drag start from the HUD header.
-       * @param {MouseEvent} event
+       * Handle drag start from the HUD header (mouse or finger via Pointer Events).
+       * @param {PointerEvent} event
        * @private
        */
-      handleHeaderMouseDown(event) {
+      handleHeaderPointerDown(event) {
         if (event.target.closest(".hud-btn")) {
           return;
         }
@@ -3456,11 +3519,11 @@
       }
     
       /**
-       * Handle mouse move while dragging.
-       * @param {MouseEvent} event
+       * Handle pointer move while dragging.
+       * @param {PointerEvent} event
        * @private
        */
-      handleDocumentMouseMove(event) {
+      handleDocumentPointerMove(event) {
         if (!this.isDragging) {
           return;
         }
@@ -3471,10 +3534,26 @@
       }
     
       /**
-       * Handle mouse up to finish dragging.
+       * Handle pointer up to finish dragging.
+       * @param {PointerEvent} event
        * @private
        */
-      handleDocumentMouseUp() {
+      handleDocumentPointerUp(event) {
+        if (!this.isDragging || !this.panel) {
+          return;
+        }
+    
+        this.isDragging = false;
+        this.panel.classList.remove("dragging");
+      }
+    
+      /**
+       * Handle pointercancel: a touch takeover (e.g. the browser scrolling) must
+       * not leave the panel stuck in dragging state.
+       * @param {PointerEvent} event
+       * @private
+       */
+      handleDocumentPointerCancel(event) {
         if (!this.isDragging || !this.panel) {
           return;
         }

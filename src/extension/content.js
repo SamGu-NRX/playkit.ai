@@ -2130,6 +2130,14 @@
         this.directionPriority = [...DEFAULT_DIRECTION_PRIORITY];
         this.solverConfig = { ...DEFAULT_SOLVER_CONFIG };
     
+        // Engine honesty: Strategy/Heuristic stay disabled until the solver
+        // manager reports the WASM engine as active.
+        this.engineSupportsCustomStrategy = false;
+    
+        // Announcement bookkeeping (see updateRunState and autoSolveLoop).
+        this._pendingStopMessage = null;
+        this._detectionState = undefined;
+    
         this.isInitialized = false;
       }
     
@@ -2162,6 +2170,7 @@
       applySolverControlState() {
         const isProbability = this.solverConfig.type === "expectimax-probability";
         this.view.setSolverControlAvailability(!isProbability, isProbability);
+        this.view.setEngineDependentControlsEnabled(this.engineSupportsCustomStrategy);
       }
     
       /**
@@ -2232,6 +2241,13 @@
     
         this.view.setSolverStatus(state);
     
+        // The WASM engine honours Strategy/Heuristic; the JS fallback ignores
+        // them, so the controls disable with a reason while it is active.
+        this.engineSupportsCustomStrategy = Boolean(
+          status && status.status === "ready" && status.mode === "wasm",
+        );
+        this.applySolverControlState();
+    
         if (status && status.strategy) {
           const clamped = clampSolverConfig(status.strategy);
           this.solverConfig = {
@@ -2270,6 +2286,17 @@
           this.view.setGameStatus({ text: "Not detected", color: "#f87171" });
           this.view.setScore("-");
           this.view.setControlsEnabled({ autoSolve: false, step: false });
+        }
+    
+        // Announce detection transitions once. updateStatus() runs after every
+        // move, so repeat refreshes stay silent; the first read only records the
+        // initial state.
+        const isDetected = Boolean(this.currentAdapter);
+        if (this._detectionState === undefined) {
+          this._detectionState = isDetected;
+        } else if (isDetected && !this._detectionState) {
+          this._detectionState = true;
+          this.announce(`${this.currentAdapter.getName()} detected.`);
         }
     
         if (this.controller && this.controller.getSolverStatus) {
@@ -2330,10 +2357,12 @@
             this.updateStatus();
             if (!detected && !this.currentAdapter) {
               this.showMessage("No game detected.");
+              this.announce("No game detected.");
             }
           } catch (error) {
             console.warn("HUD: Controller-driven detect failed", error);
             this.showMessage("Detect failed. Check console.");
+            this.announce("Detect failed. Check console.");
           }
           return;
         }
@@ -2343,6 +2372,7 @@
     
         if (!this.currentAdapter) {
           this.showMessage("No game detected.");
+          this.announce("No game detected.");
         }
       }
     
@@ -2422,12 +2452,35 @@
       }
     
       /**
-       * Update run state UI to reflect automation status
+       * Update run state UI to reflect automation status. Announcements only
+       * fire on real transitions, so refreshes never repeat the same message.
        * @param {boolean} isRunning Whether automation is active
+       * @param {"user"|"runtime"} source What asked for the transition; the
+       *   wording follows it ("paused" for the Pause button, "stopped" when the
+       *   runtime tears the run down).
        */
-      updateRunState(isRunning) {
+      updateRunState(isRunning, source = "user") {
+        const wasRunning = this.isAutoSolving;
         this.isAutoSolving = !!isRunning;
         this.view.setAutoSolveRunning(this.isAutoSolving);
+    
+        if (this.isAutoSolving && !wasRunning) {
+          this.announce("Auto-solve started.");
+        } else if (!this.isAutoSolving && wasRunning) {
+          const message =
+            this._pendingStopMessage ||
+            (source === "runtime" ? "Auto-solve stopped." : "Auto-solve paused.");
+          this._pendingStopMessage = null;
+          this.announce(message);
+        }
+      }
+    
+      /**
+       * Push a message to the polite live region for assistive technology.
+       * @param {string} message
+       */
+      announce(message) {
+        this.view.setAnnouncement(message);
       }
     
       /**
@@ -2488,7 +2541,7 @@
        * Stop auto-solving
        * @private
        */
-      async stopAutoSolve() {
+      async stopAutoSolve(source = "user") {
         if (this.controller) {
           try {
             const stopFn = this.controller.stop?.bind(this.controller);
@@ -2498,7 +2551,7 @@
           } catch (error) {
             console.warn("HUD: stopAutoSolve controller invocation failed", error);
           }
-          this.updateRunState(false);
+          this.updateRunState(false, source);
           return;
         }
     
@@ -2507,7 +2560,7 @@
           this.autoSolveTimeout = null;
         }
     
-        this.updateRunState(false);
+        this.updateRunState(false, source);
       }
     
       /**
@@ -2518,7 +2571,12 @@
         if (!this.isAutoSolving || !this.currentAdapter) return;
     
         if (this.currentAdapter.isGameOver()) {
-          this.stopAutoSolve();
+          const finalScore = this.currentAdapter.getScore();
+          this._pendingStopMessage =
+            finalScore !== null && finalScore !== undefined
+              ? `Game over. Final score ${Number(finalScore).toLocaleString()}.`
+              : "Game over.";
+          await this.stopAutoSolve("runtime");
           this.showMessage("Game over!");
           return;
         }
@@ -2584,12 +2642,12 @@
     
         if (this.controller && this.controller.isRunning) {
           try {
-            this.updateRunState(!!this.controller.isRunning());
+            this.updateRunState(!!this.controller.isRunning(), "runtime");
           } catch (error) {
             console.warn("HUD: Failed to read controller run state", error);
           }
         } else {
-          this.updateRunState(false);
+          this.updateRunState(false, "runtime");
         }
     
         this.updateStatus();
@@ -2619,7 +2677,7 @@
        */
       destroy() {
         if (this.isAutoSolving) {
-          this.stopAutoSolve();
+          this.stopAutoSolve("runtime");
         }
     
         if (this.autoSolveTimeout) {
@@ -2725,7 +2783,6 @@
             pointer-events: auto;
             backdrop-filter: blur(10px);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
             user-select: none;
           }
     
@@ -2770,7 +2827,6 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
-            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 4px;
@@ -2886,6 +2942,24 @@
             color: white;
           }
     
+          .setting-hint {
+            margin: 4px 0 0;
+            font-size: 12px;
+          }
+    
+          .hud-live-region {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
+            border: 0;
+          }
+    
           .setting-input {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
@@ -2902,13 +2976,23 @@
             cursor: not-allowed;
           }
     
-          .hud-panel.auto-solving .hud-btn-success {
-            animation: pulse 1s infinite;
-          }
+          @media (prefers-reduced-motion: no-preference) {
+            .hud-panel {
+              transition: all 0.3s ease;
+            }
     
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            .hud-btn {
+              transition: all 0.2s ease;
+            }
+    
+            .hud-panel.auto-solving .hud-btn-success {
+              animation: pulse 1s infinite;
+            }
+    
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.7; }
+            }
           }
     
           .hud-panel.dragging {
@@ -2927,15 +3011,15 @@
           <style>
             ${getHUDCSS()}
           </style>
-          <div class="hud-panel" data-collapsed="false">
+          <div class="hud-panel" role="region" aria-label="AI 2048 Solver" data-collapsed="false">
             <div class="hud-header">
               <div class="hud-title">
                 <span class="hud-icon">🎯</span>
                 <span class="hud-text">2048 AI Solver</span>
               </div>
               <div class="hud-controls">
-                <button class="hud-btn hud-btn-collapse" title="Collapse/Expand">
-                  <span class="collapse-icon">−</span>
+                <button class="hud-btn hud-btn-collapse" type="button" aria-expanded="true" aria-label="Collapse panel" title="Collapse panel">
+                  <span class="collapse-icon" aria-hidden="true">−</span>
                 </button>
               </div>
             </div>
@@ -2969,7 +3053,7 @@
     
               <div class="hud-settings">
                 <div class="setting-group">
-                  <label class="setting-label">Direction Priority:</label>
+                  <label class="setting-label" for="direction-priority">Direction Priority:</label>
                   <select class="setting-select" id="direction-priority">
                     <option value="0,2,1,3">Up → Down → Right → Left</option>
                     <option value="3,2,1,0" selected>Left → Down → Right → Up</option>
@@ -2978,21 +3062,24 @@
                   </select>
                 </div>
                 <div class="setting-group">
-                  <label class="setting-label">Solver Strategy:</label>
-                  <select class="setting-select" id="solver-strategy">
+                  <label class="setting-label" for="solver-strategy">Solver Strategy:</label>
+                  <select class="setting-select" id="solver-strategy" aria-describedby="strategy-engine-hint">
                     <option value="expectimax-depth" selected>Expectimax (Depth)</option>
                     <option value="expectimax-probability">Expectimax (Probability)</option>
                   </select>
                 </div>
                 <div class="setting-group">
-                  <label class="setting-label">Heuristic:</label>
-                  <select class="setting-select" id="solver-heuristic">
+                  <label class="setting-label" for="solver-heuristic">Heuristic:</label>
+                  <select class="setting-select" id="solver-heuristic" aria-describedby="strategy-engine-hint">
                     <option value="corner" selected>Corner Bias</option>
                     <option value="monotonicity">Monotonicity</option>
                     <option value="wall">Wall Building</option>
                     <option value="score">Score Focus</option>
                   </select>
                 </div>
+                <p class="setting-hint" id="strategy-engine-hint">
+                  Strategy and heuristic options need the WASM solver.
+                </p>
                 <div class="setting-group">
                   <label class="setting-label" for="solver-depth">Depth:</label>
                   <input class="setting-input" id="solver-depth" type="number" min="1" max="8" step="1" value="4" />
@@ -3003,6 +3090,8 @@
                 </div>
               </div>
             </div>
+    
+            <div class="hud-live-region" id="hud-announcer" role="status"></div>
           </div>
         `;
     }
@@ -3055,12 +3144,15 @@
           solverHeuristic: null,
           solverDepth: null,
           solverProbability: null,
+          strategyHint: null,
+          announcer: null,
         };
     
         this.isCollapsed = false;
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
         this._suppressSolverEvents = false;
+        this.announcementTimeout = null;
     
         this.boundHandlers = {
           headerMouseDown: this.handleHeaderMouseDown.bind(this),
@@ -3108,6 +3200,11 @@
     
         this.detachEventListeners();
     
+        if (this.announcementTimeout) {
+          clearTimeout(this.announcementTimeout);
+          this.announcementTimeout = null;
+        }
+    
         if (this.shadowHost.parentNode) {
           this.shadowHost.parentNode.removeChild(this.shadowHost);
         }
@@ -3139,6 +3236,8 @@
           solverHeuristic: this.shadowRoot.getElementById("solver-heuristic"),
           solverDepth: this.shadowRoot.getElementById("solver-depth"),
           solverProbability: this.shadowRoot.getElementById("solver-probability"),
+          strategyHint: this.shadowRoot.getElementById("strategy-engine-hint"),
+          announcer: this.shadowRoot.getElementById("hud-announcer"),
         };
       }
     
@@ -3300,9 +3399,29 @@
             : COLLAPSE_ICON.EXPANDED;
         }
     
+        this.setCollapseAccessibleState(this.isCollapsed);
+    
         if (typeof this.callbacks.onCollapse === "function") {
           this.callbacks.onCollapse(this.isCollapsed);
         }
+      }
+    
+      /**
+       * Keep the collapse button's accessible name and expanded state in sync
+       * with the panel. The name states what pressing the button does; the
+       * glyph is decorative.
+       * @param {boolean} isCollapsed
+       * @private
+       */
+      setCollapseAccessibleState(isCollapsed) {
+        if (!this.elements.collapseBtn) {
+          return;
+        }
+    
+        const action = isCollapsed ? "Expand panel" : "Collapse panel";
+        this.elements.collapseBtn.setAttribute("aria-expanded", String(!isCollapsed));
+        this.elements.collapseBtn.setAttribute("aria-label", action);
+        this.elements.collapseBtn.title = action;
       }
     
       /**
@@ -3394,6 +3513,32 @@
       }
     
       /**
+       * Enable Strategy and Heuristic only when the active engine honours them
+       * (the WASM solver); while disabled, describe the reason via the hint.
+       * @param {boolean} wasmActive
+       */
+      setEngineDependentControlsEnabled(wasmActive) {
+        const active = Boolean(wasmActive);
+    
+        for (const control of [this.elements.solverStrategy, this.elements.solverHeuristic]) {
+          if (!control) {
+            continue;
+          }
+    
+          control.disabled = !active;
+          if (active) {
+            control.removeAttribute("aria-describedby");
+          } else {
+            control.setAttribute("aria-describedby", "strategy-engine-hint");
+          }
+        }
+    
+        if (this.elements.strategyHint) {
+          this.elements.strategyHint.hidden = active;
+        }
+      }
+    
+      /**
        * Update the solver status indicator text and colour.
        * @param {{text:string, color:string, title:string}} status
        */
@@ -3428,6 +3573,30 @@
         if (this.elements.scoreStatus) {
           this.elements.scoreStatus.textContent = scoreText;
         }
+      }
+    
+      /**
+       * Queue an announcement on the polite live region. The region is a stable
+       * empty element that is cleared first so repeated announcements are re-read;
+       * a pending older announcement is cancelled so the latest event wins.
+       * @param {string} message
+       */
+      setAnnouncement(message) {
+        const announcer = this.elements.announcer;
+        if (!announcer) {
+          return;
+        }
+    
+        if (this.announcementTimeout) {
+          clearTimeout(this.announcementTimeout);
+          this.announcementTimeout = null;
+        }
+    
+        announcer.textContent = "";
+        this.announcementTimeout = setTimeout(() => {
+          this.announcementTimeout = null;
+          announcer.textContent = message;
+        }, 20);
       }
     
       /**

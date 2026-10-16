@@ -5,6 +5,7 @@
  * intervals.
  *
  * Rungs (weakest to strongest):
+ *   chess-sand                            (random-legal-opponent tier, chess game)
  *   chess-paper, chess-wood               (built-in engine ladder, chess game)
  *   sf-250, sf-1k, sf-10k, sf-100k        (Stockfish node-budget tiers)
  *
@@ -12,9 +13,9 @@
  * wood) while still dropping points to sf-1k (1/16), so every adjacent
  * pair has nonzero cross scores and the anchored fit is identified.
  *
- * Pairs played: paper-wood, wood-sf-250, sf-250-sf-1k, sf-1k-sf-10k,
- * sf-10k-sf-100k, and the skip pair paper-sf-1k (two rungs apart, cheap).
- * Each rung's rating is
+ * Pairs played: sand-vs-paper, paper-wood, wood-sf-250, sf-250-sf-1k,
+ * sf-1k-sf-10k, sf-10k-sf-100k, and the skip pair paper-sf-1k (two rungs
+ * apart, cheap). Each rung's rating is
  * identified only by these pair results; the anchor is `chess-paper`
  * declared at 1000. Games are seeded (`rating/<pairId>/<k>`), seats chosen
  * by the game's own `agentSeat` function and balanced to
@@ -27,6 +28,11 @@
  *
  * Flags:
  *   --games-per-colour=N   default 20 (episodes per colour per pair)
+ *   --pairs=csv            run only these pair ids (default all)
+ *   --merge-from=PATH      load a prior results JSON and carry its pair
+ *                          results (all pairs not being re-run) into the
+ *                          fit and output, so a new rung can be added
+ *                          without replaying the old pairs
  *   --builtin-only         run only the built-in pair (paper vs wood); the
  *                          fit then covers just those two rungs
  *   --replicates=N         bootstrap replicates, default 2000
@@ -37,11 +43,11 @@
  * @module
  */
 
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { chess } from '../games/chess/index.js';
 import { chessStockfish } from '../games/chess-stockfish/index.js';
-import { createEngineBaselineAgent } from '../games/chess/baselines.js';
+import { createEngineBaselineAgent, createRandomBaselineAgent } from '../games/chess/baselines.js';
 import { createStockfishOpponentAgent } from '../games/chess-stockfish/stockfish-agent.js';
 import { runEpisode } from '../core/runner.js';
 import { fitRatings, bootstrapRatings } from './elo.js';
@@ -58,6 +64,7 @@ const GAMES = {
 
 /** @type {Record<string, { gameId: string, tierId: string }>} */
 const RUNGS = {
+  'chess-sand': { gameId: 'chess', tierId: 'sand' },
   'chess-paper': { gameId: 'chess', tierId: 'paper' },
   'chess-wood': { gameId: 'chess', tierId: 'wood' },
   'chess-stockfish-sf-250': { gameId: 'chess-stockfish', tierId: 'sf-250' },
@@ -68,6 +75,7 @@ const RUNGS = {
 
 /** @type {Array<{ id: string, gameId: string, opponentRung: string, agentRung: string }>} */
 const PAIRS = [
+  { id: 'sand-vs-paper', gameId: 'chess', opponentRung: 'chess-paper', agentRung: 'chess-sand' },
   { id: 'paper-vs-wood', gameId: 'chess', opponentRung: 'chess-paper', agentRung: 'chess-wood' },
   { id: 'wood-vs-sf-250', gameId: 'chess-stockfish', opponentRung: 'chess-stockfish-sf-250', agentRung: 'chess-wood' },
   { id: 'sf-250-vs-sf-1k', gameId: 'chess-stockfish', opponentRung: 'chess-stockfish-sf-1k', agentRung: 'chess-stockfish-sf-250' },
@@ -104,6 +112,11 @@ function createAgentForRung(rungId, { seed, seat }) {
   const tier = game.spec.tiers.find((/** @type {any} */ t) => t.id === rung.tierId);
   if (!tier) throw new Error(`ladder: rung ${rungId} tier ${rung.tierId} not found`);
   if (rung.gameId === 'chess') {
+    if (rung.tierId === 'sand') {
+      return /** @type {*} */ (
+        createRandomBaselineAgent({ tier, seed, seat, id: `rating-${rungId}/${seed}` })
+      );
+    }
     return /** @type {*} */ (
       createEngineBaselineAgent({ tier, seed, seat, id: `rating-${rungId}/${seed}` })
     );
@@ -204,15 +217,39 @@ async function main() {
     flags.out ??
     new URL('./ladder-results.json', import.meta.url).pathname;
 
-  const pairs = builtinOnly
-    ? PAIRS.filter((p) => p.id === 'paper-vs-wood')
-    : PAIRS;
+  let pairs = builtinOnly ? PAIRS.filter((p) => p.id === 'paper-vs-wood') : [...PAIRS];
+  if (typeof flags.pairs === 'string') {
+    const wanted = flags.pairs.split(',').map((s) => s.trim());
+    pairs = pairs.filter((p) => wanted.includes(p.id));
+  }
+  if (pairs.length === 0) {
+    throw new Error(`ladder: no pairs selected (available: ${PAIRS.map((p) => p.id).join(', ')})`);
+  }
+
+  /** @type {any} */
+  let prior = null;
+  let mergeFromPath = null;
+  if (typeof flags['merge-from'] === 'string') {
+    mergeFromPath = flags['merge-from'];
+    prior = JSON.parse(readFileSync(mergeFromPath, 'utf8'));
+    if (!prior || typeof prior !== 'object' || !prior.pairs || !prior.fit) {
+      throw new Error(`ladder: --merge-from ${mergeFromPath} is not a ladder-results JSON`);
+    }
+  }
 
   const binaryPath = findEngineBinary();
   const engineId = builtinOnly ? null : probeEngineIdSync(binaryPath);
 
   /** @type {Record<string, ReturnType<typeof runPair> extends Promise<infer T> ? T : never>} */
   const pairResults = {};
+  // Carry forward every prior pair that this run is not replaying.
+  if (prior) {
+    for (const [id, result] of Object.entries(prior.pairs)) {
+      if (!pairs.some((p) => p.id === id)) {
+        pairResults[id] = /** @type {*} */ (result);
+      }
+    }
+  }
   for (const pair of pairs) {
     process.stdout.write(`pair ${pair.id}: ${pair.agentRung} vs ${pair.opponentRung}\n`);
     pairResults[pair.id] = await runPair(pair, gamesPerColour);
@@ -298,6 +335,16 @@ async function main() {
       chessSpec: { id: chess.spec.id, version: chess.spec.version },
       chessStockfishSpec: { id: chessStockfish.spec.id, version: chessStockfish.spec.version },
       stockfish: builtinOnly ? null : { binaryPath, id: engineId },
+      mergedFrom: prior
+        ? {
+            path: mergeFromPath,
+            finishedAt: prior.meta?.finishedAt ?? null,
+            chessSpecVersion: prior.meta?.chessSpec?.version ?? null,
+            carriedPairs: Object.keys(prior.pairs).filter(
+              (id) => !pairs.some((p) => p.id === id)
+            ),
+          }
+        : null,
       git: gitProvenance(),
       finishedAt: new Date().toISOString(),
     },

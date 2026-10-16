@@ -1,0 +1,1523 @@
+{
+  "format": "playkit-gauntlet-msep-v2-solo-stats/1",
+  "pinned": {
+    "serve": "llama.cpp llama-server b11662, --ctx-size 4096 --temp 0 --seed 42 --threads 8, one warm-up call",
+    "run": "--concurrency 1 --max-output-tokens 256 --call-timeout-ms 60000, official model track",
+    "scorer": "scoring/score.js (replay-verifies every trajectory it scores)",
+    "bootstrap": "10,000-draw percentile intervals; score() seeds from suite id, paired diffs from core/rng.js"
+  },
+  "models": [
+    {
+      "stem": "qwen2.5-0.5b-instruct-q4_k_m",
+      "short": "qwen2.5-0.5b",
+      "size": 0.5
+    },
+    {
+      "stem": "qwen2.5-1.5b-instruct-q4_k_m",
+      "short": "qwen2.5-1.5b",
+      "size": 1.5
+    },
+    {
+      "stem": "qwen2.5-7b-instruct-q4_k_m",
+      "short": "qwen2.5-7b",
+      "size": 7
+    }
+  ],
+  "tiers": [
+    {
+      "game": "sliding",
+      "tier": "p8-short"
+    },
+    {
+      "game": "sokoban",
+      "tier": "one-box"
+    },
+    {
+      "game": "mastermind",
+      "tier": "mini"
+    },
+    {
+      "game": "cube",
+      "tier": "cube-2"
+    },
+    {
+      "game": "nonogram",
+      "tier": "tiny"
+    },
+    {
+      "game": "minesweeper",
+      "tier": "beginner"
+    }
+  ],
+  "profiles": [
+    "rhae-v1",
+    "squared-outcome",
+    "chance-adjusted"
+  ],
+  "random": {
+    "sliding/p8-short": {
+      "mean": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "episodes": 16,
+      "source": "calibration/tables/sliding.json",
+      "gameVersion": "1.1.0"
+    },
+    "sokoban/one-box": {
+      "mean": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "episodes": 16,
+      "source": "calibration/tables/sokoban.json",
+      "gameVersion": "1.0.0"
+    },
+    "mastermind/mini": {
+      "mean": 0.029847,
+      "ci95": [
+        0.0004,
+        0.07955
+      ],
+      "episodes": 25,
+      "source": "calibration/tables/mastermind.json",
+      "gameVersion": "1.0.0"
+    },
+    "cube/cube-2": {
+      "mean": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "episodes": 16,
+      "source": "calibration/tables/cube.json",
+      "gameVersion": "1.1.0"
+    },
+    "nonogram/tiny": {
+      "mean": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "episodes": 16,
+      "gameVersion": "1.0.0",
+      "source": "study-local random run (runs-random/), scored through scoring/score.js"
+    },
+    "minesweeper/beginner": {
+      "mean": 0.662535,
+      "ci95": [
+        0.592113,
+        0.729577
+      ],
+      "episodes": 25,
+      "source": "calibration/tables/minesweeper.json",
+      "gameVersion": "1.1.0"
+    }
+  },
+  "perTier": {
+    "sliding/p8-short": {
+      "perModel": {
+        "qwen2.5-0.5b": {
+          "agent": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "sliding/p8-short/public/0",
+            "sliding/p8-short/public/1",
+            "sliding/p8-short/public/2",
+            "sliding/p8-short/public/3",
+            "sliding/p8-short/public/4",
+            "sliding/p8-short/public/5",
+            "sliding/p8-short/public/6",
+            "sliding/p8-short/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.02439,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.02439,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.02439,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.02439,
+          "secPerCall": 0.511756,
+          "tokensPerCall": 529.073171
+        },
+        "qwen2.5-1.5b": {
+          "agent": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "sliding/p8-short/public/0",
+            "sliding/p8-short/public/1",
+            "sliding/p8-short/public/2",
+            "sliding/p8-short/public/3",
+            "sliding/p8-short/public/4",
+            "sliding/p8-short/public/5",
+            "sliding/p8-short/public/6",
+            "sliding/p8-short/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.617021,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.617021,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.617021,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.617021,
+          "secPerCall": 0.84866,
+          "tokensPerCall": 538.680851
+        },
+        "qwen2.5-7b": {
+          "agent": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+          "episodes": 4,
+          "seeds": [
+            "sliding/p8-short/public/0",
+            "sliding/p8-short/public/1",
+            "sliding/p8-short/public/2",
+            "sliding/p8-short/public/3"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 4,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 4,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 4,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0,
+          "secPerCall": 2.675669,
+          "tokensPerCall": 528.33125
+        }
+      },
+      "beatRandom": {
+        "qwen2.5-0.5b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        },
+        "qwen2.5-1.5b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        },
+        "qwen2.5-7b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        }
+      },
+      "pairedDiffs": {
+        "1.5b-minus-0.5b": {
+          "seeds": 8,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "7b-minus-1.5b": {
+          "seeds": 4,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      },
+      "sizeOrder": {
+        "meansRhaeV1": {
+          "qwen2.5-0.5b": 0,
+          "qwen2.5-1.5b": 0,
+          "qwen2.5-7b": 0
+        },
+        "monotoneIncreasing": false,
+        "strictlyOrdered": true,
+        "spearmanRho": null,
+        "spearmanRhoPooledEpisodes": null,
+        "pooledEpisodes": 20
+      }
+    },
+    "sokoban/one-box": {
+      "perModel": {
+        "qwen2.5-0.5b": {
+          "agent": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "sokoban/one-box/public/0",
+            "sokoban/one-box/public/1",
+            "sokoban/one-box/public/2",
+            "sokoban/one-box/public/3",
+            "sokoban/one-box/public/4",
+            "sokoban/one-box/public/5",
+            "sokoban/one-box/public/6",
+            "sokoban/one-box/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.571429,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.571429,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.571429,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.571429,
+          "secPerCall": 0.302214,
+          "tokensPerCall": 442.357143
+        },
+        "qwen2.5-1.5b": {
+          "agent": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "sokoban/one-box/public/0",
+            "sokoban/one-box/public/1",
+            "sokoban/one-box/public/2",
+            "sokoban/one-box/public/3",
+            "sokoban/one-box/public/4",
+            "sokoban/one-box/public/5",
+            "sokoban/one-box/public/6",
+            "sokoban/one-box/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.23,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.23,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.23,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.23,
+          "secPerCall": 0.394873,
+          "tokensPerCall": 443.398333
+        },
+        "qwen2.5-7b": {
+          "agent": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+          "episodes": 4,
+          "seeds": [
+            "sokoban/one-box/public/0",
+            "sokoban/one-box/public/1",
+            "sokoban/one-box/public/2",
+            "sokoban/one-box/public/3"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 4,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.4,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 4,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.4,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 4,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.4,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.4,
+          "secPerCall": 1.390967,
+          "tokensPerCall": 445.966667
+        }
+      },
+      "beatRandom": {
+        "qwen2.5-0.5b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        },
+        "qwen2.5-1.5b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        },
+        "qwen2.5-7b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        }
+      },
+      "pairedDiffs": {
+        "1.5b-minus-0.5b": {
+          "seeds": 8,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "7b-minus-1.5b": {
+          "seeds": 4,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      },
+      "sizeOrder": {
+        "meansRhaeV1": {
+          "qwen2.5-0.5b": 0,
+          "qwen2.5-1.5b": 0,
+          "qwen2.5-7b": 0
+        },
+        "monotoneIncreasing": false,
+        "strictlyOrdered": true,
+        "spearmanRho": null,
+        "spearmanRhoPooledEpisodes": null,
+        "pooledEpisodes": 20
+      }
+    },
+    "mastermind/mini": {
+      "perModel": {
+        "qwen2.5-0.5b": {
+          "agent": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "mastermind/mini/public/0",
+            "mastermind/mini/public/1",
+            "mastermind/mini/public/2",
+            "mastermind/mini/public/3",
+            "mastermind/mini/public/4",
+            "mastermind/mini/public/5",
+            "mastermind/mini/public/6",
+            "mastermind/mini/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 1,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 1,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 1,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 1,
+          "secPerCall": 0.820792,
+          "tokensPerCall": 746
+        },
+        "qwen2.5-1.5b": {
+          "agent": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "mastermind/mini/public/0",
+            "mastermind/mini/public/1",
+            "mastermind/mini/public/2",
+            "mastermind/mini/public/3",
+            "mastermind/mini/public/4",
+            "mastermind/mini/public/5",
+            "mastermind/mini/public/6",
+            "mastermind/mini/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.454545,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.454545,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.454545,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.454545,
+          "secPerCall": 1.234833,
+          "tokensPerCall": 775.727273
+        },
+        "qwen2.5-7b": {
+          "agent": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+          "episodes": 4,
+          "seeds": [
+            "mastermind/mini/public/0",
+            "mastermind/mini/public/1",
+            "mastermind/mini/public/2",
+            "mastermind/mini/public/3"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0.5,
+              "ci95": [
+                0,
+                1
+              ],
+              "episodes": 4,
+              "solvedFraction": 0.5,
+              "invalidActionRate": 0.018519,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0.5,
+              "ci95": [
+                0,
+                1
+              ],
+              "episodes": 4,
+              "solvedFraction": 0.5,
+              "invalidActionRate": 0.018519,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0.5,
+              "ci95": [
+                0,
+                1
+              ],
+              "episodes": 4,
+              "solvedFraction": 0.5,
+              "invalidActionRate": 0.018519,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.018519,
+          "secPerCall": 6.162093,
+          "tokensPerCall": 873.37037
+        }
+      },
+      "beatRandom": {
+        "qwen2.5-0.5b": {
+          "randomMean": 0.029847,
+          "beatsRandomMean": false,
+          "separatedFromRandom": true,
+          "belowRandomMean": true
+        },
+        "qwen2.5-1.5b": {
+          "randomMean": 0.029847,
+          "beatsRandomMean": false,
+          "separatedFromRandom": true,
+          "belowRandomMean": true
+        },
+        "qwen2.5-7b": {
+          "randomMean": 0.029847,
+          "beatsRandomMean": true,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        }
+      },
+      "pairedDiffs": {
+        "1.5b-minus-0.5b": {
+          "seeds": 8,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "7b-minus-1.5b": {
+          "seeds": 4,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0.5,
+              "ci95": [
+                0,
+                1
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0.5,
+              "ci95": [
+                0,
+                1
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0.5,
+              "ci95": [
+                0,
+                1
+              ]
+            }
+          }
+        }
+      },
+      "sizeOrder": {
+        "meansRhaeV1": {
+          "qwen2.5-0.5b": 0,
+          "qwen2.5-1.5b": 0,
+          "qwen2.5-7b": 0.5
+        },
+        "monotoneIncreasing": false,
+        "strictlyOrdered": true,
+        "spearmanRho": 0.866025,
+        "spearmanRhoPooledEpisodes": 0.496904,
+        "pooledEpisodes": 20
+      }
+    },
+    "cube/cube-2": {
+      "perModel": {
+        "qwen2.5-0.5b": {
+          "agent": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "cube/cube-2/public/0",
+            "cube/cube-2/public/1",
+            "cube/cube-2/public/2",
+            "cube/cube-2/public/3",
+            "cube/cube-2/public/4",
+            "cube/cube-2/public/5",
+            "cube/cube-2/public/6",
+            "cube/cube-2/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0,
+          "secPerCall": 0.408208,
+          "tokensPerCall": 948.191667
+        },
+        "qwen2.5-1.5b": {
+          "agent": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "cube/cube-2/public/0",
+            "cube/cube-2/public/1",
+            "cube/cube-2/public/2",
+            "cube/cube-2/public/3",
+            "cube/cube-2/public/4",
+            "cube/cube-2/public/5",
+            "cube/cube-2/public/6",
+            "cube/cube-2/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0,
+          "secPerCall": 0.872425,
+          "tokensPerCall": 948.958333
+        },
+        "qwen2.5-7b": {
+          "agent": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+          "episodes": 4,
+          "seeds": [
+            "cube/cube-2/public/0",
+            "cube/cube-2/public/1",
+            "cube/cube-2/public/2",
+            "cube/cube-2/public/3"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 4,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 4,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 4,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0,
+          "secPerCall": 6.61325,
+          "tokensPerCall": 948.433333
+        }
+      },
+      "beatRandom": {
+        "qwen2.5-0.5b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        },
+        "qwen2.5-1.5b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        },
+        "qwen2.5-7b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        }
+      },
+      "pairedDiffs": {
+        "1.5b-minus-0.5b": {
+          "seeds": 8,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "7b-minus-1.5b": {
+          "seeds": 4,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      },
+      "sizeOrder": {
+        "meansRhaeV1": {
+          "qwen2.5-0.5b": 0,
+          "qwen2.5-1.5b": 0,
+          "qwen2.5-7b": 0
+        },
+        "monotoneIncreasing": false,
+        "strictlyOrdered": true,
+        "spearmanRho": null,
+        "spearmanRhoPooledEpisodes": null,
+        "pooledEpisodes": 20
+      }
+    },
+    "nonogram/tiny": {
+      "perModel": {
+        "qwen2.5-0.5b": {
+          "agent": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "nonogram/tiny/public/0",
+            "nonogram/tiny/public/1",
+            "nonogram/tiny/public/2",
+            "nonogram/tiny/public/3",
+            "nonogram/tiny/public/4",
+            "nonogram/tiny/public/5",
+            "nonogram/tiny/public/6",
+            "nonogram/tiny/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0,
+          "secPerCall": 0.206306,
+          "tokensPerCall": 643.490909
+        },
+        "qwen2.5-1.5b": {
+          "agent": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "nonogram/tiny/public/0",
+            "nonogram/tiny/public/1",
+            "nonogram/tiny/public/2",
+            "nonogram/tiny/public/3",
+            "nonogram/tiny/public/4",
+            "nonogram/tiny/public/5",
+            "nonogram/tiny/public/6",
+            "nonogram/tiny/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.060519,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.060519,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 8,
+              "solvedFraction": 0,
+              "invalidActionRate": 0.060519,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.060519,
+          "secPerCall": 0.492781,
+          "tokensPerCall": 648.302594
+        },
+        "qwen2.5-7b": {
+          "episodes": 0,
+          "note": "not played (see REPORT.md)"
+        }
+      },
+      "beatRandom": {
+        "qwen2.5-0.5b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        },
+        "qwen2.5-1.5b": {
+          "randomMean": 0,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": false
+        }
+      },
+      "pairedDiffs": {
+        "1.5b-minus-0.5b": {
+          "seeds": 8,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      },
+      "sizeOrder": {
+        "meansRhaeV1": {
+          "qwen2.5-0.5b": 0,
+          "qwen2.5-1.5b": 0,
+          "qwen2.5-7b": null
+        },
+        "monotoneIncreasing": null,
+        "strictlyOrdered": null,
+        "spearmanRho": null,
+        "spearmanRhoPooledEpisodes": null,
+        "pooledEpisodes": 16
+      }
+    },
+    "minesweeper/beginner": {
+      "perModel": {
+        "qwen2.5-0.5b": {
+          "agent": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "minesweeper/beginner/public/0",
+            "minesweeper/beginner/public/1",
+            "minesweeper/beginner/public/2",
+            "minesweeper/beginner/public/3",
+            "minesweeper/beginner/public/4",
+            "minesweeper/beginner/public/5",
+            "minesweeper/beginner/public/6",
+            "minesweeper/beginner/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0.116197,
+              "ci95": [
+                0,
+                0.348592
+              ],
+              "episodes": 8,
+              "solvedFraction": null,
+              "invalidActionRate": 0.676471,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0.108014,
+              "ci95": [
+                0,
+                0.324043
+              ],
+              "episodes": 8,
+              "solvedFraction": null,
+              "invalidActionRate": 0.676471,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0.098915,
+              "ci95": [
+                0,
+                0.296745
+              ],
+              "episodes": 8,
+              "solvedFraction": null,
+              "invalidActionRate": 0.676471,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.676471,
+          "secPerCall": 0.979647,
+          "tokensPerCall": 898.235294
+        },
+        "qwen2.5-1.5b": {
+          "agent": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+          "episodes": 8,
+          "seeds": [
+            "minesweeper/beginner/public/0",
+            "minesweeper/beginner/public/1",
+            "minesweeper/beginner/public/2",
+            "minesweeper/beginner/public/3",
+            "minesweeper/beginner/public/4",
+            "minesweeper/beginner/public/5",
+            "minesweeper/beginner/public/6",
+            "minesweeper/beginner/public/7"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0.191901,
+              "ci95": [
+                0,
+                0.450704
+              ],
+              "episodes": 8,
+              "solvedFraction": null,
+              "invalidActionRate": 0.818182,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0.15178,
+              "ci95": [
+                0,
+                0.354915
+              ],
+              "episodes": 8,
+              "solvedFraction": null,
+              "invalidActionRate": 0.818182,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0.088481,
+              "ci95": [
+                0,
+                0.265442
+              ],
+              "episodes": 8,
+              "solvedFraction": null,
+              "invalidActionRate": 0.818182,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.818182,
+          "secPerCall": 1.251227,
+          "tokensPerCall": 830.909091
+        },
+        "qwen2.5-7b": {
+          "agent": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+          "episodes": 4,
+          "seeds": [
+            "minesweeper/beginner/public/0",
+            "minesweeper/beginner/public/1",
+            "minesweeper/beginner/public/2",
+            "minesweeper/beginner/public/3"
+          ],
+          "scores": {
+            "rhae-v1": {
+              "mean": 0.380282,
+              "ci95": [
+                0,
+                0.760563
+              ],
+              "episodes": 4,
+              "solvedFraction": null,
+              "invalidActionRate": 0.636364,
+              "costUsd": "unknown"
+            },
+            "squared-outcome": {
+              "mean": 0.299147,
+              "ci95": [
+                0,
+                0.609403
+              ],
+              "episodes": 4,
+              "solvedFraction": null,
+              "invalidActionRate": 0.636364,
+              "costUsd": "unknown"
+            },
+            "chance-adjusted": {
+              "mean": 0.176962,
+              "ci95": [
+                0,
+                0.530885
+              ],
+              "episodes": 4,
+              "solvedFraction": null,
+              "invalidActionRate": 0.636364,
+              "costUsd": "unknown"
+            }
+          },
+          "invalidReplyRate": 0.636364,
+          "secPerCall": 6.111727,
+          "tokensPerCall": 748.272727
+        }
+      },
+      "beatRandom": {
+        "qwen2.5-0.5b": {
+          "randomMean": 0.662535,
+          "beatsRandomMean": false,
+          "separatedFromRandom": true,
+          "belowRandomMean": true
+        },
+        "qwen2.5-1.5b": {
+          "randomMean": 0.662535,
+          "beatsRandomMean": false,
+          "separatedFromRandom": true,
+          "belowRandomMean": true
+        },
+        "qwen2.5-7b": {
+          "randomMean": 0.662535,
+          "beatsRandomMean": false,
+          "separatedFromRandom": false,
+          "belowRandomMean": true
+        }
+      },
+      "pairedDiffs": {
+        "1.5b-minus-0.5b": {
+          "seeds": 8,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0.075704,
+              "ci95": [
+                -0.269366,
+                0.417253
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0.043766,
+              "ci95": [
+                -0.273829,
+                0.353774
+              ]
+            },
+            "chance-adjusted": {
+              "mean": -0.010434,
+              "ci95": [
+                -0.296744,
+                0.265442
+              ]
+            }
+          }
+        },
+        "7b-minus-1.5b": {
+          "seeds": 4,
+          "diffs": {
+            "rhae-v1": {
+              "mean": 0.15493,
+              "ci95": [
+                0,
+                0.464789
+              ]
+            },
+            "squared-outcome": {
+              "mean": 0.096013,
+              "ci95": [
+                0,
+                0.288038
+              ]
+            },
+            "chance-adjusted": {
+              "mean": 0,
+              "ci95": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      },
+      "sizeOrder": {
+        "meansRhaeV1": {
+          "qwen2.5-0.5b": 0.116197,
+          "qwen2.5-1.5b": 0.191901,
+          "qwen2.5-7b": 0.380282
+        },
+        "monotoneIncreasing": true,
+        "strictlyOrdered": true,
+        "spearmanRho": 1,
+        "spearmanRhoPooledEpisodes": 0.244365,
+        "pooledEpisodes": 20
+      }
+    }
+  },
+  "pooled": {
+    "qwen2.5-0.5b": {
+      "episodes": 48,
+      "meanRhaeV1": 0.019366,
+      "ci95": [
+        0,
+        0.058099
+      ]
+    },
+    "qwen2.5-1.5b": {
+      "episodes": 48,
+      "meanRhaeV1": 0.031984,
+      "ci95": [
+        0,
+        0.082746
+      ]
+    },
+    "qwen2.5-7b": {
+      "episodes": 20,
+      "meanRhaeV1": 0.176056,
+      "ci95": [
+        0.030986,
+        0.34507
+      ]
+    }
+  }
+}

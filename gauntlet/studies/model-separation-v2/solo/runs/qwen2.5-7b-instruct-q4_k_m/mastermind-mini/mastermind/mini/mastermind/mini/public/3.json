@@ -1,0 +1,66 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "mini",
+  "seed": "mastermind/mini/public/3",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "guess AAA",
+        "usage": {
+          "inputTokens": 714,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-hPIl1Zn8o7YA1MFJ9cephK63M1GlcNEB",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess AAA",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 714,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 5241
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1
+      ],
+      "raw": [
+        1
+      ],
+      "reason": "solved: the secret was found in 1 guess(es), reference par 3",
+      "solved": true,
+      "par": 3
+    },
+    "agentActions": 1,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:46:29.911Z",
+  "finishedAt": "2026-10-16T11:46:35.153Z"
+}

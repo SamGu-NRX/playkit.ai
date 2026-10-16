@@ -1,0 +1,26 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-msep-v2-qwen2.5-7b-instruct-q4_k_m-minesweeper-beginner-4",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "minesweeper",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "beginner",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "minesweeper/beginner/public/0",
+            "minesweeper/beginner/public/1",
+            "minesweeper/beginner/public/2",
+            "minesweeper/beginner/public/3"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -30,7 +30,6 @@ export function getHUDCSS() {
         pointer-events: auto;
         backdrop-filter: blur(10px);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
         user-select: none;
       }
 
@@ -75,7 +74,6 @@ export function getHUDCSS() {
         border-radius: 4px;
         cursor: pointer;
         font-size: 12px;
-        transition: all 0.2s ease;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -191,6 +189,24 @@ export function getHUDCSS() {
         color: white;
       }
 
+      .setting-hint {
+        margin: 4px 0 0;
+        font-size: 12px;
+      }
+
+      .hud-live-region {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+      }
+
       .setting-input {
         width: 100%;
         background: rgba(255, 255, 255, 0.1);
@@ -207,13 +223,23 @@ export function getHUDCSS() {
         cursor: not-allowed;
       }
 
-      .hud-panel.auto-solving .hud-btn-success {
-        animation: pulse 1s infinite;
-      }
+      @media (prefers-reduced-motion: no-preference) {
+        .hud-panel {
+          transition: all 0.3s ease;
+        }
 
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
+        .hud-btn {
+          transition: all 0.2s ease;
+        }
+
+        .hud-panel.auto-solving .hud-btn-success {
+          animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
       }
 
       .hud-panel.dragging {
@@ -232,15 +258,15 @@ export function getHUDHTML() {
       <style>
         ${getHUDCSS()}
       </style>
-      <div class="hud-panel" data-collapsed="false">
+      <div class="hud-panel" role="region" aria-label="AI 2048 Solver" data-collapsed="false">
         <div class="hud-header">
           <div class="hud-title">
             <span class="hud-icon">🎯</span>
             <span class="hud-text">2048 AI Solver</span>
           </div>
           <div class="hud-controls">
-            <button class="hud-btn hud-btn-collapse" title="Collapse/Expand">
-              <span class="collapse-icon">−</span>
+            <button class="hud-btn hud-btn-collapse" type="button" aria-expanded="true" aria-label="Collapse panel" title="Collapse panel">
+              <span class="collapse-icon" aria-hidden="true">−</span>
             </button>
           </div>
         </div>
@@ -274,7 +300,7 @@ export function getHUDHTML() {
 
           <div class="hud-settings">
             <div class="setting-group">
-              <label class="setting-label">Direction Priority:</label>
+              <label class="setting-label" for="direction-priority">Direction Priority:</label>
               <select class="setting-select" id="direction-priority">
                 <option value="0,2,1,3">Up → Down → Right → Left</option>
                 <option value="3,2,1,0" selected>Left → Down → Right → Up</option>
@@ -283,21 +309,24 @@ export function getHUDHTML() {
               </select>
             </div>
             <div class="setting-group">
-              <label class="setting-label">Solver Strategy:</label>
-              <select class="setting-select" id="solver-strategy">
+              <label class="setting-label" for="solver-strategy">Solver Strategy:</label>
+              <select class="setting-select" id="solver-strategy" aria-describedby="strategy-engine-hint">
                 <option value="expectimax-depth" selected>Expectimax (Depth)</option>
                 <option value="expectimax-probability">Expectimax (Probability)</option>
               </select>
             </div>
             <div class="setting-group">
-              <label class="setting-label">Heuristic:</label>
-              <select class="setting-select" id="solver-heuristic">
+              <label class="setting-label" for="solver-heuristic">Heuristic:</label>
+              <select class="setting-select" id="solver-heuristic" aria-describedby="strategy-engine-hint">
                 <option value="corner" selected>Corner Bias</option>
                 <option value="monotonicity">Monotonicity</option>
                 <option value="wall">Wall Building</option>
                 <option value="score">Score Focus</option>
               </select>
             </div>
+            <p class="setting-hint" id="strategy-engine-hint">
+              Strategy and heuristic options need the WASM solver.
+            </p>
             <div class="setting-group">
               <label class="setting-label" for="solver-depth">Depth:</label>
               <input class="setting-input" id="solver-depth" type="number" min="1" max="8" step="1" value="4" />
@@ -308,6 +337,8 @@ export function getHUDHTML() {
             </div>
           </div>
         </div>
+
+        <div class="hud-live-region" id="hud-announcer" role="status"></div>
       </div>
     `;
 }

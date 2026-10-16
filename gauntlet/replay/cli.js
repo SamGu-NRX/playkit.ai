@@ -24,18 +24,27 @@
  * @module
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { buildFrames, ReplayRefusedError } from './frames.js';
+import { CompareRefusedError, compareBundles, compareTrajectories } from './compare.js';
 import { getGame } from '../games/index.js';
 
 /** @typedef {import('./frames.js').ReplayFrame} ReplayFrame */
 /** @typedef {import('./frames.js').ReplayFrames} ReplayFrames */
 
-const USAGE = `usage: node replay/cli.js <trajectory.json> [--step N] [--format text|json] [--max-reply-chars K]
+const USAGE = `usage:
+  node replay/cli.js <trajectory.json> [--step N] [--format text|json] [--max-reply-chars K]
+  node replay/cli.js <a.json> --against <b.json> [--format text|json]
+  node replay/cli.js --bundles <dirA> <dirB> [--format text|json]
 
-  --step N             show only step N (0-based)
-  --format text|json   text: readable episode (default); json: frames payload
+  --step N             show only step N (0-based) — single-trajectory mode only
+  --format text|json   text: readable report (default); json: machine payload
+                       (frames: playkit-gauntlet-replay-frames/1;
+                       compare: playkit-gauntlet-replay-compare/1)
   --max-reply-chars K  truncate displayed replies to K chars (text only)
+  --against <b.json>   compare two trajectories of the same episode turn by turn
+  --bundles <a> <b>    compare two run directories episode by episode
 `;
 
 /**
@@ -49,11 +58,11 @@ function usageError(message) {
 
 /**
  * @param {string[]} argv
- * @returns {{ file: string, step: number | null, format: 'text' | 'json', maxReplyChars: number | null }}
+ * @returns {{ file: string, step: number | null, format: 'text' | 'json', maxReplyChars: number | null, against: string | null, bundles: [string, string] | null }}
  */
 function parseArgs(argv) {
-  /** @type {{ file: string, step: number | null, format: 'text' | 'json', maxReplyChars: number | null }} */
-  const args = { file: '', step: null, format: 'text', maxReplyChars: null };
+  /** @type {{ file: string, step: number | null, format: 'text' | 'json', maxReplyChars: number | null, against: string | null, bundles: [string, string] | null }} */
+  const args = { file: '', step: null, format: 'text', maxReplyChars: null, against: null, bundles: null };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     /** @param {string} name @returns {string} */
@@ -66,6 +75,9 @@ function parseArgs(argv) {
       const raw = value('step');
       const n = Number(raw);
       if (!Number.isInteger(n) || n < 0) usageError(`--step must be a non-negative integer, got ${JSON.stringify(raw)}`);
+      if (args.against !== null || args.bundles !== null) {
+        usageError('--step only works in single-trajectory mode');
+      }
       args.step = n;
     } else if (arg === '--format') {
       const raw = value('format');
@@ -77,19 +89,35 @@ function parseArgs(argv) {
       const raw = value('max-reply-chars');
       const n = Number(raw);
       if (!Number.isInteger(n) || n < 1) usageError(`--max-reply-chars must be a positive integer, got ${JSON.stringify(raw)}`);
+      if (args.against !== null || args.bundles !== null) {
+        usageError('--max-reply-chars only works in single-trajectory mode');
+      }
       args.maxReplyChars = n;
+    } else if (arg === '--against') {
+      if (args.bundles !== null) usageError('--against cannot be combined with --bundles');
+      if (args.against !== null) usageError('--against given twice');
+      args.against = value('against');
+    } else if (arg === '--bundles') {
+      if (args.against !== null) usageError('--bundles cannot be combined with --against');
+      if (args.file !== '') usageError('--bundles takes two run directories and no trajectory file');
+      if (args.bundles !== null) usageError('--bundles given twice');
+      const dirA = value('bundles');
+      const dirB = value('bundles');
+      args.bundles = [dirA, dirB];
     } else if (arg === '--help' || arg === '-h') {
       process.stdout.write(USAGE);
       process.exit(0);
     } else if (arg.startsWith('--')) {
       usageError(`unknown option ${arg}`);
+    } else if (args.bundles !== null) {
+      usageError(`--bundles takes two run directories; unexpected extra argument ${JSON.stringify(arg)}`);
     } else if (args.file === '') {
       args.file = arg;
     } else {
-      usageError(`unexpected extra argument ${JSON.stringify(arg)}`);
+      usageError(`unexpected extra argument ${JSON.stringify(arg)} — to compare two files use --against`);
     }
   }
-  if (args.file === '') usageError('a trajectory file is required');
+  if (args.file === '' && args.bundles === null) usageError('a trajectory file is required');
   return args;
 }
 
@@ -246,10 +274,284 @@ function renderText(payload, maxReplyChars) {
 }
 
 /**
+ * Recursively collect *.json files under a run directory, sorted.
+ *
+ * @param {string} root
+ * @returns {string[]}
+ */
+function collectJsonFiles(root) {
+  /** @type {string[]} */
+  const files = [];
+  /** @param {string} dir */
+  const walk = (dir) => {
+    for (const name of readdirSync(dir).sort()) {
+      const path = join(dir, name);
+      if (statSync(path).isDirectory()) walk(path);
+      else if (name.endsWith('.json')) files.push(path);
+    }
+  };
+  walk(root);
+  return files;
+}
+
+/**
+ * Load every trajectory JSON in a run directory, keyed by the episode identity
+ * the contents record (`<game>/<tier>/<split>/<seed>`) — directory layout is
+ * incidental. Files that are not trajectory JSON (run.json, suite.json) are
+ * reported as ignored rather than fatal.
+ *
+ * @param {string} root
+ * @returns {{ entries: Map<string, import('./compare.js').TrajectoryEntry & { rel: string }>, ignored: string[] }}
+ */
+function loadBundle(root) {
+  const entries = /** @type {Map<string, import('./compare.js').TrajectoryEntry & { rel: string }>} */ (new Map());
+  /** @type {string[]} */
+  const ignored = [];
+  for (const path of collectJsonFiles(root)) {
+    const rel = relative(root, path);
+    /** @type {*} */
+    let parsed;
+    try {
+      parsed = JSON.parse(readFileSync(path, 'utf8'));
+    } catch {
+      ignored.push(rel);
+      continue;
+    }
+    const isTrajectory =
+      parsed &&
+      parsed.format === 'playkit-gauntlet-trajectory/1' &&
+      parsed.game &&
+      typeof parsed.game.id === 'string' &&
+      typeof parsed.tier === 'string' &&
+      typeof parsed.seed === 'string' &&
+      Array.isArray(parsed.steps);
+    if (!isTrajectory) {
+      ignored.push(rel);
+      continue;
+    }
+    const key = `${parsed.game.id}/${parsed.tier}/${parsed.split}/${parsed.seed}`;
+    if (entries.has(key)) {
+      throw new Error(`duplicate episode ${key} in ${root}: ${entries.get(key)?.rel} and ${rel}`);
+    }
+    entries.set(key, { trajectory: parsed, path, rel });
+  }
+  return { entries, ignored };
+}
+
+/**
+ * @param {number | null} value
+ * @returns {string}
+ */
+function formatUsd(value) {
+  if (value === null) return 'unknown';
+  const cents = value.toFixed(value !== 0 && Math.abs(value) < 0.01 ? 5 : 4);
+  return '$' + cents;
+}
+
+/**
+ * @param {number | null} value
+ * @returns {string}
+ */
+function formatP(value) {
+  return value === null ? '—' : value.toFixed(4);
+}
+
+/**
+ * @param {import('./compare.js').EpisodeCompare} payload
+ * @returns {string}
+ */
+function renderEpisodeCompareText(payload) {
+  const A = payload.a;
+  const B = payload.b;
+  const lines = [
+    'PlayKit Gauntlet replay compare',
+    `game:  ${payload.game.id} v${payload.game.version} · tier ${payload.tier} · seed ${payload.seed}`,
+    `A:     ${payload.agents.a.id}${payload.agents.a.model ? ` — ${payload.agents.a.model}` : ''}`,
+    `B:     ${payload.agents.b.id}${payload.agents.b.model ? ` — ${payload.agents.b.model}` : ''}`,
+  ];
+  if (payload.identical) {
+    lines.push('', 'the two replays are identical: same verified steps, no divergence');
+    return lines.join('\n');
+  }
+  /** @param {string} label @param {string | number} a @param {string | number} b */
+  const row = (label, a, b) => lines.push(`${label.padEnd(24)}${String(a).padEnd(30)}${b}`);
+  lines.push('');
+  row('metric', 'A', 'B');
+  row('attempts (agent turns)', A.attempts, B.attempts);
+  row('valid actions', A.validActions, B.validActions);
+  row('invalid replies', A.invalidActions, B.invalidActions);
+  row('distinct observations', A.distinctObservations, B.distinctObservations);
+  row('revisited states', A.revisitedStates, B.revisitedStates);
+  row(
+    'undo-style actions',
+    A.undoStyleActions === null ? '—' : String(A.undoStyleActions),
+    B.undoStyleActions === null ? '—' : String(B.undoStyleActions)
+  );
+  row('tokens in', A.tokens.inputTokens ?? 'unknown', B.tokens.inputTokens ?? 'unknown');
+  row('tokens out', A.tokens.outputTokens ?? 'unknown', B.tokens.outputTokens ?? 'unknown');
+  row('steps without usage', A.tokens.unknownSteps, B.tokens.unknownSteps);
+  row('latency total', formatDuration(A.latency.totalMs), formatDuration(B.latency.totalMs));
+  row('latency mean', formatDuration(Math.round(A.latency.meanMs ?? 0)), formatDuration(Math.round(B.latency.meanMs ?? 0)));
+  row('cost', formatUsd(A.costUsd), formatUsd(B.costUsd));
+  row(
+    'end',
+    `${A.end.reason} · ${A.end.outcomeScore === null ? 'no score' : A.end.outcomeScore.toFixed(3)}`,
+    `${B.end.reason} · ${B.end.outcomeScore === null ? 'no score' : B.end.outcomeScore.toFixed(3)}`
+  );
+  row(
+    'episode score',
+    A.end.episodeScore === null ? '—' : A.end.episodeScore.toFixed(4),
+    B.end.episodeScore === null ? '—' : B.end.episodeScore.toFixed(4)
+  );
+
+  /** @param {import('./compare.js').AgentCompare} agent @param {string} label */
+  const detailBlock = (agent, label) => {
+    lines.push('');
+    lines.push(`${label} top actions:`);
+    for (const { action, count, share } of agent.topActions) {
+      lines.push(`  ${action.padEnd(24)}${String(count).padStart(5)}  (${(share * 100).toFixed(1)}%)`);
+    }
+    if (agent.topActions.length === 0) lines.push('  (none)');
+    if (agent.invalidByReason.length > 0) {
+      lines.push(`${label} invalid replies by reason:`);
+      for (const { reason, count } of agent.invalidByReason) {
+        lines.push(`  ${String(count).padStart(5)}  × ${reason}`);
+      }
+    }
+  };
+  detailBlock(A, 'A');
+  detailBlock(B, 'B');
+
+  const div = payload.divergence;
+  if (div) {
+    const why =
+      div.reason === 'actions-differ'
+        ? `actions differ (observations ${div.observationMatch ? 'match' : 'ALSO differ'})`
+        : div.reason === 'observation-differs'
+          ? 'observations differ (the same seat now sees a different position or reply feedback)'
+          : div.reason === 'a-ended'
+            ? 'A ends here while B continues'
+            : 'B ends here while A continues';
+    lines.push('');
+    lines.push(`first divergence: step ${div.index} — ${why}`);
+    /** @param {import('./compare.js').DivergenceSide | null} sideOrNull @param {string} label */
+    const side = (sideOrNull, label) => {
+      lines.push(`${label} at step ${div.index}:`);
+      if (!sideOrNull) {
+        lines.push('  (no recorded step)');
+        return;
+      }
+      lines.push(`  observation hash ${sideOrNull.observation.hash}:`);
+      lines.push(indent(sideOrNull.observation.text, '    '));
+      lines.push(
+        `  reply ${JSON.stringify(sideOrNull.replyText)} → ${
+          sideOrNull.invalid
+            ? `INVALID (${sideOrNull.attempted === null ? 'unparseable' : JSON.stringify(sideOrNull.attempted)})`
+            : `action ${JSON.stringify(sideOrNull.action)}`
+        }`
+      );
+    };
+    side(div.a, 'A');
+    side(div.b, 'B');
+  }
+  return lines.join('\n');
+}
+
+/**
+ * @param {import('./compare.js').BundleCompare} payload
+ * @returns {string}
+ */
+function renderBundleCompareText(payload) {
+  const lines = [
+    'PlayKit Gauntlet bundle compare',
+    `A: ${payload.bundles.a.dir || '(dir A)'} — ${payload.bundles.a.agent} (${payload.bundles.a.episodes} episodes)`,
+    `B: ${payload.bundles.b.dir || '(dir B)'} — ${payload.bundles.b.agent} (${payload.bundles.b.episodes} episodes)`,
+    '',
+    'per-game paired results (winner = higher episode score; the sign test drops ties):',
+    `${'game'.padEnd(16)}${'pairs'.padStart(6)}${'A wins'.padStart(8)}${'ties'.padStart(6)}${'B wins'.padStart(8)}${'  sign-test p'}`,
+  ];
+  let totals = { pairs: 0, aWins: 0, ties: 0, bWins: 0 };
+  for (const g of payload.games) {
+    lines.push(
+      `${g.game.padEnd(16)}${String(g.pairs).padStart(6)}${String(g.aWins).padStart(8)}${String(g.ties).padStart(6)}${String(g.bWins).padStart(8)}${'  '}${formatP(g.signTestP)}`
+    );
+    totals = {
+      pairs: totals.pairs + g.pairs,
+      aWins: totals.aWins + g.aWins,
+      ties: totals.ties + g.ties,
+      bWins: totals.bWins + g.bWins,
+    };
+  }
+  lines.push(
+    `${'total'.padEnd(16)}${String(totals.pairs).padStart(6)}${String(totals.aWins).padStart(8)}${String(totals.ties).padStart(6)}${String(totals.bWins).padStart(8)}`
+  );
+  lines.push('');
+  lines.push('paired episodes:');
+  for (const pair of payload.pairs) {
+    const tag =
+      pair.verdict === 'end-record' && pair.versionDrift
+        ? `  [end-record: game v${pair.versionDrift.recorded} → current v${pair.versionDrift.current}]`
+        : '  [verified]';
+    lines.push(`  ${pair.key}  A ${pair.a.outcome} — B ${pair.b.outcome} → ${pair.winner}${tag}`);
+  }
+  /** @param {string[]} keys @param {string} label */
+  const unpaired = (keys, label) => {
+    lines.push('');
+    lines.push(keys.length ? `unpaired, only in ${label} (${keys.length}):` : `unpaired, only in ${label}: none`);
+    for (const key of keys) lines.push(`  ${key}`);
+  };
+  unpaired(payload.unpaired.a, 'A');
+  unpaired(payload.unpaired.b, 'B');
+  lines.push('');
+  lines.push(payload.refused.length ? `refused pairs (${payload.refused.length}):` : 'refused pairs: none');
+  for (const { key, reason } of payload.refused) lines.push(`  ${key}: ${reason}`);
+  lines.push(payload.ignored.length ? `ignored files (${payload.ignored.length}):` : 'ignored files: none');
+  for (const file of payload.ignored) lines.push(`  ${file}`);
+  return lines.join('\n');
+}
+
+/**
  * @returns {Promise<void>}
  */
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+
+  if (args.bundles) {
+    const [dirA, dirB] = args.bundles;
+    let bundleA;
+    let bundleB;
+    try {
+      bundleA = loadBundle(dirA);
+      bundleB = loadBundle(dirB);
+    } catch (err) {
+      usageError(err instanceof Error ? err.message : String(err));
+    }
+    let bundlePayload;
+    try {
+      bundlePayload = await compareBundles(bundleA.entries, bundleB.entries, {
+        getGameOf: (trajectory) => getGame(trajectory.game.id),
+        dirA,
+        dirB,
+      });
+    } catch (err) {
+      if (err instanceof ReplayRefusedError || err instanceof CompareRefusedError) {
+        process.stderr.write(`replay: ${err.message}\n`);
+        process.exit(1);
+      }
+      throw err;
+    }
+    bundlePayload.ignored = [
+      ...bundleA.ignored.map((rel) => join(dirA, rel)),
+      ...bundleB.ignored.map((rel) => join(dirB, rel)),
+    ];
+    if (args.format === 'json') {
+      process.stdout.write(`${JSON.stringify(bundlePayload, null, 2)}\n`);
+    } else {
+      process.stdout.write(`${renderBundleCompareText(bundlePayload)}\n`);
+    }
+    return;
+  }
+
   /** @type {import('../core/types.js').Trajectory} */
   let trajectory;
   try {
@@ -263,6 +565,34 @@ async function main() {
     game = getGame(trajectory.game.id);
   } catch (err) {
     usageError(err instanceof Error ? err.message : String(err));
+  }
+
+  if (args.against !== null) {
+    let other;
+    try {
+      other = readTrajectory(readFileSync(args.against, 'utf8'));
+    } catch (err) {
+      usageError(`cannot read ${args.against}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    let comparePayload;
+    try {
+      comparePayload = await compareTrajectories(game, trajectory, other, {
+        pathA: args.file,
+        pathB: args.against,
+      });
+    } catch (err) {
+      if (err instanceof ReplayRefusedError || err instanceof CompareRefusedError) {
+        process.stderr.write(`replay: ${err.message}\n`);
+        process.exit(1);
+      }
+      throw err;
+    }
+    if (args.format === 'json') {
+      process.stdout.write(`${JSON.stringify(comparePayload, null, 2)}\n`);
+    } else {
+      process.stdout.write(`${renderEpisodeCompareText(comparePayload)}\n`);
+    }
+    return;
   }
 
   let payload;

@@ -2,16 +2,30 @@
   "format": "playkit-gauntlet-calibration-table/2",
   "game": {
     "id": "chess",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "benchmark": true
   },
   "split": "public",
   "baselines": {
     "random": {
       "tiers": {
+        "sand": {
+          "id": "sand",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.8,
+            "ci95": [
+              0.6,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
         "paper": {
           "id": "paper",
-          "rank": 1,
+          "rank": 2,
           "scoring": "outcome",
           "score": {
             "value": 0,
@@ -25,7 +39,7 @@
         },
         "wood": {
           "id": "wood",
-          "rank": 2,
+          "rank": 3,
           "scoring": "outcome",
           "score": {
             "value": 0,
@@ -39,7 +53,7 @@
         },
         "steel": {
           "id": "steel",
-          "rank": 3,
+          "rank": 4,
           "scoring": "outcome",
           "score": {
             "value": 0,
@@ -53,7 +67,7 @@
         },
         "granite": {
           "id": "granite",
-          "rank": 4,
+          "rank": 5,
           "scoring": "outcome",
           "score": {
             "value": 0,
@@ -69,9 +83,23 @@
     },
     "greedy": {
       "tiers": {
+        "sand": {
+          "id": "sand",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.7,
+            "ci95": [
+              0.5,
+              0.9
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
         "paper": {
           "id": "paper",
-          "rank": 1,
+          "rank": 2,
           "scoring": "outcome",
           "score": {
             "value": 0,
@@ -85,7 +113,7 @@
         },
         "wood": {
           "id": "wood",
-          "rank": 2,
+          "rank": 3,
           "scoring": "outcome",
           "score": {
             "value": 0,
@@ -99,7 +127,7 @@
         },
         "steel": {
           "id": "steel",
-          "rank": 3,
+          "rank": 4,
           "scoring": "outcome",
           "score": {
             "value": 0,
@@ -113,7 +141,7 @@
         },
         "granite": {
           "id": "granite",
-          "rank": 4,
+          "rank": 5,
           "scoring": "outcome",
           "score": {
             "value": 0,
@@ -129,9 +157,23 @@
     },
     "engine": {
       "tiers": {
+        "sand": {
+          "id": "sand",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
         "paper": {
           "id": "paper",
-          "rank": 1,
+          "rank": 2,
           "scoring": "outcome",
           "score": {
             "value": 0.4,
@@ -145,7 +187,7 @@
         },
         "wood": {
           "id": "wood",
-          "rank": 2,
+          "rank": 3,
           "scoring": "outcome",
           "score": {
             "value": 0.4,
@@ -159,7 +201,7 @@
         },
         "steel": {
           "id": "steel",
-          "rank": 3,
+          "rank": 4,
           "scoring": "outcome",
           "score": {
             "value": 0.7,
@@ -173,7 +215,7 @@
         },
         "granite": {
           "id": "granite",
-          "rank": 4,
+          "rank": 5,
           "scoring": "outcome",
           "score": {
             "value": 0.7,

@@ -1,0 +1,116 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "nonogram",
+    "version": "1.0.0"
+  },
+  "tier": "tiny",
+  "seed": "nonogram/tiny/public/7",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "748367024f6888d3",
+      "reply": {
+        "text": "row 1 #. . . .",
+        "usage": {
+          "inputTokens": 637,
+          "outputTokens": 9,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Y3R41o36VLfdUu1D7yAS3LX522VTOB5o",
+          "reasoningChars": 0
+        }
+      },
+      "action": "row 1 #. . . .",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 637,
+        "outputTokens": 9,
+        "costUsd": null
+      },
+      "ms": 1083
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "748367024f6888d3",
+      "reply": {
+        "text": "row 1 #. . . .",
+        "usage": {
+          "inputTokens": 693,
+          "outputTokens": 9,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-9DTBShYUTC25q53nckZDSMeDU92B5cUA",
+          "reasoningChars": 0
+        }
+      },
+      "action": "row 1 #. . . .",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 693,
+        "outputTokens": 9,
+        "costUsd": null
+      },
+      "ms": 1291
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "748367024f6888d3",
+      "reply": {
+        "text": "row 1 #. . . .",
+        "usage": {
+          "inputTokens": 693,
+          "outputTokens": 9,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-xpePJQirkK2FPzjILqR17QtGTcNhYmT7",
+          "reasoningChars": 0
+        }
+      },
+      "action": "row 1 #. . . .",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 693,
+        "outputTokens": 9,
+        "costUsd": null
+      },
+      "ms": 283
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:27:56.939Z",
+  "finishedAt": "2026-10-16T11:27:59.597Z"
+}

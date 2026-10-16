@@ -38,6 +38,14 @@ export class HUD {
     this.directionPriority = [...DEFAULT_DIRECTION_PRIORITY];
     this.solverConfig = { ...DEFAULT_SOLVER_CONFIG };
 
+    // Engine honesty: Strategy/Heuristic stay disabled until the solver
+    // manager reports the WASM engine as active.
+    this.engineSupportsCustomStrategy = false;
+
+    // Announcement bookkeeping (see updateRunState and autoSolveLoop).
+    this._pendingStopMessage = null;
+    this._detectionState = undefined;
+
     this.isInitialized = false;
   }
 
@@ -70,6 +78,7 @@ export class HUD {
   applySolverControlState() {
     const isProbability = this.solverConfig.type === "expectimax-probability";
     this.view.setSolverControlAvailability(!isProbability, isProbability);
+    this.view.setEngineDependentControlsEnabled(this.engineSupportsCustomStrategy);
   }
 
   /**
@@ -140,6 +149,13 @@ export class HUD {
 
     this.view.setSolverStatus(state);
 
+    // The WASM engine honours Strategy/Heuristic; the JS fallback ignores
+    // them, so the controls disable with a reason while it is active.
+    this.engineSupportsCustomStrategy = Boolean(
+      status && status.status === "ready" && status.mode === "wasm",
+    );
+    this.applySolverControlState();
+
     if (status && status.strategy) {
       const clamped = clampSolverConfig(status.strategy);
       this.solverConfig = {
@@ -178,6 +194,17 @@ export class HUD {
       this.view.setGameStatus({ text: "Not detected", color: "#f87171" });
       this.view.setScore("-");
       this.view.setControlsEnabled({ autoSolve: false, step: false });
+    }
+
+    // Announce detection transitions once. updateStatus() runs after every
+    // move, so repeat refreshes stay silent; the first read only records the
+    // initial state.
+    const isDetected = Boolean(this.currentAdapter);
+    if (this._detectionState === undefined) {
+      this._detectionState = isDetected;
+    } else if (isDetected && !this._detectionState) {
+      this._detectionState = true;
+      this.announce(`${this.currentAdapter.getName()} detected.`);
     }
 
     if (this.controller && this.controller.getSolverStatus) {
@@ -238,10 +265,12 @@ export class HUD {
         this.updateStatus();
         if (!detected && !this.currentAdapter) {
           this.showMessage("No game detected.");
+          this.announce("No game detected.");
         }
       } catch (error) {
         console.warn("HUD: Controller-driven detect failed", error);
         this.showMessage("Detect failed. Check console.");
+        this.announce("Detect failed. Check console.");
       }
       return;
     }
@@ -251,6 +280,7 @@ export class HUD {
 
     if (!this.currentAdapter) {
       this.showMessage("No game detected.");
+      this.announce("No game detected.");
     }
   }
 
@@ -330,12 +360,35 @@ export class HUD {
   }
 
   /**
-   * Update run state UI to reflect automation status
+   * Update run state UI to reflect automation status. Announcements only
+   * fire on real transitions, so refreshes never repeat the same message.
    * @param {boolean} isRunning Whether automation is active
+   * @param {"user"|"runtime"} source What asked for the transition; the
+   *   wording follows it ("paused" for the Pause button, "stopped" when the
+   *   runtime tears the run down).
    */
-  updateRunState(isRunning) {
+  updateRunState(isRunning, source = "user") {
+    const wasRunning = this.isAutoSolving;
     this.isAutoSolving = !!isRunning;
     this.view.setAutoSolveRunning(this.isAutoSolving);
+
+    if (this.isAutoSolving && !wasRunning) {
+      this.announce("Auto-solve started.");
+    } else if (!this.isAutoSolving && wasRunning) {
+      const message =
+        this._pendingStopMessage ||
+        (source === "runtime" ? "Auto-solve stopped." : "Auto-solve paused.");
+      this._pendingStopMessage = null;
+      this.announce(message);
+    }
+  }
+
+  /**
+   * Push a message to the polite live region for assistive technology.
+   * @param {string} message
+   */
+  announce(message) {
+    this.view.setAnnouncement(message);
   }
 
   /**
@@ -396,7 +449,7 @@ export class HUD {
    * Stop auto-solving
    * @private
    */
-  async stopAutoSolve() {
+  async stopAutoSolve(source = "user") {
     if (this.controller) {
       try {
         const stopFn = this.controller.stop?.bind(this.controller);
@@ -406,7 +459,7 @@ export class HUD {
       } catch (error) {
         console.warn("HUD: stopAutoSolve controller invocation failed", error);
       }
-      this.updateRunState(false);
+      this.updateRunState(false, source);
       return;
     }
 
@@ -415,7 +468,7 @@ export class HUD {
       this.autoSolveTimeout = null;
     }
 
-    this.updateRunState(false);
+    this.updateRunState(false, source);
   }
 
   /**
@@ -426,7 +479,12 @@ export class HUD {
     if (!this.isAutoSolving || !this.currentAdapter) return;
 
     if (this.currentAdapter.isGameOver()) {
-      this.stopAutoSolve();
+      const finalScore = this.currentAdapter.getScore();
+      this._pendingStopMessage =
+        finalScore !== null && finalScore !== undefined
+          ? `Game over. Final score ${Number(finalScore).toLocaleString()}.`
+          : "Game over.";
+      await this.stopAutoSolve("runtime");
       this.showMessage("Game over!");
       return;
     }
@@ -492,12 +550,12 @@ export class HUD {
 
     if (this.controller && this.controller.isRunning) {
       try {
-        this.updateRunState(!!this.controller.isRunning());
+        this.updateRunState(!!this.controller.isRunning(), "runtime");
       } catch (error) {
         console.warn("HUD: Failed to read controller run state", error);
       }
     } else {
-      this.updateRunState(false);
+      this.updateRunState(false, "runtime");
     }
 
     this.updateStatus();
@@ -527,7 +585,7 @@ export class HUD {
    */
   destroy() {
     if (this.isAutoSolving) {
-      this.stopAutoSolve();
+      this.stopAutoSolve("runtime");
     }
 
     if (this.autoSolveTimeout) {

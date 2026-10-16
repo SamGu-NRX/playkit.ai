@@ -1,183 +1,148 @@
 /**
- * Baseline agents for chess endgames: a material-safe greedy heuristic and the
- * tablebase engine. Both play the converting seat (White). The engine probes
- * the DTM table and scores exactly 1.0 efficiency against perfect defense;
- * greedy plays without the table and exists as a beatable floor.
+ * Bundled baselines for chess-endgames. The `engine` plays tablebase-optimal
+ * moves (always reducing the distance to mate) and must score 1.0 on every
+ * public seed. The `greedy` baseline uses no tablebase: it mates in one when
+ * it can and otherwise restricts the defending king's mobility, with seeded
+ * tie-breaks.
  *
  * @module
  */
 
 import { Chess } from 'chess.js';
-import { nextInt, streamFromSeed } from '../../core/rng.js';
-import { probe } from './tablebase.js';
+import { GauntletRuleError } from '../../core/errors.js';
+import { streamFromSeed } from '../../core/rng.js';
+import { getTablebase, positionFromPlacement } from './tablebase.js';
 
-/** @import { Agent, TierSpec } from '../../core/types.js' */
-
-export const BASELINE_IDS = ['greedy', 'tablebase-engine'];
-
-/**
- * Apply a UCI from-to move to a FEN.
- *
- * @param {string} fen
- * @param {string} from
- * @param {string} to
- * @returns {string}
- */
-function applyUci(fen, from, to) {
-  const chess = new Chess(fen);
-  chess.move({ from, to });
-  return chess.fen();
-}
+/** @import { Agent, TierSpec, TurnContext } from '../../core/types.js' */
 
 /**
- * Legal moves as UCI strings, sorted for determinism.
- *
- * @param {Chess} chess
- * @returns {{ uci: string, from: string, to: string }[]}
+ * @typedef {import('./index.js').ChessEndgameState} ChessEndgameState
  */
-function legalUci(chess) {
-  return chess
-    .moves({ verbose: true })
-    .map((m) => ({ uci: `${m.from}${m.to}`, from: m.from, to: m.to }))
-    .sort((a, b) => (a.uci < b.uci ? -1 : 1));
-}
 
 /**
- * Chebyshev distance between two squares.
+ * The tablebase-optimal agent for seat 0: every move reduces the DTM of the
+ * resulting position by exactly one, so the episode mates in exactly `par`
+ * moves and scores 1.0.
  *
- * @param {string} a
- * @param {string} b
- * @returns {number}
+ * @param {TierSpec} tier
+ * @param {string} seed
+ * @returns {Agent}
  */
-function kingDistance(a, b) {
-  return Math.max(
-    Math.abs(a.charCodeAt(0) - b.charCodeAt(0)),
-    Math.abs(a.charCodeAt(1) - b.charCodeAt(1)),
-  );
-}
-
-/**
- * The greedy heuristic, evaluated on the child position: prefer checkmate,
- * then positions where the defender king has the fewest legal moves and the
- * White king stands close to the defender king. Ties break alphabetically, so
- * the agent is fully deterministic.
- *
- * @param {string} eg
- * @param {string} fen
- * @param {string} uci
- * @returns {number} Lower is better for White.
- */
-function greedyScore(eg, fen, uci) {
-  void eg;
-  const child = new Chess(applyUci(fen, uci.slice(0, 2), uci.slice(2, 4)));
-  if (child.isCheckmate()) return -1e6;
-  const board = child.board();
-  /** @type {string[]} */
-  const blackKingSquares = [];
-  for (let r = 0; r < 8; r++) {
-    for (let f = 0; f < 8; f++) {
-      const sq = board[r][f];
-      if (sq && sq.type === 'k' && sq.color === 'b') {
-        blackKingSquares.push(String.fromCharCode(97 + f) + String(r + 1));
+export function engineAgent(tier, seed) {
+  return {
+    id: 'tablebase-engine',
+    track: 'baseline',
+    /**
+     * @param {TurnContext} ctx
+     * @returns {Promise<{ text: string }>}
+     */
+    async act(ctx) {
+      const data = /** @type {ChessEndgameState & { seat?: number }} */ (ctx.observation.data);
+      const table = getTablebase(data.kind);
+      const chess = new Chess(data.fen);
+      const verbose = chess.moves({ verbose: true });
+      if (verbose.length === 0) {
+        throw new GauntletRuleError('tablebase engine found no legal move');
       }
-    }
-  }
-  const bk = blackKingSquares[0];
-  const defenderMoves = child.moves().length;
-  let minKingDist = 8;
-  for (let r = 0; r < 8; r++) {
-    for (let f = 0; f < 8; f++) {
-      const sq = board[r][f];
-      if (sq && sq.color === 'w') {
-        const name = String.fromCharCode(97 + f) + String(r + 1);
-        const d = kingDistance(name, bk);
-        if (sq.type === 'k' && d < minKingDist) minKingDist = d;
+      /** @type {{ m: import('chess.js').Move, d: number }[]} */
+      const wins = [];
+      for (const m of verbose) {
+        chess.move({ from: m.from, to: m.to });
+        const placement = chess.fen().split(' ')[0];
+        const pos = positionFromPlacement(data.kind, placement, 1);
+        const d = table.dtm(pos);
+        chess.undo();
+        if (d !== null) wins.push({ m, d });
       }
-    }
-  }
-  return defenderMoves * 100 + minKingDist;
+      const stream = streamFromSeed(`${tier.id}/${seed}/engine/turn${ctx.turn}`);
+      if (wins.length === 0) {
+        // Not expected from a winning start with optimal play; fall back to a
+        // seeded legal move rather than crashing the episode.
+        const pick = stream.nextInt(0, verbose.length - 1);
+        return { text: verbose[pick].from + verbose[pick].to };
+      }
+      let best = Infinity;
+      for (const w of wins) best = Math.min(best, w.d);
+      const tied = wins.filter((w) => w.d === best);
+      const pick = stream.nextInt(0, tied.length - 1);
+      return { text: tied[pick].m.from + tied[pick].m.to };
+    },
+  };
 }
 
 /**
- * The tablebase engine: always moves along a shortest mate. Against the
- * perfect defender this converts in exactly the starting DTM and scores 1.0.
+ * The greedy agent for seat 0: mate in one when available, otherwise the move
+ * after which Black has the fewest legal replies (mobility restriction). No
+ * tablebase involvement.
  *
- * @param {string} eg
- * @param {string} fen
- * @returns {string} UCI of the DTM-optimal move.
+ * @param {TierSpec} tier
+ * @param {string} seed
+ * @returns {Agent}
  */
-export function engineMove(eg, fen) {
-  const chess = new Chess(fen);
-  let best = /** @type {{ uci: string, dtm: number } | null} */ (null);
-  for (const m of legalUci(chess)) {
-    const child = new Chess(applyUci(fen, m.from, m.to));
-    if (child.isCheckmate()) return m.uci;
-    const value = probe(eg, applyUci(fen, m.from, m.to));
-    if (value.draw || value.dtm === null) continue; // never walk into a draw
-    if (best === null || value.dtm < best.dtm) best = { uci: m.uci, dtm: value.dtm };
-  }
-  if (best === null) {
-    // No progress available (should not happen on a won position): give up
-    // quietly with the first legal move.
-    return /** @type {string} */ (legalUci(chess)[0]?.uci);
-  }
-  return best.uci;
+export function greedyAgent(tier, seed) {
+  return {
+    id: 'greedy-mobility',
+    track: 'baseline',
+    /**
+     * @param {TurnContext} ctx
+     * @returns {Promise<{ text: string }>}
+     */
+    async act(ctx) {
+      const data = /** @type {ChessEndgameState & { seat?: number }} */ (ctx.observation.data);
+      const chess = new Chess(data.fen);
+      const verbose = chess.moves({ verbose: true });
+      if (verbose.length === 0) {
+        throw new GauntletRuleError('greedy baseline found no legal move');
+      }
+      /** @type {import('chess.js').Move[]} */
+      const mates = [];
+      /** @type {{ m: import('chess.js').Move, replies: number }[]} */
+      const scored = [];
+      for (const m of verbose) {
+        chess.move({ from: m.from, to: m.to });
+        if (chess.isCheckmate()) {
+          mates.push(m);
+        } else if (!chess.isGameOver()) {
+          scored.push({ m, replies: chess.moves().length });
+        }
+        chess.undo();
+      }
+      const stream = streamFromSeed(`${tier.id}/${seed}/greedy/turn${ctx.turn}`);
+      if (mates.length > 0) {
+        const pick = stream.nextInt(0, mates.length - 1);
+        return { text: mates[pick].from + mates[pick].to };
+      }
+      if (scored.length === 0) {
+        const pick = stream.nextInt(0, verbose.length - 1);
+        return { text: verbose[pick].from + verbose[pick].to };
+      }
+      let best = Infinity;
+      for (const s of scored) best = Math.min(best, s.replies);
+      const tied = scored.filter((s) => s.replies === best);
+      const pick = stream.nextInt(0, tied.length - 1);
+      return { text: tied[pick].m.from + tied[pick].m.to };
+    },
+  };
 }
 
 /**
- * The greedy baseline agent.
- *
  * @param {TierSpec} tier
  * @param {string} seed
  * @param {number} seat
  * @returns {Agent}
  */
-export function greedyAgent(tier, seed, seat) {
-  void seat;
-  return {
-    id: 'greedy',
-    track: 'baseline',
-    async act(ctx) {
-      const data = /** @type {{ eg: string, fen: string }} */ (ctx.observation.data);
-      const chess = new Chess(data.fen);
-      const moves = legalUci(chess);
-      if (moves.length === 0) {
-        throw new Error('greedy agent found no legal move');
-      }
-      let best = moves[0];
-      let bestScore = Infinity;
-      for (const m of moves) {
-        const score = greedyScore(data.eg, data.fen, m.uci);
-        if (score < bestScore) {
-          bestScore = score;
-          best = m;
-        }
-      }
-      const tied = moves.filter(
-        (m) => greedyScore(data.eg, data.fen, m.uci) === bestScore,
-      );
-      const stream = streamFromSeed(`${tier.id}/${seed}/greedy/turn${ctx.turn}`);
-      const chosen = tied[nextInt(stream.getState(), 0, tied.length - 1).value];
-      return { text: chosen.uci };
-    },
-  };
+export function engineFor(tier, seed, seat) {
+  if (seat !== 0) throw new Error('chess-endgames baselines play seat 0 only');
+  return engineAgent(tier, seed);
 }
 
 /**
- * The tablebase engine baseline agent.
- *
- * @param {TierSpec} _tier
- * @param {string} _seed
- * @param {number} _seat
+ * @param {TierSpec} tier
+ * @param {string} seed
+ * @param {number} seat
  * @returns {Agent}
  */
-export function engineAgent(_tier, _seed, _seat) {
-  return {
-    id: 'tablebase-engine',
-    track: 'baseline',
-    async act(ctx) {
-      const data = /** @type {{ eg: string, fen: string }} */ (ctx.observation.data);
-      return { text: engineMove(data.eg, data.fen) };
-    },
-  };
+export function greedyFor(tier, seed, seat) {
+  if (seat !== 0) throw new Error('chess-endgames baselines play seat 0 only');
+  return greedyAgent(tier, seed);
 }

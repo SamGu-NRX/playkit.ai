@@ -21,6 +21,21 @@ import { EQUITY_SAMPLES, equityPolicy, monteCarloEquity } from './opponents.js';
 export const GREEDY_PREFLOP_RAISE = 8;
 
 /**
+ * Hands completed, parsed from an outcome reason. Truncation reasons read
+ * "N of M hands completed" (N decides); completion reasons read
+ * "... M hands ...".
+ *
+ * @param {string} reason
+ * @returns {number}
+ */
+export function parseHandsCompleted(reason) {
+  const truncated = /(\d+) of (\d+) hands completed/.exec(reason);
+  if (truncated) return Number(truncated[1]);
+  const m = /(\d+) hands/.exec(reason);
+  return m ? Number(m[1]) : 40;
+}
+
+/**
  * @param {HoldemData} data
  * @returns {'fold' | 'call' | 'raise'}
  */

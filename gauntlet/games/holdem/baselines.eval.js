@@ -14,7 +14,7 @@
  */
 
 import { holdem, GAME_ID } from './index.js';
-import { makeBaseline } from './baselines.js';
+import { makeBaseline, parseHandsCompleted } from './baselines.js';
 import { runEpisode } from '../../core/runner.js';
 import { publicSeed } from '../../core/seeds.js';
 
@@ -54,9 +54,7 @@ for (const kind of baselines) {
 
 /** @param {import('../../core/types.js').Trajectory} trajectory */
 function trajectoryStepsHands(trajectory) {
-  const reason = trajectory.end.outcome?.reason ?? '';
-  const m = /(\d+) hands/.exec(reason);
-  return m ? Number(m[1]) : 40;
+  return parseHandsCompleted(trajectory.end.outcome?.reason ?? '');
 }
 
 /** @param {number} n */

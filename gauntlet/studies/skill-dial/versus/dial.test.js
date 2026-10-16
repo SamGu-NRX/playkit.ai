@@ -33,7 +33,7 @@ function scriptedExpert(id) {
     async act(ctx) {
       return {
         text: `expert-${id}-turn-${ctx.turn}`,
-        usage: { inputTokens: 1, outputTokens: 2 },
+        usage: { inputTokens: 1, outputTokens: 2, costUsd: 0 },
         meta: { expert: true },
       };
     },
@@ -70,7 +70,7 @@ test('p=0 plays the expert on every turn, reply forwarded verbatim', async () =>
   for (let turn = 0; turn < 10; turn++) {
     const reply = await dial.act(fakeCtx(turn));
     assert.equal(reply.text, `expert-tester-turn-${turn}`);
-    assert.deepEqual(reply.usage, { inputTokens: 1, outputTokens: 2, costUsd: null });
+    assert.deepEqual(reply.usage, { inputTokens: 1, outputTokens: 2, costUsd: 0 });
     assert.deepEqual(reply.meta, { expert: true });
   }
 });

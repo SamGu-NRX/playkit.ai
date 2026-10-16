@@ -1,0 +1,82 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "torus",
+  "seed": "minesweeper/torus/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73400f365f25776d",
+      "reply": {
+        "text": "flag 15 0"
+      },
+      "action": "flag 15 0",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bbb0ebcb40da68ba",
+      "reply": {
+        "text": "flag 7 2"
+      },
+      "action": "flag 7 2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "69b949114fa6252d",
+      "reply": {
+        "text": "flag 1 7"
+      },
+      "action": "flag 1 7",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bd685bee9e6c4a8e",
+      "reply": {
+        "text": "reveal 6 10"
+      },
+      "action": "reveal 6 10",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.16666666666666666
+      ],
+      "raw": [
+        31
+      ],
+      "reason": "mine revealed at row 6, column 10 — episode ends with 31 of 186 safe cells revealed"
+    },
+    "agentActions": 4,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:18:48.983Z",
+  "finishedAt": "2026-10-16T06:18:48.985Z"
+}

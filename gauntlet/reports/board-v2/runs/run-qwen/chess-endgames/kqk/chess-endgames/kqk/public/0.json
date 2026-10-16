@@ -1,0 +1,184 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-endgames",
+    "version": "1.0.0"
+  },
+  "tier": "kqk",
+  "seed": "chess-endgames/kqk/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "tablebase-perfect"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "16a13aa22030a338",
+      "reply": {
+        "text": "c7b6",
+        "usage": {
+          "inputTokens": 716,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Yt41RSgu6gsy4FZO5Mz2f3XLi7jVZ5yJ",
+          "reasoningChars": 0
+        }
+      },
+      "action": "c7b6",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 716,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 4171
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "e008d12831df248f",
+      "reply": {
+        "text": "b2c1"
+      },
+      "action": "b2c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4e7edbba7ef4157c",
+      "reply": {
+        "text": "c7b6",
+        "usage": {
+          "inputTokens": 718,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-HWzVt6sXVmHpya0zmHIFK47q76EGXorl",
+          "reasoningChars": 0
+        }
+      },
+      "action": "c7b6",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 718,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 7811
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4e7edbba7ef4157c",
+      "reply": {
+        "text": "d3a3",
+        "usage": {
+          "inputTokens": 734,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-GoHLvevbnrlPEmCzNWpscM4x7P5QvIXN",
+          "reasoningChars": 0
+        }
+      },
+      "action": "d3a3",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 734,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 4843
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "6a936a0a50b74dd4",
+      "reply": {
+        "text": "c1b1"
+      },
+      "action": "c1b1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "67e761b9494fe249",
+      "reply": {
+        "text": "a3a1",
+        "usage": {
+          "inputTokens": 696,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-VUJubj0qvC2eLyPJARjHv0FHYhv3cznK",
+          "reasoningChars": 0
+        }
+      },
+      "action": "a3a1",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 696,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 4517
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "cf34ae24bf234ac0",
+      "reply": {
+        "text": "b1a1"
+      },
+      "action": "b1a1",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0,
+        1
+      ],
+      "raw": [
+        "loss",
+        "win"
+      ],
+      "reason": "conversion failed: the defender captured a piece and the material left is not enough to mate"
+    },
+    "agentActions": 4,
+    "invalidActions": 1
+  },
+  "startedAt": "2026-10-16T05:42:27.008Z",
+  "finishedAt": "2026-10-16T05:42:48.478Z"
+}

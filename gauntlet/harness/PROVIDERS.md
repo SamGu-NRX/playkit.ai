@@ -86,14 +86,23 @@ Anthropic specifics:
 - **Current Claude models take effort, not a budget.** On the
   adaptive-thinking models (Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5,
   Sonnet 5, Opus 4.8, Opus 4.7, Fable 5.1) the model steers its own thinking;
-  there is no `thinking` field, a manual `budget_tokens` is rejected with HTTP
-  400, and `--reasoning-effort` goes out as `output_config.effort`. Levels and
+  a manual `budget_tokens` is rejected with HTTP 400, and `--reasoning-effort`
+  goes out as `output_config.effort`. Levels and
   the documented defaults are per model — e.g. Opus 5.5 documents
   low/medium/high/xhigh/max with default `medium`, Opus 4.6 documents
   low/medium/high/max — so an unset effort is recorded as
   `reasoning-effort=provider-default` in the agent identity rather than
   guessed. A new Claude id cannot run at all until a row is added: construction
   fails with a message naming the capability table and the models-overview doc.
+- **Adaptive thinking is sent explicitly.** Every model that accepts it (the
+  list above plus Opus 4.6 and Sonnet 4.6) gets `thinking: {type: "adaptive"}`
+  unless `--thinking-budget` is set. On Opus 4.8, 4.7 and 4.6 and Sonnet 4.6
+  a request without a `thinking` field runs with thinking off, so effort alone
+  would measure those models without thinking; on the 5.x models the explicit
+  field is the documented equivalent of omitting it. run.json's `agent.thinking`
+  records the mode: `adaptive`, `enabled` (manual budget), `off` (a Claude
+  model without adaptive support and no budget), or `provider-default` (a
+  non-Claude id on provider `anthropic`, where no field is sent).
 - **On adaptive-thinking models `max_tokens` is the whole-reply limit.**
   Thinking rides inside `max_tokens` (the docs recommend starting around 64k
   at `xhigh`/`max`), so the wire `max_tokens` is `--max-output-tokens` itself

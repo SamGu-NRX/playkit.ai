@@ -2,9 +2,10 @@
  * Tests for adaptive thinking and reasoning effort on current Claude models:
  * the per-model Anthropic capability table (accepted thinking modes, effort
  * levels, documented defaults, sampling-field rules, with doc URLs and check
- * dates on each row), the effort wire shape (`output_config.effort`, no
- * `thinking` field, max_tokens as the hard limit on the whole reply), the
- * effective-effort agent identity, manual budgets on the models that still
+ * dates on each row), the effort wire shape (`output_config.effort` with
+ * `thinking: {type: "adaptive"}`, max_tokens as the hard limit on the whole
+ * reply), the effective-effort agent identity, the recorded thinking mode,
+ * manual budgets on the models that still
  * take them, `stop_reason: "refusal"` replies, and the dollar cap's
  * reservation when an effort is set instead of a budget.
  *
@@ -150,23 +151,25 @@ function testAgent(stubUrl, model, options) {
 
 // ---------------------------------------------------------------------------
 // The wire shape on an adaptive-thinking model: effort goes out as
-// output_config.effort, no `thinking` field is ever sent, and max_tokens is
+// output_config.effort next to thinking {type: "adaptive"}, and max_tokens is
 // the whole-reply limit (the text cap itself, no budget headroom).
 
-test('claude-opus-5-5 with reasoningEffort sends output_config.effort, no thinking field, and max_tokens as the cap itself', async () => {
+test('claude-opus-5-5 with reasoningEffort sends thinking {type: "adaptive"}, output_config.effort, and max_tokens as the cap itself', async () => {
   const stub = await scriptStub([anthropicTake()]);
   try {
     const agent = testAgent(stub.url, 'claude-opus-5-5', { reasoningEffort: 'high' });
     assert.equal(agent.id, 'anthropic/claude-opus-5-5:reasoning-effort=high');
+    assert.equal(agent.thinking, 'adaptive');
     await agent.act(CTX);
     const body = stub.requests[0].body;
-    // Exact key set: no thinking field, no sampling fields, no stray params.
+    // Exact key set: no sampling fields, no stray params.
     assert.deepEqual(
       Object.keys(body).sort(),
-      ['max_tokens', 'messages', 'model', 'output_config', 'system']
+      ['max_tokens', 'messages', 'model', 'output_config', 'system', 'thinking']
     );
     assert.equal(body.model, 'claude-opus-5-5');
     assert.equal(body.max_tokens, 64);
+    assert.deepEqual(body.thinking, { type: 'adaptive' });
     assert.deepEqual(body.output_config, { effort: 'high' });
     assert.equal(body.system, OFFICIAL_SYSTEM_PROMPT);
   } finally {
@@ -183,7 +186,8 @@ test('an unset effort on a documented-default model sends no output_config and r
     assert.equal(agent.reasoningEffortDefault, 'medium');
     await agent.act(CTX);
     const body = stub.requests[0].body;
-    assert.deepEqual(Object.keys(body).sort(), ['max_tokens', 'messages', 'model', 'system']);
+    assert.deepEqual(Object.keys(body).sort(), ['max_tokens', 'messages', 'model', 'system', 'thinking']);
+    assert.deepEqual(body.thinking, { type: 'adaptive' });
     assert.equal(body.max_tokens, 64);
   } finally {
     await stub.close();
@@ -214,7 +218,7 @@ test('all five documented effort levels are accepted on claude-opus-5-5 and reac
     const levels = stub.requests.map((/** @type {*} */ r) => r.body.output_config.effort);
     assert.deepEqual(levels, ['low', 'medium', 'high', 'xhigh', 'max']);
     for (const request of stub.requests) {
-      assert.equal(request.body.thinking, undefined, 'no thinking field on adaptive models');
+      assert.deepEqual(request.body.thinking, { type: 'adaptive' });
       assert.equal(request.body.max_tokens, 64);
     }
   } finally {
@@ -621,5 +625,95 @@ test('reasoningEffort xhigh reaches the wire for provider openai and is refused 
     );
   } finally {
     await stub.close();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Adaptive thinking is sent explicitly. On Claude Opus 4.8, 4.7 and 4.6 (and
+// Sonnet 4.6) a request with no `thinking` field runs without thinking, so
+// effort alone would measure those models with thinking off. On the 5.x
+// models omitting it already runs adaptive and `{type: "adaptive"}` is the
+// documented equivalent. Source: the Anthropic adaptive-thinking and model
+// migration guides, checked 2026-10-16 (see ANTHROPIC_CAPABILITIES).
+
+test('Opus 4.x models whose omitted thinking means off send thinking {type: "adaptive"}, with or without an effort', async () => {
+  const cases = [
+    { model: 'claude-opus-4-8', reasoningEffort: /** @type {const} */ ('xhigh') },
+    { model: 'claude-opus-4-7', reasoningEffort: /** @type {const} */ ('high') },
+    { model: 'claude-opus-4-6', reasoningEffort: /** @type {const} */ ('max') },
+    { model: 'claude-opus-4-7', reasoningEffort: undefined },
+  ];
+  const stub = await scriptStub(cases.map(() => anthropicTake()));
+  try {
+    for (const [i, { model, reasoningEffort }] of cases.entries()) {
+      const agent = testAgent(stub.url, model, reasoningEffort ? { reasoningEffort } : {});
+      assert.equal(agent.thinking, 'adaptive', `${model} records adaptive thinking`);
+      await agent.act(CTX);
+      const body = stub.requests[i].body;
+      assert.deepEqual(body.thinking, { type: 'adaptive' }, `${model} sends adaptive thinking`);
+      if (reasoningEffort) {
+        assert.deepEqual(body.output_config, { effort: reasoningEffort });
+      } else {
+        assert.equal(body.output_config, undefined, 'an unset effort leaves the provider default');
+      }
+      assert.equal(body.max_tokens, 64, 'adaptive thinking adds no budget on top of the cap');
+    }
+  } finally {
+    await stub.close();
+  }
+});
+
+test('the thinking mode is recorded per model: manual budget "enabled", no adaptive support "off", non-Claude ids "provider-default", other providers absent', () => {
+  const base = { baseUrl: 'http://127.0.0.1:9', apiKeyEnv: 'GAUNTLET_TEST_KEY' };
+  const opus46Budget = createModelAgent({
+    provider: 'anthropic',
+    model: 'claude-opus-4-6',
+    thinkingBudget: 2048,
+    ...base,
+  });
+  assert.equal(opus46Budget.thinking, 'enabled');
+  const opus45 = createModelAgent({ provider: 'anthropic', model: 'claude-opus-4-5', ...base });
+  assert.equal(opus45.thinking, 'off');
+  const opus45Budget = createModelAgent({
+    provider: 'anthropic',
+    model: 'claude-opus-4-5',
+    thinkingBudget: 1024,
+    ...base,
+  });
+  assert.equal(opus45Budget.thinking, 'enabled');
+  const stubId = createModelAgent({ provider: 'anthropic', model: 'stub-model', ...base });
+  assert.equal(stubId.thinking, 'provider-default');
+  const openai = createModelAgent({ provider: 'openai', model: 'stub-model', ...base });
+  assert.equal(openai.thinking, undefined);
+});
+
+test('run.json records the agent thinking mode', { timeout: 60 * 1000 }, async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), 'gauntlet-frontier-thinking-run-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const stub = await scriptStub([anthropicTake()]);
+  t.after(() => stub.close());
+
+  const result = await runSuite({
+    suite: CAP_SUITE,
+    games: CAP_GAMES,
+    outDir: dir,
+    reasoningEffort: 'high',
+    agentFactory: () =>
+      createModelAgent({
+        provider: 'anthropic',
+        model: 'claude-opus-4-8',
+        baseUrl: stub.url,
+        apiKeyEnv: 'GAUNTLET_TEST_KEY',
+        maxOutputTokens: 64,
+        reasoningEffort: 'high',
+        sleep: async () => {},
+      }),
+  });
+
+  assert.equal(result.run.agent?.model, 'claude-opus-4-8');
+  assert.equal(result.run.agent?.thinking, 'adaptive');
+  assert.ok(stub.requests.length > 0, 'the run reached the stub');
+  for (const request of stub.requests) {
+    assert.deepEqual(request.body.thinking, { type: 'adaptive' });
   }
 });

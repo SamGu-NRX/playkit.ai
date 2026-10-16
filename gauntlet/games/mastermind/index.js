@@ -5,6 +5,8 @@
  * The observation never reveals the secret — only the guess history, its
  * feedback, and the guesses remaining. Efficiency-scored: par is the guess
  * count of the bundled reference strategy (`reference.js`) for this secret.
+ * The `mini` tier (3 pegs, 4 colors) is the on-ramp: a 64-code space a weak
+ * agent can deduce within budget, while random guessing still floors out.
  *
  * @module
  */
@@ -44,10 +46,13 @@ import {
  */
 
 const TIER_DEFS = [
-  // maxPar values: classic 5 is Knuth's proven worst case; wide 8 and deep 9
-  // are the largest par values measured over 120 seeds each (wide mean 5.71
-  // max 8; deep mean 6.53 max 8, seen on ~9% of seeds, so one step of
-  // headroom) — the static budget is 5 × maxPar.
+  // maxPar values: mini 5 is the largest par measured over 300 seeds
+  // (distribution 1:6, 2:35, 3:152, 4:86, 5:21, mean 3.27); classic 5 is
+  // Knuth's proven worst case; wide 8 and deep 9 are the largest par values
+  // measured over 120 seeds each (wide mean 5.71 max 8; deep mean 6.53 max 8,
+  // seen on ~9% of seeds, so one step of headroom) — the static budget is
+  // 5 × maxPar.
+  { id: 'mini', pegs: 3, colors: 4, maxPar: 5 },
   { id: 'classic', pegs: 4, colors: 6, maxPar: 5 },
   { id: 'wide', pegs: 5, colors: 8, maxPar: 8 },
   { id: 'deep', pegs: 6, colors: 9, maxPar: 9 },
@@ -131,6 +136,7 @@ export const mastermind = {
     requires: [],
     rulesText: [
       'Mastermind: deduce a hidden secret code. Each tier fixes the code length (pegs) and the color alphabet:',
+      'tier mini: 3 pegs over 4 colors (A, B, C, D);',
       'tier classic: 4 pegs over 6 colors (A, B, C, D, E, F);',
       'tier wide: 5 pegs over 8 colors (A through H);',
       'tier deep: 6 pegs over 9 colors (A through I).',

@@ -34,19 +34,22 @@ reproduce the tables below exactly on the same hardware class.
 
 | Pair (higher > lower) | Higher-rung score | Wilson 95% | Terminations | Avg plies | Avg game time |
 | --- | --- | --- | --- | --- | --- |
-| wood > paper | 0.854 / 24 | [0.665, 0.945] | checkmate:17 threefold:7 | 93.5 | 5.2s |
-| steel > wood | 0.708 / 24 | [0.508, 0.851] | checkmate:12 material:1 threefold:11 | 93.8 | 10.9s |
-| granite > steel | 0.792 / 24 | [0.595, 0.908] | checkmate:16 threefold:8 | 110.7 | 31.5s |
+| wood > paper | 0.813 / 24 | [0.618, 0.921] | threefold:9 checkmate:15 | 99.5 | 2.4s |
+| steel > wood | 0.667 / 24 | [0.467, 0.820] | checkmate:14 threefold:10 | 101.8 | 7.1s |
+| granite > steel | 0.771 / 24 | [0.573, 0.894] | threefold:11 checkmate:13 | 116.4 | 21.0s |
 
-Every adjacent pair is ordered with the interval lower bound above 0.5, so the
-ladder has no inversions at this sample size. Average seconds per move per
-tier: paper 0.06s, wood 0.09s, steel 0.21s, granite 0.28s — note the per-tier
-timing splits each game's wall time evenly between the two engines, so these
-are approximations (a tier that finishes its moves early still accrues half
-the game's remaining wait). Full 72-game run: 207s wall time on an 8-core
-machine with 6 workers.
+Point estimates order all three pairs the same way, and wood>paper and
+granite>steel are resolved with intervals clear of 0.5. steel>wood is NOT
+resolved at 24 games: its Wilson lower bound (0.467) spans 0.5, so this sample
+cannot distinguish wood from steel — consistent with the caveat below, and a
+reminder that a missing result here means the sample is too small, not that
+the rungs are equal. Average seconds per move per tier: paper 0.02s, wood
+0.05s, steel 0.13s, granite 0.18s — note the per-tier timing splits each
+game's wall time evenly between the two engines, so these are approximations
+(a tier that finishes its moves early still accrues half the game's remaining
+wait). Full 72-game run: 141s wall time on an 8-core machine with 6 workers.
 
-Read the intervals, not the point estimates: with 24 games a pair, a 0.708 is
+Read the intervals, not the point estimates: with 24 games a pair, a 0.667 is
 statistically consistent with a 0.85. What the table pins is *ordering*, not
 exact strength gaps. For absolute strength on a common scale (including
 Stockfish rungs), use the rating calibration tooling in `rating/`, which

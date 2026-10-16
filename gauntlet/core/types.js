@@ -137,7 +137,10 @@
 /**
  * Everything an agent gets for one decision. `legalActions` is null for
  * official-track agents, who see only `observation.text` and must derive
- * legality from the rules text.
+ * legality from the rules text. `signal` fires when the episode's wall-clock
+ * limit (`runEpisode`'s `episodeTimeLimitMs`) passes: an agent that accepts
+ * an abort signal cancels its in-flight work, so a stalled call cannot hold
+ * the episode past the limit. Absent when no limit is set.
  *
  * @typedef {object} TurnContext
  * @property {GameSpec} spec
@@ -150,6 +153,9 @@
  *   on the official track.
  * @property {string | null} feedback The previous invalid attempt's message,
  *   or null.
+ * @property {AbortSignal} [signal] Aborted when the episode's wall-clock
+ *   limit passes; agents may adopt it (e.g. hand it to their fetch) to cancel
+ *   in-flight work.
  */
 
 /**
@@ -259,7 +265,10 @@ export {};
  * @property {{ id: string, track: AgentTrack, seat: number, model?: string, provider?: string, dryRun?: boolean }} agent
  * @property {{ seat: number, id: string }[]} opponents
  * @property {TrajectoryStep[]} steps
- * @property {{ reason: string, outcome: Outcome | null, agentActions: number, invalidActions: number, forfeitThreshold: number }} end
+ * @property {{ reason: string, outcome: Outcome | null, agentActions: number, invalidActions: number, forfeitThreshold: number, timeLimitMs?: number, elapsedMs?: number }} end
+ *   `timeLimitMs` and `elapsedMs` are present only on a `time-limit` end and
+ *   are self-reported like usage: the replay verifier cannot re-derive a wall
+ *   clock from (game, tier, seed), so it checks their shape, not the numbers.
  * @property {string} startedAt
  * @property {string} finishedAt
  */

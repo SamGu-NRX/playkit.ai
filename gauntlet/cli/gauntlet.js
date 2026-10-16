@@ -22,16 +22,26 @@
  *                                          write the trajectory.
  *   verify <file-or-dir>                   Replay-verify a trajectory file or
  *                                          every trajectory in a directory.
+ *                                          --episode-time-limit-ms <ms> (on
+ *                                          `play` too) caps one episode's
+ *                                          wall clock the same way.
  *   suite build --split public|eval [--salt-file <file>]
  *        [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]
  *                                          Write (or print) a suite manifest.
  *   run --suite <file> --agent <spec> --out <dir> [--limit <n>]
  *        [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]
  *        [--requests-per-minute <n>] [--max-output-tokens <n>]
- *        [--call-timeout-ms <ms>] [--thinking-budget <n>]
+ *        [--call-timeout-ms <ms>] [--episode-time-limit-ms <ms>]
+ *        [--thinking-budget <n>]
  *        [--reasoning-effort <low|medium|high|xhigh|max>] [--prices <file>]
  *        [--dry-run --script <file>]
  *                                          Run the agent over the manifest.
+ *                                          --episode-time-limit-ms <ms> caps
+ *                                          each episode's wall clock: when it
+ *                                          passes, the episode ends with a
+ *                                          time-limit trajectory that scores
+ *                                          like a forfeit and still replays.
+ *                                          Recorded in run.json's limits.
  *   page --agent <spec> --out <dir> [--base-url <url>] [--api-key-env <var>]
  *        [--moves <n>] [--seed <s>] [--timeout-ms <ms>]
  *                                          Attach the agent to the vendored
@@ -140,7 +150,7 @@ const USAGE_TEXT = [
   'usage: gauntlet list',
   '       gauntlet play --game <id> --tier <id> [--seed <seed>] [--agent <spec>]',
   '                      [--split <split>] [--out <file>] [--max-invalid <n>]',
-  '                      [--prices <file>] [--dry-run --script <file>]',
+  '                      [--episode-time-limit-ms <ms>] [--prices <file>] [--dry-run --script <file>]',
   '       gauntlet verify <trajectory.json-or-dir>',
   '       gauntlet replay <trajectory.json> [--step N] [--format text|json]',
   '                      [--max-reply-chars K]',
@@ -149,7 +159,7 @@ const USAGE_TEXT = [
   '       gauntlet run --suite <file> --agent <spec> --out <dir> [--limit <n>]',
   '                      [--max-invalid <n>] [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]',
   '                      [--requests-per-minute <n>] [--max-output-tokens <n>]',
-  '                      [--call-timeout-ms <ms>] [--thinking-budget <n>] [--reasoning-effort low|medium|high|xhigh|max]',
+  '                      [--call-timeout-ms <ms>] [--episode-time-limit-ms <ms>] [--thinking-budget <n>] [--reasoning-effort low|medium|high|xhigh|max]',
   '                      [--prices <file>] [--dry-run --script <file>]',
   '       gauntlet estimate --suite <file> --agent <spec> [--prices <file>] [--out <dir>]',
   '                         [--no-probes] [--against <runDir>] [--json]',
@@ -206,7 +216,8 @@ const COMMAND_FLAGS = {
   play: {
     label: 'gauntlet play',
     flags: [
-      'agent', 'api-key-env', 'base-url', 'call-timeout-ms', 'dry-run', 'game',
+      'agent', 'api-key-env', 'base-url', 'call-timeout-ms', 'dry-run',
+      'episode-time-limit-ms', 'game',
       'max-invalid', 'max-output-tokens', 'out', 'prices', 'reasoning-effort',
       'script', 'seed', 'split', 'thinking-budget', 'tier',
     ],
@@ -230,7 +241,8 @@ const COMMAND_FLAGS = {
     label: 'gauntlet run',
     flags: [
       'agent', 'api-key-env', 'base-url', 'call-timeout-ms', 'concurrency',
-      'dry-run', 'limit', 'max-calls', 'max-invalid', 'max-output-tokens',
+      'dry-run', 'episode-time-limit-ms', 'limit', 'max-calls', 'max-invalid',
+      'max-output-tokens',
       'max-usd', 'out', 'prices', 'reasoning-effort', 'requests-per-minute',
       'resume', 'script', 'suite', 'thinking-budget',
     ],
@@ -511,6 +523,9 @@ async function main(argv) {
     const agentSeat = typeof game.agentSeat === 'function' ? game.agentSeat(tier, seed) : 0;
     const agent = await spec.createForEpisode({ game, tier, seed, agentSeat });
     const maxInvalid = numberFlag(flags, 'max-invalid');
+    const episodeTimeLimit = flags.has('episode-time-limit-ms')
+      ? numberFlag(flags, 'episode-time-limit-ms')
+      : undefined;
     const trajectory = await runEpisode({
       game,
       tierId: tier.id,
@@ -518,6 +533,7 @@ async function main(argv) {
       split,
       agent,
       ...(maxInvalid !== undefined ? { maxConsecutiveInvalid: maxInvalid } : {}),
+      ...(episodeTimeLimit !== undefined ? { episodeTimeLimitMs: episodeTimeLimit } : {}),
     });
     const out = flags.get('out');
     if (out) {
@@ -656,6 +672,9 @@ async function main(argv) {
         ...(flags.has('max-calls') ? { maxCalls: numberFlag(flags, 'max-calls') } : {}),
         ...(flags.has('requests-per-minute')
           ? { requestsPerMinute: finiteNumberFlag(flags, 'requests-per-minute') }
+          : {}),
+        ...(flags.has('episode-time-limit-ms')
+          ? { episodeTimeLimitMs: numberFlag(flags, 'episode-time-limit-ms') }
           : {}),
         ...(flags.has('resume') ? { resume: true } : {}),
         signal: controller.signal,

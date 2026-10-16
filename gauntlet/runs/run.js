@@ -1,6 +1,7 @@
 /**
  * The run engine: plays a whole suite with bounded concurrency, a shared
- * token-bucket rate limit, a hard dollar cap and a hard call cap, atomic
+ * token-bucket rate limit, a hard dollar cap and a hard call cap, an optional
+ * per-episode wall-clock limit, atomic
  * per-episode trajectory files, resume without replaying finished episodes,
  * and a `run.json` provenance record that makes the results bundle verifiable
  * by anyone with the games and the manifest. The record's per-invocation fields
@@ -292,7 +293,7 @@ function gitCommit() {
  * @property {string} startedAt
  * @property {string} finishedAt
  * @property {number} concurrency
- * @property {{ maxUsd: number | null, maxCalls: number | null, requestsPerMinute: number | null, maxOutputTokens: number | null, callTimeoutMs: number | null, thinkingBudget: number | null, reasoningEffort: string | null }} limits
+ * @property {{ maxUsd: number | null, maxCalls: number | null, requestsPerMinute: number | null, maxOutputTokens: number | null, callTimeoutMs: number | null, thinkingBudget: number | null, reasoningEffort: string | null, episodeTimeLimitMs: number | null }} limits
  * @property {number} spendUsd Sum of the steps' known costs. A step that
  *   reported usage without a priced cost counts here as 0 and separately in
  *   unknownCostSteps — unknown stays unknown, it is never folded into 0.
@@ -341,6 +342,10 @@ function gitCommit() {
  * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort] Recorded in
  *   run.json's limits for provenance; the OpenAI reasoning effort itself is
  *   applied by the agent layer (reasoning.effort / reasoning_effort).
+ * @property {number} [episodeTimeLimitMs] Wall-clock cap on each episode, in
+ *   milliseconds. Enforced here by passing it to every `runEpisode` call (the
+ *   runner ends a stalled episode with a `time-limit` trajectory) and
+ *   recorded in run.json's limits for provenance.
  * @property {boolean} [resume] Verify existing trajectory files and skip the
  *   verified ones. Default false.
  * @property {AbortSignal} [signal] Abort to stop after the calls in flight.
@@ -396,6 +401,7 @@ export async function runSuite({
   callTimeoutMs,
   thinkingBudget,
   reasoningEffort,
+  episodeTimeLimitMs,
   resume = false,
   signal,
   prices,
@@ -439,6 +445,14 @@ export async function runSuite({
   if (callTimeoutMs !== undefined && (!Number.isInteger(callTimeoutMs) || callTimeoutMs < 1)) {
     throw new Error(
       `[gauntlet/runs/run.js] callTimeoutMs: must be a positive integer, got ${JSON.stringify(callTimeoutMs)}`
+    );
+  }
+  if (
+    episodeTimeLimitMs !== undefined &&
+    (!Number.isInteger(episodeTimeLimitMs) || episodeTimeLimitMs < 1)
+  ) {
+    throw new Error(
+      `[gauntlet/runs/run.js] episodeTimeLimitMs: must be a positive integer (milliseconds), got ${JSON.stringify(episodeTimeLimitMs)}`
     );
   }
   if (thinkingBudget !== undefined && (!Number.isInteger(thinkingBudget) || thinkingBudget < 1)) {
@@ -669,6 +683,7 @@ export async function runSuite({
           seed: job.seed,
           split: job.split,
           agent: wrapAgent(base, job),
+          episodeTimeLimitMs,
           now,
         });
         await atomicWriteFile(trajectoryPath(outDir, job), JSON.stringify(trajectory, null, 2) + '\n');
@@ -738,6 +753,7 @@ export async function runSuite({
       callTimeoutMs: callTimeoutMs ?? null,
       thinkingBudget: thinkingBudget ?? null,
       reasoningEffort: reasoningEffort ?? null,
+      episodeTimeLimitMs: episodeTimeLimitMs ?? null,
     },
     spendUsd,
     unknownCostSteps,

@@ -10,7 +10,7 @@
 import { canonicalJson, hashObservation } from './canonical.js';
 import { GauntletRuleError } from './errors.js';
 import { forfeitOutcome, unsolvedOutcome } from './outcomes.js';
-import { judgeReply } from './runner.js';
+import { judgeReply, timeLimitOutcome } from './runner.js';
 
 /** @import { Game, TierSpec, Trajectory } from './types.js' */
 
@@ -284,6 +284,41 @@ export async function verifyTrajectory(game, trajectory) {
         ok: false,
         step: trajectory.steps.length,
         reason: 'forfeit outcome differs from the standard forfeit outcome',
+      };
+    }
+  } else if (reason === 'time-limit') {
+    // The episode ran out of wall clock (runEpisode's episodeTimeLimitMs).
+    // Like a forfeit, the outcome is agent 0 / others 1 and the game must not
+    // have reached a natural end on its own. The recorded limit and elapsed
+    // time are self-reported like usage — a wall clock is not replayable from
+    // (game, tier, seed) — so only their shape is checked here.
+    if (game.toAct(state) === null) {
+      return {
+        ok: false,
+        step: trajectory.steps.length,
+        reason: 'end reason is time-limit but the replayed game reached a natural end',
+      };
+    }
+    if (!Number.isInteger(end.timeLimitMs) || /** @type {number} */ (end.timeLimitMs) < 1) {
+      return {
+        ok: false,
+        step: trajectory.steps.length,
+        reason: `end reason is time-limit but the recorded limit is ${JSON.stringify(end.timeLimitMs)}`,
+      };
+    }
+    if (typeof end.elapsedMs !== 'number' || !Number.isFinite(end.elapsedMs) || end.elapsedMs < 0) {
+      return {
+        ok: false,
+        step: trajectory.steps.length,
+        reason: `end reason is time-limit but the recorded elapsed time is ${JSON.stringify(end.elapsedMs)}`,
+      };
+    }
+    const expected = timeLimitOutcome(seats, agentSeat);
+    if (!same(expected, end.outcome)) {
+      return {
+        ok: false,
+        step: trajectory.steps.length,
+        reason: 'time-limit outcome differs from the standard forfeit-shaped outcome',
       };
     }
   } else if (reason === 'budget-exhausted') {

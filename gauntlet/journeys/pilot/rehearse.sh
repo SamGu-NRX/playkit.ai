@@ -45,6 +45,11 @@ RL="${STUB_RATE_LIMIT_EVERY:-5}"
 OL="${STUB_OVERLOAD_EVERY:-13}"
 RF="${STUB_REFUSE_EVERY:-11}"
 TR="${STUB_TRUNCATE_EVERY:-7}"
+# Keep every step bounded so a rehearsal cannot hang on the known go-ladder
+# probe wedges of the pre-burst13 GTP client (see PILOT.md).
+export ESTIMATE_TIMEOUT_SECS="${ESTIMATE_TIMEOUT_SECS:-240}"
+export RUN_TIMEOUT_SECS="${RUN_TIMEOUT_SECS:-600}"
+export ESTIMATE_AGAINST_TIMEOUT_SECS="${ESTIMATE_AGAINST_TIMEOUT_SECS:-240}"
 
 OUT="${PILOT_OUT:-$SCRIPT_DIR/runs/rehearsal-$(echo "$MODEL" | tr '/' '-')}"
 mkdir -p "$OUT"

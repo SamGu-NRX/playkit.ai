@@ -112,9 +112,40 @@ JOB_COUNT="$(node -e '
 echo "pilot: current-tree public split: $JOB_COUNT"
 
 # 2. Estimate: local probe episodes and tier pars; no API calls, no spend.
+#
+# Known harness hang on this base: with the pre-burst13 GTP client (burst13's
+# stale-reply fix is still an unmerged draft), the estimate's go-ladder probe
+# episodes can wedge — gnugo children blocked, estimate never exits after
+# writing its outputs. Bounded with a timeout; if the outputs exist when the
+# timeout fires, the step counts as complete with a loud warning. For a live
+# pilot the estimate numbers are only ever a scoping aid, never a gate.
 echo "== [2/6] estimate =="
-node "$CLI" estimate --suite "$SUITE" --agent "model:$MODEL" --prices "$PRICES" \
+ESTIMATE_TIMEOUT_SECS="${ESTIMATE_TIMEOUT_SECS:-900}"
+set +e
+timeout --signal=TERM --kill-after=10 "$ESTIMATE_TIMEOUT_SECS" \
+  node "$CLI" estimate --suite "$SUITE" --agent "model:$MODEL" --prices "$PRICES" \
   --out "$OUT/estimate" 2>&1 | tee "$OUT/estimate.console.txt"
+EST_STATUS="${PIPESTATUS[0]}"
+set -e
+case "$EST_STATUS" in
+  0) : ;;
+  124|137|143)
+    if [[ -f "$OUT/estimate/estimate.json" ]]; then
+      echo "pilot: WARNING: estimate did not exit (status $EST_STATUS after ${ESTIMATE_TIMEOUT_SECS}s) but its outputs are present — known go-ladder probe hang on this base (pre-burst13 GTP client); continuing with the written estimate." >&2
+      # The timeout killed the estimate's node process, not its engine
+      # children; orphaned gnugo GTP instances (parent pid 1) would idle
+      # forever, so reap exactly those.
+      for OPID in $(ps -eo pid,ppid,args | awk '$2 == 1 && /gnugo --mode gtp/ {print $1}'); do
+        kill "$OPID" 2>/dev/null || true
+      done
+    else
+      echo "pilot: estimate timed out after ${ESTIMATE_TIMEOUT_SECS}s with no outputs — see $OUT/estimate.console.txt" >&2
+      exit 1
+    fi ;;
+  *)
+    echo "pilot: estimate failed with exit $EST_STATUS — see $OUT/estimate.console.txt" >&2
+    exit 1 ;;
+esac
 
 # 3. Run, resuming until the bundle completes. A run invocation that reaches a
 # cap exits 1 with run.json stopped="budget"; each resume re-verifies what is
@@ -131,10 +162,23 @@ attempt=1
 while :; do
   RESUME_FLAG=""
   if [[ "$attempt" -gt 1 ]]; then RESUME_FLAG="--resume"; fi
+  # Optional wall-clock bound per invocation (RUN_TIMEOUT_SECS, 0 = none;
+  # rehearsals set it). A killed invocation exits 124/143 and leaves the
+  # bundle exactly as --resume expects it; if one episode wedges every
+  # attempt, the resume cap below aborts with that message.
+  TIMEOUT_CMD=()
+  RUN_TIMEOUT_SECS="${RUN_TIMEOUT_SECS:-0}"
+  if [[ "$RUN_TIMEOUT_SECS" -gt 0 ]]; then
+    TIMEOUT_CMD=(timeout --signal=TERM --kill-after=10 "$RUN_TIMEOUT_SECS")
+  fi
   set +e
-  node "$CLI" run "${RUN_ARGS[@]}" $RESUME_FLAG 2>&1 | tee "$OUT/run-$attempt.console.txt"
+  "${TIMEOUT_CMD[@]}" node "$CLI" run "${RUN_ARGS[@]}" $RESUME_FLAG 2>&1 | tee "$OUT/run-$attempt.console.txt"
   RUN_STATUS="${PIPESTATUS[0]}"
   set -e
+  if [[ "$RUN_STATUS" -eq 124 || "$RUN_STATUS" -eq 137 || "$RUN_STATUS" -eq 143 ]]; then
+    echo "pilot: run invocation $attempt hit the ${RUN_TIMEOUT_SECS}s wall clock (status $RUN_STATUS) — resuming from the bundle"
+    RUN_STATUS=1
+  fi
   if [[ "$RUN_STATUS" -ne 0 && "$RUN_STATUS" -ne 1 ]]; then
     echo "pilot: gauntlet run failed with exit $RUN_STATUS (see $OUT/run-$attempt.console.txt)" >&2
     exit 1
@@ -166,16 +210,49 @@ node "$CLI" verify "$OUT/run" 2>&1 | tee "$OUT/verify.console.txt"
 
 # 5. Leaderboard under all three scoring profiles. Decision #36 (the floor
 # profile) is Sam's open call — publishing all three keeps that decision open.
+# Profiles fail independently: a stale committed scoring baseline makes the
+# chance-rescaling profiles refuse a tier with an actionable error (the
+# version-refusal is correct behavior; the recal is sibling-owned). One
+# profile refusing must not lose the other two.
 echo "== [5/6] leaderboard (rhae-v1, chance-adjusted, squared-outcome) =="
+LEADERBOARD_FAILED=""
 for PROFILE in rhae-v1 chance-adjusted squared-outcome; do
+  set +e
   node "$CLI" leaderboard --suite "$SUITE" --scoring-profile "$PROFILE" \
     --out "$OUT/leaderboard/$PROFILE" "$OUT/run" 2>&1 | tee "$OUT/leaderboard-$PROFILE.console.txt"
+  LB_STATUS="${PIPESTATUS[0]}"
+  set -e
+  if [[ "$LB_STATUS" -ne 0 ]]; then
+    LEADERBOARD_FAILED="$LEADERBOARD_FAILED $PROFILE"
+    echo "pilot: WARNING: leaderboard profile $PROFILE failed (exit $LB_STATUS) — see $OUT/leaderboard-$PROFILE.console.txt; continuing" >&2
+  fi
 done
 
 # 6. Estimate vs actual: how the run's calls, tokens and dollars landed
-# against the estimate's low and high figures.
+# against the estimate's low and high figures. Same non-exit hang as step 2
+# (the comparison is fully printed to the console, then the process wedges) —
+# bounded by a timeout, with the printed Total table counting as the
+# deliverable.
 echo "== [6/6] estimate --against =="
-node "$CLI" estimate --suite "$SUITE" --agent "model:$MODEL" --prices "$PRICES" \
+ESTIMATE_AGAINST_TIMEOUT_SECS="${ESTIMATE_AGAINST_TIMEOUT_SECS:-600}"
+set +e
+timeout --signal=TERM --kill-after=10 "$ESTIMATE_AGAINST_TIMEOUT_SECS" \
+  node "$CLI" estimate --suite "$SUITE" --agent "model:$MODEL" --prices "$PRICES" \
   --against "$OUT/run" 2>&1 | tee "$OUT/estimate-against.console.txt"
+ESTA_STATUS="${PIPESTATUS[0]}"
+set -e
+case "$ESTA_STATUS" in
+  0) : ;;
+  124|137|143)
+    if grep -q '^| \*\*Total\*\*' "$OUT/estimate-against.console.txt"; then
+      echo "pilot: WARNING: estimate --against printed its comparison but did not exit (status $ESTA_STATUS after ${ESTIMATE_AGAINST_TIMEOUT_SECS}s) — same hang as the estimate step; the transcript above is complete." >&2
+    else
+      echo "pilot: estimate --against timed out with no comparison table — see $OUT/estimate-against.console.txt" >&2
+      exit 1
+    fi ;;
+  *)
+    echo "pilot: estimate --against failed with exit $ESTA_STATUS — see $OUT/estimate-against.console.txt" >&2
+    exit 1 ;;
+esac
 
 echo "pilot: COMPLETE — model=$MODEL effort=$EFFORT cap=\$$MAX_USD bundleSpendUsd=$SPEND outputs in $OUT"

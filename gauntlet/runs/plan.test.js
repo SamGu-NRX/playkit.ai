@@ -71,3 +71,72 @@ test('normalizeGames accepts arrays, Maps and records, and refuses gaps', () => 
   assert.throws(() => normalizeGames([takeOrPass], SUITE), /no implementation/);
   assert.throws(() => normalizeGames([], SUITE), /no implementation/);
 });
+
+test('planJobs refuses manifest strings whose components climb out of the run directory', () => {
+  // Seeds are composite paths ('<split>/<i>'), so the guard must hold for
+  // every /-component, not just the whole string: an interior '..' still
+  // escapes trajectoryPath.
+  /** @type {[string, (s: any) => void][]} */
+  const cases = [
+    [
+      'seed',
+      (/** @type {any} */ s) => {
+        s.games[0].tiers[0].seeds = ['public/../../../../tmp/gauntlet-escape/probe', 'public/0'];
+      },
+    ],
+    [
+      'tier-id',
+      (/** @type {any} */ s) => {
+        s.games[0].tiers[0].id = 'main/../../escape';
+      },
+    ],
+    [
+      'game-id',
+      (/** @type {any} */ s) => {
+        s.games[0].id = 'take-or-pass/../../escape';
+      },
+    ],
+  ];
+  for (const [step, mutate] of cases) {
+    const suite = buildSuite([takeOrPass], { split: 'public' });
+    mutate(suite);
+    assert.throws(() => planJobs(suite), /unsafe path segment/, `${step} must refuse`);
+  }
+});
+
+test('trajectoryPath refuses a job that would escape the run directory', () => {
+  // path.join normalizes interior '..' lexically, so only a climb deep enough
+  // to pass above the run directory itself escapes — the assert guards the
+  // resolved result, whatever the components were.
+  assert.throws(
+    () =>
+      trajectoryPath('/tmp/run', {
+        key: 'g/t/../../../../tmp/gauntlet-escape/probe',
+        gameId: 'g',
+        tierId: 't',
+        seed: '../../../../tmp/gauntlet-escape/probe',
+        split: 'public',
+      }),
+    /escapes the run directory/
+  );
+  assert.throws(
+    () =>
+      trajectoryPath('/tmp/run', {
+        key: '../evil/t/public/0',
+        gameId: '../evil',
+        tierId: 't',
+        seed: 'public/0',
+        split: 'public',
+      }),
+    /escapes the run directory/
+  );
+  // A legitimate composite seed stays under the run directory.
+  const job = /** @type {import('./plan.js').Job} */ ({
+    key: 'take-or-pass/main/public/0',
+    gameId: 'take-or-pass',
+    tierId: 'main',
+    seed: 'public/0',
+    split: 'public',
+  });
+  assert.ok(trajectoryPath('/tmp/run', job).startsWith('/tmp/run/'));
+});

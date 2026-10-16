@@ -24,6 +24,15 @@ Rules that hold for all providers:
 - `usage.costUsd` comes from the caller-supplied `prices` file only: `null`
   without an entry for `<provider>/<model>`, and `0` only when that entry has
   explicit 0 rates.
+- A provider that omits a token count (or reports a negative or non-numeric
+  one) records `null` for it, never 0 — unreported usage is unknown, not free.
+  A reported 0 stays 0. `usage.costUsd` is `null` whenever either count is
+  `null`, so a run capped at `maxUsd` refuses instead of billing $0.
+- A 2xx body that does not parse as JSON fails immediately (never retried) as
+  `model agent: <provider> returned an unparseable 2xx body (HTTP <status)>:
+  <first 200 characters>`. Every error the client throws carries a numeric
+  `retries` property: the retries it performed, `0` when the first answer was
+  not retryable.
 - Reasoning delivered separately (chat-completions
   `message.reasoning_content` or `message.reasoning`) never enters the reply
   text the runner parses; only its character count is recorded in

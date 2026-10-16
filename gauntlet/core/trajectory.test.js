@@ -36,7 +36,69 @@ test('an edited action breaks verification', async () => {
   const result = await verifyTrajectory(game, trajectory);
   assert.equal(result.ok, false);
   if (!result.ok) {
-    assert.match(result.reason, /not legal|hash mismatch|is not legal/);
+    assert.match(result.reason, /not legal|hash mismatch|is not legal|reply parses|would extract|would have rejected/);
+  }
+});
+
+test('an invalid agent step whose reply is edited to a legal action is rejected', async () => {
+  // The runner records the reply text verbatim, so a forger can edit the
+  // reply of a recorded invalid attempt. Editing it to "play a1" — which the
+  // runner would accept and move with — must fail verification.
+  let turn = 0;
+  const agent = {
+    id: 'one-invalid',
+    track: /** @type {'official'} */ ('official'),
+    async act() {
+      turn++;
+      if (turn === 1) return { text: 'z9' };
+      return { text: 'a1' };
+    },
+  };
+  const trajectory = await runEpisode({
+    game,
+    tierId: 'perfect-opponent',
+    seed: 'invalid-reply-edit-seed',
+    agent,
+    maxConsecutiveInvalid: 99,
+  });
+  const index = trajectory.steps.findIndex((step) => step.invalid);
+  assert.notEqual(index, -1, 'the episode recorded an invalid attempt');
+  trajectory.steps[index].reply.text = 'play a1'; // legal on an empty board
+  const result = await verifyTrajectory(game, trajectory);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.match(result.reason, new RegExp(`step ${index}`));
+    assert.match(result.reason, /marked invalid/);
+    assert.match(result.reason, /would have accepted/);
+  }
+});
+
+test('a valid step whose reply names a different legal move than its recorded action is rejected', async () => {
+  const trajectory = await recorded('reply-action-mismatch-seed');
+  const index = trajectory.steps.findIndex((step) => !step.invalid);
+  const step = trajectory.steps[index];
+  const legal = game.legalActions(replayState(trajectory, index), step.seat);
+  const other = legal.find((cell) => cell !== step.action);
+  assert.ok(other, 'a different legal move exists');
+  step.reply.text = /** @type {string} */ (other);
+  const result = await verifyTrajectory(game, trajectory);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.match(result.reason, new RegExp(`step ${index}`));
+    assert.match(result.reason, /parses to/);
+  }
+});
+
+test('an invalid opponent step is rejected outright', async () => {
+  const trajectory = await recorded('invalid-opponent-step-seed');
+  const index = trajectory.steps.findIndex((step) => step.by === 'opponent');
+  assert.notEqual(index, -1, 'a two-seat episode has opponent steps');
+  trajectory.steps[index].invalid = true;
+  const result = await verifyTrajectory(game, trajectory);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.match(result.reason, new RegExp(`step ${index}`));
+    assert.match(result.reason, /opponent/);
   }
 });
 
@@ -108,3 +170,29 @@ function replayState(trajectory, upto) {
   }
   return state;
 }
+
+test('a forged forfeit threshold above the recorded consecutive invalids is rejected', async () => {
+  const trajectory = await runEpisode({
+    game,
+    tierId: 'perfect-opponent',
+    seed: 'forged-threshold',
+    agent: {
+      id: 'stubborn',
+      track: /** @type {'baseline'} */ ('baseline'),
+      async act() {
+        return { text: 'z9' };
+      },
+    },
+    maxConsecutiveInvalid: 2,
+  });
+  assert.equal(trajectory.end.reason, 'forfeit-invalid');
+  // The honest record carries the threshold the runner actually used...
+  assert.equal(trajectory.end.forfeitThreshold, 2);
+  assert.deepEqual(await verifyTrajectory(game, trajectory), { ok: true });
+  // ...and a record claiming a stricter threshold than its steps support does
+  // not verify: only 2 consecutive invalid attempts back this forfeit.
+  trajectory.end.forfeitThreshold = 5;
+  const result = await verifyTrajectory(game, trajectory);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.match(result.reason, /threshold/);
+});

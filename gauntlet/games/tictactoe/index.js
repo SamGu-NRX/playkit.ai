@@ -139,7 +139,7 @@ function negamax(state) {
 export const tictactoe = {
   spec: {
     id: 'tictactoe',
-    version: '1.0.0',
+    version: '1.2.0',
     title: 'Tic-Tac-Toe',
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {import('../../core/types.js').InformationMode} */ ('perfect'),
@@ -199,13 +199,13 @@ export const tictactoe = {
     const mover = MARKS[state.toMove];
     /** @type {string[]} */
     const rows = [];
-    rows.push('    1   2   3');
+    rows.push('    a   b   c');
     for (let row = 0; row < 3; row++) {
       const cells = [0, 1, 2].map((col) => {
         const mark = state.board[row * 3 + col];
         return mark === null ? '.' : mark;
       });
-      rows.push(`${COLUMN_LETTERS[row]}   ${cells.join('   ')}`);
+      rows.push(`${row + 1}   ${cells.join('   ')}`);
     }
     const board = rows.join('\n');
     const legal =
@@ -339,7 +339,8 @@ export const tictactoe = {
    * Truncation on this outcome tier assesses the current position under
    * perfect play: a decided position scores as the game would have, an
    * unfinished position scores by its minimax value (a forced win for the
-   * mover scores like a win; anything else scores a draw).
+   * mover scores like a win, a forced loss like a loss; only an undecided
+   * position scores a draw).
    *
    * @param {TictactoeState} state
    * @returns {import('../../core/types.js').Outcome}
@@ -354,6 +355,10 @@ export const tictactoe = {
     let reason;
     if (position.score > 0) {
       const winner = state.toMove;
+      normalized = winner === 0 ? [1, 0] : [0, 1];
+      reason = `truncated: seat ${winner} (${MARKS[winner]}) has a forced win from the current position`;
+    } else if (position.score < 0) {
+      const winner = 1 - state.toMove;
       normalized = winner === 0 ? [1, 0] : [0, 1];
       reason = `truncated: seat ${winner} (${MARKS[winner]}) has a forced win from the current position`;
     } else {

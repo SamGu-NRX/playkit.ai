@@ -159,6 +159,20 @@ test('the minimax opponent wins as X against a naive center-then-corner player',
   }
 });
 
+test('the rendered board labels match the <column><row> grammar', () => {
+  // X takes c1 (top-right), O takes b2 (center), X takes a3 (bottom-left).
+  let state = game.reset(tier, 's');
+  state = game.step(state, 0, 'c1');
+  state = game.step(state, 1, 'b2');
+  state = game.step(state, 0, 'a3');
+  const observation = game.observe(state, 1);
+  const lines = observation.text.split('\n');
+  assert.equal(lines[1], '    a   b   c', 'columns a b c run across the top');
+  assert.equal(lines[2], '1   .   .   X', 'c1 renders as row 1, column c');
+  assert.equal(lines[3], '2   .   O   .', 'b2 renders as row 2, column b');
+  assert.equal(lines[4], '3   X   .   .', 'a3 renders as row 3, column a');
+});
+
 test('the full conformance kit passes for tic-tac-toe', async () => {
   const report = await runConformance(game);
   assert.equal(report.ok, true);
@@ -174,4 +188,43 @@ test('the conformance kit rejects a broken game variant', async () => {
     runConformance(/** @type {*} */ (broken)),
     /conformance failed for game "tictactoe"/
   );
+});
+
+test('the rendered board places played cells under the documented coordinates', () => {
+  // rulesText: columns a-c left to right, rows 1-3 top to bottom, actions are
+  // <column><row>. An official-track agent sees only observation.text, so a2
+  // must render as row 2 under the column-a header — not transposed.
+  const state = game.step(game.reset(tier, 'render-seed'), 0, 'a2');
+  const text = game.observe(state, /** @type {number} */ (game.toAct(state))).text;
+  const lines = text.split('\n');
+  const row2 = lines.find((line) => line.startsWith('2'));
+  assert.ok(row2, `board rows must be labeled with digits 1-3, got:\n${text}`);
+  assert.equal(row2.trim().split(/\s+/)[1], 'X', `played a2 must render X in row 2, column a, got:\n${text}`);
+  assert.equal(
+    lines.find((line) => /^[abc]\s/.test(line)),
+    undefined,
+    `board rows must not be labeled with column letters, got:\n${text}`
+  );
+  assert.ok(
+    lines.some((line) => line.trim() === 'a   b   c'),
+    `the column letters a-c must be the header row, got:\n${text}`
+  );
+});
+
+test('truncate() scores a forced loss for the mover as a loss, not a draw', () => {
+  // X: a1, b2, a2 — X threatens a3 (column a) and c3 (diagonal a1-b2-c3);
+  // O holds b1, c2 and can block only one threat. Seat 1 (O) to move: a
+  // decided position, whatever the action budget does next.
+  let state = game.reset(tier, 'forced-loss-seed');
+  /** @type {[number, string][]} */
+  const moves = [[0, 'a1'], [1, 'b1'], [0, 'b2'], [1, 'c2'], [0, 'a2']];
+  for (const [seat, cell] of moves) {
+    state = game.step(state, seat, cell);
+  }
+  assert.equal(state.toMove, 1);
+  assert.equal(state.status, 'playing');
+  const outcome = game.truncate(state);
+  assert.deepEqual(outcome.normalized, [1, 0], 'a forced loss for the mover scores a win for the opponent');
+  assert.match(outcome.reason, /forced win/);
+  assert.doesNotMatch(outcome.reason, /drawn/, 'a decided position must not be reported as drawn');
 });

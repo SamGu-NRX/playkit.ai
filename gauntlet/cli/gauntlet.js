@@ -16,11 +16,22 @@
  *        [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]
  *                                          Write (or print) a suite manifest.
  *   run --suite <file> --agent <spec> --out <dir> [--limit <n>]
- *        [--max-invalid <n>] [--prices <file>] [--dry-run --script <file>]
+ *        [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]
+ *        [--requests-per-minute <n>] [--max-output-tokens <n>]
+ *        [--call-timeout-ms <ms>] [--prices <file>] [--dry-run --script <file>]
  *                                          Run the agent over the manifest.
- *   leaderboard --suite <file> [--out <dir>] [--json] <dirs...>
+ *   leaderboard --suite <file> [--out <dir>] [--scoring-profile <name>]
+ *        [--json] <dirs...>
  *                                          Score run directories, render JSON
  *                                          and Markdown through gauntlet/scoring.
+ *                                          --scoring-profile is one of rhae-v1
+ *                                          (default), chance-adjusted,
+ *                                          squared-outcome.
+ *   rate <dirs...> [--ladder <file>] [--json]
+ *                                          Elo-rate chess trajectories against
+ *                                          the ladder fitted by rating/ladder.js;
+ *                                          off-ladder trajectories are skipped
+ *                                          and reported per agent.
  *   serve                                  Serve the JSON-Lines wire protocol
  *                                          on stdin/stdout (protocol/server.js).
  *
@@ -38,6 +49,11 @@
  *                                   never logged). Live runs need --prices for
  *                                   cost accounting; --dry-run with
  *                                   --script <file> replays replies.
+ *                                   --max-output-tokens <n> caps each reply's
+ *                                   output tokens and --call-timeout-ms <ms>
+ *                                   bounds each attempt (a timed-out attempt
+ *                                   retries like any transport error); both
+ *                                   are recorded in run.json's limits.
  *
  * Node-only: imports `node:*` freely.
  * @module
@@ -52,6 +68,8 @@ import { buildSuiteManifest } from './suite.js';
 import { runSuite, printRunSummary } from './run.js';
 import { verifyPath } from './verify.js';
 import { buildLeaderboard } from './leaderboard.js';
+import { rateRunDirs } from './rate.js';
+import { resolveProfile } from '../scoring/profiles.js';
 import { buildEstimate } from './estimate.js';
 import { printBundleVerify } from './bundle.js';
 import { parseAgentSpec } from './agents.js';
@@ -72,8 +90,11 @@ function usage() {
       '       gauntlet suite build --split public|eval [--salt-file <file>]',
       '                      [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]',
       '       gauntlet run --suite <file> --agent <spec> --out <dir> [--limit <n>]',
-      '                      [--max-invalid <n>] [--prices <file>] [--dry-run --script <file>]',
-      '       gauntlet leaderboard --suite <file> [--out <dir>] [--json] <dirs...>',
+      '                      [--max-invalid <n>] [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]',
+      '                      [--requests-per-minute <n>] [--max-output-tokens <n>]',
+      '                      [--call-timeout-ms <ms>] [--prices <file>] [--dry-run --script <file>]',
+      '       gauntlet leaderboard --suite <file> [--out <dir>] [--scoring-profile rhae-v1] [--json] <dirs...>',
+      '       gauntlet rate <dirs...> [--ladder <file>] [--json]',
       '       gauntlet serve',
       '',
       'agent specs: random | baseline:<game>:<greedy|engine> | model:<provider>/<model>',
@@ -156,7 +177,7 @@ function finiteNumberFlag(flags, name) {
 
 /**
  * @param {Map<string, string>} flags
- * @returns {{ dryRun: boolean, prices?: string, script?: string, baseUrl?: string, apiKeyEnv?: string }}
+ * @returns {{ dryRun: boolean, prices?: string, script?: string, baseUrl?: string, apiKeyEnv?: string, maxOutputTokens?: number, callTimeoutMs?: number }}
  */
 function modelFlags(flags) {
   return {
@@ -165,6 +186,12 @@ function modelFlags(flags) {
     ...(flags.has('script') ? { script: /** @type {string} */ (flags.get('script')) } : {}),
     ...(flags.has('base-url') ? { baseUrl: /** @type {string} */ (flags.get('base-url')) } : {}),
     ...(flags.has('api-key-env') ? { apiKeyEnv: /** @type {string} */ (flags.get('api-key-env')) } : {}),
+    ...(flags.has('max-output-tokens')
+      ? { maxOutputTokens: numberFlag(flags, 'max-output-tokens') }
+      : {}),
+    ...(flags.has('call-timeout-ms')
+      ? { callTimeoutMs: numberFlag(flags, 'call-timeout-ms') }
+      : {}),
   };
 }
 
@@ -332,10 +359,24 @@ async function main(argv) {
   if (command === 'leaderboard') {
     const suitePath = flags.get('suite');
     if (!suitePath || positionals.length === 0) usage();
+    // resolveProfile refuses an unknown name naming the selectable profiles;
+    // the catch below prints that and exits 1.
+    const profileFlag = flags.get('scoring-profile');
     await buildLeaderboard({
       suitePath,
       dirs: positionals,
+      ...(profileFlag !== undefined ? { profile: resolveProfile(profileFlag) } : {}),
       ...(flags.has('out') ? { outDir: /** @type {string} */ (flags.get('out')) } : {}),
+      ...(flags.has('json') ? { json: true } : {}),
+    });
+    return;
+  }
+
+  if (command === 'rate') {
+    if (positionals.length === 0) usage();
+    rateRunDirs({
+      dirs: positionals,
+      ...(flags.has('ladder') ? { ladderPath: /** @type {string} */ (flags.get('ladder')) } : {}),
       ...(flags.has('json') ? { json: true } : {}),
     });
     return;

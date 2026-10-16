@@ -23,6 +23,7 @@ const MAX_ACTIONS = 150;
 
 /** Search-timeout ceilings per tier: far above the expected per-move time. */
 const SEARCH_TIMEOUT_MS = {
+  'sf-250': 10_000,
   'sf-1k': 10_000,
   'sf-10k': 20_000,
   'sf-100k': 30_000,
@@ -52,7 +53,7 @@ export const chessStockfish = {
     tiers: /** @type {TierSpec[]} */ ([
       {
         id: 'sf-1k',
-        rank: 1,
+        rank: 2,
         scoring: 'outcome',
         maxActions: MAX_ACTIONS,
         publicSeeds: 5,
@@ -60,7 +61,7 @@ export const chessStockfish = {
       },
       {
         id: 'sf-10k',
-        rank: 2,
+        rank: 3,
         scoring: 'outcome',
         maxActions: MAX_ACTIONS,
         publicSeeds: 5,
@@ -68,7 +69,7 @@ export const chessStockfish = {
       },
       {
         id: 'sf-100k',
-        rank: 3,
+        rank: 4,
         scoring: 'outcome',
         maxActions: MAX_ACTIONS,
         publicSeeds: 5,
@@ -76,11 +77,22 @@ export const chessStockfish = {
       },
       {
         id: 'sf-1m',
-        rank: 4,
+        rank: 5,
         scoring: 'outcome',
         maxActions: MAX_ACTIONS,
         publicSeeds: 5,
         params: { nodes: 1_000_000, searchTimeoutMs: SEARCH_TIMEOUT_MS['sf-1m'] },
+      },
+      {
+        // Bridge rung for rating-ladder identifiability: weak enough to draw
+        // the built-in wood engine while still connected to sf-1k (probed
+        // 4/6 vs wood, 1/16 vs sf-1k — nonzero cross scores on both sides).
+        id: 'sf-250',
+        rank: 1,
+        scoring: 'outcome',
+        maxActions: MAX_ACTIONS,
+        publicSeeds: 5,
+        params: { nodes: 250, searchTimeoutMs: SEARCH_TIMEOUT_MS['sf-250'] },
       },
     ]),
   },

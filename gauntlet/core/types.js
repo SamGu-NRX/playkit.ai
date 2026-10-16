@@ -155,10 +155,17 @@
 /**
  * Token/cost accounting for one agent reply.
  *
+ * Changed 2026-10-15: inputTokens/outputTokens became `number | null` because
+ * a provider that omits a count did not measure it — null (unknown), not 0,
+ * which made unreported usage look measured and billed a priced run at $0.
+ *
  * @typedef {object} Usage
- * @property {number} inputTokens
- * @property {number} outputTokens
- * @property {number | null} costUsd Number, or null when unknown.
+ * @property {number | null} inputTokens Reported input token count, or null
+ *   when the provider did not report one.
+ * @property {number | null} outputTokens Reported output token count, or null
+ *   when the provider did not report one.
+ * @property {number | null} costUsd Number, or null when unknown — always
+ *   null whenever either token count is null.
  */
 
 /**
@@ -183,6 +190,12 @@
  * @property {string} [provider]
  * @property {boolean} [dryRun] True for harness shakedowns that must not hit
  *   paid APIs.
+ * @property {(ctx: TurnContext) => number | null} [quoteWorstCaseUsd] Upper
+ *   bound on one act() call's cost in USD, computable before the call starts
+ *   (the request's size times the input price plus the output-token limit
+ *   times the output price), or null when there is no price entry. The run
+ *   engine reserves this quote against a maxUsd cap before admitting the
+ *   call, so concurrent in-flight calls cannot jointly overshoot the cap.
  */
 
 /**
@@ -243,7 +256,7 @@ export {};
  * @property {{ id: string, track: AgentTrack, seat: number, model?: string, provider?: string, dryRun?: boolean }} agent
  * @property {{ seat: number, id: string }[]} opponents
  * @property {TrajectoryStep[]} steps
- * @property {{ reason: string, outcome: Outcome | null, agentActions: number, invalidActions: number }} end
+ * @property {{ reason: string, outcome: Outcome | null, agentActions: number, invalidActions: number, forfeitThreshold: number }} end
  * @property {string} startedAt
  * @property {string} finishedAt
  */

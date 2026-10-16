@@ -80,6 +80,60 @@ export function extractAction(text) {
 }
 
 /**
+ * The runner's full accept/reject decision for one reply: extract the
+ * attempted action, parse it against the current state and seat, and check
+ * legality. `runEpisode` and `verifyTrajectory` both call this, so replay
+ * verification re-derives exactly the decision the runner made instead of
+ * re-implementing a copy of it.
+ *
+ * @param {Game<*>} game
+ * @param {*} state
+ * @param {number} seat
+ * @param {string[]} legalActions Sorted canonical actions for this seat.
+ * @param {string} replyText Raw reply text.
+ * @returns {{ attempted: string | null, canonical: string | null, invalid: boolean, reason: string | null }}
+ *   `attempted` is what extractAction read from the reply (null when nothing
+ *   usable); `canonical` is the accepted action on a valid reply and null
+ *   otherwise; `reason` explains a rejection and is null when valid.
+ */
+export function judgeReply(game, state, seat, legalActions, replyText) {
+  const attempted = extractAction(replyText);
+  /** @type {string | null} */
+  let canonical = null;
+  /** @type {string | null} */
+  let invalidReason = null;
+  if (attempted === null) {
+    invalidReason = 'no action found in reply';
+  } else {
+    try {
+      const parsed = game.parseAction(state, seat, attempted);
+      if (parsed && parsed.ok) {
+        canonical = parsed.action;
+      } else {
+        invalidReason =
+          parsed && !parsed.ok && parsed.error
+            ? String(parsed.error)
+            : 'unparseable action';
+      }
+    } catch (err) {
+      invalidReason = `parseAction threw: ${err instanceof Error ? err.message : String(err)}`;
+    }
+  }
+  let invalid = invalidReason !== null;
+  if (!invalid && canonical !== null && !legalActions.includes(canonical)) {
+    invalid = true;
+    invalidReason = `illegal action "${canonical}"`;
+    canonical = null;
+  }
+  return {
+    attempted,
+    canonical,
+    invalid,
+    reason: invalid ? invalidReason : null,
+  };
+}
+
+/**
  * @param {Game<*>} game
  * @param {TierSpec} tier
  * @param {*} state
@@ -247,38 +301,17 @@ export async function runEpisode({
     }
     const ms = now() - startedAt;
 
-    const attempted = extractAction(reply && typeof reply.text === 'string' ? reply.text : '');
-    /** @type {string | null} */
-    let canonical = null;
-    /** @type {string | null} */
-    let invalidReason = null;
-    if (attempted === null) {
-      invalidReason = 'no action found in reply';
-    } else {
-      try {
-        const parsed = game.parseAction(state, seat, attempted);
-        if (parsed && parsed.ok) {
-          canonical = parsed.action;
-        } else {
-          invalidReason =
-            parsed && !parsed.ok && parsed.error
-              ? String(parsed.error)
-              : 'unparseable action';
-        }
-      } catch (err) {
-        invalidReason = `parseAction threw: ${err instanceof Error ? err.message : String(err)}`;
-      }
-    }
-    let invalid = invalidReason !== null;
-    if (
-      !invalid &&
-      canonical !== null &&
-      !legalActions.includes(canonical)
-    ) {
-      invalid = true;
-      invalidReason = `illegal action "${canonical}"`;
-      canonical = null;
-    }
+    const decision = judgeReply(
+      game,
+      state,
+      seat,
+      legalActions,
+      reply && typeof reply.text === 'string' ? reply.text : ''
+    );
+    const attempted = decision.attempted;
+    const canonical = decision.canonical;
+    const invalid = decision.invalid;
+    const invalidReason = decision.reason;
 
     if (!isAgent && invalid) {
       throw new Error(
@@ -345,6 +378,7 @@ export async function runEpisode({
       outcome: end.outcome,
       agentActions,
       invalidActions,
+      forfeitThreshold: maxConsecutiveInvalid,
     },
     startedAt: new Date(startedAtMs).toISOString(),
     finishedAt: new Date(finishedAtMs).toISOString(),

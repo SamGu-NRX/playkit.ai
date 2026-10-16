@@ -15,7 +15,9 @@
  * @module
  */
 
-import { score } from './score.js';
+import { score, GauntletRefusalError } from './score.js';
+
+import { DEFAULT_PROFILE } from './profiles.js';
 
 /** @import { Game } from '../core/types.js' */
 /** @import { SuiteManifest } from './suite.js' */
@@ -41,6 +43,9 @@ const TRACKS = ['official', 'community', 'baseline'];
  * @property {number} invalidActionRate
  * @property {number} meanAgentActions
  * @property {Record<string, import('./score.js').GameScore>} games
+ * @property {{ profile: string, baselineSha256?: string }} [scoring] Present
+ *   only when the entry was scored under a non-default or explicitly
+ *   selected scoring profile.
  */
 
 /**
@@ -61,6 +66,8 @@ const TRACKS = ['official', 'community', 'baseline'];
  * @property {'playkit-gauntlet-leaderboard/1'} format
  * @property {string} generatedAt
  * @property {{ id: string, split: string, saltCommitment: string | null }} suite
+ * @property {{ profile: string, baselineSha256?: string }} [scoring] Present
+ *   only when a scoring profile was explicitly selected or is non-default.
  * @property {Record<string, LeaderboardEntry[]>} tracks One array per track.
  * @property {Record<string, ScoreVsCostPoint[]>} scoreVsCost One series per
  *   track, like the ARC Prize leaderboard's score-vs-cost plot data.
@@ -150,15 +157,29 @@ function trackMarkdown(track, entries) {
 }
 
 /**
+ * @typedef {object} LeaderboardOptions
+ * @property {string} [profile] Default scoring profile for entries that do
+ *   not name one. Defaults to `rhae-v1`. When the effective profile is
+ *   non-default (or explicitly selected), the leaderboard JSON carries a
+ *   `scoring` block with the profile id and, when used, the baseline file's
+ *   SHA-256.
+ * @property {import('./profiles.js').ScoringBaseline} [baseline] Default
+ *   parsed scoring baseline for entries that do not carry one (required by
+ *   `chance-adjusted`).
+ * @property {string} [baselineSha256] SHA-256 hex of the baseline file.
+ */
+
+/**
  * Build the leaderboard.
  *
  * @param {SuiteManifest} suite
  * @param {ScoreEntry[]} entries One per submitting agent.
  * @param {Game<*>[] | Map<string, Game<*>> | Record<string, Game<*>>} games
  *   Implementations for every suite game.
+ * @param {LeaderboardOptions} [options]
  * @returns {Promise<{ leaderboard: Leaderboard, markdown: string }>}
  */
-export async function leaderboard(suite, entries, games) {
+export async function leaderboard(suite, entries, games, options = {}) {
   if (!Array.isArray(entries)) {
     throw new Error('[gauntlet/scoring/leaderboard.js] entries: entries must be an array');
   }
@@ -180,8 +201,58 @@ export async function leaderboard(suite, entries, games) {
     const result = await score(suite, entry.trajectories, games, {
       agent: entry.agent,
       saltCommitment: entry.saltCommitment,
+      profile: entry.profile ?? options.profile,
+      baseline: entry.baseline ?? options.baseline,
+      baselineSha256: entry.baselineSha256 ?? options.baselineSha256,
     });
     scored.push(/** @type {LeaderboardEntry} */ (/** @type {*} */ (result)));
+  }
+
+  // One leaderboard, one profile. Entries scored under different profiles
+  // are on different scales (rhae-v1 floors the random baseline at ~0.11,
+  // chance-adjusted pins it at 0), so ranking them together would compare
+  // numbers that do not mean the same thing.
+  const boardProfile = scored.find((e) => e.scoring)?.scoring?.profile ?? DEFAULT_PROFILE;
+  for (const entry of scored) {
+    const entryProfile = entry.scoring?.profile ?? DEFAULT_PROFILE;
+    if (entryProfile !== boardProfile) {
+      throw new GauntletRefusalError(
+        'leaderboard.js',
+        'profile-mismatch',
+        `cannot rank entry "${entry.agent.id}" scored under profile "${entryProfile}" together with entries under profile "${boardProfile}"; profile scores are on different scales — build one leaderboard per profile`
+      );
+    }
+  }
+
+  // One board, one baseline. chance-adjusted scores depend on the baseline
+  // file's random-mean vector (it sets the denominator and clamp per tier),
+  // so two entries scored against different baseline files are on different
+  // scales even under the same profile name — exactly what the profile check
+  // above exists to prevent. Only entries whose result names a baseline
+  // participate: chance-adjusted always carries a scoring block, while the
+  // baseline-reading-free profiles (rhae-v1, squared-outcome) never read one,
+  // so a differing sha there is provenance noise, not a scale difference.
+  if (boardProfile === 'chance-adjusted') {
+    /** @type {string | undefined} */
+    let boardBaselineSha256;
+    /** @type {string | undefined} */
+    let boardBaselineEntryId;
+    for (const entry of scored) {
+      const sha = entry.scoring?.baselineSha256;
+      if (sha === undefined) continue;
+      if (boardBaselineSha256 === undefined) {
+        boardBaselineSha256 = sha;
+        boardBaselineEntryId = entry.agent.id;
+        continue;
+      }
+      if (boardBaselineSha256 !== sha) {
+        throw new GauntletRefusalError(
+          'leaderboard.js',
+          'baseline-mismatch',
+          `cannot rank entry "${entry.agent.id}" scored against baseline ${sha.slice(0, 12)} together with entry "${boardBaselineEntryId}" scored against baseline ${boardBaselineSha256.slice(0, 12)}; chance-adjusted scores depend on the baseline's random-mean vector — build one leaderboard per baseline file`
+        );
+      }
+    }
   }
 
   /** @type {Record<string, LeaderboardEntry[]>} */
@@ -226,6 +297,18 @@ export async function leaderboard(suite, entries, games) {
     tracks,
     scoreVsCost,
   };
+  // The profile block appears only when a profile was explicitly selected or
+  // is non-default, so the default leaderboard JSON stays byte-identical.
+  if (options.profile !== undefined || boardProfile !== DEFAULT_PROFILE) {
+    /** @type {{ profile: string, baselineSha256?: string }} */
+    const scoring = { profile: boardProfile };
+    // Provenance names the baseline the entries were actually scored against:
+    // the entries' consensus when they carry their own baselines, falling
+    // back to the board-level option.
+    const sha = scored.find((e) => e.scoring?.baselineSha256)?.scoring?.baselineSha256 ?? options.baselineSha256;
+    if (typeof sha === 'string') scoring.baselineSha256 = sha;
+    board.scoring = scoring;
+  }
 
   const markdownLines = [
     '# PlayKit Gauntlet leaderboard',

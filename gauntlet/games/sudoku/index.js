@@ -7,7 +7,7 @@
  * - `easy` — 9x9, singles only.
  * - `medium` — 9x9, needs naked/hidden pairs or pointing/claiming.
  * - `hard` — 9x9, needs X-wing/XY-wing or techniques beyond the ladder;
- *   the engine baseline does not solve every seed.
+ *   the engine baseline solves every seed privately at par.
  *
  * Scoring is efficiency: par is the number of empty cells at reset, so wrong
  * placements and erasures cost actions. A placement that repeats a digit

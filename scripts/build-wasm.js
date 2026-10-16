@@ -4,7 +4,11 @@
  * Build script for compiling the C++ solver to WebAssembly using Emscripten.
  *
  * Usage:
- *   node scripts/build-wasm.js [--release] [--emcc /path/to/emcc]
+ *   node scripts/build-wasm.js [--release] [--emcc /path/to/emcc] [--src /path/to/solver-source]
+ *
+ * The source directory defaults to the `solver/` git submodule checkout. It
+ * must contain `wasm/export_solver.cpp` plus the headers it includes
+ * (`game.hpp`, `heuristics.hpp`, `strategies/*.hpp`, `util.hpp`).
  */
 
 const { spawnSync } = require("child_process");
@@ -13,12 +17,18 @@ const os = require("os");
 const path = require("path");
 
 const rootDir = path.resolve(__dirname, "..");
-const sourceFile = path.join(rootDir, "solver/wasm/export_solver.cpp");
 const outputDir = path.join(rootDir, "src/extension/wasm");
 
 const args = process.argv.slice(2);
 const isRelease = args.includes("--release");
 const emccIndex = args.indexOf("--emcc");
+const srcIndex = args.indexOf("--src");
+const solverSourceDir =
+  srcIndex !== -1 && args[srcIndex + 1]
+    ? path.resolve(args[srcIndex + 1])
+    : path.join(rootDir, "solver");
+
+const sourceFile = path.join(solverSourceDir, "wasm/export_solver.cpp");
 
 const resolveEmccFromDir = (dir) => {
   if (!dir || !fs.existsSync(dir)) {
@@ -103,13 +113,15 @@ const emccExecutable = (() => {
 })();
 
 if (!fs.existsSync(sourceFile)) {
-  console.error("export_solver.cpp not found at", sourceFile);
+  console.error(
+    `export_solver.cpp not found at ${sourceFile}. Pass --src <dir> to point at a solver source checkout containing wasm/export_solver.cpp.`,
+  );
   process.exit(1);
 }
 
 fs.mkdirSync(outputDir, { recursive: true });
 
-const emccArgs = [sourceFile, "-std=c++17", isRelease ? "-O3" : "-O0"];
+const emccArgs = [sourceFile, "-std=c++17", isRelease ? "-O3" : "-O0", "-sDEFAULT_TO_CXX"];
 
 if (!isRelease) {
   emccArgs.push("-g", "-sASSERTIONS=1");
@@ -126,16 +138,21 @@ emccArgs.push(
   "-sWASM_BIGINT=1",
   "-sSUPPORT_LONGJMP=0",
   "-sDISABLE_EXCEPTION_CATCHING=1",
+  // MV3 content-script CSP forbids 'unsafe-eval'; embind's dynamic invokers
+  // build functions with `new Function(...)`. This flag makes embind emit
+  // fixed-arity invokers so the glue never evaluates strings.
+  "-sNO_DYNAMIC_EXECUTION=1",
   "-sEXPORTED_RUNTIME_METHODS=['cwrap','ccall']",
   "-sEXPORT_NAME=createSolverModule",
   "-I",
-  path.join(rootDir, "solver"),
+  solverSourceDir,
   "-I",
-  path.join(rootDir, "solver/vendor/sparsehash/src"),
+  path.join(solverSourceDir, "vendor/sparsehash/src"),
   "-o",
   path.join(outputDir, "solver.mjs"),
 );
 
+console.log(`Solver source: ${solverSourceDir}`);
 console.log(
   `Running ${emccExecutable.executable} (${emccExecutable.reason}) ${emccArgs.join(" ")}`,
 );

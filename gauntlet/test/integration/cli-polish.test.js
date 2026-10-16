@@ -139,6 +139,41 @@ test('unknown flag fails naming the flags the command takes', async () => {
   assert.match(result.stderr, /--dry-run/);
 });
 
+test('estimate takes --no-probes and --against, and still rejects an unknown flag', { timeout: 2 * 60 * 1000 }, async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'gauntlet-estimate-flags-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const suitePath = join(dir, 'suite.json');
+  const runDir = join(dir, 'run');
+  const built = await gauntlet(
+    'suite', 'build', '--split', 'public', '--games', 'tictactoe',
+    '--seeds-per-tier', '1', '--out', suitePath,
+  );
+  assert.equal(built.status, 0, built.stderr);
+  const ran = await gauntlet('run', '--suite', suitePath, '--agent', 'random', '--out', runDir, '--limit', '1');
+  assert.equal(ran.status, 0, ran.stderr);
+
+  const result = await gauntlet(
+    'estimate', '--suite', suitePath, '--agent', 'random',
+    '--no-probes', '--against', runDir, '--json',
+  );
+  assert.equal(result.status, 0, result.stderr);
+  const comparison = JSON.parse(result.stdout);
+  // --against reached the estimator: the output is a comparison, not an estimate.
+  assert.equal(comparison.kind, 'estimate-vs-actual');
+  // --no-probes reached it too: with probes, tictactoe's low call count comes
+  // from a baseline probe; without them it stays unknown.
+  assert.equal(comparison.games[0].gameId, 'tictactoe');
+  assert.equal(comparison.games[0].figures.estimated.callsLow, null);
+
+  const rejected = await gauntlet(
+    'estimate', '--suite', suitePath, '--agent', 'random', '--probes',
+  );
+  assert.equal(rejected.status, 1);
+  assert.match(rejected.stderr, /unknown flag "--probes" for gauntlet estimate/);
+  assert.match(rejected.stderr, /--no-probes/);
+  assert.match(rejected.stderr, /--against/);
+});
+
 test('--help, -h and `gauntlet help` print usage on stdout and exit 0', async () => {
   for (const argv of [['--help'], ['-h'], ['help']]) {
     const result = await gauntlet(...argv);

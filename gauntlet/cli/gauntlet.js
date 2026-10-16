@@ -151,6 +151,8 @@ const USAGE_TEXT = [
   '                      [--requests-per-minute <n>] [--max-output-tokens <n>]',
   '                      [--call-timeout-ms <ms>] [--thinking-budget <n>] [--reasoning-effort low|medium|high|xhigh|max]',
   '                      [--prices <file>] [--dry-run --script <file>]',
+  '       gauntlet estimate --suite <file> --agent <spec> [--prices <file>] [--out <dir>]',
+  '                         [--no-probes] [--against <runDir>] [--json]',
   '       gauntlet page --agent <spec> --out <dir> [--base-url <url>] [--api-key-env <var>]',
   '                      [--moves <n>] [--seed <s>] [--timeout-ms <ms>]',
   '       gauntlet leaderboard --suite <file> [--out <dir>] [--scoring-profile rhae-v1] [--json] <dirs...>',
@@ -220,8 +222,8 @@ const COMMAND_FLAGS = {
   },
   estimate: {
     label: 'gauntlet estimate',
-    flags: ['agent', 'json', 'out', 'prices', 'suite'],
-    booleans: new Set(['json']),
+    flags: ['against', 'agent', 'json', 'no-probes', 'out', 'prices', 'suite'],
+    booleans: new Set(['json', 'no-probes']),
     positionals: 0,
   },
   run: {
@@ -609,6 +611,8 @@ async function main(argv) {
       agentSpecText,
       ...(flags.has('prices') ? { prices: /** @type {string} */ (flags.get('prices')) } : {}),
       ...(flags.has('out') ? { outDir: /** @type {string} */ (flags.get('out')) } : {}),
+      ...(flags.has('no-probes') ? { noProbes: true } : {}),
+      ...(flags.has('against') ? { against: /** @type {string} */ (flags.get('against')) } : {}),
       ...(flags.has('json') ? { json: true } : {}),
     });
     return;

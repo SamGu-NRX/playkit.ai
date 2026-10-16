@@ -391,9 +391,104 @@ test('compareRunAgainstEstimate: actual calls/tokens/spend vs the estimate, per 
     assert.match(md, /# Estimate vs actual/);
     assert.match(md, /Actual, not an estimate/);
     assert.match(md, /—/); // missing ratios render as em dashes, not zeros
+    // The within-2x question is answered per game; a game with no low basis
+    // stays null (an em dash) rather than masquerading as a hit or a miss.
+    assert.match(md, /\| Calls vs expected \|/);
+    assert.equal(top.callsVerdict, null);
+    assert.ok(
+      ['within-2x', 'over-2x', 'under-2x'].includes(/** @type {*} */ (cd.callsVerdict)),
+      `countdown verdict ${cd.callsVerdict} should be a concrete verdict`
+    );
+    assert.ok(
+      ['within-2x', 'over-2x', 'under-2x'].includes(/** @type {*} */ (comparison.totals.callsVerdict))
+    );
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test('comparisonToMarkdown: the Calls vs expected column answers the within-2x question', () => {
+  /** @param {string} gameId @param {'within-2x' | 'over-2x' | 'under-2x' | null} v @returns {*} */
+  const row = (gameId, v) => ({
+    gameId,
+    episodes: 1,
+    unknownCostSteps: 0,
+    callsVerdict: v,
+    figures: {
+      actual: { calls: 10, tokensIn: 100, tokensOut: 10, spendUsd: 0.01 },
+      estimated: {
+        callsLow: v === 'over-2x' ? 2 : v === 'under-2x' ? 20 : v === 'within-2x' ? 10 : null,
+        callsHigh: 100,
+        tokensInLow: null,
+        tokensOutLow: null,
+        tokensInHigh: null,
+        tokensOutHigh: null,
+        usdLow: null,
+        usdHigh: null,
+      },
+      ratio: {
+        callsLow: v === 'over-2x' ? 5 : v === 'under-2x' ? 0.5 : v === 'within-2x' ? 1 : null,
+        callsHigh: 0.1,
+        tokensInLow: null,
+        tokensOutLow: null,
+        tokensInHigh: null,
+        tokensOutHigh: null,
+        usdLow: null,
+        usdHigh: null,
+      },
+    },
+  });
+  const md = comparisonToMarkdown({
+    format: COMPARE_FORMAT,
+    kind: 'estimate-vs-actual',
+    runDir: '/tmp/fake-bundle',
+    episodes: 4,
+    unplayedEpisodes: 0,
+    games: [
+      row('sokoban', 'over-2x'),
+      row('tictactoe', 'within-2x'),
+      row('minesweeper', 'under-2x'),
+      row('take-or-pass', null),
+    ],
+    totals: {
+      episodes: 4,
+      unknownCostSteps: 0,
+      unplayedEpisodes: 0,
+      callsVerdict: 'within-2x',
+      figures: {
+        actual: { calls: 40, tokensIn: 400, tokensOut: 40, spendUsd: 0.04 },
+        estimated: {
+          callsLow: 32,
+          callsHigh: 400,
+          tokensInLow: null,
+          tokensOutLow: null,
+          tokensInHigh: null,
+          tokensOutHigh: null,
+          usdLow: null,
+          usdHigh: null,
+        },
+        ratio: {
+          callsLow: 1.25,
+          callsHigh: 0.1,
+          tokensInLow: null,
+          tokensOutLow: null,
+          tokensInHigh: null,
+          tokensOutHigh: null,
+          usdLow: null,
+          usdHigh: null,
+        },
+      },
+    },
+  });
+
+  assert.match(md, /\| Game \| Calls \| Calls vs expected \| Tokens in \| Tokens out \| USD \|/);
+  assert.match(md, /\| within 2× \|/);
+  // Over and under are named, not collapsed into one "no": they mean opposite
+  // failures (the model ran past the budget vs stopped far short of it).
+  assert.match(md, /\| over 2× \|/);
+  assert.match(md, /\| under 2× \|/);
+  assert.match(md, /Calls beyond 2× of expected: sokoban \(over\), minesweeper \(under\)\./);
+  assert.match(md, /runs\/estimate-fit\/fit-report\.md/);
 });
 
 test('compareRunAgainstEstimate refuses a bundle whose suite manifest differs', async () => {

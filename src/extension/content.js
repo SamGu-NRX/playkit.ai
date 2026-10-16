@@ -3695,6 +3695,155 @@
     
     exports.HUDView = HUDView;
   },
+  "./src/observer/detection-watcher.js": function (exports, module, require) {
+    /**
+     * @fileoverview Detection watcher: bounded, debounced detection retries on DOM changes
+     *
+     * A one-shot detection at init misses games whose tiles are created by page
+     * JavaScript after load (e.g. the vendored 2048 creates `.tile` elements after
+     * document_idle). This watcher re-runs detection whenever the DOM changes until
+     * an adapter attaches or a bounded window closes, so the HUD shows
+     * "Game: <adapter>" and an enabled Auto-solve without a manual Detect click.
+     *
+     * Detection only: the watcher never starts solving. It stops at the first
+     * successful attach, or after `timeoutMs`.
+     */
+    
+    class DetectionWatcher {
+      /**
+       * @param {Object} options
+       * @param {() => boolean} options.onProbe Called on DOM activity; return true
+       *   once an adapter has attached (also stops the watcher).
+       * @param {number} [options.debounceMs] Coalesce bursts of mutations into one probe.
+       * @param {number} [options.timeoutMs] Bounded window; the watcher stops itself after this.
+       * @param {number} [options.heartbeatMs] Safety-net probe interval for pages whose
+       *   change never fires a DOM mutation during the window.
+       */
+      constructor(options = {}) {
+        this.onProbe = options.onProbe;
+        this.debounceMs =
+          typeof options.debounceMs === "number" ? options.debounceMs : 250;
+        this.timeoutMs =
+          typeof options.timeoutMs === "number" ? options.timeoutMs : 15000;
+        this.heartbeatMs =
+          typeof options.heartbeatMs === "number" ? options.heartbeatMs : 1500;
+    
+        this.isActive = false;
+        this.probeCount = 0;
+        this.observer = null;
+        this.debounceTimer = null;
+        this.heartbeatTimer = null;
+        this.timeoutTimer = null;
+    
+        this._handleMutations = this._handleMutations.bind(this);
+        this._probe = this._probe.bind(this);
+        this._stopForTimeout = this._stopForTimeout.bind(this);
+      }
+    
+      /**
+       * Start watching. No-op when already active or when MutationObserver is
+       * unavailable (very old hosts); heartbeat probes still bound the window.
+       */
+      start() {
+        if (this.isActive) {
+          return;
+        }
+        this.isActive = true;
+    
+        if (typeof MutationObserver !== "undefined" && document.documentElement) {
+          this.observer = new MutationObserver(this._handleMutations);
+          this.observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true,
+          });
+        }
+    
+        if (this.heartbeatMs > 0) {
+          this.heartbeatTimer = setInterval(this._probe, this.heartbeatMs);
+        }
+    
+        this.timeoutTimer = setTimeout(this._stopForTimeout, this.timeoutMs);
+      }
+    
+      /**
+       * Stop watching and release every timer/observer. Safe to call more than once.
+       */
+      stop() {
+        if (!this.isActive && !this.observer) {
+          return;
+        }
+    
+        this.isActive = false;
+    
+        if (this.observer) {
+          this.observer.disconnect();
+          this.observer = null;
+        }
+        if (this.debounceTimer) {
+          clearTimeout(this.debounceTimer);
+          this.debounceTimer = null;
+        }
+        if (this.heartbeatTimer) {
+          clearInterval(this.heartbeatTimer);
+          this.heartbeatTimer = null;
+        }
+        if (this.timeoutTimer) {
+          clearTimeout(this.timeoutTimer);
+          this.timeoutTimer = null;
+        }
+      }
+    
+      /**
+       * @private
+       */
+      _handleMutations() {
+        if (!this.isActive) {
+          return;
+        }
+        if (this.debounceTimer) {
+          clearTimeout(this.debounceTimer);
+        }
+        this.debounceTimer = setTimeout(this._probe, this.debounceMs);
+      }
+    
+      /**
+       * @private
+       */
+      _probe() {
+        this.debounceTimer = null;
+        if (!this.isActive) {
+          return;
+        }
+    
+        this.probeCount++;
+    
+        let attached = false;
+        try {
+          attached = this.onProbe ? this.onProbe() === true : false;
+        } catch (error) {
+          console.warn("DetectionWatcher: probe failed:", error);
+        }
+    
+        if (attached) {
+          this.stop();
+        }
+      }
+    
+      /**
+       * @private
+       */
+      _stopForTimeout() {
+        console.log(
+          `DetectionWatcher: window closed after ${this.timeoutMs}ms (${this.probeCount} probes, no adapter)`
+        );
+        this.stop();
+      }
+    }
+    
+    exports.DetectionWatcher = DetectionWatcher;
+  },
   "./src/observer/index.js": function (exports, module, require) {
     /**
      * @fileoverview Observer system exports
@@ -3706,12 +3855,15 @@
     exports.GameMutationObserver = GameMutationObserver;
     const createGameObserver = __reExport0.createGameObserver;
     exports.createGameObserver = createGameObserver;
-    const __reExport1 = require("./src/observer/visibility-handler.js");
-    const VisibilityHandler = __reExport1.VisibilityHandler;
+    const __reExport1 = require("./src/observer/detection-watcher.js");
+    const DetectionWatcher = __reExport1.DetectionWatcher;
+    exports.DetectionWatcher = DetectionWatcher;
+    const __reExport2 = require("./src/observer/visibility-handler.js");
+    const VisibilityHandler = __reExport2.VisibilityHandler;
     exports.VisibilityHandler = VisibilityHandler;
-    const getVisibilityHandler = __reExport1.getVisibilityHandler;
+    const getVisibilityHandler = __reExport2.getVisibilityHandler;
     exports.getVisibilityHandler = getVisibilityHandler;
-    const destroyVisibilityHandler = __reExport1.destroyVisibilityHandler;
+    const destroyVisibilityHandler = __reExport2.destroyVisibilityHandler;
     exports.destroyVisibilityHandler = destroyVisibilityHandler;
     
   },
@@ -4383,6 +4535,7 @@
         // Initialize runtime with extension-appropriate settings
         const runtime = await initRuntime({
           autoInit: false, // Don't auto-start in extension mode
+          autoDetectRetry: true, // Re-detect on DOM changes until an adapter attaches (detection only)
           enableHUD: true,
           enableVisibilityHandling: true,
           enableMutationObserver: true,
@@ -4530,7 +4683,7 @@
     const { initHUD, getHUD, destroyHUD } = require("./src/hud/index.js");
     const { detectGame, globalAdapterRegistry } = require("./src/adapters/index.js");
     const { createDriver } = require("./src/driver/index.js");
-    const { createGameObserver, getVisibilityHandler } = require("./src/observer/index.js");
+    const { createGameObserver, DetectionWatcher, getVisibilityHandler } = require("./src/observer/index.js");
     const { createSolverManager } = require("./src/solver/index.js");
     
     /**
@@ -4547,10 +4700,24 @@
           ...options,
         };
     
+        // Auto-detect retry knobs. Resolved separately from this.options so an
+        // explicit `undefined` in options cannot clobber these defaults through the
+        // ...options spread above.
+        this.autoDetectRetryEnabled = options.autoDetectRetry !== false;
+        this.autoDetectRetryDebounceMs =
+          typeof options.autoDetectRetryDebounceMs === "number"
+            ? options.autoDetectRetryDebounceMs
+            : 250;
+        this.autoDetectRetryTimeoutMs =
+          typeof options.autoDetectRetryTimeoutMs === "number"
+            ? options.autoDetectRetryTimeoutMs
+            : 15000;
+    
         // Component instances
         this.hud = null;
         this.driver = null;
         this.observer = null;
+        this.detectionWatcher = null;
         this.visibilityHandler = null;
         this.currentAdapter = null;
         this.directionPriority = null;
@@ -4612,6 +4779,13 @@
           // Try to detect game
           this.detectGame();
     
+          // One-shot detection misses games whose tiles are built by page JS after
+          // load; keep retrying on DOM changes until an adapter attaches or the
+          // bounded window closes. Detection only — solving never starts by itself.
+          if (!this.currentAdapter && this.autoDetectRetryEnabled) {
+            this._startDetectionRetry();
+          }
+    
           this.isInitialized = true;
           console.log("Runtime initialized successfully");
     
@@ -4645,6 +4819,48 @@
           console.log("No game detected");
           return false;
         }
+      }
+    
+      /**
+       * Retry detection on DOM changes within a bounded window (detection only)
+       * @private
+       */
+      _startDetectionRetry() {
+        if (this.detectionWatcher) {
+          return;
+        }
+    
+        this.detectionWatcher = new DetectionWatcher({
+          onProbe: () => this._probeForGame(),
+          debounceMs: this.autoDetectRetryDebounceMs,
+          timeoutMs: this.autoDetectRetryTimeoutMs,
+        });
+    
+        this.detectionWatcher.start();
+        console.log(
+          `Runtime: no game detected yet; retrying on DOM changes for up to ${this.autoDetectRetryTimeoutMs}ms`
+        );
+      }
+    
+      /**
+       * One detection attempt for the retry watcher
+       * @private
+       * @returns {boolean} True once an adapter is attached
+       */
+      _probeForGame() {
+        if (this.currentAdapter) {
+          return true;
+        }
+    
+        const attached = this.detectGame();
+    
+        // autoInit runtimes (bookmarklet) wire components on late attach, matching
+        // init-time behavior; the driver still never starts by itself.
+        if (attached && this.options.autoInit && !this.driver) {
+          this.setupComponents();
+        }
+    
+        return attached;
       }
     
       /**
@@ -4933,6 +5149,11 @@
        */
       destroy() {
         console.log("Destroying runtime...");
+    
+        if (this.detectionWatcher) {
+          this.detectionWatcher.stop();
+          this.detectionWatcher = null;
+        }
     
         this.stop();
     

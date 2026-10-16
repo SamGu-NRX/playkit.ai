@@ -101,11 +101,14 @@ export function findGtpBinary(name = 'gnugo', options = {}) {
 
 /**
  * A parsed GTP response: `= payload` on success, `? message` on failure.
+ * GTP lets a command carry a numeric id, which the engine must echo
+ * (`=3 payload`); `id` is set only when the response carries one.
  *
  * @typedef {object} GtpResponse
  * @property {boolean} ok
- * @property {string} payload The text after the marker, with the trailing
- *   blank line removed.
+ * @property {number | undefined} [id] The echoed command id, when present.
+ * @property {string} payload The text after the marker (and echoed id),
+ *   with the trailing blank line removed.
  */
 
 /**
@@ -122,12 +125,24 @@ export function parseGtpBlock(block) {
   while (head < lines.length && !/^[=?]/.test(lines[head])) head++;
   if (head >= lines.length) return null;
   const first = lines[head];
-  if (first.startsWith('?')) {
-    return { ok: false, payload: first.slice(1).trim() || 'error' };
+  // A leading digit run after the marker is the echoed command id:
+  // "=3 GNU Go" answers command "3 name".
+  const m = /^([=?])(\d+)\s*(.*)$/.exec(first);
+  const marker = m ? m[1] : first[0];
+  const id = m ? Number(m[2]) : undefined;
+  const headPayload = m ? m[3].trim() : first.slice(1).trim();
+  if (marker === '?') {
+    /** @type {GtpResponse} */
+    const failure = { ok: false, payload: headPayload || 'error' };
+    if (id !== undefined) failure.id = id;
+    return failure;
   }
   const rest = lines.slice(head + 1).filter((line) => line.trim().length > 0);
-  const payload = [first.slice(1).trim(), ...rest].join('\n').trim();
-  return { ok: true, payload };
+  const payload = [headPayload, ...rest].join('\n').trim();
+  /** @type {GtpResponse} */
+  const response = { ok: true, payload };
+  if (id !== undefined) response.id = id;
+  return response;
 }
 
 /**
@@ -179,10 +194,14 @@ export class GtpEngine {
   #buffer = '';
   /** @type {Promise<void>} */
   #queue = Promise.resolve();
-  /** @type {{ resolve: (r: GtpResponse) => void, reject: (e: Error) => void, timer: NodeJS.Timeout | null } | null} */
+  /** @type {{ resolve: (r: GtpResponse) => void, reject: (e: Error) => void, timer: NodeJS.Timeout | null, id: number } | null} */
   #pending = null;
   /** @type {string | null} */
   #idName = null;
+  /** @type {number} */
+  #nextCommandId = 0;
+  /** @type {boolean} */
+  #engineEchoesIds = false;
 
   /**
    * @param {GtpEngineOptions} options
@@ -197,6 +216,16 @@ export class GtpEngine {
   /** The engine's self-reported `name version`, captured at start. */
   get idName() {
     return this.#idName;
+  }
+
+  /**
+   * stdin 'error' listener count (0 when not running). Pins the once-at-start
+   * handler contract in the tests: it must not grow per command.
+   *
+   * @returns {number}
+   */
+  get stdinErrorListenerCount() {
+    return this.#child ? this.#child.stdin.listenerCount('error') : 0;
   }
 
   /** The binary path this engine was spawned from. */
@@ -222,6 +251,11 @@ export class GtpEngine {
       this.#buffer += String(chunk);
       this.#drain();
     });
+    // One protective no-op handler for the process lifetime: a dead engine
+    // surfaces as EPIPE on stdin writes, and without any handler the write
+    // error crashes the process. Attached once — not per command — so the
+    // listener count stays flat across an episode's hundreds of commands.
+    child.stdin.on('error', () => {});
     child.on('error', (err) => this.#failPending(new Error(`GTP engine "${this.#binaryPath}" failed to spawn: ${err.message}`)));
     child.on('exit', (code, signal) => {
       liveChildren.delete(child);
@@ -229,9 +263,12 @@ export class GtpEngine {
         new Error(`GTP engine "${this.#binaryPath}" exited unexpectedly (code ${code ?? 'null'}, signal ${signal ?? 'null'})`)
       );
     });
-    const name = await this.command('name');
-    const version = await this.command('version');
-    this.#idName = `${name} ${version}`.replace(/\s+/g, ' ').trim();
+    const nameResponse = await this.#send('name', this.#commandTimeoutMs);
+    const version = await this.#send('version', this.#commandTimeoutMs);
+    // The first command carries id 1; an echo means the engine speaks
+    // id-tagged GTP and stale replies can be held to id discipline.
+    this.#engineEchoesIds = nameResponse.id === 1;
+    this.#idName = `${nameResponse.payload} ${version.payload}`.replace(/\s+/g, ' ').trim();
   }
 
   /**
@@ -255,29 +292,51 @@ export class GtpEngine {
    * @returns {void}
    */
   #drain() {
-    const pending = this.#pending;
-    if (!pending) return;
-    const end = this.#buffer.indexOf('\n\n');
-    if (end < 0) return;
-    const block = this.#buffer.slice(0, end);
-    this.#buffer = this.#buffer.slice(end + 2);
-    const parsed = parseGtpBlock(block);
-    if (!parsed) return; // Banner-only block; keep waiting.
-    this.#pending = null;
-    if (pending.timer) clearTimeout(pending.timer);
-    if (parsed.ok) pending.resolve(parsed);
-    else pending.reject(new Error(`GTP command failed: ${parsed.payload}`));
+    for (;;) {
+      const pending = this.#pending;
+      if (!pending) return;
+      const end = this.#buffer.indexOf('\n\n');
+      if (end < 0) return;
+      const block = this.#buffer.slice(0, end);
+      this.#buffer = this.#buffer.slice(end + 2);
+      const parsed = parseGtpBlock(block);
+      if (!parsed) continue; // Banner-only block; keep scanning.
+      // Id discipline: an engine that echoes ids answers in order, so a
+      // block whose id predates the pending command is the late reply to a
+      // timed-out command — drop it and keep scanning for the live id.
+      // (A loop, not a single shot: one chunk can carry several blocks.)
+      if (this.#engineEchoesIds && parsed.id !== undefined && parsed.id !== pending.id) continue;
+      this.#pending = null;
+      if (pending.timer) clearTimeout(pending.timer);
+      if (parsed.ok) pending.resolve(parsed);
+      else pending.reject(new Error(`GTP command failed: ${parsed.payload}`));
+    }
   }
 
   /**
    * Send one GTP command and wait for its response. Commands are serialized
-   * through a promise chain so concurrent callers cannot interleave writes.
+   * through a promise chain so concurrent callers cannot interleave writes,
+   * and each carries an incrementing GTP id (echoed by GNU Go): when a
+   * command times out, its late reply is discarded instead of settling the
+   * next command.
    *
    * @param {string} text The command line, without a trailing newline.
    * @param {{ timeoutMs?: number }} [options]
    * @returns {Promise<string>} The response payload (text after `= `).
    */
   async command(text, options = {}) {
+    const response = await this.#send(text, options.timeoutMs ?? this.#commandTimeoutMs);
+    return response.payload;
+  }
+
+  /**
+   * Queue one id-tagged command write and resolve with the parsed response.
+   *
+   * @param {string} text The command line, without a trailing newline.
+   * @param {number} timeoutMs Deadline for this command.
+   * @returns {Promise<GtpResponse>}
+   */
+  #send(text, timeoutMs) {
     const run = this.#queue.then(
       () =>
         new Promise((resolve, reject) => {
@@ -285,17 +344,17 @@ export class GtpEngine {
             reject(new Error('GTP engine is not running (start() first, or it already quit)'));
             return;
           }
-          const timeoutMs = options.timeoutMs ?? this.#commandTimeoutMs;
+          const id = ++this.#nextCommandId;
           const timer = setTimeout(() => {
             this.#pending = null;
             reject(new Error(`GTP command "${text}" timed out after ${timeoutMs}ms on "${this.#binaryPath}"`));
           }, timeoutMs);
           if (typeof timer.unref === 'function') timer.unref();
-          this.#pending = { resolve, reject, timer };
-          // A dead engine surfaces as EPIPE on the write; fail the pending
-          // command with a clear error instead of crashing the process.
-          this.#child.stdin.on('error', () => {});
-          this.#child.stdin.write(`${text}\n`, (err) => {
+          this.#pending = { resolve, reject, timer, id };
+          // A dead engine surfaces as EPIPE on the write; the single no-op
+          // stdin error handler from start() keeps the process alive, and
+          // the write callback fails the pending command with a clear error.
+          this.#child.stdin.write(`${id} ${text}\n`, (err) => {
             if (err) {
               this.#failPending(new Error(`GTP engine "${this.#binaryPath}" stdin write failed: ${err.message}`));
             }
@@ -306,8 +365,7 @@ export class GtpEngine {
       () => undefined,
       () => undefined
     );
-    const response = await run;
-    return response.payload;
+    return run;
   }
 
   /**

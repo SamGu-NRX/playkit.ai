@@ -200,7 +200,7 @@ function gitCommit() {
  * @property {string} startedAt
  * @property {string} finishedAt
  * @property {number} concurrency
- * @property {{ maxUsd: number | null, maxCalls: number | null, requestsPerMinute: number | null, maxOutputTokens: number | null, callTimeoutMs: number | null }} limits
+ * @property {{ maxUsd: number | null, maxCalls: number | null, requestsPerMinute: number | null, maxOutputTokens: number | null, callTimeoutMs: number | null, thinkingBudget: number | null, reasoningEffort: string | null }} limits
  * @property {number} spendUsd Sum of the steps' known costs. A step that
  *   reported usage without a priced cost counts here as 0 and separately in
  *   unknownCostSteps — unknown stays unknown, it is never folded into 0.
@@ -237,6 +237,13 @@ function gitCommit() {
  * @property {number} [callTimeoutMs] Recorded in run.json's limits for
  *   provenance; the per-attempt timeout itself is applied by the agent layer
  *   (the agent spec's --call-timeout-ms).
+ * @property {number} [thinkingBudget] Recorded in run.json's limits for
+ *   provenance; the Anthropic extended-thinking budget itself is applied by
+ *   the agent layer (thinking.budget_tokens; the wire max_tokens is the reply
+ *   cap plus this budget) and the worst-case cost quote includes it.
+ * @property {'low' | 'medium' | 'high'} [reasoningEffort] Recorded in
+ *   run.json's limits for provenance; the OpenAI reasoning effort itself is
+ *   applied by the agent layer (reasoning.effort / reasoning_effort).
  * @property {boolean} [resume] Verify existing trajectory files and skip the
  *   verified ones. Default false.
  * @property {AbortSignal} [signal] Abort to stop after the calls in flight.
@@ -290,6 +297,8 @@ export async function runSuite({
   requestsPerMinute,
   maxOutputTokens,
   callTimeoutMs,
+  thinkingBudget,
+  reasoningEffort,
   resume = false,
   signal,
   prices,
@@ -333,6 +342,21 @@ export async function runSuite({
   if (callTimeoutMs !== undefined && (!Number.isInteger(callTimeoutMs) || callTimeoutMs < 1)) {
     throw new Error(
       `[gauntlet/runs/run.js] callTimeoutMs: must be a positive integer, got ${JSON.stringify(callTimeoutMs)}`
+    );
+  }
+  if (thinkingBudget !== undefined && (!Number.isInteger(thinkingBudget) || thinkingBudget < 1)) {
+    throw new Error(
+      `[gauntlet/runs/run.js] thinkingBudget: must be a positive integer (the agent layer enforces the Anthropic minimum of 1024), got ${JSON.stringify(thinkingBudget)}`
+    );
+  }
+  if (
+    reasoningEffort !== undefined &&
+    reasoningEffort !== 'low' &&
+    reasoningEffort !== 'medium' &&
+    reasoningEffort !== 'high'
+  ) {
+    throw new Error(
+      `[gauntlet/runs/run.js] reasoningEffort: must be "low", "medium" or "high", got ${JSON.stringify(reasoningEffort)}`
     );
   }
 
@@ -612,6 +636,8 @@ export async function runSuite({
       requestsPerMinute: requestsPerMinute ?? null,
       maxOutputTokens: maxOutputTokens ?? null,
       callTimeoutMs: callTimeoutMs ?? null,
+      thinkingBudget: thinkingBudget ?? null,
+      reasoningEffort: reasoningEffort ?? null,
     },
     spendUsd,
     unknownCostSteps,

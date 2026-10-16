@@ -15,6 +15,19 @@
  *                                     for cost accounting, or with --dry-run
  *                                     and --script <file> to rehearse offline.
  *
+ * Reasoning settings ride with model specs two ways, and are validated to
+ * match the provider: --thinking-budget <tokens> (Anthropic extended
+ * thinking) and --reasoning-effort <low|medium|high> (OpenAI reasoning,
+ * including Gemini through its OpenAI-compatible endpoint) as flags, or
+ * inline as a trailing `:key=value` list on the model part —
+ * `model:anthropic/claude-opus-4-5:thinking-budget=10240`,
+ * `model:openai/gpt-5.2:reasoning-effort=high`. A trailing segment that does
+ * not match the settings grammar stays part of the model id, so Ollama-style
+ * tags like `model:openai-chat/qwen2.5:7b` keep working. Settings are part of
+ * the agent identity: the agent id carries a canonical settings suffix, so
+ * the leaderboard prints the same model with different settings as different
+ * entries.
+ *
  * Node-only. The packet modules do the work; this file only resolves specs
  * into per-episode Agent instances.
  *
@@ -62,6 +75,16 @@ import { pathToFileURL } from 'node:url';
  * @property {number} [maxOutputTokens] --max-output-tokens: per-reply output
  *   token cap for live model specs, sent as the provider's max_tokens /
  *   max_output_tokens and recorded in run.json's limits.
+ * @property {number} [thinkingBudget] --thinking-budget: Anthropic
+ *   extended-thinking budget in tokens (budget_tokens), provider "anthropic"
+ *   only, minimum 1024. Recorded in run.json's limits and in the agent id's
+ *   settings suffix.
+ * @property {'low' | 'medium' | 'high'} [reasoningEffort] --reasoning-effort:
+ *   OpenAI reasoning effort for providers "openai" (reasoning.effort) and
+ *   "openai-chat" (the chat-completions reasoning_effort field, which is how
+ *   Google's Gemini OpenAI-compatible endpoint takes it); provider
+ *   "anthropic" rejects it. Recorded in run.json's limits and in the agent
+ *   id's settings suffix.
  * @property {number} [callTimeoutMs] --call-timeout-ms: per-attempt timeout
  *   for live model specs; a timed-out attempt is retryable like a network
  *   error. Recorded in run.json's limits.
@@ -181,10 +204,12 @@ export async function parseAgentSpec(text, options = {}) {
       options.script ||
       options.prices ||
       options.maxOutputTokens !== undefined ||
-      options.callTimeoutMs !== undefined
+      options.callTimeoutMs !== undefined ||
+      options.thinkingBudget !== undefined ||
+      options.reasoningEffort !== undefined
     ) {
       throw new Error(
-        `agent spec "${text}" takes no --dry-run, --script, --prices, --max-output-tokens or --call-timeout-ms flags`
+        `agent spec "${text}" takes no --dry-run, --script, --prices, --max-output-tokens, --call-timeout-ms, --thinking-budget or --reasoning-effort flags`
       );
     }
     getGame(gameId); // fail fast on an unknown game id
@@ -213,15 +238,106 @@ export async function parseAgentSpec(text, options = {}) {
   const modelMatch = /^model:([a-z0-9-]+)\/(.+)$/.exec(text);
   if (modelMatch) {
     const provider = modelMatch[1];
-    const model = modelMatch[2];
+    let model = modelMatch[2];
     if (provider !== 'anthropic' && provider !== 'openai' && provider !== 'openai-chat') {
       throw new Error(
         `agent spec "${text}": provider must be "anthropic", "openai" or "openai-chat", got "${provider}"`
       );
     }
+
+    // A trailing `:key=value` list on the model part is a settings suffix;
+    // peel known settings keys from the end. Any trailing segment that does
+    // not fully match the grammar stays part of the model id, so model tags
+    // that contain colons (Ollama's `qwen2.5:7b`) keep working.
+    /** @type {Record<string, string>} */
+    const suffixSettings = {};
+    for (;;) {
+      const m = /(,|:)(thinking-budget=(\d+)|reasoning-effort=(low|medium|high))$/.exec(model);
+      if (!m) break;
+      const key = m[3] !== undefined ? 'thinking-budget' : 'reasoning-effort';
+      const value = m[3] !== undefined ? m[3] : m[4];
+      if (suffixSettings[key] !== undefined) {
+        throw new Error(
+          `agent spec "${text}": conflicting duplicate "${key}" settings suffix`
+        );
+      }
+      suffixSettings[key] = value;
+      model = model.slice(0, model.length - m[0].length);
+    }
+    if (
+      suffixSettings['thinking-budget'] !== undefined &&
+      options.thinkingBudget !== undefined
+    ) {
+      throw new Error(
+        `agent spec "${text}": thinking-budget is set both in the spec suffix (${suffixSettings['thinking-budget']}) and with --thinking-budget (${options.thinkingBudget}); use one or the other`
+      );
+    }
+    if (
+      suffixSettings['reasoning-effort'] !== undefined &&
+      options.reasoningEffort !== undefined
+    ) {
+      throw new Error(
+        `agent spec "${text}": reasoning-effort is set both in the spec suffix (${suffixSettings['reasoning-effort']}) and with --reasoning-effort (${options.reasoningEffort}); use one or the other`
+      );
+    }
+
+    /** @type {number | undefined} */
+    let effectiveThinkingBudget = options.thinkingBudget;
+    if (suffixSettings['thinking-budget'] !== undefined) {
+      const parsed = Number(suffixSettings['thinking-budget']);
+      if (!Number.isInteger(parsed) || parsed < 1024) {
+        throw new Error(
+          `agent spec "${text}": thinking-budget must be an integer >= 1024 (the Anthropic minimum budget_tokens), got "${suffixSettings['thinking-budget']}"`
+        );
+      }
+      effectiveThinkingBudget = parsed;
+    }
+    let effectiveReasoningEffort = options.reasoningEffort;
+    if (suffixSettings['reasoning-effort'] !== undefined) {
+      effectiveReasoningEffort = /** @type {'low' | 'medium' | 'high'} */ (
+        suffixSettings['reasoning-effort']
+      );
+    }
+
+    // Settings are provider-specific; a mismatched pairing is a loud error,
+    // not a silent no-op.
+    if (effectiveThinkingBudget !== undefined && provider !== 'anthropic') {
+      throw new Error(
+        `agent spec "${text}": thinking-budget only applies to provider "anthropic" (Anthropic extended thinking), got provider "${provider}"${provider === 'openai' || provider === 'openai-chat' ? ' — use reasoning-effort for OpenAI reasoning' : ''}`
+      );
+    }
+    if (effectiveReasoningEffort !== undefined && provider === 'anthropic') {
+      throw new Error(
+        `agent spec "${text}": reasoning-effort does not apply to provider "anthropic" — use thinking-budget for Anthropic extended thinking`
+      );
+    }
+    if (options.dryRun && effectiveThinkingBudget !== undefined) {
+      throw new Error(
+        `agent spec "${text}": thinking-budget is a model-agent setting and cannot be combined with --dry-run`
+      );
+    }
+    if (options.dryRun && effectiveReasoningEffort !== undefined) {
+      throw new Error(
+        `agent spec "${text}": reasoning-effort is a model-agent setting and cannot be combined with --dry-run`
+      );
+    }
+
+    // Canonical settings suffix for the agent identity: the same model with
+    // different settings is a different leaderboard entry. With settings set
+    // in the spec text itself, the id is byte-identical to the spec; with
+    // flag-set settings the suffix is appended here.
+    const settingsSuffix =
+      (effectiveThinkingBudget !== undefined
+        ? `:thinking-budget=${effectiveThinkingBudget}`
+        : '') +
+      (effectiveReasoningEffort !== undefined
+        ? `:reasoning-effort=${effectiveReasoningEffort}`
+        : '');
+    const agentId = `model:${provider}/${model}${settingsSuffix}`;
+
     if (provider === 'openai-chat' && !options.baseUrl) {
       throw new Error(
-        `agent spec "${text}": the openai-chat provider talks to any OpenAI-compatible chat-completions server, so it requires --base-url <url> (the request goes to <base-url>/v1/chat/completions)`
+        `agent spec "${text}": the openai-chat provider talks to any OpenAI-compatible chat-completions server, so it requires --base-url <url> (the request goes to <base-url>/v1/chat/completions, or the base URL as-is when it already ends in /chat/completions — e.g. Google's Gemini endpoint https://generativelanguage.googleapis.com/v1beta/openai/chat/completions)`
       );
     }
     if (options.dryRun && !options.script) {
@@ -284,10 +400,16 @@ export async function parseAgentSpec(text, options = {}) {
             ...(options.maxOutputTokens !== undefined
               ? { maxOutputTokens: options.maxOutputTokens }
               : {}),
+            ...(effectiveThinkingBudget !== undefined
+              ? { thinkingBudget: effectiveThinkingBudget }
+              : {}),
+            ...(effectiveReasoningEffort !== undefined
+              ? { reasoningEffort: effectiveReasoningEffort }
+              : {}),
             ...(options.callTimeoutMs !== undefined
               ? { callTimeoutMs: options.callTimeoutMs }
               : {}),
-            id: text,
+            id: agentId,
           })
         );
       },

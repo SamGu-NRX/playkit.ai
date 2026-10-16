@@ -11,7 +11,7 @@
  * is a report, not a gate.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 const [runDir, estimateDir] = process.argv.slice(2);
@@ -45,19 +45,64 @@ const pct = (actual, predicted) =>
     ? `${(((actual - predicted) / predicted) * 100).toFixed(1)}%`
     : 'n/a';
 
+/** Recursively list trajectory .json files under the run dir (not run.json). */
+function walkTrajectories() {
+  const out = [];
+  const stack = [runDir];
+  while (stack.length > 0) {
+    const dir = stack.pop();
+    for (const name of readdirSync(dir)) {
+      const p = `${dir}/${name}`;
+      if (statSync(p).isDirectory()) stack.push(p);
+      else if (name.endsWith('.json') && name !== 'run.json' && name !== 'suite.json') out.push(p);
+    }
+  }
+  return out;
+}
+
+// run.json's calls/spendUsd cover only the invocation that wrote it. After a
+// --resume that is a partial-run figure, so when the bundle says it skipped
+// episodes (verified from an earlier invocation), aggregate the full run from
+// the trajectories themselves, which carry per-step usage.
+let calls = run.calls;
+let spendUsd = run.spendUsd;
+let actualSource = 'run.json (this invocation only)';
+if ((run.counts?.skipped ?? 0) > 0) {
+  let trajCalls = 0;
+  let trajSpend = 0;
+  let files = 0;
+  for (const entry of walkTrajectories()) {
+    files += 1;
+    const t = readJson(entry);
+    if (!t || !t.steps) continue;
+    for (const step of t.steps) {
+      if (step.usage) {
+        trajCalls += 1;
+        if (Number.isFinite(step.usage.costUsd)) trajSpend += step.usage.costUsd;
+      }
+    }
+  }
+  if (files > 0) {
+    calls = trajCalls;
+    spendUsd = trajSpend;
+    actualSource = `${files} trajectories (full bundle across resumes)`;
+  }
+}
+
 const lines = [];
 lines.push('estimate vs actual');
-lines.push(`  calls  actual ${run.calls}  | estimated low ${totals.callsLow ?? '—'} / high ${totals.callsHigh}`);
+lines.push(`  calls  actual ${calls}  | estimated low ${totals.callsLow ?? '—'} / high ${totals.callsHigh}`);
+lines.push(`         actual from ${actualSource}`);
 if (Number.isFinite(totals.callsLow)) {
-  lines.push(`         error vs low ${pct(run.calls, totals.callsLow)}, vs high ${pct(run.calls, totals.callsHigh)}`);
+  lines.push(`         error vs low ${pct(calls, totals.callsLow)}, vs high ${pct(calls, totals.callsHigh)}`);
 }
-if (run.spendUsd !== undefined) {
+if (spendUsd !== undefined) {
   const usdLow = totals.usdLow ?? null;
   const usdHigh = totals.usdHigh ?? null;
   const fmt = (v) => (Number.isFinite(v) ? `$${v.toFixed(4)}` : '—');
-  lines.push(`  spend  actual $${Number(run.spendUsd).toFixed(6)}  | estimated low ${fmt(usdLow)} / high ${fmt(usdHigh)}`);
+  lines.push(`  spend  actual $${Number(spendUsd).toFixed(6)}  | estimated low ${fmt(usdLow)} / high ${fmt(usdHigh)}`);
   if (Number.isFinite(usdLow)) {
-    lines.push(`         error vs low ${pct(run.spendUsd, usdLow)}, vs high ${pct(run.spendUsd, usdHigh)}`);
+    lines.push(`         error vs low ${pct(spendUsd, usdLow)}, vs high ${pct(spendUsd, usdHigh)}`);
   }
 }
 if (run.unknownCostSteps > 0) {

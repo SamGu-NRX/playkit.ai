@@ -62,3 +62,23 @@ not source, and stay out of the repository.
 - The estimator's probe episodes (engine baselines on chess-stockfish and
   chess tiers) can take longer than the model run itself on a small box;
   there is no flag to skip the low-basis probes.
+- `run.json` provenance is per-invocation: after a `--resume`, its `calls` and
+  `spendUsd` cover only the episodes played by the resuming invocation, so a
+  full-run total must be summed from the trajectories (which do carry
+  per-step usage). `estimate-check.mjs` does that sum when it detects a
+  resumed bundle.
+- A `--max-usd` cap binds as a pre-reservation refusal: the run prints
+  `stopped budget — <job>: maxUsd reached (settled …, reserved …, next-call
+  worst case …)` and exits 1 with run.json written; `--resume` then skips the
+  verified episodes and replays the rest. The cap refuses before the first
+  call if the cap is below one call's worst-case quote.
+- `chance-adjusted` leaderboards refuse when a committed baseline is older
+  than the game version in a trajectory; at alpha this fires for tictactoe
+  (`games/tictactoe/index.js` declares 1.2.0, `scoring/baselines/random-public.json`
+  records 1.1.0 — the 0c5140a bump landed after the 84ce154 recalibration).
+  `rhae-v1` and `squared-outcome` are unaffected.
+- The 7B Instruct model does not stop at the bare move: it fills the whole
+  `--max-output-tokens` budget with chatter the runner then extracts the move
+  from. On CPU (llama.cpp b11662, 8 threads) that is ~24 s per call at
+  256 tokens, so a full 150-action sokoban episode is best treated as an
+  overnight-grade run; the 1.5B emits 1–3 tokens and finishes in minutes.

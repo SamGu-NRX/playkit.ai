@@ -12,12 +12,19 @@
  * Entries that cannot be scored honestly are refused by `score` and the
  * refusal propagates from here.
  *
+ * When the caller supplies a fitted rating ladder (`ratingLadder`), every
+ * entry also carries a display-only chess rating — `rateAgent` over the
+ * entry's trajectories on ladder-known rungs. It renders as a Markdown
+ * column and a per-entry `rating` field and is never read by the ranking
+ * math; entries with no ladder-known trajectories have no rating.
+ *
  * @module
  */
 
 import { score, GauntletRefusalError } from './score.js';
 
 import { DEFAULT_PROFILE } from './profiles.js';
+import { rateAgent, selectLadderKnown } from '../rating/elo.js';
 
 /** @import { Game } from '../core/types.js' */
 /** @import { SuiteManifest } from './suite.js' */
@@ -43,6 +50,9 @@ const TRACKS = ['official', 'community', 'baseline'];
  * @property {number} invalidActionRate
  * @property {number} meanAgentActions
  * @property {Record<string, import('./score.js').GameScore>} games
+ * @property {import('../rating/elo.js').AgentRating} [rating] Display-only
+ *   chess rating, present only when the caller supplied a rating ladder and
+ *   the entry has trajectories on ladder-known rungs. Never affects rank.
  * @property {{ profile: string, baselineSha256?: string }} [scoring] Present
  *   only when the entry was scored under a non-default or explicitly
  *   selected scoring profile.
@@ -105,13 +115,33 @@ function agentLabel(agent) {
 }
 
 /**
+ * The display-only chess rating cell: `rating [low, high]`, the divergence
+ * direction for an agent with no finite rating, `—` when the entry was not
+ * rated (no ladder supplied, or no ladder-known trajectories).
+ *
+ * @param {import('../rating/elo.js').AgentRating | undefined} rating
+ * @returns {string}
+ */
+function fmtRatingCell(rating) {
+  if (!rating) return '—';
+  if (rating.rating === null) {
+    return rating.direction === null ? '—' : `— (${rating.direction})`;
+  }
+  const low = rating.low === null ? 'unbounded' : fmt(rating.low, 1);
+  const high = rating.high === null ? 'unbounded' : fmt(rating.high, 1);
+  return `${fmt(rating.rating, 1)} [${low}, ${high}]`;
+}
+
+/**
  * Render the Markdown for one track.
  *
  * @param {string} track
  * @param {LeaderboardEntry[]} entries
+ * @param {boolean} withRatings Render the chess rating column — present only
+ *   when the builder was given a rating ladder.
  * @returns {string}
  */
-function trackMarkdown(track, entries) {
+function trackMarkdown(track, entries, withRatings) {
   const lines = [`## ${track[0].toUpperCase()}${track.slice(1)} track`, ''];
   if (entries.length === 0) {
     lines.push('_No entries._', '');
@@ -119,13 +149,26 @@ function trackMarkdown(track, entries) {
   }
 
   lines.push(
-    '| Rank | Agent | Benchmark score (95% CI) | Cost (USD) | Cost/episode (USD) | Invalid actions | Mean agent actions |',
-    '|---:|---|---:|---:|---:|---:|---:|'
+    withRatings
+      ? '| Rank | Agent | Benchmark score (95% CI) | Cost (USD) | Cost/episode (USD) | Invalid actions | Mean agent actions | Chess rating (95% CI) |'
+      : '| Rank | Agent | Benchmark score (95% CI) | Cost (USD) | Cost/episode (USD) | Invalid actions | Mean agent actions |',
+    withRatings
+      ? '|---:|---|---:|---:|---:|---:|---:|---:|'
+      : '|---:|---|---:|---:|---:|---:|---:|'
   );
   for (const entry of entries) {
-    lines.push(
-      `| ${entry.rank ?? '—'} | ${agentLabel(entry.agent)} | ${fmtScoreCI(entry.benchmarkScore)} | ${fmt(entry.costUsd)} | ${fmt(entry.costPerEpisodeUsd)} | ${(entry.invalidActionRate * 100).toFixed(1)}% | ${fmt(entry.meanAgentActions, 1)} |`
-    );
+    /** @type {string[]} */
+    const cells = [
+      `${entry.rank ?? '—'}`,
+      agentLabel(entry.agent),
+      fmtScoreCI(entry.benchmarkScore),
+      fmt(entry.costUsd),
+      fmt(entry.costPerEpisodeUsd),
+      `${(entry.invalidActionRate * 100).toFixed(1)}%`,
+      fmt(entry.meanAgentActions, 1),
+    ];
+    if (withRatings) cells.push(fmtRatingCell(entry.rating));
+    lines.push(`| ${cells.join(' | ')} |`);
   }
   lines.push('');
 
@@ -167,6 +210,9 @@ function trackMarkdown(track, entries) {
  *   parsed scoring baseline for entries that do not carry one (required by
  *   `chance-adjusted`).
  * @property {string} [baselineSha256] SHA-256 hex of the baseline file.
+ * @property {import('../rating/elo.js').RatingLadder} [ratingLadder] Fitted
+ *   chess ladder for the display-only rating column. When absent the column
+ *   is omitted entirely.
  */
 
 /**
@@ -205,7 +251,15 @@ export async function leaderboard(suite, entries, games, options = {}) {
       baseline: entry.baseline ?? options.baseline,
       baselineSha256: entry.baselineSha256 ?? options.baselineSha256,
     });
-    scored.push(/** @type {LeaderboardEntry} */ (/** @type {*} */ (result)));
+    /** @type {LeaderboardEntry} */
+    const scoredEntry = /** @type {*} */ (result);
+    // Display-only chess rating: computed from the entry's trajectories on
+    // ladder-known rungs, never read by the ranking math below.
+    if (options.ratingLadder) {
+      const { known } = selectLadderKnown(entry.trajectories, options.ratingLadder);
+      if (known.length > 0) scoredEntry.rating = rateAgent(known, options.ratingLadder);
+    }
+    scored.push(scoredEntry);
   }
 
   // One leaderboard, one profile. Entries scored under different profiles
@@ -317,8 +371,9 @@ export async function leaderboard(suite, entries, games, options = {}) {
     `- Generated: ${board.generatedAt}`,
     '',
   ];
+  const withRatings = options.ratingLadder !== undefined;
   for (const track of TRACKS) {
-    markdownLines.push(trackMarkdown(track, tracks[track]));
+    markdownLines.push(trackMarkdown(track, tracks[track], withRatings));
   }
 
   return { leaderboard: board, markdown: markdownLines.join('\n') };

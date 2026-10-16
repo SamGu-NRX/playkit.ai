@@ -515,13 +515,40 @@ export function rungForTrajectory(trajectory) {
 }
 
 /**
+ * Pre-filter trajectories to those whose rung has a fitted ladder rating:
+ * `rateAgent` refuses a single unknown rung, and real run directories mix
+ * in non-chess games and chess tiers above the fitted ladder. The skipped
+ * rungs are reported so callers can say what was left out and why.
+ *
+ * @param {readonly AgentTrajectory[]} trajectories
+ * @param {RatingLadder} ladder
+ * @returns {{ known: AgentTrajectory[], skippedRungs: string[] }} `known` in
+ *   input order; `skippedRungs` the unique unknown rung ids, first-seen
+ *   order.
+ */
+export function selectLadderKnown(trajectories, ladder) {
+  /** @type {AgentTrajectory[]} */
+  const known = [];
+  /** @type {Set<string>} */
+  const skipped = new Set();
+  for (const trajectory of trajectories) {
+    const rung = rungForTrajectory(trajectory);
+    if (typeof ladder.ratings[rung] === 'number') known.push(trajectory);
+    else skipped.add(rung);
+  }
+  return { known, skippedRungs: [...skipped] };
+}
+
+/**
  * A minimal trajectory slice `rateAgent` needs. Structurally compatible
  * with the runner's recorded trajectories.
  *
  * @typedef {object} AgentTrajectory
  * @property {{ id: string }} game
  * @property {string} tier
- * @property {{ seat: number }} agent Seat the agent played.
+ * @property {{ id?: string, seat: number }} agent Seat the agent played;
+ *   runner-recorded trajectories also carry the agent id (rateAgent reads
+ *   only the seat).
  * @property {{ outcome: { normalized: number[] } | null }} end
  */
 

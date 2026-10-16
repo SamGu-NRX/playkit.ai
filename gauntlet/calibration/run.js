@@ -207,7 +207,11 @@ const report = renderReport({
 writeFileSync(reportPath, report);
 
 console.error(`[run] tables in ${outDir}, report at ${reportPath}`);
-console.error(`[run] wall time ${wallTimeSec}s, checks: ${violations.length} violation(s)`);
+console.error(
+  `[run] wall time ${wallTimeSec}s, checks: ${
+    violations.filter((v) => v.severity === 'violation').length
+  } violation(s), ${violations.filter((v) => v.severity === 'warning').length} within-noise warning(s)`
+);
 for (const violation of violations) {
   console.error(`[check:${violation.check}] ${violation.detail}`);
 }

@@ -30,6 +30,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GAMES } from '../../games/index.js';
 import { findEngineBinary } from '../../engines/uci/client.js';
+import { findGtpBinary } from '../../engines/gtp/client.js';
 
 const gauntletRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const cli = join(gauntletRoot, 'cli', 'gauntlet.js');
@@ -41,6 +42,10 @@ const cli = join(gauntletRoot, 'cli', 'gauntlet.js');
 // message; when a binary exists, the suite stays complete and exercises it.
 const REAL_BINARY = findEngineBinary();
 const STOCKFISH_SKIP_MESSAGE = 'no engine binary found (set GAUNTLET_STOCKFISH or install stockfish)';
+// Go's ladder tiers play against GNU Go the same way; without a binary
+// (GAUNTLET_GNUGO unset, none on PATH) go is excluded with a skip message.
+const REAL_GNUGO = findGtpBinary();
+const GNUGO_SKIP_MESSAGE = 'no GNU Go binary found (set GAUNTLET_GNUGO or install gnugo)';
 
 /**
  * @param {...string} args
@@ -85,10 +90,19 @@ test('cli end-to-end: suite build → run → verify → leaderboard', { timeout
   // a Stockfish binary, chess-stockfish is excluded (see the skip message) —
   // its episodes would otherwise fail the run on machines without the engine.
   const buildArgs = ['suite', 'build', '--split', 'public', '--seeds-per-tier', '1', '--out', suiteFile];
+  /** @type {string[]} */
+  const excluded = [];
   if (!REAL_BINARY) {
-    const engineLess = Object.keys(GAMES).filter((id) => id !== 'chess-stockfish');
-    buildArgs.push('--games', engineLess.join(','));
+    excluded.push('chess-stockfish');
     console.error(`[skip] chess-stockfish: ${STOCKFISH_SKIP_MESSAGE} — excluded from the end-to-end suite`);
+  }
+  if (!REAL_GNUGO) {
+    excluded.push('go');
+    console.error(`[skip] go: ${GNUGO_SKIP_MESSAGE} — excluded from the end-to-end suite`);
+  }
+  if (excluded.length > 0) {
+    const engineLess = Object.keys(GAMES).filter((id) => !excluded.includes(id));
+    buildArgs.push('--games', engineLess.join(','));
   }
   gauntlet(...buildArgs);
   const suite = JSON.parse(readFileSync(suiteFile, 'utf8'));

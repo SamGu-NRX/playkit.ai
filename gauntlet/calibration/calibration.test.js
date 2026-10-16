@@ -90,6 +90,9 @@ test('reduced calibration runs are byte-identical across runs', { timeout: 300_0
  * @property {number} greedy
  * @property {number} engine
  * @property {number | null} [engineSolved]
+ * @property {[number, number] | null} [randomCi]
+ * @property {[number, number] | null} [greedyCi]
+ * @property {[number, number] | null} [engineCi]
  */
 
 /**
@@ -102,7 +105,12 @@ test('reduced calibration runs are byte-identical across runs', { timeout: 300_0
 function fixtureTable(gameId, tiers) {
   /** @type {Record<string, { tiers: Record<string, *> }>} */
   const baselines = {};
-  const kinds = /** @type {[keyof CalibrationTable['baselines'], (t: FixtureTier) => number][]} */ ([
+  const ciOf = /** @type {Record<'random' | 'greedy' | 'engine', (t: FixtureTier) => [number, number] | null>} */ ({
+    random: (t) => t.randomCi ?? null,
+    greedy: (t) => t.greedyCi ?? null,
+    engine: (t) => t.engineCi ?? null,
+  });
+  const kinds = /** @type {['random' | 'greedy' | 'engine', (t: FixtureTier) => number][]} */ ([
     ['random', (t) => t.random],
     ['greedy', (t) => t.greedy],
     ['engine', (t) => t.engine],
@@ -115,7 +123,7 @@ function fixtureTable(gameId, tiers) {
         id: tier.id,
         rank: tier.rank,
         scoring: tier.scoring,
-        score: { value: pick(tier), ci95: null },
+        score: { value: pick(tier), ci95: ciOf[key](tier) },
         solvedFraction: key === 'engine' ? (tier.engineSolved ?? null) : null,
         episodes: 5,
       };
@@ -150,36 +158,143 @@ test('checks flag a well-ordered fixture as clean', () => {
 
 test('checks flag greedy below random on a tier', () => {
   const table = fixtureTable('minesweeper', [
-    { id: 'novice', rank: 1, scoring: 'outcome', random: 0.5, greedy: 0.4, engine: 0.9 },
+    {
+      id: 'novice',
+      rank: 1,
+      scoring: 'outcome',
+      random: 0.5,
+      greedy: 0.4,
+      engine: 0.9,
+      // Disjoint intervals: the inversion is demonstrated, not noise.
+      randomCi: [0.45, 0.55],
+      greedyCi: [0.3, 0.44],
+      engineCi: [0.85, 0.95],
+    },
   ]);
   const violations = runChecks([table]);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].check, 'a-order');
+  assert.equal(violations[0].severity, 'violation');
   assert.match(violations[0].detail, /greedy .* < random /);
   assert.match(violations[0].proposal, /re-tune the heuristic/);
 });
 
+test('a point inversion with overlapping intervals warns instead of failing', () => {
+  const table = fixtureTable('minesweeper', [
+    {
+      id: 'novice',
+      rank: 1,
+      scoring: 'outcome',
+      random: 0.5,
+      greedy: 0.4,
+      engine: 0.9,
+      // Overlapping intervals: point inversion visible, but within noise.
+      randomCi: [0.35, 0.55],
+      greedyCi: [0.3, 0.45],
+      engineCi: [0.85, 0.95],
+    },
+  ]);
+  const violations = runChecks([table]);
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].severity, 'warning');
+  assert.match(violations[0].detail, /0\.4 \[0\.3, 0\.45\]/);
+});
+
+test('a point inversion with no interval warns instead of failing', () => {
+  const table = fixtureTable('minesweeper', [
+    { id: 'novice', rank: 1, scoring: 'outcome', random: 0.5, greedy: 0.4, engine: 0.9 },
+  ]);
+  const violations = runChecks([table]);
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].severity, 'warning');
+  assert.match(violations[0].detail, /no interval/);
+});
+
 test('checks flag engine below greedy on a tier', () => {
   const table = fixtureTable('chess', [
-    { id: 'paper', rank: 1, scoring: 'outcome', random: 0.0, greedy: 0.5, engine: 0.3 },
+    {
+      id: 'paper',
+      rank: 1,
+      scoring: 'outcome',
+      random: 0.0,
+      greedy: 0.5,
+      engine: 0.3,
+      randomCi: [0.0, 0.05],
+      greedyCi: [0.45, 0.55],
+      engineCi: [0.2, 0.4],
+    },
   ]);
   const violations = runChecks([table]);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].check, 'a-order');
+  assert.equal(violations[0].severity, 'violation');
   assert.match(violations[0].detail, /engine .* < greedy /);
   assert.match(violations[0].proposal, /engine-side strength/);
 });
 
 test('checks flag a random score rising with tier rank', () => {
   const table = fixtureTable('connect4', [
-    { id: 'bronze', rank: 1, scoring: 'outcome', random: 0.2, greedy: 0.4, engine: 0.6 },
-    { id: 'silver', rank: 2, scoring: 'outcome', random: 0.3, greedy: 0.4, engine: 0.6 },
+    {
+      id: 'bronze',
+      rank: 1,
+      scoring: 'outcome',
+      random: 0.2,
+      greedy: 0.4,
+      engine: 0.6,
+      randomCi: [0.1, 0.3],
+      greedyCi: [0.3, 0.5],
+      engineCi: [0.5, 0.7],
+    },
+    {
+      id: 'silver',
+      rank: 2,
+      scoring: 'outcome',
+      random: 0.3,
+      greedy: 0.4,
+      engine: 0.6,
+      // Silver's random interval lies entirely above bronze's: violation.
+      randomCi: [0.35, 0.45],
+      greedyCi: [0.3, 0.5],
+      engineCi: [0.5, 0.7],
+    },
   ]);
   const violations = runChecks([table]);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].check, 'b-monotonic');
+  assert.equal(violations[0].severity, 'violation');
   assert.match(violations[0].detail, /random rises/);
   assert.equal(violations[0].tier, 'silver');
+});
+
+test('a rising score with overlapping intervals warns instead of failing', () => {
+  const table = fixtureTable('connect4', [
+    {
+      id: 'bronze',
+      rank: 1,
+      scoring: 'outcome',
+      random: 0.2,
+      greedy: 0.4,
+      engine: 0.6,
+      randomCi: [0.1, 0.3],
+      greedyCi: [0.3, 0.5],
+      engineCi: [0.5, 0.7],
+    },
+    {
+      id: 'silver',
+      rank: 2,
+      scoring: 'outcome',
+      random: 0.3,
+      greedy: 0.4,
+      engine: 0.6,
+      // Silver's random interval overlaps bronze's: within noise.
+      randomCi: [0.25, 0.4],
+      greedyCi: [0.3, 0.5],
+      engineCi: [0.5, 0.7],
+    },
+  ]);
+  const violations = runChecks([table]);
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].severity, 'warning');
 });
 
 test('checks flag an engine solving below 95% on an efficiency tier', () => {
@@ -197,6 +312,7 @@ test('checks flag an engine solving below 95% on an efficiency tier', () => {
   const violations = runChecks([table]);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].check, 'c-solved');
+  assert.equal(violations[0].severity, 'violation');
   assert.match(violations[0].detail, /solves 0\.8 .* floor is 0\.95/);
 });
 
@@ -222,12 +338,21 @@ test('the tracked REPORT.md matches the committed tables', () => {
   }
 
   const violations = runChecks(tables);
-  const expected = violations
+  const expectedErrors = violations
+    .filter((v) => v.severity === 'violation')
     .map((v) => `- **${v.game} — ${v.check}** (${v.tier ?? 'cross-tier'}): ${v.detail}`)
     .sort();
-  const reported = report
-    .split('\n')
+  const expectedWarnings = violations
+    .filter((v) => v.severity !== 'violation')
+    .map((v) => `- ⚠️ ${v.game} — ${v.check} (${v.tier ?? 'cross-tier'}): ${v.detail}`)
+    .sort();
+  const reportLines = report.split('\n');
+  const reported = reportLines
     .filter((line) => /^- \*\*[^*]+ — (a-order|b-monotonic|c-solved)\*\*/.test(line))
     .sort();
-  assert.deepEqual(reported, expected);
+  const reportedWarnings = reportLines
+    .filter((line) => /^- ⚠️ [^ ]+ — (a-order|b-monotonic|c-solved) \(/.test(line))
+    .sort();
+  assert.deepEqual(reported, expectedErrors);
+  assert.deepEqual(reportedWarnings, expectedWarnings);
 });

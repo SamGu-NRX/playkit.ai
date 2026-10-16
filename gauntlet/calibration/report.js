@@ -15,6 +15,14 @@ const MAPPING_NOTES = {
     '`greedy` is the packet\'s probability agent (proven-safe cells first, lowest mine-probability cell when deduction stalls); `engine` is the packet\'s deduction agent (plays only proven-safe cells — the no-guess guarantee).',
   sliding:
     'The sliding packet ships no greedy baseline: `greedy` here minimizes total Manhattan distance to goal with seeded tie-breaks; `engine` is the packet\'s optimal-line solver agent.',
+  cube:
+    'Packet-native baselines: `greedy` takes the one-ply move that most increases matched-facelet count with seeded tie-breaks; `engine` replays a proven-optimal solved line (re-solving from live facelets if the state ever leaves it).',
+  'chess-endgames':
+    'Packet-native baselines: `greedy` is a seeded mobility-greedy attacker; `engine` is the packet\'s tablebase-optimal agent — it plays the exact DTM line, so it converts every public seed at par and its efficiency score is the 1.0 ceiling.',
+  'chess-puzzles':
+    '`greedy` and `engine` are the chess packet\'s material-capture greedy and fixed-strength engine agents (the pairing the puzzles packet itself reports); the tier ladder is the puzzle rating, so engine strength degrades with rating while greedy stays near the floor.',
+  'chess-stockfish':
+    '`greedy` is the chess packet\'s material-capture agent; `engine` is full node-budget Stockfish (the sf-1m ceiling rung) playing as the agent, so the ladder runs from uniform play to the strongest local engine as the opponent rungs rise.',
 };
 
 /**
@@ -144,7 +152,8 @@ export function renderReport(input) {
       lines.push(`_Run:_ ${coverage}.`);
       lines.push('');
     }
-    const gameViolations = violations.filter((v) => v.game === table.game.id);
+    const gameViolations = violations.filter((v) => v.game === table.game.id && v.severity === 'violation');
+    const gameWarnings = violations.filter((v) => v.game === table.game.id && v.severity !== 'violation');
     if (gameViolations.length === 0) {
       lines.push('✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).');
       lines.push('');
@@ -156,6 +165,15 @@ export function renderReport(input) {
         lines.push('');
       }
     }
+    // Point inversions whose 95% intervals do not separate are warnings (the
+    // rule is documented in checks.js): they do not fail the check but stay
+    // visible, with the interval evidence carried in the detail line itself.
+    for (const warning of gameWarnings) {
+      lines.push(`⚠️ **${warning.check} (within noise)** — ${warning.detail}`);
+      lines.push('');
+      lines.push(`  _Why not a violation:_ the 95% intervals do not separate (they overlap, or a side has no interval), so the misordering is not demonstrated at the measured precision; re-measure at more seeds before changing tier parameters.`);
+      lines.push('');
+    }
     const note = MAPPING_NOTES[table.game.id];
     if (note) {
       lines.push(`_Baselines:_ ${note}`);
@@ -166,15 +184,31 @@ export function renderReport(input) {
   // Checks summary.
   lines.push('## Checks');
   lines.push('');
-  if (violations.length === 0) {
+  const errorCount = violations.filter((v) => v.severity === 'violation').length;
+  const warningCount = violations.length - errorCount;
+  if (errorCount === 0 && warningCount === 0) {
     lines.push(`All games pass all three checks (${tables.length} table${tables.length === 1 ? '' : 's'}).`);
   } else {
-    lines.push(
-      `${violations.length} violation(s) across ${new Set(violations.map((v) => v.game)).size} game(s). Each violation names the parameter it suggests changing; a violation is a calibration finding about tier parameters, not a scoring-rules bug — the scoring rules are the package's own and are shared with the leaderboard.`
-    );
+    if (errorCount > 0) {
+      lines.push(
+        `${errorCount} violation(s) across ${new Set(violations.filter((v) => v.severity === 'violation').map((v) => v.game)).size} game(s). Each violation names the parameter it suggests changing; a violation is a calibration finding about tier parameters, not a scoring-rules bug — the scoring rules are the package's own and are shared with the leaderboard.`
+      );
+    } else {
+      lines.push(`No violations across ${tables.length} table${tables.length === 1 ? '' : 's'}; ${warningCount} point inversion${warningCount === 1 ? '' : 's'} reported as within-noise warnings below.`);
+    }
     lines.push('');
     for (const violation of violations) {
+      if (violation.severity !== 'violation') continue;
       lines.push(`- **${violation.game} — ${violation.check}** (${violation.tier ?? 'cross-tier'}): ${violation.detail}`);
+    }
+    if (warningCount > 0) {
+      lines.push('');
+      lines.push('Warnings — point inversions within noise (the 95% intervals do not separate; the rule is documented in calibration/checks.js):');
+      lines.push('');
+      for (const warning of violations) {
+        if (warning.severity === 'violation') continue;
+        lines.push(`- ⚠️ ${warning.game} — ${warning.check} (${warning.tier ?? 'cross-tier'}): ${warning.detail}`);
+      }
     }
   }
   lines.push('');

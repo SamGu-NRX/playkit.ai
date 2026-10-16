@@ -10,6 +10,21 @@
  * (c) on efficiency tiers, the engine solves at least 95% of seeds — the
  *     engine baseline must demonstrate the tier is solvable within budget.
  *
+ * Decision rule for (a) and (b), set with the random-floor decision
+ * (scoring/FLOOR-OPTIONS.md): a point-estimate inversion fails the check only
+ * when the two blocks' 95% intervals separate — the interval of the block
+ * with the smaller point estimate lies entirely below the other's. When the
+ * intervals overlap (or either side has no interval), the inversion is
+ * recorded as a warning, not a violation. Reason: point-only comparisons
+ * repeatedly flagged inversions that do not reproduce as separable at higher
+ * precision — mastermind wide/deep re-measured at 4x seeds, 100 per tier
+ * (0.8355 [0.794, 0.877] vs 0.8686 [0.830, 0.905]: intervals overlap) and
+ * connect4 forced-win's truncation-referee residual (0.031 [0.000, 0.083]
+ * after the recal-versus packet's fix) both stayed inside noise. A check
+ * that fails on those is a list of noise; failing only on separated
+ * intervals keeps the ordering requirement strict where the evidence is
+ * strict, while point inversions stay visible as warnings.
+ *
  * Pure module: no `node:*` imports, no I/O.
  *
  * @module
@@ -60,6 +75,8 @@ const EPSILON = 1e-9;
  * @property {string | null} tier Null when the violation spans tiers.
  * @property {string} detail
  * @property {string} proposal
+ * @property {'violation' | 'warning'} severity A violation only when the
+ *   95% intervals separate; a point inversion within noise is a warning.
  */
 
 /**
@@ -93,6 +110,35 @@ function tierOf(table, tier, kind) {
 }
 
 /**
+ * Severity of a point-estimate inversion between two blocks, per the
+ * decision rule documented at the module head: 'violation' only when the
+ * lower block's 95% interval lies entirely below the higher block's, else
+ * 'warning'. Missing intervals cannot separate, so they warn.
+ *
+ * @param {TierBlock} lowerBlock Block with the smaller point estimate.
+ * @param {TierBlock} higherBlock Block with the larger point estimate.
+ * @returns {'violation' | 'warning'}
+ */
+function inversionSeverity(lowerBlock, higherBlock) {
+  const lowerCi = lowerBlock.score.ci95;
+  const higherCi = higherBlock.score.ci95;
+  if (!lowerCi || !higherCi) return 'warning';
+  return lowerCi[1] < higherCi[0] ? 'violation' : 'warning';
+}
+
+/**
+ * @param {TierBlock} block
+ * @returns {string} "0.123 [0.101, 0.144]" or "0.123 (no interval)" so the
+ * report itself carries the interval evidence for every inversion.
+ */
+function fmtWithCi(block) {
+  const value = fmt(block.score.value);
+  return block.score.ci95
+    ? `${value} [${fmt(block.score.ci95[0])}, ${fmt(block.score.ci95[1])}]`
+    : `${value} (no interval)`;
+}
+
+/**
  * Run all three checks over the given tables.
  *
  * @param {CalibrationTable[]} tables
@@ -120,7 +166,8 @@ export function runChecks(tables) {
           check: 'a-order',
           game,
           tier: tier.id,
-          detail: `greedy ${fmt(greedy.score.value)} < random ${fmt(random.score.value)} on tier ${tier.id} (rank ${tier.rank})`,
+          severity: inversionSeverity(greedy, random),
+          detail: `greedy ${fmtWithCi(greedy)} < random ${fmtWithCi(random)} on tier ${tier.id} (rank ${tier.rank})`,
           proposal: `the greedy heuristic loses to uniform play on ${game}/${tier.id} — re-tune the heuristic or its seeded tie-breaks until it at least matches random`,
         });
       }
@@ -133,7 +180,8 @@ export function runChecks(tables) {
           check: 'a-order',
           game,
           tier: tier.id,
-          detail: `engine ${fmt(engine.score.value)} < greedy ${fmt(greedy.score.value)} on tier ${tier.id} (rank ${tier.rank})`,
+          severity: inversionSeverity(engine, greedy),
+          detail: `engine ${fmtWithCi(engine)} < greedy ${fmtWithCi(greedy)} on tier ${tier.id} (rank ${tier.rank})`,
           proposal: `raise the engine-side strength for ${game}/${tier.id} (tier.params: search depth, node budget, or solver budget) until it at least matches greedy; if this ladder rung is meant to be the ceiling, swap the rungs`,
         });
       }
@@ -153,7 +201,8 @@ export function runChecks(tables) {
               check: 'b-monotonic',
               game,
               tier: tier.id,
-              detail: `${kind} rises from ${fmt(prevValue)} on ${previous.id} (rank ${previous.rank}) to ${fmt(value)} on ${tier.id} (rank ${tier.rank})`,
+              severity: inversionSeverity(previous, current),
+              detail: `${kind} rises from ${fmtWithCi(previous)} on ${previous.id} (rank ${previous.rank}) to ${fmtWithCi(current)} on ${tier.id} (rank ${tier.rank})`,
               proposal: `re-tune ${game}'s tier parameters (board size, band, or engine rung) or re-rank the tiers so rank ${tier.rank} is at least as hard as rank ${previous.rank} for ${kind} play`,
             });
           }
@@ -173,6 +222,7 @@ export function runChecks(tables) {
           check: 'c-solved',
           game,
           tier: tier.id,
+          severity: 'violation',
           detail: `engine solves ${fmt(fraction)} of seeds on efficiency tier ${tier.id} (rank ${tier.rank}); floor is ${EFFICIENCY_ENGINE_SOLVED_FRACTION}`,
           proposal: `raise ${game}/${tier.id} maxActions above 5×par, strengthen the engine/reference solver in tier.params, or lower the tier's par band`,
         });

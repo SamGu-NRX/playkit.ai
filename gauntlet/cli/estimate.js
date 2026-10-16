@@ -2,8 +2,14 @@
  * `gauntlet estimate`: estimate the calls and cost of playing a suite before
  * spending anything, through `gauntlet/runs/estimate.js`. The estimate comes
  * from each game packet's own engine baselines and scoring par (probe
- * episodes run locally, no API calls); USD figures appear only when a price
- * file prices the agent's `provider/model` key, and unknowns stay `null`.
+ * episodes run locally, no API calls) — or, with `--no-probes`, from the
+ * fitted parameters and the tiers' pars alone, with no baseline episodes at
+ * all. USD figures appear only when a price file prices the agent's
+ * `provider/model` key, and unknowns stay `null`.
+ *
+ * With `--against <runDir>` the estimate is instead compared with a finished
+ * run bundle: per game and in total, how the run's actual calls, tokens and
+ * dollars landed against the estimate's low and high figures.
  *
  * Node-only.
  *
@@ -13,7 +19,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listGames } from '../games/index.js';
-import { estimateSuite, estimateToMarkdown, writeEstimate } from '../runs/estimate.js';
+import {
+  compareRunAgainstEstimate,
+  comparisonToMarkdown,
+  estimateSuite,
+  estimateToMarkdown,
+  writeEstimate,
+} from '../runs/estimate.js';
 import { readSuiteFile } from './suite.js';
 
 /** @import { Estimate } from '../runs/estimate.js' */
@@ -37,8 +49,13 @@ export function pricingKeyForSpec(agentSpecText) {
  * @property {string} agentSpecText
  * @property {string} [prices] --prices file (PriceFile JSON).
  * @property {string} [outDir] --out: write estimate.json and estimate.md here.
+ * @property {boolean} [noProbes] --no-probes: skip the baseline probe
+ *   episodes; the low side comes from the fit where fitted, else the tier's
+ *   par, and a tier with neither is unestimated.
+ * @property {string} [against] --against <runDir>: compare the estimate with
+ *   the finished run bundle in that directory instead of printing it.
  * @property {boolean} [json] --json: print the JSON estimate (default prints
- *   the Markdown).
+ *   the Markdown); with --against, print the JSON comparison.
  */
 
 /**
@@ -64,7 +81,18 @@ export async function buildEstimate(options) {
     games: listGames(),
     ...(prices ? { prices } : {}),
     ...(pricingKey ? { pricingKey } : {}),
+    ...(options.noProbes ? { noProbes: true } : {}),
   });
+
+  if (options.against) {
+    const comparison = await compareRunAgainstEstimate(estimate, options.against);
+    if (options.json) {
+      process.stdout.write(JSON.stringify(comparison, null, 2) + '\n');
+    } else {
+      process.stdout.write(comparisonToMarkdown(comparison) + '\n');
+    }
+    return estimate;
+  }
 
   if (options.outDir) {
     await writeEstimate(options.outDir, estimate);

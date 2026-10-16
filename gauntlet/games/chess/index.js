@@ -45,10 +45,14 @@ const POSITION_CACHE = new WeakMap();
 const OCCURRENCE_CACHE = new WeakMap();
 
 /**
- * The chess.js position for a state, replayed once per state and reused.
- * Callers may make/undo on it but must leave it restored (the engine and
- * parser contracts already promise this); nothing hands the cached instance
- * to a caller that mutates it permanently.
+ * The chess.js position for a state, computed once per state and reused.
+ * Populated lazily by cachedChess() for read paths (toAct, observe,
+ * legalActions, parse) and by step(), which builds a fresh instance at the
+ * child position and donates it to the child's cache. Callers may make/undo
+ * on it but must leave it restored (the engine and parser contracts already
+ * promise this); step() deliberately builds its own fresh instance rather
+ * than reusing the parent's, so a caller holding the parent's cached
+ * instance can never observe the move being applied.
  *
  * @param {ChessState} state
  * @returns {Chess}
@@ -464,6 +468,11 @@ export const chess = {
       termination: terminationOf(chessApi, state.startFen, moves, childOccurrences),
     };
     OCCURRENCE_CACHE.set(child, childOccurrences);
+    // The fresh instance now sits exactly at the child position and nothing
+    // else holds it, so handing it to the child's cache is safe by
+    // construction: the next read of the child reuses this replay instead of
+    // replaying the whole history again.
+    POSITION_CACHE.set(child, chessApi);
     return child;
   },
 

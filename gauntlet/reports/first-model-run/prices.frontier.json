@@ -1,0 +1,20 @@
+{
+  "anthropic/claude-opus-5-5": {
+    "inputPerMTok": 4,
+    "outputPerMTok": 20,
+    "source": "docs.anthropic.com/en/docs/about-claude/pricing, 'Model pricing' table, Claude Opus 5.5 row: $4/MTok base input, $20/MTok output (read 2026-10-15). Note: the page states Claude 4.7+ models use a newer tokenizer producing ~30% more tokens for the same text, so chars/4 token estimates underestimate these models' billed tokens.",
+    "checked": "2026-10-15"
+  },
+  "openai/gpt-6-astra": {
+    "inputPerMTok": 10,
+    "outputPerMTok": 50,
+    "source": "openai.com/api/pricing (standard, short context, read 2026-10-15) and developers.openai.com/api/docs/models: GPT-6 Astra, $10/MTok input, $50/MTok output, cached input $1/MTok.",
+    "checked": "2026-10-15"
+  },
+  "openai-chat/gemini-4-argon": {
+    "inputPerMTok": 2,
+    "outputPerMTok": 10,
+    "source": "ai.google.dev/gemini-api/docs/pricing (read 2026-10-15): Gemini 4 Argon standard tier, $2.00/MTok input and $10.00/MTok output (including thinking tokens) through November 30, 2026; $4.00/$20.00 from December 1, 2026. Served through Gemini's OpenAI-compatible chat-completions endpoint, hence the openai-chat key.",
+    "checked": "2026-10-15"
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "wide",
+  "seed": "mastermind/wide/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ea20131f2a8901f7",
+      "reply": {
+        "text": "guess ABDGH",
+        "usage": {
+          "inputTokens": 452,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-0YlKZtsZGNL23UFmatuSpisaX133kTKr",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABDGH",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 452,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 7315
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "93e0aa90c9b292b6",
+      "reply": {
+        "text": "guess AEGHF",
+        "usage": {
+          "inputTokens": 470,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-mzcLStLPFiJ5Kch81rRGa3wgzXvaB4q4",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess AEGHF",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 470,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 3302
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7b9f9e5090af03fa",
+      "reply": {
+        "text": "guess DEHJG",
+        "usage": {
+          "inputTokens": 485,
+          "outputTokens": 6,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Ixrfb6POPdSaO4rQHo0qcbRMAvHqTY93",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess DEHJG",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 485,
+        "outputTokens": 6,
+        "costUsd": 0
+      },
+      "ms": 5004
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7b9f9e5090af03fa",
+      "reply": {
+        "text": "guess ABCD",
+        "usage": {
+          "inputTokens": 532,
+          "outputTokens": 4,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-CF02koeLC7wtpXKhWajzCBLhEJlE6uZb",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABCD",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 532,
+        "outputTokens": 4,
+        "costUsd": 0
+      },
+      "ms": 3162
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7b9f9e5090af03fa",
+      "reply": {
+        "text": "guess ACFG",
+        "usage": {
+          "inputTokens": 528,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-4upwRlSB6lwfvNha7cwDIeN7md4QgBsG",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ACFG",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 528,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 2816
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 5,
+    "invalidActions": 3
+  },
+  "startedAt": "2026-10-15T20:14:56.176Z",
+  "finishedAt": "2026-10-15T20:15:17.790Z"
+}

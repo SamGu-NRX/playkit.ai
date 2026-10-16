@@ -15,13 +15,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
-import { runChecks } from './checks.js';
+import { runChecks, TABLE_FORMAT } from './checks.js';
+import { renderReport } from './report.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const gauntletRoot = dirname(here);
@@ -63,7 +64,7 @@ test('reduced calibration runs are byte-identical across runs', { timeout: 300_0
       const b = readFileSync(join(dirB, `${gameId}.json`));
       assert.ok(a.equals(b), `${gameId}.json differs between two identical runs`);
       const table = JSON.parse(a.toString('utf8'));
-      assert.equal(table.format, 'playkit-gauntlet-calibration-table/1');
+      assert.equal(table.format, TABLE_FORMAT);
       for (const kind of ['random', 'greedy', 'engine']) {
         const blocks = Object.values(table.baselines[kind].tiers);
         assert.ok(
@@ -123,10 +124,9 @@ function fixtureTable(gameId, tiers) {
     baselines[key] = { tiers: mapped };
   }
   return {
-    format: 'playkit-gauntlet-calibration-table/1',
+    format: TABLE_FORMAT,
     game: { id: gameId, version: '1.0.0', benchmark: true },
     split: 'public',
-    seedsPerTier: 5,
     baselines,
   };
 }
@@ -198,4 +198,186 @@ test('checks flag an engine solving below 95% on an efficiency tier', () => {
   assert.equal(violations.length, 1);
   assert.equal(violations[0].check, 'c-solved');
   assert.match(violations[0].detail, /solves 0\.8 .* floor is 0\.95/);
+});
+
+// ---------------------------------------------------------------------------
+// Review pins (PR #30 independent review): each assertion below pins a fix and
+// was demonstrated to fail against the pre-fix source.
+// ---------------------------------------------------------------------------
+
+/** Tolerance for score-ordering comparisons on point estimates. */
+const ORDER_EPSILON = 1e-9;
+
+/**
+ * Assert random <= greedy <= engine on every tier of a produced table. This is
+ * the assertion that pins the negamax mover-perspective terminal fix: with the
+ * bug, the tictactoe engine prefers losing lines at odd plies and scores below
+ * greedy on perfect-opponent.
+ *
+ * @param {string} gameId
+ * @param {import('./checks.js').CalibrationTable} table
+ * @returns {void}
+ */
+function assertBaselineOrdering(gameId, table) {
+  const tierIds = Object.keys(table.baselines.random.tiers);
+  assert.ok(tierIds.length > 0, `${gameId} table has no tiers`);
+  for (const tierId of tierIds) {
+    const random = table.baselines.random.tiers[tierId]?.score.value;
+    const greedy = table.baselines.greedy.tiers[tierId]?.score.value;
+    const engine = table.baselines.engine.tiers[tierId]?.score.value;
+    assert.equal(table.baselines.random.tiers[tierId].episodes > 0, true, `${gameId}/${tierId} random has no episodes`);
+    if (typeof random === 'number' && typeof greedy === 'number') {
+      assert.ok(
+        greedy >= random - ORDER_EPSILON,
+        `${gameId}/${tierId}: greedy ${greedy} < random ${random} — baseline ordering broken`
+      );
+    }
+    if (typeof greedy === 'number' && typeof engine === 'number') {
+      assert.ok(
+        engine >= greedy - ORDER_EPSILON,
+        `${gameId}/${tierId}: engine ${engine} < greedy ${greedy} — an engine that prefers losing lines produces exactly this`
+      );
+    }
+  }
+}
+
+test('produced tictactoe table orders random <= greedy <= engine on every tier', { timeout: 300_000 }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'gauntlet-calib-order-'));
+  try {
+    runCalibration(dir, ['tictactoe'], 2);
+    const table = JSON.parse(readFileSync(join(dir, 'tictactoe.json'), 'utf8'));
+    assertBaselineOrdering('tictactoe', table);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('--per-game-cap rejects non-positive and non-finite values', { timeout: 60_000 }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'gauntlet-calib-capflag-'));
+  try {
+    for (const bad of ['-1', 'abc']) {
+      let status = 0;
+      let stderr = '';
+      try {
+        execFileSync(
+          process.execPath,
+          [
+            join(here, 'run.js'),
+            '--games=tictactoe',
+            `--per-game-cap=${bad}`,
+            `--out=${dir}`,
+            `--report=${join(dir, 'REPORT.md')}`,
+          ],
+          { cwd: gauntletRoot, stdio: 'pipe', maxBuffer: 16 * 1024 * 1024 }
+        );
+      } catch (err) {
+        status = /** @type {*} */ (err).status ?? -1;
+        stderr = /** @type {Buffer} */ (/** @type {*} */ (err).stderr).toString('utf8');
+      }
+      assert.equal(status, 1, `--per-game-cap=${bad} must fail the run, got exit ${status}`);
+      assert.match(stderr, /--per-game-cap must be a positive/);
+      assert.ok(!existsSync(join(dir, 'tictactoe.json')), `--per-game-cap=${bad} must not write a table`);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('tables record executed episode coverage, not the requested seed limit', { timeout: 300_000 }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'gauntlet-calib-coverage-'));
+  try {
+    // tictactoe ships 8 public seeds per tier: requesting 100 must not record 100.
+    runCalibration(dir, ['tictactoe'], 100);
+    const table = JSON.parse(readFileSync(join(dir, 'tictactoe.json'), 'utf8'));
+    assert.ok(!('seedsPerTier' in table), 'table must not carry a requested-seeds field that reads as coverage');
+    for (const kind of ['random', 'greedy', 'engine']) {
+      const blocks = Object.values(table.baselines[kind].tiers);
+      assert.ok(blocks.length > 0);
+      const counts = blocks.map((b) => /** @type {{episodes: number}} */ (b).episodes);
+      assert.ok(counts.every((n) => n > 0), `${kind} has empty tiers in a full reduced run`);
+      assert.equal(new Set(counts).size, 1, `${kind} tiers disagree on executed episode counts`);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a capped partial table skips the ordering-pass line and says checks were skipped', () => {
+  // Chess-shaped fixture: random and greedy ran, the engine rung never did.
+  const tiers = {
+    paper: { id: 'paper', rank: 1, scoring: /** @type {'outcome'} */ ('outcome'), score: { value: 0.02, ci95: /** @type {[number, number]} */ ([0, 0.1]) }, solvedFraction: null, episodes: 20 },
+    norms: { id: 'norms', rank: 2, scoring: /** @type {'outcome'} */ ('outcome'), score: { value: 0.3, ci95: /** @type {[number, number]} */ ([0.1, 0.5]) }, solvedFraction: null, episodes: 16 },
+    deep: { id: 'deep', rank: 3, scoring: /** @type {'outcome'} */ ('outcome'), score: { value: null, ci95: null }, solvedFraction: null, episodes: 0 },
+  };
+  const table = {
+    format: TABLE_FORMAT,
+    game: { id: 'chess', version: '1.0.0', benchmark: true },
+    split: /** @type {'public'} */ ('public'),
+    baselines: {
+      random: { tiers: { paper: { ...tiers.paper }, norms: { ...tiers.norms }, deep: { ...tiers.deep } } },
+      greedy: { tiers: { paper: { ...tiers.paper }, norms: { ...tiers.norms }, deep: { ...tiers.deep } } },
+      engine: { tiers: { paper: { ...tiers.paper, score: { value: null, ci95: null } }, norms: { ...tiers.norms, score: { value: null, ci95: null } }, deep: { ...tiers.deep } } },
+    },
+  };
+  const md = renderReport({
+    tables: [table],
+    violations: [],
+    metas: [{ gameId: 'chess', wallTimeSec: 1381.2, episodesRun: 36, capHit: true }],
+    failures: [],
+    seedsLimit: null,
+    timeCapSec: 1200,
+    wallTimeSec: 1381.6,
+    env: {
+      node: 'test', platform: 'test', cpu: 'test', cores: 1, parallelismUsed: 1, memoryGiB: 1,
+      headSha: 'test', baseSha: 'test', mergeParents: [], runAt: '2026-01-01T00:00:00.000Z',
+    },
+  });
+  const chessSection = md.slice(md.indexOf('### chess'));
+  assert.doesNotMatch(chessSection, /✅/, 'a table with empty cells must not print the ordering-pass line');
+  assert.match(chessSection, /checks skipped/i);
+});
+
+test('a fully-run table with no violations still gets the ordering-pass line', () => {
+  const table = fixtureTable('holdem', [
+    { id: 'micro', rank: 1, scoring: 'outcome', random: 0.1, greedy: 0.3, engine: 0.6 },
+  ]);
+  const md = renderReport({
+    tables: [table],
+    violations: [],
+    metas: [{ gameId: 'holdem', wallTimeSec: 12, episodesRun: 15, capHit: false }],
+    failures: [],
+    seedsLimit: null,
+    timeCapSec: 1200,
+    wallTimeSec: 12,
+    env: {
+      node: 'test', platform: 'test', cpu: 'test', cores: 1, parallelismUsed: 1, memoryGiB: 1,
+      headSha: 'test', baseSha: 'test', mergeParents: [], runAt: '2026-01-01T00:00:00.000Z',
+    },
+  });
+  const section = md.slice(md.indexOf('### holdem'));
+  assert.match(section, /✅ ordering checks pass/);
+});
+
+test('worker fails fast when an episode wedges past its deadline', { timeout: 30_000 }, async () => {
+  // Lazy import: the worker module registers the nine games on load.
+  const { runWorker } = await import('./worker.js');
+  const dir = mkdtempSync(join(tmpdir(), 'gauntlet-calib-wedge-'));
+  try {
+    const never = () => new Promise(() => {});
+    const result = await runWorker(
+      {
+        gameId: 'tictactoe',
+        seedsLimit: 2,
+        tablePath: join(dir, 'tictactoe.json'),
+        trajDir: join(dir, 'trajectories'),
+        timeCapSec: 1,
+      },
+      { runEpisodeImpl: /** @type {*} */ (never), episodeGraceSec: 0.2 }
+    );
+    assert.match(String(result.failure), /exceeded its deadline/, 'a wedged episode must fail the worker');
+    assert.equal(result.capHit, true);
+    assert.ok(existsSync(join(dir, 'tictactoe.json')), 'the worker writes its partial table for forensics before failing');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

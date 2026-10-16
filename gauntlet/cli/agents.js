@@ -162,6 +162,12 @@ const BASELINE_FACTORIES = {
       ? createGreedyAgent({ episodeSeed: seed })
       : createEngineAgent({ episodeSeed: seed });
   },
+  async go(kind, { seed }) {
+    const { createGreedyAgent, createEngineAgent } = await import('../games/go/baselines.js');
+    return kind === 'greedy'
+      ? createGreedyAgent({ episodeSeed: seed })
+      : createEngineAgent({ episodeSeed: seed });
+  },
   async nonogram(kind, { seed }) {
     const { createGreedyAgent, createEngineAgent } = await import('../games/nonogram/baselines.js');
     return kind === 'greedy'

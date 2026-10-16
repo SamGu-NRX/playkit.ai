@@ -49,8 +49,9 @@ what the run records.
 
 | Setting | Provider | Wire field | Values |
 |---|---|---|---|
-| `--thinking-budget <n>` | `anthropic` | `thinking: {type: "enabled", budget_tokens: n}` | integer ≥ 1024 |
-| `--reasoning-effort <v>` | `openai` | `reasoning: {effort: v}` | `low` \| `medium` \| `high` |
+| `--reasoning-effort <v>` | `anthropic` | `output_config: {effort: v}` (per-model capability table) | enforced per model; `low` \| `medium` \| `high` \| `xhigh` \| `max` on the models that document all five |
+| `--thinking-budget <n>` | `anthropic` (manual-thinking models only) | `thinking: {type: "enabled", budget_tokens: n}` | integer ≥ 1024 |
+| `--reasoning-effort <v>` | `openai` | `reasoning: {effort: v}` | `low` \| `medium` \| `high` \| `xhigh` (per-model value sets vary — see the OpenAI reasoning guide) |
 | `--reasoning-effort <v>` | `openai-chat` | `reasoning_effort: v` | `low` \| `medium` \| `high` |
 
 Rules that hold for both:
@@ -68,16 +69,38 @@ Rules that hold for both:
   (suffix and flag) is an error.
 - **A reasoning setting never applies to a `--dry-run` rehearsal or a
   `baseline:` agent**; both are loud parse errors naming the spec.
-- **The provider pairing is validated, not silently ignored.** A thinking
-  budget on a non-Anthropic spec (or an effort on an Anthropic spec) fails at
-  parse time with the spec named in the message.
+- **The provider pairing and per-model settings are validated, not silently
+  ignored.** A thinking budget on a non-Anthropic spec fails at parse time
+  with the spec named in the message. On Anthropic, the effort value is
+  checked against the model's capability row (`resolveAnthropicCapability` in
+  `harness/model-agent.js`): a `claude-*` id matching no row is refused with a
+  message naming the table, a manual budget on an adaptive-thinking model
+  (the API answers HTTP 400) and an effort on a row without documented effort
+  levels are both refused, and sampling fields in `params` are refused
+  exactly on the models the docs say reject them with HTTP 400. Rows record
+  their doc URLs and check dates, so a refusal reads as documentation, not
+  guesswork.
 
 Anthropic specifics:
 
-- **Thinking tokens spend `max_tokens`, so the client raises it.** Anthropic
-  counts thinking tokens against `max_tokens`; with a budget set, the client
-  sends `max_tokens = maxOutputTokens + thinkingBudget`, keeping the reply's
-  full text budget on top of the thinking budget.
+- **Current Claude models take effort, not a budget.** On the
+  adaptive-thinking models (Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5,
+  Sonnet 5, Opus 4.8, Opus 4.7, Fable 5.1) the model steers its own thinking;
+  there is no `thinking` field, a manual `budget_tokens` is rejected with HTTP
+  400, and `--reasoning-effort` goes out as `output_config.effort`. Levels and
+  the documented defaults are per model — e.g. Opus 5.5 documents
+  low/medium/high/xhigh/max with default `medium`, Opus 4.6 documents
+  low/medium/high/max — so an unset effort is recorded as
+  `reasoning-effort=provider-default` in the agent identity rather than
+  guessed. A new Claude id cannot run at all until a row is added: construction
+  fails with a message naming the capability table and the models-overview doc.
+- **On adaptive-thinking models `max_tokens` is the whole-reply limit.**
+  Thinking rides inside `max_tokens` (the docs recommend starting around 64k
+  at `xhigh`/`max`), so the wire `max_tokens` is `--max-output-tokens` itself
+  and the dollar cap's reservation quotes exactly that number as the
+  worst-case output. On models that still take a manual budget (Opus 4.6,
+  Sonnet 4.6, and older), the client sends
+  `max_tokens = maxOutputTokens + thinkingBudget` as before.
 - **Thinking text never enters the reply text.** `thinking` and
   `redacted_thinking` content blocks are stripped; the runner parses only
   visible text. (A redacted block is encrypted server-side and never visible
@@ -86,9 +109,16 @@ Anthropic specifics:
   text — `stop_reason: "max_tokens"` while still thinking — records empty
   reply text (an invalid attempt for the runner) instead of throwing a
   transport error, with the usage honestly recorded.
-- **The dollar cap reserves the budget.** The worst-case reservation is the
-  wire `max_tokens` — the text cap plus the thinking budget — so a
-  thinking-heavy reply cannot push realized spend past `--max-usd`.
+- **A refusal reply is recorded, not hidden.** A declined request arrives as
+  HTTP 200 with `stop_reason: "refusal"` and a `stop_details` object
+  (`{category, explanation}`, null when the provider sends none): empty reply
+  text, honest usage, and `meta.refusal` on the step, so a refusal is visible
+  in the trajectory and priced like any other usage.
+- **The dollar cap reserves the whole-reply limit.** The worst-case
+  reservation is the wire `max_tokens` — the text cap itself on
+  adaptive-thinking models, the text cap plus the thinking budget on
+  manual-budget models — so a thinking-heavy reply cannot push realized spend
+  past `--max-usd`.
 
 OpenAI and chat-completions specifics:
 

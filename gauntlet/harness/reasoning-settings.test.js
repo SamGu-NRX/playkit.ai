@@ -4,7 +4,9 @@
  * (--reasoning-effort → reasoning.effort / reasoning_effort), their provider
  * pairing and dry-run rules in the spec layer, the settings suffix in the
  * agent identity, run.json's limits, and the dollar cap's reservation that
- * includes the thinking budget.
+ * includes the thinking budget. The Anthropic effort path on current Claude
+ * models (output_config.effort, per-model capability table, refusals) lives
+ * in frontier-effort.test.js.
  *
  * Fixture bodies mirror the documented provider shapes (Anthropic Messages
  * extended-thinking guide and API reference; OpenAI Responses reasoning
@@ -509,15 +511,9 @@ test('createModelAgent rejects reasoning settings that do not match the provider
       }),
     /only applies to provider "anthropic"/
   );
-  assert.throws(
-    () =>
-      createModelAgent({
-        provider: 'anthropic',
-        model: 'stub-model',
-        reasoningEffort: 'high',
-      }),
-    /reasoningEffort is the OpenAI reasoning setting and does not apply to provider "anthropic"/
-  );
+  // reasoningEffort is now accepted for provider "anthropic" (it is
+  // output_config.effort there — see frontier-effort.test.js for the per-model
+  // capability table it enforces); the provider value sets are still enforced.
   assert.throws(
     () =>
       createModelAgent({
@@ -525,7 +521,7 @@ test('createModelAgent rejects reasoning settings that do not match the provider
         model: 'stub-model',
         reasoningEffort: /** @type {*} */ ('extreme'),
       }),
-    /reasoningEffort must be "low", "medium" or "high"/
+    /reasoningEffort for provider "openai" must be one of "low", "medium", "high", "xhigh", got "extreme"/
   );
   assert.throws(
     () =>

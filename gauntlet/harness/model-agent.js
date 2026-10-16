@@ -41,7 +41,7 @@
  *   `stop_reason: "refusal"` and a `stop_details` object
  *   (https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback).
  * - OpenAI Responses reasoning: https://platform.openai.com/docs/guides/reasoning
- *   — request `reasoning: {effort: "low"|"medium"|"high"}`; max_output_tokens
+ *   — request `reasoning: {effort: "low"|"medium"|"high"|"xhigh"|"max"}`; max_output_tokens
  *   bounds reasoning and answer tokens together; `usage.output_tokens`
  *   includes reasoning tokens and `usage.output_tokens_details
  *   .reasoning_tokens` is the breakdown; an answer cut off mid-reasoning
@@ -116,6 +116,8 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  *   accepts low/medium/high/xhigh). Provider "openai-chat": the
  *   chat-completions body field `reasoning_effort` (Google's Gemini
  *   OpenAI-compatible endpoint maps low/medium/high to thinking_level).
+ *   On provider "anthropic", passing both thinkingBudget and reasoningEffort
+ *   is an error: both steer Anthropic thinking.
  * @property {number} [callTimeoutMs] Per-attempt timeout in milliseconds.
  *   Default: no per-attempt timeout. A timed-out attempt counts as a
  *   transport error and retries with the same backoff as a network failure;
@@ -890,8 +892,8 @@ async function callOpenAI({
  * @property {number} maxRetries
  * @property {number} retryBaseDelayMs
  * @property {(ms: number) => Promise<void>} sleep
- * @property {'low' | 'medium' | 'high'} [reasoningEffort] OpenAI reasoning
- *   effort, sent as the chat-completions reasoning_effort field.
+ * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
+ *   Reasoning effort, sent as the chat-completions reasoning_effort field.
  * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.
  */
 
@@ -1070,6 +1072,11 @@ export function createModelAgent({
     if (!allowed.includes(reasoningEffort)) {
       throw new Error(
         `createModelAgent: reasoningEffort for provider ${JSON.stringify(provider)} must be one of ${allowed.map((v) => JSON.stringify(v)).join(', ')}, got ${JSON.stringify(reasoningEffort)}`
+      );
+    }
+    if (provider === 'anthropic' && thinkingBudget !== undefined) {
+      throw new Error(
+        'createModelAgent: thinkingBudget and reasoningEffort both steer Anthropic thinking — pass one, not both (manual budget mode for pre-4.6 models, adaptive thinking with effort for 4.6 and later)'
       );
     }
   }

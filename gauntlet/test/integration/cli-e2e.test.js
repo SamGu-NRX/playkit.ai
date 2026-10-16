@@ -10,9 +10,13 @@
  * 4. `bundle verify` checks the run directory end to end.
  * 5. `leaderboard` ranks the random agent #1 in the baseline track with a
  *    numeric benchmark score.
- * 6. The same suite with a dry-run scripted model agent (`--dry-run
- *    --script`) produces official-track trajectories that verify, and the
+ * 6. The same suite with a dry-run scripted model agent (`--dry-run`
+ *    --script) produces official-track trajectories that verify, and the
  *    leaderboard flags the entry as a dry run and leaves it unranked.
+ *
+ * Without a Stockfish binary, chess-stockfish is excluded from the built
+ * suite with a visible skip message (the same gate the chess-stockfish
+ * real-engine tests use); with one, the full registered suite runs.
  *
  * @module
  */
@@ -24,9 +28,19 @@ import { mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync, rmSync
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { GAMES } from '../../games/index.js';
+import { findEngineBinary } from '../../engines/uci/client.js';
 
 const gauntletRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const cli = join(gauntletRoot, 'cli', 'gauntlet.js');
+
+// The chess-stockfish episodes shell out to a local Stockfish binary. The
+// real-engine tests in games/chess-stockfish gate themselves the same way:
+// with no binary configured (GAUNTLET_STOCKFISH unset, none on PATH) the
+// chess-stockfish game is excluded from the built suite with a visible skip
+// message; when a binary exists, the suite stays complete and exercises it.
+const REAL_BINARY = findEngineBinary();
+const STOCKFISH_SKIP_MESSAGE = 'no engine binary found (set GAUNTLET_STOCKFISH or install stockfish)';
 
 /**
  * @param {...string} args
@@ -67,8 +81,16 @@ test('cli end-to-end: suite build → run → verify → leaderboard', { timeout
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const suiteFile = join(root, 'suite.json');
 
-  // 1. Build a one-seed-per-tier public suite through the real CLI.
-  gauntlet('suite', 'build', '--split', 'public', '--seeds-per-tier', '1', '--out', suiteFile);
+  // 1. Build a one-seed-per-tier public suite through the real CLI. Without
+  // a Stockfish binary, chess-stockfish is excluded (see the skip message) —
+  // its episodes would otherwise fail the run on machines without the engine.
+  const buildArgs = ['suite', 'build', '--split', 'public', '--seeds-per-tier', '1', '--out', suiteFile];
+  if (!REAL_BINARY) {
+    const engineLess = Object.keys(GAMES).filter((id) => id !== 'chess-stockfish');
+    buildArgs.push('--games', engineLess.join(','));
+    console.error(`[skip] chess-stockfish: ${STOCKFISH_SKIP_MESSAGE} — excluded from the end-to-end suite`);
+  }
+  gauntlet(...buildArgs);
   const suite = JSON.parse(readFileSync(suiteFile, 'utf8'));
   assert.equal(suite.format, 'playkit-gauntlet-suite/1');
   assert.equal(suite.split, 'public');

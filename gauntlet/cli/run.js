@@ -50,11 +50,12 @@ import { parseAgentSpec } from './agents.js';
  *   extended-thinking budget (budget_tokens), provider "anthropic" specs
  *   only; rides on top of the reply's output cap, is part of the worst-case
  *   cost quote, and is recorded in run.json's limits.
- * @property {'low' | 'medium' | 'high'} [reasoningEffort] --reasoning-effort:
- *   OpenAI reasoning effort (provider openai: reasoning.effort; provider
- *   openai-chat: the chat-completions reasoning_effort field, which is how
- *   Google's Gemini OpenAI-compatible endpoint takes it), recorded in
- *   run.json's limits.
+ * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
+ *   --reasoning-effort: reasoning effort for every provider (provider openai:
+ *   reasoning.effort; provider openai-chat: the chat-completions
+ *   reasoning_effort field, which is how Google's Gemini OpenAI-compatible
+ *   endpoint takes it; provider anthropic: output_config.effort, with the
+ *   per-model levels checked in harness/model-agent.js), recorded in run.json's limits.
  * @property {boolean} [resume] Verify existing trajectory files and skip
  *   them; replay only missing or unverifiable ones.
  * @property {AbortSignal} [signal] Abort signal; a signalled run stops after

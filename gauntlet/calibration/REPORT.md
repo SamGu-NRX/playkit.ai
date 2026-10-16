@@ -94,18 +94,35 @@ _Run:_ 75 episodes, 3819.4s.
 
 _Baselines:_ `greedy` is the chess packet's material-capture agent; `engine` is full node-budget Stockfish (the sf-1m ceiling rung) playing as the agent, so the ladder runs from uniform play to the strongest local engine as the opponent rungs rise.
 
-### chess (v1.1.0)
+### chess (v1.2.0)
 
 | tier (rank) | scoring | random | greedy | engine | engine solved |
 |---|---|---|---|---|---|
-| paper (1) | outcome | 0 [0, 0] | 0 [0, 0] | 0.4 [0.1, 0.7] | — |
-| wood (2) | outcome | 0 [0, 0] | 0 [0, 0] | 0.4 [0.2, 0.5] | — |
-| steel (3) | outcome | 0 [0, 0] | 0 [0, 0] | 0.7 [0.3, 1] | — |
-| granite (4) | outcome | 0 [0, 0] | 0 [0, 0] | 0.7 [0.3, 1] | — |
+| sand (1) | outcome | 0.8 [0.6, 1] | 0.7 [0.5, 0.9] | 1 [1, 1] | — |
+| paper (2) | outcome | 0 [0, 0] | 0 [0, 0] | 0.4 [0.1, 0.7] | — |
+| wood (3) | outcome | 0 [0, 0] | 0 [0, 0] | 0.4 [0.2, 0.5] | — |
+| steel (4) | outcome | 0 [0, 0] | 0 [0, 0] | 0.7 [0.3, 1] | — |
+| granite (5) | outcome | 0 [0, 0] | 0 [0, 0] | 0.7 [0.3, 1] | — |
 
-_Run:_ 60 episodes, 432.3s.
+_Run:_ 75 episodes, 426.7s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
+
+⚠️ **a-order (within noise)** — greedy 0.7 [0.5, 0.9] < random 0.8 [0.6, 1] on tier sand (rank 1)
+
+  _Why not a violation:_ the 95% intervals do not separate (they overlap, or a side has no interval), so the misordering is not demonstrated at the measured precision; re-measure at more seeds before changing tier parameters.
+
+## Checks
+
+No violations across 1 table; 1 point inversion reported as within-noise warnings below.
+
+
+Warnings — point inversions within noise (the 95% intervals do not separate; the rule is documented in calibration/checks.js):
+
+- ⚠️ chess — a-order (sand): greedy 0.7 [0.5, 0.9] < random 0.8 [0.6, 1] on tier sand (rank 1)
+
+_Regenerated chess-only on 2026-10-16 (chess v1.2.0: the new sand tier, rank 1). Other game sections are unchanged from the 2026-10-16 full-suite report; their tables and code are untouched by the sand change._
+
 
 ### connect4 (v1.1.0)
 

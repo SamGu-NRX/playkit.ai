@@ -1,0 +1,350 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "mini",
+  "seed": "mastermind/mini/public/5",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "guess AAB",
+        "usage": {
+          "inputTokens": 714,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-LD7zUbhkK7rKSXccjQdKjwozqJQ7MDdU",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 714,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 1424
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "25c0c31a938b4335",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 730,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-SF5TyLOg9R8LwawjKUkI6ADwQEmM9qUI",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 730,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 1466
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4478544d5020bab5",
+      "reply": {
+        "text": "guess ACD",
+        "usage": {
+          "inputTokens": 744,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-2rNPQ42BzgLTo0Efs3F9TyLyTAZZIQSz",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ACD",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 744,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 1590
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9937633a6c8cc1fc",
+      "reply": {
+        "text": "guess ABD",
+        "usage": {
+          "inputTokens": 758,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-WihGWuTx2aBK6ZDkW8n7qgG9VC3Zj3N6",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABD",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 758,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 1281
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "449d9162a6289c9e",
+      "reply": {
+        "text": "guess ACDB",
+        "usage": {
+          "inputTokens": 772,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-293SHbzI5qolpRr5TW8xI4SEzmwI3fu1",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ACDB",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 772,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 1356
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "449d9162a6289c9e",
+      "reply": {
+        "text": "guess ACDB",
+        "usage": {
+          "inputTokens": 813,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-BCRWkynH7mbCQM7jW7G0yTtUrvLq4AOD",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ACDB",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 813,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 1446
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "449d9162a6289c9e",
+      "reply": {
+        "text": "guess ACD",
+        "usage": {
+          "inputTokens": 813,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-wrWiLIKipk9Zuedg9nQnMdhWWy5Aa6jK",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ACD",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 813,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 128
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "1179e46c2d8e8295",
+      "reply": {
+        "text": "guess ADE",
+        "usage": {
+          "inputTokens": 786,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-9BPV8FiyOviGcLjh2Gd8fxaVJcdXNlRr",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ADE",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 786,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 1247
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "1179e46c2d8e8295",
+      "reply": {
+        "text": "guess ABD",
+        "usage": {
+          "inputTokens": 827,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-KrPdhFiSJ5USQsRsIkQVaZXws4qTjzDs",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABD",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 827,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 1809
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7d7442884c7dbbe3",
+      "reply": {
+        "text": "guess ABE",
+        "usage": {
+          "inputTokens": 800,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-BVLdECGkHztZubGxH7lHXsFtUIyS5wfK",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABE",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 800,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 1327
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7d7442884c7dbbe3",
+      "reply": {
+        "text": "guess ABE",
+        "usage": {
+          "inputTokens": 841,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-FcrEDXmYP2ekZAiCRlBynlRsdrN9hyr0",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABE",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 841,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 1440
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7d7442884c7dbbe3",
+      "reply": {
+        "text": "guess ABE",
+        "usage": {
+          "inputTokens": 841,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Ecz1G646scMqgqDrUGnWEdtzPiqSiWfy",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABE",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 841,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 116
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 12,
+    "invalidActions": 6,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:22:47.615Z",
+  "finishedAt": "2026-10-16T11:23:02.248Z"
+}

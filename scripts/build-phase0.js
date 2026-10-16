@@ -258,6 +258,15 @@ function main() {
     copyDirectoryContents(srcDir, distDir);
   });
 
+  // Mirror the WASM solver assets next to the bookmarklet bundle too:
+  // the bundle resolves solver.mjs/solver.wasm against its own script URL
+  // (bundle origin), not the host page's, so the artifacts must be served
+  // at <bundle-dir>/wasm/.
+  copyDirectoryContents(
+    path.join(extensionSrcDir, "wasm"),
+    path.resolve(rootDir, "dist", "wasm"),
+  );
+
   console.log("Mirrored extension bundle into dist/extension");
 }
 

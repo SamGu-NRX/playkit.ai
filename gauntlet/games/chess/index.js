@@ -24,7 +24,7 @@ import {
 import { OPENINGS } from './openings.js';
 import { parseAction as parseNotation, parseNotationAsAction } from './notation.js';
 import { renderObservation as renderText } from './render.js';
-import { createEngineBaselineAgent } from './baselines.js';
+import { createEngineBaselineAgent, createRandomBaselineAgent } from './baselines.js';
 
 /** @import { Agent, Game, Observation, Outcome, ParseResult, TierSpec } from '../../core/types.js' */
 /** @import { FastChess } from './engine.js' */
@@ -277,7 +277,7 @@ function outcomeOfTermination(termination) {
 export const chess = {
   spec: {
     id: 'chess',
-    version: '1.1.0',
+    version: '1.2.0',
     title: 'Chess',
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {import('../../core/types.js').InformationMode} */ ('perfect'),
@@ -294,8 +294,21 @@ export const chess = {
     ].join(' '),
     tiers: /** @type {import('../../core/types.js').TierSpec[]} */ ([
       {
-        id: 'paper',
+        // Sand: the opponent plays a uniformly random legal move (seeded),
+        // so the only skill under test is finishing legal chess games at all.
+        // It sits below paper on the ladder: paper's shallow engine already
+        // punishes loose play, while a random opponent gives wins away, so a
+        // model that cannot convert should lose here before it loses on paper.
+        id: 'sand',
         rank: 1,
+        scoring: 'outcome',
+        maxActions: MAX_ACTIONS,
+        publicSeeds: 5,
+        params: {},
+      },
+      {
+        id: 'paper',
+        rank: 2,
         scoring: 'outcome',
         maxActions: MAX_ACTIONS,
         publicSeeds: 5,
@@ -303,7 +316,7 @@ export const chess = {
       },
       {
         id: 'wood',
-        rank: 2,
+        rank: 3,
         scoring: 'outcome',
         maxActions: MAX_ACTIONS,
         publicSeeds: 5,
@@ -311,7 +324,7 @@ export const chess = {
       },
       {
         id: 'steel',
-        rank: 3,
+        rank: 4,
         scoring: 'outcome',
         maxActions: MAX_ACTIONS,
         publicSeeds: 5,
@@ -319,7 +332,7 @@ export const chess = {
       },
       {
         id: 'granite',
-        rank: 4,
+        rank: 5,
         scoring: 'outcome',
         maxActions: MAX_ACTIONS,
         publicSeeds: 5,
@@ -507,8 +520,9 @@ export const chess = {
   },
 
   /**
-   * The tier opponent: the built-in engine reading the tier's depth and
-   * node budget, with seeded tie-breaking.
+   * The tier opponent: for sand, a seeded uniform random legal mover; for
+   * the engine tiers, the built-in engine reading the tier's depth and node
+   * budget, with seeded tie-breaking.
    *
    * @param {TierSpec} tier
    * @param {string} seed
@@ -516,11 +530,13 @@ export const chess = {
    * @returns {Agent}
    */
   opponent(tier, seed, seat) {
-    return createEngineBaselineAgent({
+    const factory =
+      tier.id === 'sand' ? createRandomBaselineAgent : createEngineBaselineAgent;
+    return factory({
       tier,
       seed,
       seat,
-      id: `chess-engine-${tier.id}`,
+      id: `chess-${tier.id}-opponent`,
     });
   },
 

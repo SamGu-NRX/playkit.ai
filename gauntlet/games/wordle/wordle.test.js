@@ -194,20 +194,16 @@ test('hard mode: revealed greens pin positions and revealed letters must be reus
   assert.ok(typeof hardModeViolation('LBLLE', lHistory) === 'string', 'E revealed once, must be reused');
   assert.equal(hardModeViolation('RAISE', []), null, 'no hints in force before the first guess');
 
-  // legalActions on the hard-mode tier reflects the constraint once hints
-  // are in force (a fresh state admits the whole 5-letter list).
+  // legalActions on the hard-mode tier never narrows: legality is
+  // word-list membership on every tier, and hint-binding is scored at the
+  // outcome instead of enforced by rejection.
   const { seed: fixtureSeed, state: after } = hardModeFixture();
   const all = game.legalActions(game.reset(hard, fixtureSeed), 0);
   assert.equal(all.length, 8636, 'first turn: the whole 5-letter list is legal');
   const legal = game.legalActions(after, 0);
-  assert.ok(legal.length > 0 && legal.length < all.length, 'hints must narrow the legal set');
-  for (const action of legal) {
-    assert.ok(hardModeViolation(action.slice(6), after.guesses) === null, `${action} is not hard-mode legal`);
-  }
-  // The guessing word itself always satisfies its own constraints, and with
-  // 5 revealed letter positions the list must have shrunk substantially.
+  assert.equal(legal.length, all.length, 'hints must not narrow the legal set');
+  assert.deepEqual(legal, all, 'the legal list is byte-identical once hints are in force');
   assert.ok(legal.includes(`guess ${after.guesses[0].guess}`), 'the opener is still legal');
-  assert.ok(legal.length < 8000, 'revealed hints bind');
 });
 
 test('parseAction accepts the canonical action and documented alternates', () => {
@@ -245,14 +241,15 @@ test('parseAction accepts the canonical action and documented alternates', () =>
   assert.ok(!unlisted.ok && /word list/.test(unlisted.error), 'unlisted words name the word list');
   const wrongLength = game.parseAction(state, 0, 'guess TALE');
   assert.ok(!wrongLength.ok && /5-letter/.test(wrongLength.error), 'wrong length names the length');
-  // Hard-mode violations are rejected with the constraint in the message.
+  // Hard-mode-violating words are legal guesses: binding is scored at the
+  // outcome, not enforced by rejection.
   const { state: hardAfter } = hardModeFixture();
   const violating = guessesFor(5).find(
     (w) => hardModeViolation(w, hardAfter.guesses) !== null
   );
-  assert.ok(violating, 'the fixture must admit a hard-mode-illegal word');
+  assert.ok(violating, 'the fixture must admit a hard-mode-breaking word');
   const violation = game.parseAction(hardAfter, 0, `guess ${violating}`);
-  assert.ok(!violation.ok && /hard mode/.test(violation.error));
+  assert.deepEqual(violation, { ok: true, action: `guess ${violating}` });
 });
 
 test('step is pure, scores feedback, and ends the game won or lost', () => {
@@ -361,4 +358,60 @@ test('runConformance passes every tier', async () => {
   assert.equal(report.ok, true);
   assert.equal(report.game, 'wordle');
   assert.ok(report.checks > 0);
+});
+
+test('hard mode is scored, not blocked: a broken-hint solve counts as unsolved', () => {
+  const { state: after } = hardModeFixture();
+  const violating = guessesFor(5).find(
+    (w) => hardModeViolation(w, after.guesses) !== null
+  );
+  assert.ok(violating, 'the fixture must admit a hard-mode-breaking word');
+
+  // The breaking guess is applied and scored as normal feedback.
+  const stepped = game.step(after, 0, `guess ${violating}`);
+  assert.equal(stepped.guesses.length, after.guesses.length + 1, 'the breaking guess was applied');
+  assert.equal(stepped.bindingBroken, true, 'the break is recorded on the state');
+  assert.equal(stepped.guesses[stepped.guesses.length - 1].pattern.length, 5, 'normal per-letter feedback');
+  assert.equal(game.toAct(stepped), 0, 'the episode continues');
+
+  // Solving after a break still counts as unsolved.
+  const solved = game.step(stepped, 0, `guess ${stepped.answer}`);
+  assert.equal(solved.status, 'won');
+  assert.equal(solved.bindingBroken, true);
+  const brokenOutcome = game.outcome(solved);
+  assert.ok(brokenOutcome && brokenOutcome.solved === false, 'a broken-hint solve is unsolved');
+  assert.deepEqual(brokenOutcome.normalized, [0]);
+  assert.match(brokenOutcome.reason, /hard mode was broken/);
+
+  // A history with no break solves normally on the same tier.
+  const fresh = game.reset(hard, 'wordle/binding-clean');
+  const clean = game.step(fresh, 0, `guess ${fresh.answer}`);
+  assert.equal(clean.status, 'won');
+  assert.equal(clean.bindingBroken, false);
+  const cleanOutcome = game.outcome(clean);
+  assert.ok(cleanOutcome && cleanOutcome.solved === true);
+  assert.equal(cleanOutcome.par, referenceGuessCount(5, true, fresh.answer));
+});
+
+test('random on hard-mode floors near zero: uniform play breaks binding long before it solves', { timeout: 120_000 }, async () => {
+  let total = 0;
+  let solvedClean = 0;
+  for (let i = 0; i < 25; i++) {
+    const seed = publicSeed('wordle', 'hard-mode', i);
+    const trajectory = await runEpisode({ game, tierId: 'hard-mode', seed, agent: createRandomAgent({ episodeSeed: seed }) });
+    const outcome = trajectory.end.outcome;
+    assert.ok(outcome, 'episode ended without an outcome');
+    await assert.doesNotReject(() => verifyTrajectory(game, trajectory));
+    const episodeScore = outcome.solved
+      ? Math.min(1.15, (/** @type {number} */ (outcome.par) / trajectory.end.agentActions) ** 2)
+      : 0;
+    total += episodeScore;
+    if (outcome.solved) solvedClean++;
+  }
+  // Before the scored-binding change, uniform play drew from the
+  // hard-mode-consistent list and scored 0.218 mean with a 32% solve rate.
+  // Now the whole list is legal, so uniform play almost always breaks binding
+  // before it can solve: the floor stays near zero. One clean uniform solve
+  // scores at most 1.15; two over 25 seeds are astronomically unlikely.
+  assert.ok(total <= 1.2, `random hard-mode total ${total.toFixed(3)} too high (${solvedClean} clean solves)`);
 });

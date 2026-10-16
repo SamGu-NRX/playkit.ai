@@ -2130,6 +2130,14 @@
         this.directionPriority = [...DEFAULT_DIRECTION_PRIORITY];
         this.solverConfig = { ...DEFAULT_SOLVER_CONFIG };
     
+        // Engine honesty: Strategy/Heuristic stay disabled until the solver
+        // manager reports the WASM engine as active.
+        this.engineSupportsCustomStrategy = false;
+    
+        // Announcement bookkeeping (see updateRunState and autoSolveLoop).
+        this._pendingStopMessage = null;
+        this._detectionState = undefined;
+    
         this.isInitialized = false;
       }
     
@@ -2162,6 +2170,7 @@
       applySolverControlState() {
         const isProbability = this.solverConfig.type === "expectimax-probability";
         this.view.setSolverControlAvailability(!isProbability, isProbability);
+        this.view.setEngineDependentControlsEnabled(this.engineSupportsCustomStrategy);
       }
     
       /**
@@ -2232,6 +2241,13 @@
     
         this.view.setSolverStatus(state);
     
+        // The WASM engine honours Strategy/Heuristic; the JS fallback ignores
+        // them, so the controls disable with a reason while it is active.
+        this.engineSupportsCustomStrategy = Boolean(
+          status && status.status === "ready" && status.mode === "wasm",
+        );
+        this.applySolverControlState();
+    
         if (status && status.strategy) {
           const clamped = clampSolverConfig(status.strategy);
           this.solverConfig = {
@@ -2270,6 +2286,17 @@
           this.view.setGameStatus({ text: "Not detected", color: "#f87171" });
           this.view.setScore("-");
           this.view.setControlsEnabled({ autoSolve: false, step: false });
+        }
+    
+        // Announce detection transitions once. updateStatus() runs after every
+        // move, so repeat refreshes stay silent; the first read only records the
+        // initial state.
+        const isDetected = Boolean(this.currentAdapter);
+        if (this._detectionState === undefined) {
+          this._detectionState = isDetected;
+        } else if (isDetected && !this._detectionState) {
+          this._detectionState = true;
+          this.announce(`${this.currentAdapter.getName()} detected.`);
         }
     
         if (this.controller && this.controller.getSolverStatus) {
@@ -2330,10 +2357,12 @@
             this.updateStatus();
             if (!detected && !this.currentAdapter) {
               this.showMessage("No game detected.");
+              this.announce("No game detected.");
             }
           } catch (error) {
             console.warn("HUD: Controller-driven detect failed", error);
             this.showMessage("Detect failed. Check console.");
+            this.announce("Detect failed. Check console.");
           }
           return;
         }
@@ -2343,6 +2372,7 @@
     
         if (!this.currentAdapter) {
           this.showMessage("No game detected.");
+          this.announce("No game detected.");
         }
       }
     
@@ -2422,12 +2452,35 @@
       }
     
       /**
-       * Update run state UI to reflect automation status
+       * Update run state UI to reflect automation status. Announcements only
+       * fire on real transitions, so refreshes never repeat the same message.
        * @param {boolean} isRunning Whether automation is active
+       * @param {"user"|"runtime"} source What asked for the transition; the
+       *   wording follows it ("paused" for the Pause button, "stopped" when the
+       *   runtime tears the run down).
        */
-      updateRunState(isRunning) {
+      updateRunState(isRunning, source = "user") {
+        const wasRunning = this.isAutoSolving;
         this.isAutoSolving = !!isRunning;
         this.view.setAutoSolveRunning(this.isAutoSolving);
+    
+        if (this.isAutoSolving && !wasRunning) {
+          this.announce("Auto-solve started.");
+        } else if (!this.isAutoSolving && wasRunning) {
+          const message =
+            this._pendingStopMessage ||
+            (source === "runtime" ? "Auto-solve stopped." : "Auto-solve paused.");
+          this._pendingStopMessage = null;
+          this.announce(message);
+        }
+      }
+    
+      /**
+       * Push a message to the polite live region for assistive technology.
+       * @param {string} message
+       */
+      announce(message) {
+        this.view.setAnnouncement(message);
       }
     
       /**
@@ -2488,7 +2541,7 @@
        * Stop auto-solving
        * @private
        */
-      async stopAutoSolve() {
+      async stopAutoSolve(source = "user") {
         if (this.controller) {
           try {
             const stopFn = this.controller.stop?.bind(this.controller);
@@ -2498,7 +2551,7 @@
           } catch (error) {
             console.warn("HUD: stopAutoSolve controller invocation failed", error);
           }
-          this.updateRunState(false);
+          this.updateRunState(false, source);
           return;
         }
     
@@ -2507,7 +2560,7 @@
           this.autoSolveTimeout = null;
         }
     
-        this.updateRunState(false);
+        this.updateRunState(false, source);
       }
     
       /**
@@ -2518,7 +2571,12 @@
         if (!this.isAutoSolving || !this.currentAdapter) return;
     
         if (this.currentAdapter.isGameOver()) {
-          this.stopAutoSolve();
+          const finalScore = this.currentAdapter.getScore();
+          this._pendingStopMessage =
+            finalScore !== null && finalScore !== undefined
+              ? `Game over. Final score ${Number(finalScore).toLocaleString()}.`
+              : "Game over.";
+          await this.stopAutoSolve("runtime");
           this.showMessage("Game over!");
           return;
         }
@@ -2584,12 +2642,12 @@
     
         if (this.controller && this.controller.isRunning) {
           try {
-            this.updateRunState(!!this.controller.isRunning());
+            this.updateRunState(!!this.controller.isRunning(), "runtime");
           } catch (error) {
             console.warn("HUD: Failed to read controller run state", error);
           }
         } else {
-          this.updateRunState(false);
+          this.updateRunState(false, "runtime");
         }
     
         this.updateStatus();
@@ -2619,7 +2677,7 @@
        */
       destroy() {
         if (this.isAutoSolving) {
-          this.stopAutoSolve();
+          this.stopAutoSolve("runtime");
         }
     
         if (this.autoSolveTimeout) {
@@ -2725,7 +2783,6 @@
             pointer-events: auto;
             backdrop-filter: blur(10px);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
             user-select: none;
           }
     
@@ -2770,7 +2827,6 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
-            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 4px;
@@ -2886,6 +2942,24 @@
             color: white;
           }
     
+          .setting-hint {
+            margin: 4px 0 0;
+            font-size: 12px;
+          }
+    
+          .hud-live-region {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
+            border: 0;
+          }
+    
           .setting-input {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
@@ -2902,13 +2976,23 @@
             cursor: not-allowed;
           }
     
-          .hud-panel.auto-solving .hud-btn-success {
-            animation: pulse 1s infinite;
-          }
+          @media (prefers-reduced-motion: no-preference) {
+            .hud-panel {
+              transition: all 0.3s ease;
+            }
     
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            .hud-btn {
+              transition: all 0.2s ease;
+            }
+    
+            .hud-panel.auto-solving .hud-btn-success {
+              animation: pulse 1s infinite;
+            }
+    
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.7; }
+            }
           }
     
           .hud-panel.dragging {
@@ -2927,15 +3011,15 @@
           <style>
             ${getHUDCSS()}
           </style>
-          <div class="hud-panel" data-collapsed="false">
+          <div class="hud-panel" role="region" aria-label="AI 2048 Solver" data-collapsed="false">
             <div class="hud-header">
               <div class="hud-title">
                 <span class="hud-icon">🎯</span>
                 <span class="hud-text">2048 AI Solver</span>
               </div>
               <div class="hud-controls">
-                <button class="hud-btn hud-btn-collapse" title="Collapse/Expand">
-                  <span class="collapse-icon">−</span>
+                <button class="hud-btn hud-btn-collapse" type="button" aria-expanded="true" aria-label="Collapse panel" title="Collapse panel">
+                  <span class="collapse-icon" aria-hidden="true">−</span>
                 </button>
               </div>
             </div>
@@ -2969,7 +3053,7 @@
     
               <div class="hud-settings">
                 <div class="setting-group">
-                  <label class="setting-label">Direction Priority:</label>
+                  <label class="setting-label" for="direction-priority">Direction Priority:</label>
                   <select class="setting-select" id="direction-priority">
                     <option value="0,2,1,3">Up → Down → Right → Left</option>
                     <option value="3,2,1,0" selected>Left → Down → Right → Up</option>
@@ -2978,21 +3062,24 @@
                   </select>
                 </div>
                 <div class="setting-group">
-                  <label class="setting-label">Solver Strategy:</label>
-                  <select class="setting-select" id="solver-strategy">
+                  <label class="setting-label" for="solver-strategy">Solver Strategy:</label>
+                  <select class="setting-select" id="solver-strategy" aria-describedby="strategy-engine-hint">
                     <option value="expectimax-depth" selected>Expectimax (Depth)</option>
                     <option value="expectimax-probability">Expectimax (Probability)</option>
                   </select>
                 </div>
                 <div class="setting-group">
-                  <label class="setting-label">Heuristic:</label>
-                  <select class="setting-select" id="solver-heuristic">
+                  <label class="setting-label" for="solver-heuristic">Heuristic:</label>
+                  <select class="setting-select" id="solver-heuristic" aria-describedby="strategy-engine-hint">
                     <option value="corner" selected>Corner Bias</option>
                     <option value="monotonicity">Monotonicity</option>
                     <option value="wall">Wall Building</option>
                     <option value="score">Score Focus</option>
                   </select>
                 </div>
+                <p class="setting-hint" id="strategy-engine-hint">
+                  Strategy and heuristic options need the WASM solver.
+                </p>
                 <div class="setting-group">
                   <label class="setting-label" for="solver-depth">Depth:</label>
                   <input class="setting-input" id="solver-depth" type="number" min="1" max="8" step="1" value="4" />
@@ -3003,6 +3090,8 @@
                 </div>
               </div>
             </div>
+    
+            <div class="hud-live-region" id="hud-announcer" role="status"></div>
           </div>
         `;
     }
@@ -3055,12 +3144,15 @@
           solverHeuristic: null,
           solverDepth: null,
           solverProbability: null,
+          strategyHint: null,
+          announcer: null,
         };
     
         this.isCollapsed = false;
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
         this._suppressSolverEvents = false;
+        this.announcementTimeout = null;
     
         this.boundHandlers = {
           headerMouseDown: this.handleHeaderMouseDown.bind(this),
@@ -3108,6 +3200,11 @@
     
         this.detachEventListeners();
     
+        if (this.announcementTimeout) {
+          clearTimeout(this.announcementTimeout);
+          this.announcementTimeout = null;
+        }
+    
         if (this.shadowHost.parentNode) {
           this.shadowHost.parentNode.removeChild(this.shadowHost);
         }
@@ -3139,6 +3236,8 @@
           solverHeuristic: this.shadowRoot.getElementById("solver-heuristic"),
           solverDepth: this.shadowRoot.getElementById("solver-depth"),
           solverProbability: this.shadowRoot.getElementById("solver-probability"),
+          strategyHint: this.shadowRoot.getElementById("strategy-engine-hint"),
+          announcer: this.shadowRoot.getElementById("hud-announcer"),
         };
       }
     
@@ -3300,9 +3399,29 @@
             : COLLAPSE_ICON.EXPANDED;
         }
     
+        this.setCollapseAccessibleState(this.isCollapsed);
+    
         if (typeof this.callbacks.onCollapse === "function") {
           this.callbacks.onCollapse(this.isCollapsed);
         }
+      }
+    
+      /**
+       * Keep the collapse button's accessible name and expanded state in sync
+       * with the panel. The name states what pressing the button does; the
+       * glyph is decorative.
+       * @param {boolean} isCollapsed
+       * @private
+       */
+      setCollapseAccessibleState(isCollapsed) {
+        if (!this.elements.collapseBtn) {
+          return;
+        }
+    
+        const action = isCollapsed ? "Expand panel" : "Collapse panel";
+        this.elements.collapseBtn.setAttribute("aria-expanded", String(!isCollapsed));
+        this.elements.collapseBtn.setAttribute("aria-label", action);
+        this.elements.collapseBtn.title = action;
       }
     
       /**
@@ -3394,6 +3513,32 @@
       }
     
       /**
+       * Enable Strategy and Heuristic only when the active engine honours them
+       * (the WASM solver); while disabled, describe the reason via the hint.
+       * @param {boolean} wasmActive
+       */
+      setEngineDependentControlsEnabled(wasmActive) {
+        const active = Boolean(wasmActive);
+    
+        for (const control of [this.elements.solverStrategy, this.elements.solverHeuristic]) {
+          if (!control) {
+            continue;
+          }
+    
+          control.disabled = !active;
+          if (active) {
+            control.removeAttribute("aria-describedby");
+          } else {
+            control.setAttribute("aria-describedby", "strategy-engine-hint");
+          }
+        }
+    
+        if (this.elements.strategyHint) {
+          this.elements.strategyHint.hidden = active;
+        }
+      }
+    
+      /**
        * Update the solver status indicator text and colour.
        * @param {{text:string, color:string, title:string}} status
        */
@@ -3428,6 +3573,30 @@
         if (this.elements.scoreStatus) {
           this.elements.scoreStatus.textContent = scoreText;
         }
+      }
+    
+      /**
+       * Queue an announcement on the polite live region. The region is a stable
+       * empty element that is cleared first so repeated announcements are re-read;
+       * a pending older announcement is cancelled so the latest event wins.
+       * @param {string} message
+       */
+      setAnnouncement(message) {
+        const announcer = this.elements.announcer;
+        if (!announcer) {
+          return;
+        }
+    
+        if (this.announcementTimeout) {
+          clearTimeout(this.announcementTimeout);
+          this.announcementTimeout = null;
+        }
+    
+        announcer.textContent = "";
+        this.announcementTimeout = setTimeout(() => {
+          this.announcementTimeout = null;
+          announcer.textContent = message;
+        }, 20);
       }
     
       /**
@@ -3526,6 +3695,155 @@
     
     exports.HUDView = HUDView;
   },
+  "./src/observer/detection-watcher.js": function (exports, module, require) {
+    /**
+     * @fileoverview Detection watcher: bounded, debounced detection retries on DOM changes
+     *
+     * A one-shot detection at init misses games whose tiles are created by page
+     * JavaScript after load (e.g. the vendored 2048 creates `.tile` elements after
+     * document_idle). This watcher re-runs detection whenever the DOM changes until
+     * an adapter attaches or a bounded window closes, so the HUD shows
+     * "Game: <adapter>" and an enabled Auto-solve without a manual Detect click.
+     *
+     * Detection only: the watcher never starts solving. It stops at the first
+     * successful attach, or after `timeoutMs`.
+     */
+    
+    class DetectionWatcher {
+      /**
+       * @param {Object} options
+       * @param {() => boolean} options.onProbe Called on DOM activity; return true
+       *   once an adapter has attached (also stops the watcher).
+       * @param {number} [options.debounceMs] Coalesce bursts of mutations into one probe.
+       * @param {number} [options.timeoutMs] Bounded window; the watcher stops itself after this.
+       * @param {number} [options.heartbeatMs] Safety-net probe interval for pages whose
+       *   change never fires a DOM mutation during the window.
+       */
+      constructor(options = {}) {
+        this.onProbe = options.onProbe;
+        this.debounceMs =
+          typeof options.debounceMs === "number" ? options.debounceMs : 250;
+        this.timeoutMs =
+          typeof options.timeoutMs === "number" ? options.timeoutMs : 15000;
+        this.heartbeatMs =
+          typeof options.heartbeatMs === "number" ? options.heartbeatMs : 1500;
+    
+        this.isActive = false;
+        this.probeCount = 0;
+        this.observer = null;
+        this.debounceTimer = null;
+        this.heartbeatTimer = null;
+        this.timeoutTimer = null;
+    
+        this._handleMutations = this._handleMutations.bind(this);
+        this._probe = this._probe.bind(this);
+        this._stopForTimeout = this._stopForTimeout.bind(this);
+      }
+    
+      /**
+       * Start watching. No-op when already active or when MutationObserver is
+       * unavailable (very old hosts); heartbeat probes still bound the window.
+       */
+      start() {
+        if (this.isActive) {
+          return;
+        }
+        this.isActive = true;
+    
+        if (typeof MutationObserver !== "undefined" && document.documentElement) {
+          this.observer = new MutationObserver(this._handleMutations);
+          this.observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true,
+          });
+        }
+    
+        if (this.heartbeatMs > 0) {
+          this.heartbeatTimer = setInterval(this._probe, this.heartbeatMs);
+        }
+    
+        this.timeoutTimer = setTimeout(this._stopForTimeout, this.timeoutMs);
+      }
+    
+      /**
+       * Stop watching and release every timer/observer. Safe to call more than once.
+       */
+      stop() {
+        if (!this.isActive && !this.observer) {
+          return;
+        }
+    
+        this.isActive = false;
+    
+        if (this.observer) {
+          this.observer.disconnect();
+          this.observer = null;
+        }
+        if (this.debounceTimer) {
+          clearTimeout(this.debounceTimer);
+          this.debounceTimer = null;
+        }
+        if (this.heartbeatTimer) {
+          clearInterval(this.heartbeatTimer);
+          this.heartbeatTimer = null;
+        }
+        if (this.timeoutTimer) {
+          clearTimeout(this.timeoutTimer);
+          this.timeoutTimer = null;
+        }
+      }
+    
+      /**
+       * @private
+       */
+      _handleMutations() {
+        if (!this.isActive) {
+          return;
+        }
+        if (this.debounceTimer) {
+          clearTimeout(this.debounceTimer);
+        }
+        this.debounceTimer = setTimeout(this._probe, this.debounceMs);
+      }
+    
+      /**
+       * @private
+       */
+      _probe() {
+        this.debounceTimer = null;
+        if (!this.isActive) {
+          return;
+        }
+    
+        this.probeCount++;
+    
+        let attached = false;
+        try {
+          attached = this.onProbe ? this.onProbe() === true : false;
+        } catch (error) {
+          console.warn("DetectionWatcher: probe failed:", error);
+        }
+    
+        if (attached) {
+          this.stop();
+        }
+      }
+    
+      /**
+       * @private
+       */
+      _stopForTimeout() {
+        console.log(
+          `DetectionWatcher: window closed after ${this.timeoutMs}ms (${this.probeCount} probes, no adapter)`
+        );
+        this.stop();
+      }
+    }
+    
+    exports.DetectionWatcher = DetectionWatcher;
+  },
   "./src/observer/index.js": function (exports, module, require) {
     /**
      * @fileoverview Observer system exports
@@ -3537,12 +3855,15 @@
     exports.GameMutationObserver = GameMutationObserver;
     const createGameObserver = __reExport0.createGameObserver;
     exports.createGameObserver = createGameObserver;
-    const __reExport1 = require("./src/observer/visibility-handler.js");
-    const VisibilityHandler = __reExport1.VisibilityHandler;
+    const __reExport1 = require("./src/observer/detection-watcher.js");
+    const DetectionWatcher = __reExport1.DetectionWatcher;
+    exports.DetectionWatcher = DetectionWatcher;
+    const __reExport2 = require("./src/observer/visibility-handler.js");
+    const VisibilityHandler = __reExport2.VisibilityHandler;
     exports.VisibilityHandler = VisibilityHandler;
-    const getVisibilityHandler = __reExport1.getVisibilityHandler;
+    const getVisibilityHandler = __reExport2.getVisibilityHandler;
     exports.getVisibilityHandler = getVisibilityHandler;
-    const destroyVisibilityHandler = __reExport1.destroyVisibilityHandler;
+    const destroyVisibilityHandler = __reExport2.destroyVisibilityHandler;
     exports.destroyVisibilityHandler = destroyVisibilityHandler;
     
   },
@@ -4214,6 +4535,7 @@
         // Initialize runtime with extension-appropriate settings
         const runtime = await initRuntime({
           autoInit: false, // Don't auto-start in extension mode
+          autoDetectRetry: true, // Re-detect on DOM changes until an adapter attaches (detection only)
           enableHUD: true,
           enableVisibilityHandling: true,
           enableMutationObserver: true,
@@ -4361,7 +4683,7 @@
     const { initHUD, getHUD, destroyHUD } = require("./src/hud/index.js");
     const { detectGame, globalAdapterRegistry } = require("./src/adapters/index.js");
     const { createDriver } = require("./src/driver/index.js");
-    const { createGameObserver, getVisibilityHandler } = require("./src/observer/index.js");
+    const { createGameObserver, DetectionWatcher, getVisibilityHandler } = require("./src/observer/index.js");
     const { createSolverManager } = require("./src/solver/index.js");
     
     /**
@@ -4378,10 +4700,24 @@
           ...options,
         };
     
+        // Auto-detect retry knobs. Resolved separately from this.options so an
+        // explicit `undefined` in options cannot clobber these defaults through the
+        // ...options spread above.
+        this.autoDetectRetryEnabled = options.autoDetectRetry !== false;
+        this.autoDetectRetryDebounceMs =
+          typeof options.autoDetectRetryDebounceMs === "number"
+            ? options.autoDetectRetryDebounceMs
+            : 250;
+        this.autoDetectRetryTimeoutMs =
+          typeof options.autoDetectRetryTimeoutMs === "number"
+            ? options.autoDetectRetryTimeoutMs
+            : 15000;
+    
         // Component instances
         this.hud = null;
         this.driver = null;
         this.observer = null;
+        this.detectionWatcher = null;
         this.visibilityHandler = null;
         this.currentAdapter = null;
         this.directionPriority = null;
@@ -4443,6 +4779,13 @@
           // Try to detect game
           this.detectGame();
     
+          // One-shot detection misses games whose tiles are built by page JS after
+          // load; keep retrying on DOM changes until an adapter attaches or the
+          // bounded window closes. Detection only — solving never starts by itself.
+          if (!this.currentAdapter && this.autoDetectRetryEnabled) {
+            this._startDetectionRetry();
+          }
+    
           this.isInitialized = true;
           console.log("Runtime initialized successfully");
     
@@ -4476,6 +4819,48 @@
           console.log("No game detected");
           return false;
         }
+      }
+    
+      /**
+       * Retry detection on DOM changes within a bounded window (detection only)
+       * @private
+       */
+      _startDetectionRetry() {
+        if (this.detectionWatcher) {
+          return;
+        }
+    
+        this.detectionWatcher = new DetectionWatcher({
+          onProbe: () => this._probeForGame(),
+          debounceMs: this.autoDetectRetryDebounceMs,
+          timeoutMs: this.autoDetectRetryTimeoutMs,
+        });
+    
+        this.detectionWatcher.start();
+        console.log(
+          `Runtime: no game detected yet; retrying on DOM changes for up to ${this.autoDetectRetryTimeoutMs}ms`
+        );
+      }
+    
+      /**
+       * One detection attempt for the retry watcher
+       * @private
+       * @returns {boolean} True once an adapter is attached
+       */
+      _probeForGame() {
+        if (this.currentAdapter) {
+          return true;
+        }
+    
+        const attached = this.detectGame();
+    
+        // autoInit runtimes (bookmarklet) wire components on late attach, matching
+        // init-time behavior; the driver still never starts by itself.
+        if (attached && this.options.autoInit && !this.driver) {
+          this.setupComponents();
+        }
+    
+        return attached;
       }
     
       /**
@@ -4764,6 +5149,11 @@
        */
       destroy() {
         console.log("Destroying runtime...");
+    
+        if (this.detectionWatcher) {
+          this.detectionWatcher.stop();
+          this.detectionWatcher = null;
+        }
     
         this.stop();
     
@@ -5379,6 +5769,12 @@
     
     const ALL_DIRECTIONS = [0, 1, 2, 3];
     
+    // The C++ solver's move indices are Right(0), Down(1), Left(2), Up(3) —
+    // verified empirically against the real binary with single-tile corner
+    // boards (isValidMove validity patterns). The project's Direction enum is
+    // Up(0), Right(1), Down(2), Left(3), so map on the way out.
+    const WASM_TO_PROJECT_DIRECTION = [1, 2, 3, 0];
+    
     function getRuntimeAPI() {
       if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL) {
         return chrome.runtime;
@@ -5389,6 +5785,32 @@
       return null;
     }
     
+    /**
+     * URL of the script tag that loaded the bundled runtime (bookmarklet path).
+     *
+     * The bundle is a classic-script IIFE, so while it evaluates `document.currentScript`
+     * still points at the <script src="…/2048-hud.min.js"> tag the host page injected.
+     * Solver assets live next to that bundle under `wasm/`, so its directory is the
+     * bundle origin. Extension content scripts and native-ESM loads leave it null.
+     */
+    const bundleScriptUrl = (() => {
+      try {
+        if (typeof document !== "undefined" && document.currentScript && document.currentScript.src) {
+          return document.currentScript.src;
+        }
+      } catch (error) {
+        // Non-DOM environment: fall through to the other resolution strategies.
+      }
+      return null;
+    })();
+    
+    /**
+     * Resolve a solver asset (`solver.mjs`, `solver.wasm`) to an absolute URL.
+     *
+     * Precedence: explicit option → extension runtime.getURL → the bundle origin
+     * (bookmarklet: assets load from where the bundle was served, NOT the host
+     * page's base URI, which produced 404s like `/2048/solver.mjs`) → page base.
+     */
     function resolveAssetUrl(filename, options = {}) {
       if (filename === "solver.mjs" && options.moduleUrl) {
         return options.moduleUrl;
@@ -5403,6 +5825,9 @@
       if (runtime) {
         return runtime.getURL(`wasm/${filename}`);
       }
+      if (bundleScriptUrl) {
+        return new URL(`wasm/${filename}`, bundleScriptUrl).toString();
+      }
       if (typeof document !== "undefined") {
         const base = options.documentBase || document.baseURI || window.location.href;
         return new URL(filename, base).toString();
@@ -5412,11 +5837,13 @@
     
     function sanitizeStrategy(config = {}) {
       return {
-        type: config.type || DEFAULT_STRATEGY.type,
-        heuristic: config.heuristic || DEFAULT_STRATEGY.heuristic,
+        type: (typeof config.type === "string" ? config.type.trim() : "") || DEFAULT_STRATEGY.type,
+        heuristic:
+          (typeof config.heuristic === "string" ? config.heuristic.trim() : "") ||
+          DEFAULT_STRATEGY.heuristic,
         depth:
           typeof config.depth === "number" && Number.isFinite(config.depth)
-            ? Math.max(1, Math.floor(config.depth))
+            ? Math.min(8, Math.max(1, Math.floor(config.depth)))
             : DEFAULT_STRATEGY.depth,
         probability:
           typeof config.probability === "number" && Number.isFinite(config.probability)
@@ -5424,6 +5851,37 @@
             : DEFAULT_STRATEGY.probability,
       };
     }
+    
+    /**
+     * One clean failure when solver.wasm is missing, instead of the Emscripten
+     * glue's multi-line abort stack. Only a definitive HTTP failure (404 etc.)
+     * short-circuits: a network/CORS error here is not proof the artifact is
+     * absent, so we let the module load attempt proceed unchanged.
+     */
+    async function assertWasmArtifactPresent(wasmUrl) {
+      try {
+        const response = await fetch(wasmUrl, { method: "HEAD" });
+        if (!response.ok) {
+          throw new Error(
+            `WASM solver artifact missing (${response.status} at ${wasmUrl}). Build it with "node scripts/build-wasm.js --release"; the JS fallback engine will be used.`,
+          );
+        }
+      } catch (error) {
+        if (error instanceof TypeError) {
+          // fetch itself failed (offline / opaque CORS) — not evidence of a
+          // missing artifact. Let the Emscripten loader speak for itself.
+          return;
+        }
+        throw error;
+      }
+    }
+    
+    function sanitizeStrategyForTest(config = {}) {
+      return sanitizeStrategy(config);
+    }
+    
+    exports.resolveAssetUrl = resolveAssetUrl;
+    exports.assertWasmArtifactPresent = assertWasmArtifactPresent;
     
     class WASMSolverEngine {
       constructor(options = {}) {
@@ -5472,6 +5930,11 @@
       async loadModule() {
         const moduleUrl = resolveAssetUrl("solver.mjs", this.options);
         const wasmUrl = resolveAssetUrl("solver.wasm", this.options);
+    
+        // Fail fast and quietly when the artifact was never built. Without this
+        // check the Emscripten glue downloads nothing, logs its own abort stack,
+        // and throws a RuntimeError — three noisy lines instead of one.
+        await assertWasmArtifactPresent(wasmUrl);
     
         const importResult = await import(/* webpackIgnore: true */ moduleUrl);
         const factory = importResult && importResult.default ? importResult.default : importResult;
@@ -5522,7 +5985,22 @@
         }
     
         const exponents = BoardEncoder.toExponentArray(board);
-        const boardValue = this.module.boardFromArray(exponents);
+    
+        // Pass an explicit IntVector: embind's array -> std::vector auto-conversion
+        // lives in the dynamic invoker, which -sNO_DYNAMIC_EXECUTION=1 removes (the
+        // MV3 content-script CSP forbids string evaluation). The registered vector
+        // binding exposes only the default constructor under fixed-arity invokers,
+        // so build it with push_back and free it after the call.
+        const tiles = new this.module.IntVector();
+        let boardValue;
+        try {
+          for (const exponent of exponents) {
+            tiles.push_back(exponent);
+          }
+          boardValue = this.module.boardFromArray(tiles);
+        } finally {
+          tiles.delete();
+        }
     
         let preferred = 0;
         try {
@@ -5558,10 +6036,14 @@
           .map((item) => item.direction);
     
         if (!ordered.length) {
-          return BoardEncoder.uniqueDirections([preferred]);
+          return BoardEncoder.uniqueDirections([preferred]).map(
+            (direction) => WASM_TO_PROJECT_DIRECTION[direction],
+          );
         }
     
-        return BoardEncoder.uniqueDirections(ordered);
+        return BoardEncoder.uniqueDirections(ordered).map(
+          (direction) => WASM_TO_PROJECT_DIRECTION[direction],
+        );
       }
     
       async getBoardInfo(board) {
@@ -5596,6 +6078,7 @@
     
     
     exports.WASMSolverEngine = WASMSolverEngine;
+    exports.sanitizeStrategyForTest = sanitizeStrategyForTest;
   }
   };
   const cache = {};

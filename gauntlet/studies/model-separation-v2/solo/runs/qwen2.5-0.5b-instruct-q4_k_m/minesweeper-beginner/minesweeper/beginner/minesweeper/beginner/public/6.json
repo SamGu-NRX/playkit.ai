@@ -1,0 +1,194 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/6",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-0.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6c527dbe099195b5",
+      "reply": {
+        "text": "flag 0 3",
+        "usage": {
+          "inputTokens": 952,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-N8MwuhDZwyAtiUdaMt0TvOSEoCFDdlQR",
+          "reasoningChars": 0
+        }
+      },
+      "action": "flag 0 3",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 952,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1177
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "96fb879d575bb9c7",
+      "reply": {
+        "text": "flag 0 4",
+        "usage": {
+          "inputTokens": 949,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-gidpeCurbf8zc4VfSrm7rcsqFGQJzdMs",
+          "reasoningChars": 0
+        }
+      },
+      "action": "flag 0 4",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 949,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1178
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "63befc499ed2f378",
+      "reply": {
+        "text": "flag 0 5",
+        "usage": {
+          "inputTokens": 944,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-dSIJsueDvqYMPtiBzgQL2y4pYI3f2QSh",
+          "reasoningChars": 0
+        }
+      },
+      "action": "flag 0 5",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 944,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 988
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "19e5959c1dac0703",
+      "reply": {
+        "text": "reveal 0 6",
+        "usage": {
+          "inputTokens": 945,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-7Nfw1K1PAXe5Ev7fMf2XkTnyenoqpnrB",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 0 6",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 945,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 984
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "63984cce6ebde721",
+      "reply": {
+        "text": "reveal 0 6",
+        "usage": {
+          "inputTokens": 891,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Y2nPstUcs7hR81Lsd3DjaSMGFUrLc6sr",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 0 6",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 891,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 943
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "63984cce6ebde721",
+      "reply": {
+        "text": "reveal 0 8",
+        "usage": {
+          "inputTokens": 913,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-OO3vKCbRnSCLOIDvIWB0qeznS5S2kp0X",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 0 8",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 913,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 938
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.9295774647887324
+      ],
+      "raw": [
+        66
+      ],
+      "reason": "mine revealed at row 0, column 8 — episode ends with 66 of 71 safe cells revealed"
+    },
+    "agentActions": 6,
+    "invalidActions": 1,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:17:07.769Z",
+  "finishedAt": "2026-10-16T11:17:13.979Z"
+}

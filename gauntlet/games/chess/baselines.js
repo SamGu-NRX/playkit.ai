@@ -64,6 +64,36 @@ export function createGreedyBaselineAgent(options = {}) {
 }
 
 /**
+ * The seeded random baseline for the sand tier: a uniformly random pick
+ * among the legal actions, deterministic per (tier, episodeSeed, seat,
+ * turn). Never plays an invalid move because it samples exactly the legal
+ * list the engine hands it.
+ *
+ * @param {object} options
+ * @param {TierSpec} options.tier Names the RNG stream (only its id).
+ * @param {string} options.seed The episode seed.
+ * @param {number} options.seat The opponent's seat.
+ * @param {string} [options.id] Default "random-baseline".
+ * @returns {Agent}
+ */
+export function createRandomBaselineAgent({ tier, seed, seat, id }) {
+  const agentId = id ?? 'random-baseline';
+  return {
+    id: agentId,
+    track: /** @type {'baseline'} */ ('baseline'),
+    async act(/** @type {import('../../core/types.js').TurnContext} */ ctx) {
+      const legal = ctx.legalActions ?? [];
+      if (legal.length === 0) {
+        throw new Error(`random baseline "${agentId}" received no legal actions`);
+      }
+      const rng = rngFromSeed(`${tier.id}/${seed}/opponent/${seat}/turn${ctx.turn}`);
+      const pick = nextInt(rng, 0, legal.length - 1).value;
+      return { text: legal[pick] };
+    },
+  };
+}
+
+/**
  * The engine baseline agent for one tier: reads the tier's engine params
  * (depth, nodeBudget, quiescenceMaxPlies) and breaks ties by seed.
  *

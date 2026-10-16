@@ -511,9 +511,21 @@ test('createModelAgent rejects reasoning settings that do not match the provider
       }),
     /only applies to provider "anthropic"/
   );
-  // reasoningEffort is now accepted for provider "anthropic" (it is
+  // reasoningEffort is accepted for provider "anthropic" (it is
   // output_config.effort there — see frontier-effort.test.js for the per-model
-  // capability table it enforces); the provider value sets are still enforced.
+  // capability table it enforces); the provider value sets are still enforced,
+  // and reasoningEffort alongside an explicit thinkingBudget is refused,
+  // because both steer Anthropic thinking.
+  assert.throws(
+    () =>
+      createModelAgent({
+        provider: 'anthropic',
+        model: 'stub-model',
+        thinkingBudget: 1024,
+        reasoningEffort: 'high',
+      }),
+    /both steer Anthropic thinking/
+  );
   assert.throws(
     () =>
       createModelAgent({
@@ -558,8 +570,12 @@ test('parseAgentSpec rejects mismatched reasoning settings, naming the spec', as
     /thinking-budget only applies to provider "anthropic"/
   );
   await assert.rejects(
-    () => parseAgentSpec('model:anthropic/stub-model', { reasoningEffort: 'high' }),
-    /agent spec "model:anthropic\/stub-model": reasoning-effort does not apply to provider "anthropic"/
+    () =>
+      parseAgentSpec('model:anthropic/stub-model', {
+        thinkingBudget: 1024,
+        reasoningEffort: 'high',
+      }),
+    /agent spec "model:anthropic\/stub-model": thinking-budget and reasoning-effort both steer Anthropic thinking/
   );
   await assert.rejects(
     () => parseAgentSpec('baseline:tictactoe:greedy', { thinkingBudget: 1024 }),
@@ -920,7 +936,7 @@ test('the CLI rejects --reasoning-effort with an unknown value before anything r
     '--reasoning-effort', 'extreme',
   ]);
   assert.notEqual(code, 0);
-  assert.match(output, /--reasoning-effort must be low, medium or high/);
+  assert.match(output, /--reasoning-effort must be low, medium, high, xhigh or max/);
 });
 
 test('the CLI rejects --thinking-budget on a non-anthropic spec before anything runs', { timeout: 30 * 1000 }, async (t) => {

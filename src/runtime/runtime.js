@@ -6,7 +6,11 @@
 import { initHUD, getHUD, destroyHUD } from "../hud/index.js";
 import { detectGame, globalAdapterRegistry } from "../adapters/index.js";
 import { createDriver } from "../driver/index.js";
-import { createGameObserver, getVisibilityHandler } from "../observer/index.js";
+import {
+  createGameObserver,
+  DetectionWatcher,
+  getVisibilityHandler,
+} from "../observer/index.js";
 import { createSolverManager } from "../solver/index.js";
 
 /**
@@ -23,10 +27,24 @@ export class Runtime {
       ...options,
     };
 
+    // Auto-detect retry knobs. Resolved separately from this.options so an
+    // explicit `undefined` in options cannot clobber these defaults through the
+    // ...options spread above.
+    this.autoDetectRetryEnabled = options.autoDetectRetry !== false;
+    this.autoDetectRetryDebounceMs =
+      typeof options.autoDetectRetryDebounceMs === "number"
+        ? options.autoDetectRetryDebounceMs
+        : 250;
+    this.autoDetectRetryTimeoutMs =
+      typeof options.autoDetectRetryTimeoutMs === "number"
+        ? options.autoDetectRetryTimeoutMs
+        : 15000;
+
     // Component instances
     this.hud = null;
     this.driver = null;
     this.observer = null;
+    this.detectionWatcher = null;
     this.visibilityHandler = null;
     this.currentAdapter = null;
     this.directionPriority = null;
@@ -88,6 +106,13 @@ export class Runtime {
       // Try to detect game
       this.detectGame();
 
+      // One-shot detection misses games whose tiles are built by page JS after
+      // load; keep retrying on DOM changes until an adapter attaches or the
+      // bounded window closes. Detection only — solving never starts by itself.
+      if (!this.currentAdapter && this.autoDetectRetryEnabled) {
+        this._startDetectionRetry();
+      }
+
       this.isInitialized = true;
       console.log("Runtime initialized successfully");
 
@@ -121,6 +146,48 @@ export class Runtime {
       console.log("No game detected");
       return false;
     }
+  }
+
+  /**
+   * Retry detection on DOM changes within a bounded window (detection only)
+   * @private
+   */
+  _startDetectionRetry() {
+    if (this.detectionWatcher) {
+      return;
+    }
+
+    this.detectionWatcher = new DetectionWatcher({
+      onProbe: () => this._probeForGame(),
+      debounceMs: this.autoDetectRetryDebounceMs,
+      timeoutMs: this.autoDetectRetryTimeoutMs,
+    });
+
+    this.detectionWatcher.start();
+    console.log(
+      `Runtime: no game detected yet; retrying on DOM changes for up to ${this.autoDetectRetryTimeoutMs}ms`
+    );
+  }
+
+  /**
+   * One detection attempt for the retry watcher
+   * @private
+   * @returns {boolean} True once an adapter is attached
+   */
+  _probeForGame() {
+    if (this.currentAdapter) {
+      return true;
+    }
+
+    const attached = this.detectGame();
+
+    // autoInit runtimes (bookmarklet) wire components on late attach, matching
+    // init-time behavior; the driver still never starts by itself.
+    if (attached && this.options.autoInit && !this.driver) {
+      this.setupComponents();
+    }
+
+    return attached;
   }
 
   /**
@@ -409,6 +476,11 @@ export class Runtime {
    */
   destroy() {
     console.log("Destroying runtime...");
+
+    if (this.detectionWatcher) {
+      this.detectionWatcher.stop();
+      this.detectionWatcher = null;
+    }
 
     this.stop();
 

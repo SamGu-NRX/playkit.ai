@@ -35,24 +35,45 @@ export async function printBundleVerify(options) {
   }
 
   const lines = [`bundle   ${report.outDir}`];
-  lines.push(
-    `manifest ${report.manifestHash.ok ? 'ok' : 'MISMATCH'} — recorded ${
-      report.manifestHash.recorded ?? 'none'
-    }, recomputed ${report.manifestHash.actual}`
-  );
-  const failed = report.trajectories.filter((t) => !t.ok);
-  lines.push(
-    `episodes ${report.trajectories.length - failed.length}/${report.trajectories.length} verified${
-      failed.length > 0 ? `, ${failed.length} FAILED` : ''
-    }`
-  );
-  for (const failure of failed) {
-    lines.push(`  FAIL  ${failure.key} — ${failure.reason ?? 'unspecified'}`);
+  if (report.pageOnly) {
+    lines.push('manifest n/a — standalone page-session bundle (no suite manifest)');
+  } else {
+    lines.push(
+      `manifest ${report.manifestHash.ok ? 'ok' : 'MISMATCH'} — recorded ${
+        report.manifestHash.recorded ?? 'none'
+      }, recomputed ${report.manifestHash.actual}`
+    );
+  }
+  if (!report.pageOnly) {
+    const failed = report.trajectories.filter((t) => !t.ok);
+    lines.push(
+      `episodes ${report.trajectories.length - failed.length}/${report.trajectories.length} verified${
+        failed.length > 0 ? `, ${failed.length} FAILED` : ''
+      }`
+    );
+    for (const failure of failed) {
+      lines.push(`  FAIL  ${failure.key} — ${failure.reason ?? 'unspecified'}`);
+    }
+  }
+  // Page sessions are reported separately from trajectories: a live page is
+  // unseeded and never scores, so their logs are audited, not scored.
+  if (report.pageSessions.length > 0) {
+    const failedPages = report.pageSessions.filter((p) => !p.ok);
+    lines.push(
+      `page sessions ${report.pageSessions.length - failedPages.length}/${report.pageSessions.length} verified${
+        failedPages.length > 0 ? `, ${failedPages.length} FAILED` : ''
+      }`
+    );
+    for (const failure of failedPages) {
+      lines.push(`  FAIL  ${failure.file} — ${failure.reason ?? 'unspecified'}`);
+    }
   }
   lines.push(
     `strays   ${report.stray.length === 0 ? 'none' : report.stray.join(', ')}`
   );
-  if (report.score) {
+  if (report.pageOnly) {
+    lines.push('score    n/a — page sessions are refereed logs, never scored');
+  } else if (report.score) {
     lines.push(`score    recomputed (see ${options.outDir}/run.json provenance)`);
   } else {
     lines.push(`score    not recomputed — ${report.scoreError ?? 'unknown reason'}`);

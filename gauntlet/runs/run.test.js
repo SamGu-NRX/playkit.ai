@@ -160,6 +160,15 @@ test('a full run writes verifiable trajectories and honest provenance', async ()
     assert.ok(Math.abs(result.spendUsd - spend) < 1e-9);
     assert.equal(result.calls, agentCalls);
     assert.equal(result.run.calls, agentCalls);
+    // The whole-bundle total block sums every trajectory in the run
+    // directory. One invocation played them all here, so it mirrors the
+    // per-invocation fields and the independent on-disk accounting above.
+    assert.equal(result.run.total.episodes, jobs.length);
+    assert.equal(result.run.total.calls, agentCalls);
+    assert.equal(result.run.total.tokens.input, agentCalls * 50);
+    assert.equal(result.run.total.tokens.output, agentCalls * 10);
+    assert.ok(Math.abs(result.run.total.spendUsd - spend) < 1e-9);
+    assert.equal(result.run.total.unknownCostSteps, 0);
   } finally {
     await rm(outDir, { recursive: true, force: true });
   }
@@ -229,6 +238,24 @@ test('aborting mid-run stops after in-flight episodes; resume completes without 
       const verdict = await verifyTrajectory(game, t);
       if (!verdict.ok) assert.fail(`${key}: step ${verdict.step}: ${verdict.reason}`);
     }
+
+    // Whole-bundle totals after resume: the resuming invocation's record
+    // sums every trajectory in the directory — including the two episodes
+    // the aborted first invocation played — while its per-invocation fields
+    // (calls, spendUsd, counts.played) describe only this invocation. That
+    // distinction is the whole point of the total block.
+    let bundleCalls = 0;
+    let bundleSpend = 0;
+    for (const t of final.values()) {
+      bundleCalls += t.end.agentActions;
+      for (const step of t.steps) {
+        if (step.usage && typeof step.usage.costUsd === 'number') bundleSpend += step.usage.costUsd;
+      }
+    }
+    assert.equal(second.run.total.episodes, total);
+    assert.equal(second.run.total.calls, bundleCalls);
+    assert.ok(bundleCalls > second.run.calls, 'the bundle holds episodes an earlier invocation played');
+    assert.ok(Math.abs(second.run.total.spendUsd - bundleSpend) < 1e-9);
   } finally {
     await rm(outDir, { recursive: true, force: true });
   }

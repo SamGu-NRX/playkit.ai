@@ -12,7 +12,7 @@ import json
 import subprocess
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Sequence
 
 __all__ = ["GauntletClient", "GauntletError"]
 
@@ -42,9 +42,17 @@ class GauntletClient:
             ``gauntlet/protocol/server.js`` next to this package.
         node_executable: Node binary used to run the server (default ``node``).
             Node 20 or later is required.
+        server_args: Extra arguments appended after the server script, for
+            example ``["serve"]`` to run ``node gauntlet/cli/gauntlet.js serve``
+            instead of ``node gauntlet/protocol/server.js``.
     """
 
-    def __init__(self, server_path: Optional[str] = None, node_executable: str = "node"):
+    def __init__(
+        self,
+        server_path: Optional[str] = None,
+        node_executable: str = "node",
+        server_args: Optional[Sequence[str]] = None,
+    ):
         resolved = Path(server_path) if server_path else _DEFAULT_SERVER
         if not resolved.is_file():
             raise FileNotFoundError(
@@ -54,7 +62,7 @@ class GauntletClient:
         self._next_id = 1
         self._closed = False
         self.process: subprocess.Popen[str] = subprocess.Popen(
-            [node_executable, self.server_path],
+            [node_executable, self.server_path, *(server_args or [])],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             text=True,

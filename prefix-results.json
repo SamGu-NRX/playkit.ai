@@ -1,0 +1,39 @@
+{
+  "runtimePresent": false,
+  "panelAfterPaste": {
+    "present": true,
+    "gameStatus": "Not detected",
+    "score": "-",
+    "autoSolveDisabled": true,
+    "panelText": "🎯\n2048 AI Solver\n−\nGame:\nNot detected\nScore:\n-\nSolver:\nFallback\n🔍 Detect Game\n▶️ Auto-solve\n⏭️ Step\nDirection Priority:\nUp → Down → Right → Left\nLeft → Down → Right → Up\nRight → Left → Up → Down\nDown → Up → Left → Right\nSolver Strategy:\nExpectimax (Depth)\nExpectimax (Probability)\nHeuristic:\nCorner Bias\nMonotonicity\nWall Building\nScore Focus\nDepth:\nProbability:"
+  },
+  "scoreProbe": {
+    "adapterScore": 8,
+    "realScore": 0
+  },
+  "consoleLines": [
+    "fixture server on http://127.0.0.1:46035 (repo: /home/user/work/burst11-playkit-overlay-helper-fix)",
+    "[console.warning] The value \"160dpi\" for key \"target-densitydpi\" was truncated to its numeric prefix.",
+    "[console.warning] The key \"target-densitydpi\" is not supported.",
+    "STEP page: vendored 2048 loaded, tiles rendered",
+    "evidence: /home/user/work/burst11-tests/evidence/01-prefix-page-loaded.png",
+    "STEP user: pasted bookmarklet (src/bookmarklet/loader.js)",
+    "[console.log] Loading 2048 AI Solver...",
+    "[console.log] Initializing 2048 AI Solver Runtime...",
+    "[console.log] VisibilityHandler started",
+    "[console.log] HUD initialized",
+    "[console.error] Runtime initialization failed: Error: Component must have pause() and resume() methods\n    at VisibilityHandler.addManagedComponent (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:3892:17)\n    at Runtime.init (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4289:38)\n    at initRuntime (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4684:27)\n    at quickStart (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4712:29)\n    at main (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4149:31)\n    at ./src/runtime/bookmarklet.js (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4211:5)\n    at require (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:5466:16)\n    at http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:5469:3\n    at http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:5470:3",
+    "[console.error] Failed to load 2048 AI Solver: Error: Component must have pause() and resume() methods\n    at VisibilityHandler.addManagedComponent (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:3892:17)\n    at Runtime.init (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4289:38)\n    at initRuntime (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4684:27)\n    at quickStart (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4712:29)\n    at main (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4149:31)\n    at ./src/runtime/bookmarklet.js (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4211:5)\n    at require (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:5466:16)\n    at http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:5469:3\n    at http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:5470:3",
+    "[console.log] HUD loaded",
+    "CHECK window.ai2048Runtime present: false (expected true for a working helper)",
+    "STEP panel state after paste: gameStatus=\"Not detected\" score=\"-\" autoSolveDisabled=true",
+    "evidence: /home/user/work/burst11-tests/evidence/02-prefix-panel-not-detected.png",
+    "[console.warning] HUD: Controller-driven detect failed ReferenceError: globalAdapterRegistry is not defined\n    at detectGame (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:1207:7)\n    at Runtime.detectGame (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4325:31)\n    at Object.detectGame (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:4550:34)\n    at HUD.handleDetectClick (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:2293:63)\n    at HTMLButtonElement.<anonymous> (http://127.0.0.1:46035/bookmarklet/2048-hud.min.js:3168:13)\n    at eval (eval at evaluate (:370:30), <anonymous>:1:93)\n    at UtilityScript.evaluate (<anonymous>:372:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+    "STEP panel state after Detect Game click: gameStatus=\"Not detected\" autoSolveDisabled=true",
+    "STEP panel message after Detect Game click: \"(none)\"",
+    "evidence: /home/user/work/burst11-tests/evidence/03-prefix-detect-error.png",
+    "STEP score defect probe: adapter getScore()=8 vs page score=0 (MISMATCH — defect 3 reproduced)",
+    "evidence: /home/user/work/burst11-tests/evidence/04-prefix-score-inflation.png",
+    "evidence: /home/user/work/burst11-tests/evidence/05-prefix-console.png"
+  ]
+}

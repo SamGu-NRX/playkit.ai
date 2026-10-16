@@ -102,3 +102,18 @@ test('toSolverEngine threads the spec and tier through the TurnContext', async (
   await eng.getMoveOrder(FULL_BOARD);
   assert.equal(seen[0].tier.id, tier.id);
 });
+
+test('toSolverEngine accepts the runner reply form "Action: right" and plays right', async () => {
+  // Greptile P2 #4285440527: runEpisode() reads the action through
+  // core/runner.js extractAction(), which strips a leading "action:" prefix;
+  // the bridge used to take the raw last line, so a supported reply like
+  // "Action: right" was rejected and the driver fell back to a direction the
+  // agent did not choose.
+  const { agent } = cannedAgent('I will merge toward the right wall.\nAction: right');
+  const eng = toSolverEngine(agent);
+  const order = await eng.getMoveOrder(FULL_BOARD);
+  assert.equal(order[0], 1, 'RIGHT is 1 in src/adapters/adapter.js; the agent chose it');
+  assert.equal(eng.lastChosen, 'right');
+  assert.equal(eng.lastError, null);
+});
+

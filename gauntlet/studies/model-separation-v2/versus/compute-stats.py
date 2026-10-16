@@ -25,6 +25,7 @@ same committed bundles. No wall-clock values are written anywhere.
 import json
 import math
 import random
+import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -136,7 +137,38 @@ def calibration_random(game, tier):
     }
 
 
-def main():
+def _self_test():
+    """Fixed-vector checks for the helpers compute-stats.py relies on."""
+    # FNV-1a 32-bit standard vectors (empty string, "a", "foobar").
+    assert fnv1a("") == 0x811C9DC5
+    assert fnv1a("a") == 0xE40C292C
+    assert fnv1a("foobar") == 0xBF9CF968
+    # Percentile: endpoints, median, interpolation between order statistics.
+    values = [1.0, 2.0, 3.0, 4.0]
+    assert percentile(values, 0.0) == 1.0
+    assert percentile(values, 1.0) == 4.0
+    assert abs(percentile(values, 0.5) - 2.5) < 1e-12
+    assert abs(percentile(values, 0.25) - 1.75) < 1e-12
+    assert percentile([7.0], 0.5) == 7.0
+    # Spearman: perfect ordering is +1, reversed is -1, all-tied is undefined.
+    assert spearman([1.0, 2.0, 3.0]) == 1.0
+    assert spearman([3.0, 2.0, 1.0]) == -1.0
+    assert spearman([2.0, 1.0, 3.0]) == round6(1 - 6 * (1 + 1) / 24)
+    assert spearman([5.0, 5.0, 5.0]) is None
+    assert spearman([1.0, None, 3.0]) is None
+    # average_ranks uses tie-averaged ranks.
+    assert average_ranks([1.0, 1.0, 2.0]) == [1.5, 1.5, 3.0]
+    # The paired bootstrap on a constant sample returns exactly that constant.
+    ci = paired_boot_ci({0: 0.5, 1: 0.5, 2: 0.5}, "self-test-constant")
+    assert ci == [0.5, 0.5]
+    print("compute-stats self-test: ok")
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if "--self-test" in argv:
+        _self_test()
+        return
     profiles = json.loads((HERE / "profile-results.json").read_text())
     episodes = json.loads((HERE / "episodes.json").read_text())
 

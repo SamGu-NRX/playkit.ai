@@ -8,34 +8,23 @@ import { getGame } from '../games/index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+// Fixtures are generated deterministically at the CURRENT game versions by
+// replay/fixtures/generate.mjs (a scripted dry-run model agent with
+// model-shaped replies — a long ramble, an unparseable guess). Regenerate with
+// `node replay/fixtures/generate.mjs`; the script is byte-identical across
+// runs, and the tests never depend on studies/ or reports/ recordings, so a
+// game-version bump cannot rot them again.
 /** @type {Record<string, string>} */
 const FIXTURES = {
-  // Two-player, terminal: Qwen2.5-1.5B loses to the perfect minimax opponent.
-  tictactoe: join(
-    here,
-    '../studies/model-separation/runs/qwen2.5-1.5b/tictactoe/perfect-opponent/tictactoe/perfect-opponent/public/0.json'
-  ),
-  // Solitaire, forfeit-invalid: Qwen2.5-1.5B guesses "ABEI" three times in a row.
-  mastermind: join(
-    here,
-    '../studies/model-separation/runs/qwen2.5-1.5b/mastermind/classic/mastermind/classic/public/0.json'
-  ),
-  // Solitaire, forfeit-invalid on the first three attempts (Qwen2.5-0.5B).
-  mastermind05: join(
-    here,
-    '../studies/model-separation/runs/qwen2.5-0.5b/mastermind/classic/mastermind/classic/public/0.json'
-  ),
-  // Two-player against the deterministic wood engine, forfeit-invalid mid-game.
-  chess: join(
-    here,
-    '../reports/first-model-run/run-qwen/chess/wood/chess/wood/public/0.json'
-  ),
-  // A real refusal case: committed before tictactoe moved to v1.1.0, so the
-  // version guard must refuse it before any replay.
-  staleTictactoe: join(
-    here,
-    '../reports/first-model-run/run-qwen/tictactoe/perfect-opponent/tictactoe/perfect-opponent/public/0.json'
-  ),
+  // Two-player, terminal: the fixture agent loses to the perfect minimax
+  // opponent; every reply parses.
+  tictactoe: join(here, 'fixtures/tictactoe-perfect-opponent.json'),
+  // Solitaire, forfeit-invalid: three valid guesses, then three consecutive
+  // unparseable ones.
+  mastermind: join(here, 'fixtures/mastermind-forfeit.json'),
+  // Solitaire, mixed: one unparseable guess early, then valid guesses to
+  // budget exhaustion.
+  mastermindMixed: join(here, 'fixtures/mastermind-mixed.json'),
 };
 
 /**
@@ -79,19 +68,21 @@ test('replays a committed two-player terminal episode into frames', async () => 
     }
   }
 
-  // Both seats acted three times each: the agent and minimax-perfect alternate.
+  // The opponent (X) and the agent (O) alternate: the opponent opened, so
+  // three opponent attempts against two agent attempts before the loss.
   assert.deepEqual([...seen.keys()].sort(), [0, 1]);
   assert.equal(seen.get(0), 3);
-  assert.equal(seen.get(1), 3);
-  assert.equal(payload.frames[0].actorId, trajectory.agent.id);
-  const opponentFrame = payload.frames.find((f) => f.by === 'opponent');
-  if (!opponentFrame) throw new Error('the episode has opponent frames');
-  assert.equal(opponentFrame.actorId, 'minimax-perfect');
+  assert.equal(seen.get(1), 2);
+  assert.equal(payload.frames[0].actorId, 'minimax-perfect');
+  const agentFrame = payload.frames.find((f) => f.by === 'agent');
+  if (!agentFrame) throw new Error('the episode has agent frames');
+  assert.equal(agentFrame.actorId, trajectory.agent.id);
 
-  // Usage and latency ride along where the trajectory recorded them.
-  assert.deepEqual(payload.frames[0].usage, {
-    inputTokens: 326,
-    outputTokens: 3,
+  // Usage and latency ride along where the trajectory recorded them. The
+  // fixture agent is a scripted dry-run agent, so its usage is zero.
+  assert.deepEqual(agentFrame.usage, {
+    inputTokens: 0,
+    outputTokens: 0,
     costUsd: null,
   });
 
@@ -153,7 +144,6 @@ test('invalid replies show the referee error and the feedback the model saw next
 
 test('feedback mirrors the runner exactly on every committed fixture', async () => {
   for (const [name, file] of Object.entries(FIXTURES)) {
-    if (name === 'staleTictactoe') continue; // refused before any frame exists
     const trajectory = loadTrajectory(file);
     const payload = await buildFrames(getGame(trajectory.game.id), trajectory);
     // The runner keeps ONE feedback slot: set to an invalid agent reply's
@@ -176,10 +166,10 @@ test('feedback mirrors the runner exactly on every committed fixture', async () 
 });
 
 test('refuses a tampered action and names the step', async () => {
-  const trajectory = loadTrajectory(FIXTURES.chess);
+  const trajectory = loadTrajectory(FIXTURES.tictactoe);
   trajectory.steps[1].action = 'zz9';
   await assert.rejects(
-    buildFrames(getGame('chess'), trajectory),
+    buildFrames(getGame('tictactoe'), trajectory),
     (/** @type {*} */ err) =>
       err instanceof ReplayRefusedError &&
       err.step === 1 &&
@@ -197,16 +187,18 @@ test('refuses a tampered observation hash at that step', async () => {
   );
 });
 
-test('refuses the stale committed v1.0.0 episode before replaying', async () => {
-  // reports/first-model-run recorded tictactoe at v1.0.0; the game is v1.1.0.
-  // The refusal names the pre-replay step (-1) and the version mismatch.
-  const trajectory = loadTrajectory(FIXTURES.staleTictactoe);
+test('refuses an older-version trajectory before replaying', async () => {
+  // Doctored in memory rather than read from a stale recording: an episode
+  // recorded at 1.0.0 must be refused before any replay, naming the recorded
+  // version, the current one, and the pre-replay step (-1).
+  const trajectory = loadTrajectory(FIXTURES.tictactoe);
+  trajectory.game.version = '1.0.0';
   await assert.rejects(
     buildFrames(getGame('tictactoe'), trajectory),
     (/** @type {*} */ err) =>
       err instanceof ReplayRefusedError &&
       err.step === -1 &&
       /1\.0\.0/.test(err.message) &&
-      /1\.1\.0/.test(err.message)
+      /1\.2\.0/.test(err.message)
   );
 });

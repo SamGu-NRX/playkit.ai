@@ -17,9 +17,11 @@ Load as an unpacked extension
 
 Parity & performance notes
 - Shared runtime: bookmarklet (`dist/2048-hud.min.js`) and MV3 content script originate from the same source modules, preventing logic drift.
-- Runtime size: `dist/extension/content.js` is ~165 KB uncompressed (~31 KB gzipped) and has no third-party dependencies or network calls.
+- Runtime size: `dist/extension/content.js` is ~190 KB uncompressed and has no third-party dependencies or network calls.
 - Host scope: content scripts are limited to URLs that contain “2048” plus the explicit target hosts. Adjust `manifest.json` if you need broader detection.
 - WASM solver: run `node scripts/build-wasm.js --release` to compile the C++ solver (requires `emcc`). The generated `solver.mjs`/`solver.wasm` land in `src/extension/wasm/` and are copied into the MV3 package on the next `build-phase0` run.
 
-Bookmarklet (optional)
-- See `src/bookmarklet/loader.js` for a bookmarklet loader. Host `dist/2048-hud.min.js` and update the CDN placeholder accordingly.
+Bookmarklet
+- **Self-contained (recommended):** `dist/2048-hud-bookmarklet.txt` is a single-line `javascript:` URL carrying the whole runtime **and** the WASM solver (base64-inlined, blob-URL bootstrapped) — no host, no CDN, no extension. Create a bookmark, paste the file's contents as its URL (~450 KB), open a 2048 page, click the bookmark. The engine reports `WASM ready`, not the JS fallback.
+- **Hosted (small URL):** see `src/bookmarklet/loader.js`. Host `dist/2048-hud.min.js` plus `dist/wasm/solver.mjs`/`solver.wasm` and update the CDN placeholder. Note this form is the one that silently ran the JS fallback when `solver.wasm` was unreachable from the bookmarklet's injection context (PR #86, journey F) — the self-contained artifact exists to remove that failure mode.
+- `node --test src/test/bookmarklet-wasm.test.mjs` builds the standalone artifact fresh and verifies its inlined payloads decode to exactly the committed `src/extension/wasm/solver.wasm`/`solver.mjs`.

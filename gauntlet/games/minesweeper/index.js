@@ -65,7 +65,15 @@ const TIER_BOARDS = {
   beginner: [9, 9, 10],
   intermediate: [16, 16, 40],
   expert: [16, 30, 99],
-  torus: [16, 16, 40],
+  // Torus density is calibrated for uniform random play: at 40 mines the
+  // edge-free wrap (every cell has 8 neighbours, cascades flood wider) made
+  // the torus EASIER for uniform play than the intermediate (random 0.412 vs
+  // 0.354) and far easier than expert (0.135), which the calibration
+  // b-monotonic check correctly flags. At 70 mines (27.3% density) random
+  // play drops to ~0.19 — below intermediate, above expert — while seeded
+  // no-guess generation stays cheap (mean ~50 rejection attempts; at 80+
+  // mines acceptance collapses, 4k+ attempts mean).
+  torus: [16, 16, 70],
 };
 
 /** @param {MinesweeperState} state @returns {number} */
@@ -444,7 +452,7 @@ export function createBoard(params, mineIndices, opening) {
 export const game = {
   spec: {
     id: 'minesweeper',
-    version: '1.0.0',
+    version: '1.1.0',
     title: 'Minesweeper',
     seats: /** @type {1 | 2} */ (1),
     information: /** @type {import('../../core/types.js').InformationMode} */ ('hidden'),
@@ -467,8 +475,12 @@ export const game = {
       ([
         ['beginner', 1],
         ['intermediate', 2],
-        ['expert', 3],
-        ['torus', 4],
+        // Torus slots between intermediate and expert: for uniform play the
+        // 70-mine wrap board is harder than the 40-mine intermediate but
+        // easier than the 99-mine expert, and re-ranking is one of the two
+        // remedies the calibration b-monotonic check itself proposes.
+        ['torus', 3],
+        ['expert', 4],
       ]).map(([id, rank]) => {
         const [rows, cols, mines] = TIER_BOARDS[/** @type {string} */ (id)];
         const wrap = id === 'torus';

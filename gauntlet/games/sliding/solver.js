@@ -594,12 +594,19 @@ function idaStar(flat, n, maxNodes) {
     let min = 0x7fffffff;
     // Snapshot the sorted children into per-call locals: the shared scratch
     // arrays are rewritten by every recursive call, so reading them after the
-    // first child's subtree returns would see that subtree's children.
+    // first child's subtree returns would see that subtree's children. All
+    // FOUR slots are snapshotted: at the search root the undo-prune is
+    // disabled, so an interior blank yields four children — dropping the
+    // fourth silently skipped the optimal first move whenever it sorted last,
+    // inflating both the threshold ladder (node explosions, 'budget' results)
+    // and the returned par (suboptimal, breaking the parKind "optimal"
+    // contract), and made the reference agent's per-turn re-solves cycle.
     const first = childDir[0];
     const second = childDir[1];
     const third = childDir[2];
+    const fourth = childDir[3];
     for (let i = 0; i < childCount; i++) {
-      const direction = i === 0 ? first : i === 1 ? second : third;
+      const direction = i === 0 ? first : i === 1 ? second : i === 2 ? third : fourth;
       apply(direction);
       path.push(DIRECTIONS[direction]);
       const result = search(g + 1, threshold, direction);

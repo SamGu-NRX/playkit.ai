@@ -20,6 +20,13 @@
  *   heuristic, `engine` = perfect minimax over the game's own `step`.
  * - sliding: `engine` = the packet's optimal-line solver agent; `greedy` =
  *   Manhattan-distance-descent with seeded tie-breaks.
+ * - chess-stockfish: `greedy` = the chess packet's material-capture agent;
+ *   `engine` = full node-budget Stockfish (the sf-1m ceiling tier) playing as
+ *   the agent, so the ladder runs from uniform play to the strongest local
+ *   engine.
+ * - chess-puzzles: `greedy`/`engine` = the chess packet's greedy and
+ *   fixed-strength engine agents (the pairing the puzzles packet reports).
+ * - chess-endgames and cube: packet-native baseline factories used directly.
  *
  * @module
  */
@@ -50,6 +57,17 @@ import { createGreedyAgent as mastermindGreedy, createEngineAgent as mastermindE
 
 import holdem from '../games/holdem/index.js';
 import { makeBaseline as holdemBaseline } from '../games/holdem/baselines.js';
+
+import cube from '../games/cube/index.js';
+import { createEngineAgent as cubeEngine, createGreedyAgent as cubeGreedy } from '../games/cube/baselines.js';
+
+import chessEndgames from '../games/chess-endgames/index.js';
+import { engineAgent as chessEndgamesEngine, greedyAgent as chessEndgamesGreedy } from '../games/chess-endgames/baselines.js';
+
+import chessStockfish from '../games/chess-stockfish/index.js';
+import { createStockfishOpponentAgent } from '../games/chess-stockfish/stockfish-agent.js';
+
+import chessPuzzles from '../games/chess-puzzles/index.js';
 
 import tictactoe from '../games/tictactoe/index.js';
 
@@ -351,6 +369,48 @@ export const CALIBRATION_GAMES = [
     game: holdem,
     makeAgent(kind, { episodeSeed, seat }) {
       return wrap(kind, holdemBaseline(kind, episodeSeed, seat));
+    },
+  },
+  {
+    id: 'cube',
+    game: cube,
+    makeAgent(kind, { episodeSeed }) {
+      return kind === 'greedy'
+        ? wrap(kind, cubeGreedy({ episodeSeed }))
+        : wrap(kind, cubeEngine({ episodeSeed }));
+    },
+  },
+  {
+    id: 'chess-endgames',
+    game: chessEndgames,
+    makeAgent(kind, { episodeSeed, tier, seat }) {
+      return kind === 'greedy'
+        ? wrap(kind, chessEndgamesGreedy(tier, episodeSeed, seat))
+        : wrap(kind, chessEndgamesEngine(tier, episodeSeed, seat));
+    },
+  },
+  {
+    id: 'chess-puzzles',
+    game: chessPuzzles,
+    makeAgent(kind, { episodeSeed, tier }) {
+      return kind === 'greedy'
+        ? wrap(kind, createGreedyBaselineAgent({ id: kind, episodeSeed }))
+        : wrap(kind, createEngineBaselineAgent({ tier, seed: episodeSeed, seat: 0, id: kind }));
+    },
+  },
+  {
+    id: 'chess-stockfish',
+    game: chessStockfish,
+    makeAgent(kind, { episodeSeed, tier, seat }) {
+      if (kind === 'greedy') {
+        return wrap(kind, createGreedyBaselineAgent({ id: kind, episodeSeed }));
+      }
+      // engine: the ladder's ceiling rung (full node budget) as the agent, so
+      // the a-order check asks whether the strongest local engine still beats
+      // uniform and greedy play against every opponent rung.
+      const ceiling = chessStockfish.spec.tiers.find((t) => t.id === 'sf-1m');
+      if (!ceiling) throw new Error('chess-stockfish is missing its sf-1m ceiling tier');
+      return wrap(kind, createStockfishOpponentAgent({ tier: ceiling, seed: episodeSeed, seat, id: kind }));
     },
   },
 ];

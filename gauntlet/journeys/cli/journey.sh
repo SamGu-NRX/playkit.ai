@@ -36,19 +36,26 @@ WORK="${JOURNEY_WORK:-${TMPDIR:-/tmp}/gauntlet-journeys}"
 mkdir -p "$WORK"
 GAUNTLET=(node cli/gauntlet.js)
 
-# Stockfish: an explicit GAUNTLET_STOCKFISH wins; otherwise the usual system
-# and user-local locations. Without a binary the chess-stockfish tiers skip.
-if [ -z "${GAUNTLET_STOCKFISH:-}" ]; then
+# Stockfish: a binary at the usual places is passed per command as
+# GAUNTLET_STOCKFISH. It is deliberately never exported globally — the engine
+# resolver gives that env var precedence over the requested engine name, so an
+# ambient value would break the resolver's own tests under
+# engines/uci/client.test.js. The install stage therefore runs npm test in a
+# clean environment; chess-stockfish tiers skip without a binary.
+STOCKFISH_BIN="${GAUNTLET_STOCKFISH:-}"
+if [ -z "$STOCKFISH_BIN" ]; then
   for candidate in /usr/games/stockfish /usr/bin/stockfish \
     "$HOME/.local/sfpkg/root/usr/games/stockfish"; do
     if [ -x "$candidate" ]; then
-      export GAUNTLET_STOCKFISH="$candidate"
+      STOCKFISH_BIN="$candidate"
       break
     fi
   done
 fi
-if [ -n "${GAUNTLET_STOCKFISH:-}" ]; then
-  echo "stockfish: $GAUNTLET_STOCKFISH"
+SF_ENV=()
+if [ -n "$STOCKFISH_BIN" ]; then
+  SF_ENV=(env GAUNTLET_STOCKFISH="$STOCKFISH_BIN")
+  echo "stockfish: $STOCKFISH_BIN (passed per command)"
 else
   echo "stockfish: none found — chess-stockfish tiers will skip"
 fi
@@ -114,7 +121,7 @@ stage_episodes() {
   for spec in "${EPISODE_SPECS[@]}"; do
     IFS='|' read -r label agent gtier <<<"$spec"
     local game="${gtier%%/*}" tier="${gtier##*/}"
-    run "${GAUNTLET[@]}" play --game "$game" --tier "$tier" --agent "$agent" \
+    run "${SF_ENV[@]}" "${GAUNTLET[@]}" play --game "$game" --tier "$tier" --agent "$agent" \
       --out "$WORK/traj/$label.json" || fail "play $label ($agent on $game/$tier)"
   done
 
@@ -146,7 +153,7 @@ stage_suite() {
   for agent in "${agents[@]}"; do
     local dir="$WORK/runs/${agent//:/_}"
     dirs+=("$dir")
-    run "${GAUNTLET[@]}" run --suite "$WORK/suite.public.json" \
+    run "${SF_ENV[@]}" "${GAUNTLET[@]}" run --suite "$WORK/suite.public.json" \
       --agent "$agent" --out "$dir/" --concurrency 8 \
       || fail "run $agent"
     run "${GAUNTLET[@]}" bundle verify "$dir/" || fail "bundle verify $agent"

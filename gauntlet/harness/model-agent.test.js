@@ -11,6 +11,9 @@ import assert from 'node:assert/strict';
 import { createModelAgent } from './model-agent.js';
 import { OFFICIAL_SYSTEM_PROMPT } from './official.js';
 import { sendJson, startStubServer } from './stub-server.js';
+import { runEpisode } from '../core/runner.js';
+import { verifyTrajectory } from '../core/trajectory.js';
+import tictactoe from '../games/tictactoe/index.js';
 
 const RULES = 'RULES TEXT for the stub game.';
 const OBS = 'OBSERVATION TEXT';
@@ -717,4 +720,401 @@ test('openai-chat requires the baseUrl option and names it in the error', () => 
     () => createModelAgent({ provider: 'openai-chat', model: 'stub-model' }),
     /baseUrl/
   );
+});
+
+// ---------------------------------------------------------------------------
+// Usage honesty: a provider that does not report a token count records null,
+// never 0, so a priced run cannot mistake unreported usage for a measured
+// spend of zero. Retry failures carry the retry count they performed.
+
+const PRICES_ONE_ENTRY = {
+  'anthropic/stub-model': {
+    inputPerMTok: 3,
+    outputPerMTok: 15,
+    source: 'https://example.com/pricing',
+    checked: '2026-10-15',
+  },
+  'openai/stub-model': {
+    inputPerMTok: 3,
+    outputPerMTok: 15,
+    source: 'https://example.com/pricing',
+    checked: '2026-10-15',
+  },
+  'openai-chat/stub-model': {
+    inputPerMTok: 3,
+    outputPerMTok: 15,
+    source: 'https://example.com/pricing',
+    checked: '2026-10-15',
+  },
+};
+
+test('anthropic: usage omitted records null tokens and a null cost even with a price file', async () => {
+  const stub = await anthropicStub([
+    [200, { ...ANTHROPIC_OK[1], usage: undefined }],
+  ]);
+  try {
+    const agent = createModelAgent({
+      provider: 'anthropic',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      prices: PRICES_ONE_ENTRY,
+    });
+    const reply = await agent.act(CTX);
+    assert.deepEqual(reply.usage, {
+      inputTokens: null,
+      outputTokens: null,
+      costUsd: null,
+    });
+  } finally {
+    await stub.close();
+  }
+});
+
+test('anthropic: a reported 0 stays 0 (never read as unreported)', async () => {
+  const stub = await anthropicStub([
+    [200, { ...ANTHROPIC_OK[1], usage: { input_tokens: 0, output_tokens: 0 } }],
+  ]);
+  try {
+    const agent = createModelAgent({
+      provider: 'anthropic',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      prices: PRICES_ONE_ENTRY,
+    });
+    const reply = await agent.act(CTX);
+    assert.deepEqual(reply.usage, {
+      inputTokens: 0,
+      outputTokens: 0,
+      costUsd: 0,
+    });
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai: usage omitted records null tokens and a null cost even with a price file', async () => {
+  const stub = await openaiStub([[200, { ...OPENAI_OK[1], usage: undefined }]]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      prices: PRICES_ONE_ENTRY,
+    });
+    const reply = await agent.act(CTX);
+    assert.deepEqual(reply.usage, {
+      inputTokens: null,
+      outputTokens: null,
+      costUsd: null,
+    });
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai: a reported 0 stays 0 (never read as unreported)', async () => {
+  const stub = await openaiStub([
+    [200, { ...OPENAI_OK[1], usage: { input_tokens: 0, output_tokens: 0 } }],
+  ]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      prices: PRICES_ONE_ENTRY,
+    });
+    const reply = await agent.act(CTX);
+    assert.deepEqual(reply.usage, {
+      inputTokens: 0,
+      outputTokens: 0,
+      costUsd: 0,
+    });
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai-chat: usage omitted records null tokens and a null cost even with a price file', async () => {
+  const stub = await chatStub([[200, { ...CHAT_OK[1], usage: undefined }]]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      prices: PRICES_ONE_ENTRY,
+    });
+    const reply = await agent.act(CTX);
+    assert.deepEqual(reply.usage, {
+      inputTokens: null,
+      outputTokens: null,
+      costUsd: null,
+    });
+  } finally {
+    await stub.close();
+  }
+});
+
+test('openai-chat: a reported 0 stays 0 (never read as unreported)', async () => {
+  const stub = await chatStub([
+    [200, { ...CHAT_OK[1], usage: { prompt_tokens: 0, completion_tokens: 0 } }],
+  ]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      prices: PRICES_ONE_ENTRY,
+    });
+    const reply = await agent.act(CTX);
+    assert.deepEqual(reply.usage, {
+      inputTokens: 0,
+      outputTokens: 0,
+      costUsd: 0,
+    });
+  } finally {
+    await stub.close();
+  }
+});
+
+test('a 200 with an HTML body fails naming the provider and status, without retrying (anthropic)', async () => {
+  /** @type {*} */
+  const requests = [];
+  const { url, close } = await startStubServer((req, res) => {
+    requests.push({ url: req.url });
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end('<!DOCTYPE html><html><body>login page from a misbehaving proxy</body></html>');
+  });
+  try {
+    const agent = createModelAgent({
+      provider: 'anthropic',
+      model: 'stub-model',
+      baseUrl: url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      retryBaseDelayMs: 1,
+    });
+    await assert.rejects(
+      () => agent.act(CTX),
+      (err) => {
+        assert.ok(err instanceof Error);
+        assert.match(
+          err.message,
+          /model agent: anthropic returned an unparseable 2xx body \(HTTP 200\): <!DOCTYPE html>/
+        );
+        assert.equal(/** @type {*} */ (err).retries, 0);
+        return true;
+      }
+    );
+    assert.equal(requests.length, 1); // not retried: a 2xx answer is final
+  } finally {
+    await close();
+  }
+});
+
+test('a 200 with an HTML body fails naming the provider and status, without retrying (openai-chat)', async () => {
+  /** @type {*} */
+  const requests = [];
+  const { url, close } = await startStubServer((req, res) => {
+    requests.push({ url: req.url });
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end('<html>gateway error page, not JSON</html>');
+  });
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: url,
+      retryBaseDelayMs: 1,
+    });
+    await assert.rejects(
+      () => agent.act(CTX),
+      (err) => {
+        assert.ok(err instanceof Error);
+        assert.match(
+          err.message,
+          /model agent: openai-chat returned an unparseable 2xx body \(HTTP 200\): <html>/
+        );
+        assert.equal(/** @type {*} */ (err).retries, 0);
+        return true;
+      }
+    );
+    assert.equal(requests.length, 1);
+  } finally {
+    await close();
+  }
+});
+
+test('an empty 2xx body fails with the same named error, without retrying', async () => {
+  const { url, close } = await startStubServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end('');
+  });
+  try {
+    const agent = createModelAgent({
+      provider: 'anthropic',
+      model: 'stub-model',
+      baseUrl: url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      retryBaseDelayMs: 1,
+    });
+    await assert.rejects(
+      () => agent.act(CTX),
+      /model agent: anthropic returned an unparseable 2xx body \(HTTP 200\): \(empty body\)/
+    );
+  } finally {
+    await close();
+  }
+});
+
+test('503 until retries run out: the error carries retries equal to maxRetries', async () => {
+  const stub = await anthropicStub(
+    /** @type {Array<[number, *]>} */ ([[503, { type: 'error', error: { message: 'overloaded' } }]])
+  );
+  try {
+    const agent = createModelAgent({
+      provider: 'anthropic',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      maxRetries: 2,
+      retryBaseDelayMs: 1,
+    });
+    await assert.rejects(
+      () => agent.act(CTX),
+      (err) => {
+        assert.ok(err instanceof Error);
+        assert.match(err.message, /HTTP 503 after 2 retries/);
+        assert.equal(/** @type {*} */ (err).retries, 2);
+        return true;
+      }
+    );
+    assert.equal(stub.requests.length, 3); // 1 attempt + 2 retries
+  } finally {
+    await stub.close();
+  }
+});
+
+test('a non-retryable 4xx on the first answer carries retries 0', async () => {
+  const stub = await anthropicStub(
+    /** @type {Array<[number, *]>} */ ([[401, { error: { message: 'bad key' } }]])
+  );
+  try {
+    const agent = createModelAgent({
+      provider: 'anthropic',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      retryBaseDelayMs: 1,
+    });
+    await assert.rejects(
+      () => agent.act(CTX),
+      (err) => {
+        assert.ok(err instanceof Error);
+        assert.match(err.message, /HTTP 401/);
+        assert.equal(/** @type {*} */ (err).retries, 0);
+        return true;
+      }
+    );
+    assert.equal(stub.requests.length, 1);
+  } finally {
+    await stub.close();
+  }
+});
+
+test('a network failure after exhausting retries carries the retry count', async () => {
+  const alwaysDown = /** @type {typeof fetch} */ (async () => {
+    throw new Error('ECONNREFUSED');
+  });
+  const agent = createModelAgent({
+    provider: 'anthropic',
+    model: 'stub-model',
+    baseUrl: 'http://127.0.0.1:1',
+    apiKeyEnv: 'GAUNTLET_TEST_KEY',
+    maxRetries: 1,
+    retryBaseDelayMs: 1,
+    fetchImpl: alwaysDown,
+  });
+  await assert.rejects(
+    () => agent.act(CTX),
+    (err) => {
+      assert.ok(err instanceof Error);
+      assert.match(err.message, /model agent: anthropic request failed after 1 retry/);
+      assert.equal(/** @type {*} */ (err).retries, 1);
+      return true;
+    }
+  );
+});
+
+// ---------------------------------------------------------------------------
+// End to end: an omitting provider records null usage on every trajectory step
+// and the episode still verifies (offline, 127.0.0.1 only).
+
+test('end to end: a provider that omits usage records null usage on every step and the trajectory verifies', async () => {
+  /** @type {*} */
+  const requests = [];
+  const { url, close } = await startStubServer((req, res, body) => {
+    requests.push(body);
+    const text = /** @type {string} */ (
+      body?.messages?.[body?.messages?.length - 1]?.content
+    );
+    const match = /Legal actions \(\d+, at most 64 so all are listed\): ([a-z0-9, ]+)/.exec(
+      String(text)
+    );
+    if (!match) {
+      sendJson(res, 400, { error: { message: 'stub could not find legal actions' } });
+      return;
+    }
+    // No `usage` field anywhere in the reply — the case the dollar cap has to
+    // refuse rather than bill at $0.
+    sendJson(res, 200, {
+      id: `chatcmpl_${requests.length}`,
+      object: 'chat.completion',
+      model: 'stub-model',
+      choices: [
+        {
+          index: 0,
+          message: { role: 'assistant', content: `action: ${match[1].split(',')[0].trim()}` },
+          finish_reason: 'stop',
+        },
+      ],
+    });
+  });
+  try {
+    const agent = createModelAgent({
+      provider: 'openai-chat',
+      model: 'stub-model',
+      baseUrl: url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      // A price file is present: with honest usage the cost must still be null,
+      // not 0, so a maxUsd cap refuses instead of counting the episode as free.
+      prices: {
+        'openai-chat/stub-model': PRICES_ONE_ENTRY['openai-chat/stub-model'],
+      },
+    });
+    const trajectory = await runEpisode({
+      game: tictactoe,
+      tierId: 'perfect-opponent',
+      seed: 'tictactoe/perfect-opponent/public/0',
+      agent,
+    });
+    assert.equal(trajectory.end.reason, 'terminal');
+    const agentSteps = trajectory.steps.filter((s) => s.by === 'agent');
+    assert.ok(agentSteps.length >= 3);
+    for (const step of agentSteps) {
+      assert.deepEqual(step.usage, {
+        inputTokens: null,
+        outputTokens: null,
+        costUsd: null,
+      });
+    }
+    const verdict = await verifyTrajectory(tictactoe, trajectory);
+    assert.deepEqual(verdict, { ok: true });
+  } finally {
+    await close();
+  }
 });

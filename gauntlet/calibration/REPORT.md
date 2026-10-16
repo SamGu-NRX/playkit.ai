@@ -8,15 +8,16 @@ Baseline calibration over the gauntlet's public seeds: every game is played by a
 
 | | |
 |---|---|
-| Run at | 2026-10-16T07:15:13.884Z |
+| Run at | 2026-10-16T10:45:40.965Z |
 | Node | v20.20.2 |
 | Machine | linux 6.1.158+ x64, Intel(R) Xeon(R) Processor @ 2.60GHz, 8 cores, 7.8 GiB |
-| Worker parallelism | 7 |
+| Worker parallelism | 8 |
 | Seeds per tier | all public seeds |
-| Per-game wall cap | 3600s |
-| Total wall time | 3918.4s |
-| HEAD | 840aa03f83da |
-| Base | unknown |
+| Per-game wall cap | 1200s |
+| Total wall time | 3526s |
+| HEAD | 454b45602118325be79b0c7c2901cd295a19d0dd |
+| Base | cc4e56e48884199f31aca8839c17262a99ab80a6 |
+| Merge parents of HEAD | f080f35557c05095c960d219c8c9d50b0d56e845, 17598855403561785822a94e71b59dbe25dd9be8 |
 
 Reproduce from `gauntlet/` with `node calibration/run.js` (flags: `--games=`, `--seeds=`, `--per-game-cap=`, `--out=`, `--report=`). One worker process per game; deterministic end to end — same seeds and code produce byte-identical tables.
 
@@ -77,7 +78,7 @@ _Run:_ 1080 episodes, 12.2s.
 
 _Baselines:_ `greedy` and `engine` are the chess packet's material-capture greedy and fixed-strength engine agents (the pairing the puzzles packet itself reports); the tier ladder is the puzzle rating, so engine strength degrades with rating while greedy stays near the floor.
 
-### chess-stockfish (v1.0.0)
+### chess-stockfish (v1.1.0)
 
 | tier (rank) | scoring | random | greedy | engine | engine solved |
 |---|---|---|---|---|---|
@@ -87,7 +88,7 @@ _Baselines:_ `greedy` and `engine` are the chess packet's material-capture greed
 | sf-100k (4) | outcome | 0 [0, 0] | 0 [0, 0] | 0.7 [0.5, 0.9] | — |
 | sf-1m (5) | outcome | 0 [0, 0] | 0 [0, 0] | 0.5 [0.5, 0.5] | — |
 
-_Run:_ 75 episodes, 3819.4s.
+_Run:_ ⚠️ the 1200s wall cap stopped this worker early (73 episodes run) — remaining cells are empty and the checks below skip them.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 

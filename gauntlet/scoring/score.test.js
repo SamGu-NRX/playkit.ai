@@ -12,6 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { score, GauntletRefusalError } from './score.js';
+import { BASELINE_FORMAT } from './profiles.js';
 import { buildSuite } from './suite.js';
 import tictactoe from '../games/tictactoe/index.js';
 import { createRandomAgent } from '../agents/random.js';
@@ -481,3 +482,84 @@ test('a suite with no benchmark games is refused', async () => {
     /score\.js\] benchmark-games/
   );
 });
+// ---------------------------------------------------------------------------
+// chance-adjusted baseline refusals name the fix (burst14 calibration-sync).
+// A user that hits `baseline-tier-missing` or `baseline-version` through the
+// CLI cannot act on "cannot rescale this tier" alone — the refusal must name
+// the command that regenerates the baseline, the same way
+// test/integration/versions-current.test.js does.
+// ---------------------------------------------------------------------------
+
+/**
+ * A minimal valid chance-adjusted scoring baseline covering one game.
+ *
+ * @param {string} gameId
+ * @param {string} version
+ * @param {string[]} tierIds
+ */
+function makeBaseline(gameId, version, tierIds) {
+  /** @type {Record<string, { scoring: 'outcome', mean: number, ci95: [number, number] | null, episodes: number }>} */
+  const tiers = {};
+  for (const id of tierIds) tiers[id] = { scoring: 'outcome', mean: 0.3, ci95: [0.2, 0.4], episodes: 2 };
+  return {
+    format: BASELINE_FORMAT,
+    agent: 'random',
+    games: { [gameId]: { id: gameId, benchmark: true, version, tiers } },
+  };
+}
+
+test('chance-adjusted refusals name the command that fixes the baseline', async () => {
+  const suite = buildSuite([takeOrPass], { split: 'public', id: 'refusal-fix-suite' });
+  const trajectories = await runSuite(suite, [takeOrPass], () =>
+    scriptedAgent(['take'], { id: 'agent-fix' })
+  );
+  const opts = { agent: { id: 'agent-fix', track: 'community' }, profile: 'chance-adjusted' };
+
+  // 1. No entry for the game at all: name the baseline regeneration, and the
+  //    calibration run that must precede it when the table is missing too.
+  await assert.rejects(
+    () =>
+      score(suite, trajectories, [takeOrPass], {
+        ...opts,
+        baseline: makeBaseline('some-other-game', '1.0.0', ['main']),
+      }),
+    (/** @type {unknown} */ err) => {
+      assert.ok(err instanceof GauntletRefusalError);
+      assert.equal(/** @type {GauntletRefusalError} */ (err).step, 'baseline-tier-missing');
+      assert.match(/** @type {Error} */ (err).message, /node scoring\/generate-baseline\.js/);
+      assert.match(/** @type {Error} */ (err).message, /node calibration\/run\.js --games=take-or-pass/);
+      return true;
+    }
+  );
+
+  // 2. Entry present but measured on an older game version.
+  await assert.rejects(
+    () =>
+      score(suite, trajectories, [takeOrPass], {
+        ...opts,
+        baseline: makeBaseline('take-or-pass', '0.0.9', ['main']),
+      }),
+    (/** @type {unknown} */ err) => {
+      assert.ok(err instanceof GauntletRefusalError);
+      assert.equal(/** @type {GauntletRefusalError} */ (err).step, 'baseline-version');
+      assert.match(/** @type {Error} */ (err).message, /node scoring\/generate-baseline\.js/);
+      return true;
+    }
+  );
+
+  // 3. Entry present at the right version but the tier is missing.
+  await assert.rejects(
+    () =>
+      score(suite, trajectories, [takeOrPass], {
+        ...opts,
+        baseline: makeBaseline('take-or-pass', '1.0.0', ['some-other-tier']),
+      }),
+    (/** @type {unknown} */ err) => {
+      assert.ok(err instanceof GauntletRefusalError);
+      assert.equal(/** @type {GauntletRefusalError} */ (err).step, 'baseline-tier-missing');
+      assert.match(/** @type {Error} */ (err).message, /node scoring\/generate-baseline\.js/);
+      return true;
+    }
+  );
+});
+

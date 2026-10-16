@@ -12,6 +12,9 @@ import chessStockfish from './chess-stockfish/index.js';
 import chessPuzzles from './chess-puzzles/index.js';
 import minesweeper from './minesweeper/index.js';
 import nonogram from './nonogram/index.js';
+import sudoku from './sudoku/index.js';
+import othello from './othello/index.js';
+import wordle from './wordle/index.js';
 import twoZeroFourEight from './2048/index.js';
 import sliding from './sliding/index.js';
 import sokoban from './sokoban/index.js';
@@ -38,6 +41,9 @@ export const GAMES = {
   mastermind,
   holdem,
   nonogram,
+  sudoku,
+  othello,
+  wordle,
 };
 
 /**

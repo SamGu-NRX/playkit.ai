@@ -1,0 +1,115 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "classic",
+  "seed": "mastermind/classic/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-0.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "27b64ac8f57bb2b0",
+      "reply": {
+        "text": "guess ABCDEF",
+        "usage": {
+          "inputTokens": 451,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-jJhq7aftEMWjAU6OfQzTFzR1bxjmxWGh",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABCDEF",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 451,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 722
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "27b64ac8f57bb2b0",
+      "reply": {
+        "text": "guess ABCDEF",
+        "usage": {
+          "inputTokens": 493,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-aooxlGF8sxO19fYd7zA2J8TmJjSghMFe",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABCDEF",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 493,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 318
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "27b64ac8f57bb2b0",
+      "reply": {
+        "text": "guess ABCDEF",
+        "usage": {
+          "inputTokens": 493,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Db1iZOSJCVbb7mQ9F0sBJjndSyZGFyoi",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABCDEF",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 493,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 56
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3
+  },
+  "startedAt": "2026-10-15T22:15:23.748Z",
+  "finishedAt": "2026-10-15T22:15:24.847Z"
+}

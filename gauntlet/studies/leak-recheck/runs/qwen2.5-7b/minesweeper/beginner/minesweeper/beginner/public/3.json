@@ -1,0 +1,89 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.0.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/3",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m-00001-of-00002",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b538ff8d32f9032c",
+      "reply": {
+        "text": "reveal 4 3",
+        "usage": {
+          "inputTokens": 732,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Huh2OxbKM4oRWDhVxKxCDz7JcjFApt4N",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 4 3",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 732,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 3711
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "303d0d06514d9772",
+      "reply": {
+        "text": "reveal 5 5",
+        "usage": {
+          "inputTokens": 736,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-YiroYGR40abA4dkBdwJWw9iP8PIshdnf",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 5 5",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 736,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 5066
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.6197183098591549
+      ],
+      "raw": [
+        44
+      ],
+      "reason": "mine revealed at row 5, column 5 — episode ends with 44 of 71 safe cells revealed"
+    },
+    "agentActions": 2,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T07:42:14.915Z",
+  "finishedAt": "2026-10-16T07:42:23.693Z"
+}

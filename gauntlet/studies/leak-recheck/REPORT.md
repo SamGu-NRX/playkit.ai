@@ -8,14 +8,16 @@ Did that cross-episode leak change any measured result — specifically the mode
 study's (PR #43) conclusion that the Gauntlet suite does **not** rank Qwen2.5 0.5B / 1.5B / 7B
 in order at 4 seeds/tier?
 
-**Verdict.** No. The leak left every per-episode score in PR #43's study unchanged, except one
-connect4 ladder episode that 1.5B *lost* under the leak and *wins* under the fixed agent. The
-study's headline numbers reproduce within one episode; its "does not rank in order" conclusion
-stands (the single flipped episode moves 1.5B up, against the leak's favor, and the pooled
-paired confidence interval still touches zero). The leak did change *trajectories*: reply
-sequences differ in 10/28 episodes for 0.5B and 13/28 for 1.5B, and per-call input-token counts
-differ by a few tokens — the fresh-agent prompts are measurably different even where greedy
-sampling lands in the same place.
+**Verdict.** No. The leak left the study's conclusion intact, and its only score-level effect
+was a one-episode fluke that *flattered* the two bigger models: connect4 ladder-1 seed 3, which
+both 1.5B and 7B happened to **win** under the leaked shared agent and **lose** under the fixed
+per-episode agent. Pooled means move by exactly that one episode (0.5B unchanged; 1.5B
+0.1751 → 0.1393; 7B 0.1884 → 0.1467), every paired confidence interval touches zero, and the
+fixed-run overall means (0.5B 0.1429, 1.5B 0.1393, 7B 0.1467) still overlap completely — the
+suite still does **not** rank Qwen2.5 0.5B / 1.5B / 7B in size order. The leak did change
+*trajectories*: reply sequences differ in 10/28 episodes for 0.5B and 13/28 for 1.5B, and
+per-call input-token counts differ by a few tokens — the fresh-agent prompts are measurably
+different even where greedy sampling lands in the same place.
 
 This study reran PR #43's suite on the episode-isolation fix with #43's exact serving setup,
 paired episodes by (game, seed), and validated the comparison with a determinism control.
@@ -64,7 +66,7 @@ on a fresh agent and every later episode reused it. From the committed bundles:
 | #43 `runs/qwen2.5-1.5b` (28 jobs) | 28 | 1 | 1 | **27** |
 | #43 `runs/qwen2.5-7b` (killed at window, 16 verified) | 16 | 1 | 1 | **15** |
 | #43 `runs/qwen2.5-7b-part2` (8 jobs) | 8 | 1 | 1 | **7** |
-| **Total** | **122** | | **8** | **114** |
+| **Total** | **122** | **7** | | **115** |
 
 No interrupted-process gaps exist inside the #43 0.5B/1.5B bundles (episode `startedAt` values
 are contiguous), so each was a single process: only the first episode (tictactoe
@@ -106,7 +108,19 @@ zero: the shift is one ladder episode out of 28.
 
 ### 7B (24 paired episodes, six games)
 
-<!-- SEVEN_B_RESULTS -->
+| class | count |
+|---|---|
+| byte-identical | 0 |
+| schema-only (replies + score identical) | 7 |
+| behavioral | 17 |
+
+Pooled paired difference **−0.0417, 95% CI [−0.1250, +0.0000]**. The entire difference is one
+episode: connect4 ladder-1 seed 3, 1.0000 under the leak-exposed agent → 0.0000 under the
+fresh agent — the same seed that flipped for 1.5B. All five other games are score-identical
+episode-for-episode despite 17 episodes changing reply sequences. Agent calls 853 → 842;
+invalid replies 19 → 16. The 7B run's last two episodes (sliding/p8 seeds 0–1) were replayed
+via `--resume` after an unrelated llama-server exit mid-run; completed episodes are untouched
+by a resume, and the replayed episodes verified normally.
 
 ### Input-token fingerprint
 
@@ -119,24 +133,27 @@ mutates across episodes; they are the mechanistic fingerprint of the leak.
 ## What this means for the model-separation study
 
 1. **The conclusion survives.** "Does not rank Qwen2.5 0.5B/1.5B/7B in order at 4 seeds/tier"
-   reproduces under the fixed agent: pooled means move by at most one episode, the 1.5B-vs-7B
-   picture is unchanged in direction (one connect4 ladder episode still separates against
-   size), and the seeds-per-tier arithmetic in `studies/model-separation/REPORT.md` needs no
-   revision in kind.
-2. **Direction of the one flip.** The only score that moved (connect4 ladder-1 seed 3) moves
-   *against* the leak: the fresh agent scores higher on it. If anything, the leak cost 1.5B
-   one episode, which slightly understated 1.5B relative to 7B in the pooled table — the
-   "1.5B edges 7B via one lost connect4 ladder episode" mechanism gets one seed weaker.
-3. **Trajectory-level effects are real but score-neutral here.** 10/28 and 13/28 episodes
-   changed reply sequences; only one changed an outcome. That is luck of the floor: most
-   model-separation episodes score 0.0 under both agents (tictactoe, mastermind, sliding,
-   cube, sokoban), where behavioral drift cannot move a score. A study scored on closer tiers
-   would be more exposed.
+   reproduces under the fixed agent: fixed-run overall means are 0.1429 (0.5B), 0.1393 (1.5B),
+   0.1467 (7B) with heavily overlapping 95% CIs — 7B ranks highest and 1.5B lowest, which is
+   the opposite of size ordering. The study's stats table regenerates from the fixed bundles
+   (`studies/leak-recheck/stats.json` via the same `compute-stats.py`); per the study's own
+   seeds-per-tier arithmetic, separating 1.5B from 7B on the only games with any gap would now
+   take 33 seeds (connect4) or 59 (minesweeper) — far beyond the 4-seed design either way.
+2. **Direction of the flips.** The only scores that moved (connect4 ladder-1 seed 3 for both
+   1.5B and 7B) moved *with* the leak removed against the models: each loses an episode the
+   leaked agent happened to win. The leak therefore flattered the two larger models by one
+   episode each rather than disadvantaging them, and no cross-model ordering in #43's table
+   rests on that seed any more — both models score 0.0000 on it under the fixed agent.
+3. **Trajectory-level effects are real but score-neutral here.** 10/28 (0.5B), 13/28 (1.5B),
+   and 17/24 (7B) episodes changed reply sequences; only one seed changed an outcome per model.
+   That is luck of the floor: most model-separation episodes score 0.0 under both agents
+   (tictactoe, mastermind, sliding, cube, sokoban), where behavioral drift cannot move a score.
+   A study scored on closer tiers would be more exposed.
 4. **Process metrics shift too** (calls ±5-10%, invalid-reply rates by 1-2 points) — reports
    that quote invalid-reply rates or calls as calibration evidence should regenerate them
    from post-fix runs. The model-separation study's headline process metrics (invalid rate
    4.2%/23.4%/2.2%) carry this caveat.
-5. **All 114 leak-exposed episodes are superseded by the fixed-agent bundles committed in this
+5. **All 115 leak-exposed episodes are superseded by the fixed-agent bundles committed in this
    study**, which are otherwise identical in serving setup and manifest.
 
 ## Provenance
@@ -161,6 +178,15 @@ mutates across episodes; they are the mechanistic fingerprint of the leak.
 ## Reproduce
 
 ```bash
+cd gauntlet
+# determinism control / fixed runs need the llama.cpp server on 127.0.0.1:8080
+bash studies/leak-recheck/run-model.sh <gauntlet-dir> <out-dir> \
+  qwen2.5-0.5b-instruct-q4_k_m studies/model-separation/suite.public.json <tag>
+python3 studies/leak-recheck/compare-runs.py <out-dir> \
+  studies/model-separation/runs/qwen2.5-0.5b
+python3 studies/leak-recheck/paired-diff.py studies/leak-recheck/runs/qwen2.5-0.5b \
+  studies/model-separation/runs/qwen2.5-0.5b
+```
 cd gauntlet
 # determinism control / fixed runs need the llama.cpp server on 127.0.0.1:8080
 bash studies/leak-recheck/run-model.sh <gauntlet-dir> <out-dir> \

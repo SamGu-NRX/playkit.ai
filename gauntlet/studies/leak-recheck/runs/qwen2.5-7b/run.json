@@ -1,0 +1,70 @@
+{
+  "format": "playkit-gauntlet-run/1",
+  "suite": {
+    "id": "gauntlet-public-model-separation-first4",
+    "split": "public",
+    "manifestSha256": "3ae611ddff4dc7ce34c63d93bca131d7a8d121753baff8741be5c35eb655a24f"
+  },
+  "git": {
+    "commit": "d0840aa4e2d9cadd9badb1a85cf541ad523a2ba3"
+  },
+  "node": "v20.20.2",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m-00001-of-00002",
+    "track": "official",
+    "provider": "openai-chat",
+    "model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002"
+  },
+  "prices": {
+    "sha256": null
+  },
+  "startedAt": "2026-10-16T08:00:53.017Z",
+  "finishedAt": "2026-10-16T08:19:13.316Z",
+  "concurrency": 1,
+  "limits": {
+    "maxUsd": null,
+    "maxCalls": 2500,
+    "requestsPerMinute": null,
+    "maxOutputTokens": null,
+    "callTimeoutMs": null
+  },
+  "spendUsd": 0,
+  "calls": 310,
+  "counts": {
+    "jobs": 24,
+    "played": 2,
+    "skipped": 22,
+    "replayed": 0,
+    "unplayed": 0,
+    "failed": 0
+  },
+  "skipped": [
+    "tictactoe/perfect-opponent/tictactoe/perfect-opponent/public/0",
+    "tictactoe/perfect-opponent/tictactoe/perfect-opponent/public/1",
+    "tictactoe/perfect-opponent/tictactoe/perfect-opponent/public/2",
+    "tictactoe/perfect-opponent/tictactoe/perfect-opponent/public/3",
+    "mastermind/classic/mastermind/classic/public/0",
+    "mastermind/classic/mastermind/classic/public/1",
+    "mastermind/classic/mastermind/classic/public/2",
+    "mastermind/classic/mastermind/classic/public/3",
+    "connect4/ladder-1/connect4/ladder-1/public/0",
+    "connect4/ladder-1/connect4/ladder-1/public/1",
+    "connect4/ladder-1/connect4/ladder-1/public/2",
+    "connect4/ladder-1/connect4/ladder-1/public/3",
+    "sliding/p8/sliding/p8/public/2",
+    "sliding/p8/sliding/p8/public/3",
+    "minesweeper/beginner/minesweeper/beginner/public/0",
+    "minesweeper/beginner/minesweeper/beginner/public/1",
+    "minesweeper/beginner/minesweeper/beginner/public/2",
+    "minesweeper/beginner/minesweeper/beginner/public/3",
+    "cube/cube-5/cube/cube-5/public/0",
+    "cube/cube-5/cube/cube-5/public/1",
+    "cube/cube-5/cube/cube-5/public/2",
+    "cube/cube-5/cube/cube-5/public/3"
+  ],
+  "replayed": [],
+  "unplayed": [],
+  "failed": [],
+  "stopped": null,
+  "stopReason": null
+}

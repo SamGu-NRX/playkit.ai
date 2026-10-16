@@ -1,0 +1,234 @@
+{
+  "format": "playkit-gauntlet-calibration-table/1",
+  "game": {
+    "id": "chess-stockfish",
+    "version": "1.0.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "seedsPerTier": 5,
+  "baselines": {
+    "random": {
+      "tiers": {
+        "sf-250": {
+          "id": "sf-250",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-1k": {
+          "id": "sf-1k",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-10k": {
+          "id": "sf-10k",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-100k": {
+          "id": "sf-100k",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-1m": {
+          "id": "sf-1m",
+          "rank": 5,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "sf-250": {
+          "id": "sf-250",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-1k": {
+          "id": "sf-1k",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-10k": {
+          "id": "sf-10k",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-100k": {
+          "id": "sf-100k",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-1m": {
+          "id": "sf-1m",
+          "rank": 5,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "sf-250": {
+          "id": "sf-250",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-1k": {
+          "id": "sf-1k",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-10k": {
+          "id": "sf-10k",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-100k": {
+          "id": "sf-100k",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.7,
+            "ci95": [
+              0.5,
+              0.9
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "sf-1m": {
+          "id": "sf-1m",
+          "rank": 5,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.5,
+            "ci95": [
+              0.5,
+              0.5
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        }
+      }
+    }
+  }
+}

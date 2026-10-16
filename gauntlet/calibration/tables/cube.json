@@ -1,0 +1,150 @@
+{
+  "format": "playkit-gauntlet-calibration-table/1",
+  "game": {
+    "id": "cube",
+    "version": "1.0.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "seedsPerTier": 6,
+  "baselines": {
+    "random": {
+      "tiers": {
+        "cube-5": {
+          "id": "cube-5",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 6
+        },
+        "cube-7": {
+          "id": "cube-7",
+          "rank": 2,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 6
+        },
+        "cube-9": {
+          "id": "cube-9",
+          "rank": 3,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 6
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "cube-5": {
+          "id": "cube-5",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 6
+        },
+        "cube-7": {
+          "id": "cube-7",
+          "rank": 2,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 6
+        },
+        "cube-9": {
+          "id": "cube-9",
+          "rank": 3,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 6
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "cube-5": {
+          "id": "cube-5",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 6
+        },
+        "cube-7": {
+          "id": "cube-7",
+          "rank": 2,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 6
+        },
+        "cube-9": {
+          "id": "cube-9",
+          "rank": 3,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 6
+        }
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@
   "format": "playkit-gauntlet-calibration-table/1",
   "game": {
     "id": "chess",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "benchmark": true
   },
   "split": "public",
@@ -75,10 +75,10 @@
           "rank": 1,
           "scoring": "outcome",
           "score": {
-            "value": 0.1,
+            "value": 0,
             "ci95": [
               0,
-              0.3
+              0
             ]
           },
           "solvedFraction": null,
@@ -124,7 +124,7 @@
             ]
           },
           "solvedFraction": null,
-          "episodes": 1
+          "episodes": 5
         }
       }
     },
@@ -135,44 +135,56 @@
           "rank": 1,
           "scoring": "outcome",
           "score": {
-            "value": null,
-            "ci95": null
+            "value": 0.4,
+            "ci95": [
+              0.1,
+              0.7
+            ]
           },
           "solvedFraction": null,
-          "episodes": 0
+          "episodes": 5
         },
         "wood": {
           "id": "wood",
           "rank": 2,
           "scoring": "outcome",
           "score": {
-            "value": null,
-            "ci95": null
+            "value": 0.4,
+            "ci95": [
+              0.2,
+              0.5
+            ]
           },
           "solvedFraction": null,
-          "episodes": 0
+          "episodes": 5
         },
         "steel": {
           "id": "steel",
           "rank": 3,
           "scoring": "outcome",
           "score": {
-            "value": null,
-            "ci95": null
+            "value": 0.7,
+            "ci95": [
+              0.3,
+              1
+            ]
           },
           "solvedFraction": null,
-          "episodes": 0
+          "episodes": 5
         },
         "granite": {
           "id": "granite",
           "rank": 4,
           "scoring": "outcome",
           "score": {
-            "value": null,
-            "ci95": null
+            "value": 0.7,
+            "ci95": [
+              0.3,
+              1
+            ]
           },
           "solvedFraction": null,
-          "episodes": 0
+          "episodes": 5
         }
       }
     }

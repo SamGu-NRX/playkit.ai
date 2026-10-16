@@ -27,6 +27,15 @@
 /** The environment variable that overrides engine binary lookup. */
 export const STOCKFISH_ENV_VAR = 'GAUNTLET_STOCKFISH';
 
+/**
+ * Directories probed after PATH when looking an engine up by name. Debian
+ * and Ubuntu install game binaries to /usr/games, and a non-interactive
+ * PATH (CI, cron, systemd) often omits that directory.
+ *
+ * @type {readonly string[]}
+ */
+export const ENGINE_EXTRA_DIRS = ['/usr/games', '/usr/local/games'];
+
 /** Default transposition-table size (MiB) configured on spawned engines. */
 export const DEFAULT_HASH_MB = 16;
 
@@ -178,18 +187,23 @@ function numberOrNull(text) {
 }
 
 /**
- * Locate an engine binary. `GAUNTLET_STOCKFISH` wins when set (and must
- * exist); otherwise each PATH directory is searched for `name` (plus a
- * `.exe` variant). Synchronous and Node-only.
+ * Locate an engine binary. For Stockfish lookups (the default name)
+ * `GAUNTLET_STOCKFISH` wins when set and must exist; the override is
+ * deliberately scoped to the Stockfish name so one shared env var cannot
+ * silently replace a different engine the caller asked for by name.
+ * Otherwise PATH is scanned for `name` (plus a `.exe` variant), then
+ * ENGINE_EXTRA_DIRS. Synchronous and Node-only.
  *
  * @param {string} [name] Executable name to look for on PATH. Default "stockfish".
+ * @param {{ searchDirs?: readonly string[] }} [options] Overrides the
+ *   directories probed after PATH (tests inject a temp dir here).
  * @returns {string | null} Absolute-ish path, or null when not configured and
  *   not found. Throws when GAUNTLET_STOCKFISH points at a missing file.
  */
-export function findEngineBinary(name = 'stockfish') {
+export function findEngineBinary(name = 'stockfish', options = {}) {
   if (!cp || !fsMod || !pathMod) throw nodeRequiredError('locating an engine binary');
   const fromEnv = process.env[STOCKFISH_ENV_VAR];
-  if (fromEnv !== undefined && fromEnv !== '') {
+  if (fromEnv !== undefined && fromEnv !== '' && name === 'stockfish') {
     if (!fsMod.existsSync(fromEnv)) {
       throw new Error(
         `${STOCKFISH_ENV_VAR} is set to "${fromEnv}" but that file does not exist`
@@ -197,7 +211,10 @@ export function findEngineBinary(name = 'stockfish') {
     }
     return fromEnv;
   }
-  for (const dir of (process.env.PATH || '').split(pathMod.delimiter)) {
+  for (const dir of [
+    ...(process.env.PATH || '').split(pathMod.delimiter),
+    ...(options.searchDirs ?? ENGINE_EXTRA_DIRS),
+  ]) {
     if (!dir) continue;
     for (const candidate of [pathMod.join(dir, name), pathMod.join(dir, `${name}.exe`)]) {
       try {

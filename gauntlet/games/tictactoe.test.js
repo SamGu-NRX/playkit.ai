@@ -159,6 +159,20 @@ test('the minimax opponent wins as X against a naive center-then-corner player',
   }
 });
 
+test('the rendered board labels match the <column><row> grammar', () => {
+  // X takes c1 (top-right), O takes b2 (center), X takes a3 (bottom-left).
+  let state = game.reset(tier, 's');
+  state = game.step(state, 0, 'c1');
+  state = game.step(state, 1, 'b2');
+  state = game.step(state, 0, 'a3');
+  const observation = game.observe(state, 1);
+  const lines = observation.text.split('\n');
+  assert.equal(lines[1], '    a   b   c', 'columns a b c run across the top');
+  assert.equal(lines[2], '1   .   .   X', 'c1 renders as row 1, column c');
+  assert.equal(lines[3], '2   .   O   .', 'b2 renders as row 2, column b');
+  assert.equal(lines[4], '3   X   .   .', 'a3 renders as row 3, column a');
+});
+
 test('the full conformance kit passes for tic-tac-toe', async () => {
   const report = await runConformance(game);
   assert.equal(report.ok, true);

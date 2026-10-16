@@ -139,7 +139,7 @@ function negamax(state) {
 export const tictactoe = {
   spec: {
     id: 'tictactoe',
-    version: '1.0.0',
+    version: '1.1.0',
     title: 'Tic-Tac-Toe',
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {import('../../core/types.js').InformationMode} */ ('perfect'),
@@ -199,13 +199,13 @@ export const tictactoe = {
     const mover = MARKS[state.toMove];
     /** @type {string[]} */
     const rows = [];
-    rows.push('    1   2   3');
+    rows.push('    a   b   c');
     for (let row = 0; row < 3; row++) {
       const cells = [0, 1, 2].map((col) => {
         const mark = state.board[row * 3 + col];
         return mark === null ? '.' : mark;
       });
-      rows.push(`${COLUMN_LETTERS[row]}   ${cells.join('   ')}`);
+      rows.push(`${row + 1}   ${cells.join('   ')}`);
     }
     const board = rows.join('\n');
     const legal =

@@ -48,16 +48,33 @@
  *   `stop_reason: "refusal"` and a `stop_details` object
  *   (https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback).
  * - OpenAI Responses reasoning: https://platform.openai.com/docs/guides/reasoning
- *   — request `reasoning: {effort: "low"|"medium"|"high"|"xhigh"|"max"}`; max_output_tokens
- *   bounds reasoning and answer tokens together; `usage.output_tokens`
- *   includes reasoning tokens and `usage.output_tokens_details
- *   .reasoning_tokens` is the breakdown; an answer cut off mid-reasoning
- *   comes back `status: "incomplete"` with no message item.
+ *   (checked 2026-10-16) — request `reasoning: {effort}`; the supported
+ *   values are model-dependent and are enforced per model from the OpenAI
+ *   capability table (OPENAI_CAPABILITIES below; the models index and the
+ *   GPT-6 Astra model page document low/medium/high/xhigh/max for the 6
+ *   generation: https://platform.openai.com/docs/models and
+ *   https://platform.openai.com/docs/models/gpt-6-astra).
+ *   max_output_tokens bounds reasoning and answer tokens together;
+ *   `usage.output_tokens` includes reasoning tokens and
+ *   `usage.output_tokens_details.reasoning_tokens` is the breakdown; a reply
+ *   cut off by the cap — before any text or mid-reasoning — comes back with
+ *   top-level `status: "incomplete"` and `incomplete_details:
+ *   {reason: "max_output_tokens"}`.
+ * - OpenAI chat-completions truncation: a reply cut off by the output cap
+ *   carries `choices[0].finish_reason: "length"`
+ *   (https://developers.openai.com/api/reference — chat completions
+ *   finish_reason, checked 2026-10-16).
  * - Google Gemini OpenAI compatibility: https://ai.google.dev/gemini-api/docs/openai
- *   — chat/completions at
+ *   (checked 2026-10-16) — chat/completions at
  *   https://generativelanguage.googleapis.com/v1beta/openai/ accepts the
  *   chat-completions body field `reasoning_effort` and maps it to Gemini's
- *   thinking_level / thinking_budget.
+ *   thinking_level (minimal→low, low→low, medium→medium, high→high); the
+ *   Gemini thinking docs document the levels low/medium/high with default
+ *   medium and thinking that cannot be disabled for Gemini 4 Argon
+ *   (https://ai.google.dev/gemini-api/docs/generate-content/thinking).
+ *   Gemini model ids on this provider are validated per model from the
+ *   Gemini capability table (GEMINI_CAPABILITIES below); other ids (local
+ *   servers) keep the permissive default.
  *
  * Pure JS except for reading the API key from `process.env` at call time; no
  * `node:*` imports.
@@ -99,8 +116,11 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  *   capability row's documented default on the adaptive-thinking Claude
  *   models (16384 — thinking rides inside max_tokens there, so a small
  *   default truncates the reply mid-thought; the row records the reason and
- *   the doc pages), else 4096. A wire max_tokens above the documented
- *   non-streaming ceiling (16384) streams the reply. For
+ *   the doc pages) and on the OpenAI/Gemini reasoning rows (16384 —
+ *   reasoning/thinking tokens ride inside the output cap there; the rows
+ *   record the reason and the doc pages), else 4096. An Anthropic wire
+ *   max_tokens above the documented non-streaming ceiling (16384) streams
+ *   the reply. For
  *   "anthropic": on models whose capability row keeps manual thinking mode
  *   (the 4.6 generation and earlier) this caps the reply's text and the
  *   request's max_tokens is maxOutputTokens + thinkingBudget (thinking tokens
@@ -124,11 +144,15 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  *   table (an unset effort on a model with documented levels is recorded as
  *   "provider-default" in the agent id, so runs at different provider
  *   defaults never merge on a leaderboard). Provider "openai":
- *   `reasoning: {effort}` (the docs' per-model value sets vary; the harness
- *   accepts low/medium/high/xhigh). Provider "openai-chat": the
- *   chat-completions body field `reasoning_effort` (Google's Gemini
- *   OpenAI-compatible endpoint maps low/medium/high to thinking_level).
- *   On provider "anthropic", passing both thinkingBudget and reasoningEffort
+ *   `reasoning: {effort}`, validated per model against the OpenAI capability
+ *   table (low/medium/high/xhigh/max on the rows that document max; an
+ *   unknown `gpt-*` id is refused with a message naming the table).
+ *   Provider "openai-chat": the chat-completions body field
+ *   `reasoning_effort`, validated per model against the Gemini capability
+ *   table (Google's Gemini OpenAI-compatible endpoint maps low/medium/high
+ *   to thinking_level; an unknown `gemini-*` id is refused with a message
+ *   naming the table, other ids — local servers — keep the permissive
+ *   default). On provider "anthropic", passing both thinkingBudget and reasoningEffort
  *   is an error: both steer Anthropic thinking.
  * @property {number} [callTimeoutMs] Per-attempt timeout in milliseconds.
  *   Default: no per-attempt timeout. A timed-out attempt counts as a
@@ -148,8 +172,8 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  *   for fast tests.
  * @property {string} [id] Agent id. Default "<provider>/<model>", plus
  *   ":reasoning-effort=<level>" (or ":reasoning-effort=provider-default")
- *   when the Anthropic model has documented effort levels — the effective
- *   effort is part of the identity, so runs at different effort levels or
+ *   when the model's capability row documents effort levels (any provider) —
+ *   the effective effort is part of the identity, so runs at different effort levels or
  *   different provider defaults never merge on a leaderboard.
  */
 
@@ -462,6 +486,242 @@ export function resolveAnthropicCapability(model) {
   return null;
 }
 
+
+// ---------------------------------------------------------------------------
+// OpenAI model-capability table (provider "openai", Responses API).
+//
+// One row per documented OpenAI model-id pattern, the same contract as the
+// Anthropic table: what the model accepts on the wire, per the OpenAI docs,
+// with the pages and the date the row was checked — the documented effort
+// levels and API default, whether sampling fields are rejected, and a
+// documented output cap. A `gpt-*` model id that matches no row is refused at
+// construction with a message naming this table, so a new model cannot be
+// silently run with settings it may reject. Ids that are not GPT model ids on
+// provider "openai" (proxies, stubs) are not tabled and keep the permissive
+// default. Where the docs are silent the row records the permissive value
+// (sampling allowed, default effort unknown) rather than a guess.
+//
+// Checked 2026-10-16 against:
+// - Models index and GPT-6 Astra model page:
+//   https://platform.openai.com/docs/models and
+//   https://platform.openai.com/docs/models/gpt-6-astra (per-model effort
+//   levels, max output tokens, prices; deprecation status for the 5.x rows)
+// - Reasoning guide: https://platform.openai.com/docs/guides/reasoning
+//   (effort values are model-dependent; reasoning tokens count toward
+//   max_output_tokens; a reply cut off by the cap arrives with status
+//   "incomplete" and incomplete_details.reason "max_output_tokens")
+// - GPT-6 family effort levels (Astra, Sol, Luna, 6.1 Sol support
+//   low/medium/high/xhigh/max): https://platform.openai.com/docs/llms-full.txt
+// - gpt-5.2 generation (incl. gpt-5.2-codex), gpt-5.4 and gpt-5.1 model
+//   pages under https://platform.openai.com/docs/models (the 5.x rows stay
+//   for existing agent specs; gpt-5.4/gpt-5.1 document a default effort of
+//   none — thinking off — which the harness never sends).
+
+/**
+ * @typedef {object} FrontierModelCapability
+ * @property {RegExp} pattern Model-id pattern (an optional `-YYYYMMDD`
+ *   snapshot suffix is tolerated on every row).
+ * @property {string} name Human-readable model name, for messages.
+ * @property {boolean} manualBudgetAccepted Always false on the OpenAI and
+ *   Gemini rows: thinkingBudget is an Anthropic-only setting (refused at
+ *   construction before the row is consulted); the field keeps the row shape
+ *   identical across the three tables.
+ * @property {boolean} adaptiveThinking Always false on the OpenAI and Gemini
+ *   rows: neither wire protocol carries an Anthropic thinking field.
+ * @property {Array<'low' | 'medium' | 'high' | 'xhigh' | 'max'> | null} effortLevels
+ *   The documented effort levels; null = effort is not documented for the
+ *   model, so reasoningEffort is refused rather than guessed.
+ * @property {'low' | 'medium' | 'high' | null} defaultEffort The documented
+ *   API default effort; null when the docs are silent (the exposed
+ *   reasoningEffortDefault is then null too — unknown, not guessed).
+ * @property {boolean} samplingFieldsAllowed False only where the docs state
+ *   that non-default temperature/top_p/top_k are rejected.
+ * @property {number | null} [defaultMaxOutputTokens] The output cap the
+ *   harness applies when the caller passes no maxOutputTokens (reasoning
+ *   rows: reasoning tokens ride inside the output cap there, so a small
+ *   default truncates the reply mid-thought). Null keeps the legacy 4096
+ *   default.
+ * @property {string | null} [outputCapSource] Why this default and where it
+ *   is documented (page + date checked); null when defaultMaxOutputTokens is.
+ * @property {string} docs The page(s) the row was verified against.
+ * @property {string} checked ISO date of the last doc check.
+ */
+
+/**
+ * Why the OpenAI reasoning rows default their output cap to 16384 and where
+ * that is documented, recorded on every row that carries the default.
+ */
+const OPENAI_OUTPUT_CAP_SOURCE =
+  'OpenAI reasoning docs, checked 2026-10-16: reasoning tokens count toward max_output_tokens (https://platform.openai.com/docs/guides/reasoning), so the legacy 4096 default cuts reasoning-heavy replies off mid-thought at higher efforts; 16384 sits under the documented 128,000-token max output for GPT-6 Astra (https://platform.openai.com/docs/models/gpt-6-astra). Pass an explicit larger cap for xhigh/max-effort runs.';
+
+/** @type {Array<FrontierModelCapability>} */
+export const OPENAI_CAPABILITIES = [
+  {
+    pattern: /^gpt-6-astra(?:-\d{8})?$/,
+    name: 'GPT-6 Astra',
+    adaptiveThinking: false,
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: null,
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: OPENAI_OUTPUT_CAP_SOURCE,
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.openai.com/docs/models/gpt-6-astra and https://platform.openai.com/docs/guides/reasoning (API default effort and sampling fields: docs silent in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^gpt-6(?:\.1)?-(?:sol|luna)(?:-\d{8})?$/,
+    name: 'GPT-6 Sol / GPT-6 Luna / GPT-6.1 Sol',
+    adaptiveThinking: false,
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: null,
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: OPENAI_OUTPUT_CAP_SOURCE,
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.openai.com/docs/llms-full.txt (GPT-6 family effort levels; Sol and Luna also accept none, which the harness never sends) and https://platform.openai.com/docs/models (API default effort and sampling fields: docs silent in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^gpt-5\.2(?:-codex)?(?:-\d{8})?$/,
+    name: 'GPT-5.2 generation',
+    adaptiveThinking: false,
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh'],
+    defaultEffort: null,
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: OPENAI_OUTPUT_CAP_SOURCE,
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.openai.com/docs/models/gpt-5.2-codex (5.2-generation effort levels; deprecated per the models index — the plain gpt-5.2 id stays in existing agent specs) and https://platform.openai.com/docs/guides/reasoning',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^gpt-5\.4(?:-\d{8})?$/,
+    name: 'GPT-5.4',
+    adaptiveThinking: false,
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh'],
+    defaultEffort: null,
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: OPENAI_OUTPUT_CAP_SOURCE,
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.openai.com/docs/models/gpt-5.4 (documented default effort none — thinking off; the harness never sends none, so an unset effort runs that provider default) and https://platform.openai.com/docs/guides/reasoning',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^gpt-5\.1(?:-\d{8})?$/,
+    name: 'GPT-5.1',
+    adaptiveThinking: false,
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high'],
+    defaultEffort: null,
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: OPENAI_OUTPUT_CAP_SOURCE,
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.openai.com/docs/models/gpt-5.1 (documented default effort none — thinking off; deprecated per the models index) and https://platform.openai.com/docs/guides/reasoning',
+    checked: '2026-10-16',
+  },
+];
+
+export const OPENAI_CAPABILITY_DOC_URL = 'https://platform.openai.com/docs/models';
+
+// ---------------------------------------------------------------------------
+// Gemini model-capability table (provider "openai-chat" — Google's
+// OpenAI-compatible chat-completions endpoint).
+//
+// One row per documented Gemini model-id pattern, same contract as the other
+// tables. A `gemini-*` model id that matches no row is refused at
+// construction with a message naming this table; other openai-chat ids
+// (llama.cpp, Ollama, vLLM, proxies, stubs) are not Gemini ids, are not
+// tabled, and keep the permissive default.
+//
+// Checked 2026-10-16 against:
+// - OpenAI compatibility: https://ai.google.dev/gemini-api/docs/openai
+//   (the chat-completions reasoning_effort field maps to Gemini's
+//   thinking_level: minimal→low, low→low, medium→medium, high→high; omitted
+//   leaves the model default)
+// - Gemini thinking: https://ai.google.dev/gemini-api/docs/generate-content/thinking
+//   (Gemini 4 Argon thinking levels low/medium/high, default medium,
+//   thinking cannot be disabled) and
+//   https://ai.google.dev/gemini-api/docs/thinking (max_output_tokens bounds
+//   thought and answer tokens together)
+// - Long decode: https://ai.google.dev/gemini-api/docs/generate-content/long-decode
+//   (on the OpenAI-compatible endpoint long decode is unavailable; a
+//   non-streaming request stops at 32,768 output tokens, streaming at
+//   65,536)
+// - Release notes: https://ai.google.dev/gemini-api/docs/changelog
+//   (temperature/top_p/top_k deprecated — not rejected; the compatibility
+//   docs are silent on them, so the row keeps the permissive value)
+
+/**
+ * Why the Gemini reasoning rows default their output cap to 16384 and where
+ * that is documented, recorded on every row that carries the default.
+ */
+const GEMINI_OUTPUT_CAP_SOURCE =
+  'Google Gemini docs, checked 2026-10-16: max_output_tokens bounds thought and answer tokens together (https://ai.google.dev/gemini-api/docs/thinking), so the legacy 4096 default cuts reasoning-heavy replies off mid-thought; on the OpenAI-compatible endpoint long decode is unavailable and a non-streaming request stops at 32,768 output tokens (https://ai.google.dev/gemini-api/docs/generate-content/long-decode), so 16384 keeps a reasoning-heavy reply under the compatibility ceiling without truncating every reply mid-thought. Pass an explicit larger cap up to the 32,768 (non-streaming) / 65,536 (streaming) limits.';
+
+/** @type {Array<FrontierModelCapability>} */
+export const GEMINI_CAPABILITIES = [
+  {
+    pattern: /^gemini-4-argon(?:-latest)?(?:-\d{8})?$/,
+    name: 'Gemini 4 Argon',
+    adaptiveThinking: false,
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high'],
+    defaultEffort: 'medium',
+    defaultMaxOutputTokens: 16384,
+    outputCapSource: GEMINI_OUTPUT_CAP_SOURCE,
+    samplingFieldsAllowed: true,
+    docs: 'https://ai.google.dev/gemini-api/docs/openai (reasoning_effort → thinking_level) and https://ai.google.dev/gemini-api/docs/generate-content/thinking (levels, default medium, thinking cannot be disabled; sampling fields: docs silent on the compatibility endpoint in the pages checked — temperature/top_p/top_k are deprecated per https://ai.google.dev/gemini-api/docs/changelog, not rejected)',
+    checked: '2026-10-16',
+  },
+];
+
+export const GEMINI_CAPABILITY_DOC_URL = 'https://ai.google.dev/gemini-api/docs/openai';
+
+/**
+ * Look up the capability row for a Gemini model id on provider "openai-chat".
+ * Returns null for ids that are not Gemini model ids (local servers, proxies
+ * and stubs keep the permissive default); throws for `gemini-*` ids that
+ * match no row, naming the table so a new model cannot be silently run with
+ * settings it may reject.
+ *
+ * @param {string} model
+ * @returns {FrontierModelCapability | null}
+ */
+export function resolveGeminiCapability(model) {
+  for (const capability of GEMINI_CAPABILITIES) {
+    if (capability.pattern.test(model)) return capability;
+  }
+  if (/^gemini-/i.test(model)) {
+    throw new Error(
+      `createModelAgent: model ${JSON.stringify(model)} is a Gemini id that matches no row in the Gemini capability table (harness/model-agent.js), so it is refused rather than run with settings the model may reject. Add a row with the model-id pattern, the documented effort levels and default, the sampling-field rule, and a documented output cap, citing the doc URL and the date checked — see ${GEMINI_CAPABILITY_DOC_URL}`
+    );
+  }
+  return null;
+}
+
+/**
+ * Look up the capability row for a GPT model id on provider "openai".
+ * Returns null for ids that are not GPT model ids (proxies and stubs keep
+ * the permissive default); throws for `gpt-*` ids that match no row, naming
+ * the table so a new model cannot be silently run with settings it may
+ * reject.
+ *
+ * @param {string} model
+ * @returns {FrontierModelCapability | null}
+ */
+export function resolveOpenAICapability(model) {
+  for (const capability of OPENAI_CAPABILITIES) {
+    if (capability.pattern.test(model)) return capability;
+  }
+  if (/^gpt-/i.test(model)) {
+    throw new Error(
+      `createModelAgent: model ${JSON.stringify(model)} is a GPT id that matches no row in the OpenAI capability table (harness/model-agent.js), so it is refused rather than run with settings the model may reject. Add a row with the model-id pattern, the documented effort levels and default, the sampling-field rule, and a documented output cap, citing the doc URL and the date checked — see ${OPENAI_CAPABILITY_DOC_URL}`
+    );
+  }
+  return null;
+}
 
 /**
  * An Error carrying the number of retries the caller performed, so a consumer
@@ -1092,6 +1352,22 @@ async function callOpenAI({
     text = json.output_text;
   }
   const reasoningTokens = tokenCount(json?.usage?.output_tokens_details?.reasoning_tokens);
+  // A reply cut off by the output cap arrives as status "incomplete" with
+  // incomplete_details.reason "max_output_tokens" (reasoning tokens count
+  // toward max_output_tokens, so the mid-reasoning case is the same marker);
+  // https://platform.openai.com/docs/guides/reasoning, checked 2026-10-16.
+  // Partial text still takes the ordinary reply path — the marker records WHY
+  // the reply is incomplete, in the Anthropic truncated record's shape.
+  const truncated =
+    json?.status === 'incomplete'
+      ? {
+          stopReason:
+            typeof json?.incomplete_details?.reason === 'string'
+              ? json.incomplete_details.reason
+              : 'incomplete',
+          outputTokens: tokenCount(json?.usage?.output_tokens),
+        }
+      : null;
   return {
     text,
     inputTokens: tokenCount(json?.usage?.input_tokens),
@@ -1099,6 +1375,7 @@ async function callOpenAI({
     retries,
     responseId: typeof json?.id === 'string' ? json.id : null,
     ...(reasoningTokens !== null ? { reasoningTokens } : {}),
+    ...(truncated ? { truncated } : {}),
   };
 }
 
@@ -1214,6 +1491,18 @@ async function callOpenAIChat({
         ? message.reasoning
         : '';
   const reasoningTokens = tokenCount(json?.usage?.completion_tokens_details?.reasoning_tokens);
+  // A reply cut off by the output cap carries finish_reason "length" (the
+  // chat-completions wire shape, spoken by every endpoint this provider
+  // reaches — llama.cpp, Ollama, vLLM, Google's Gemini OpenAI-compatible
+  // endpoint). The marker records WHY the reply is incomplete, in the
+  // Anthropic truncated record's shape.
+  const truncated =
+    choice?.finish_reason === 'length'
+      ? {
+          stopReason: 'length',
+          outputTokens: tokenCount(json?.usage?.completion_tokens),
+        }
+      : null;
   return {
     text,
     inputTokens: tokenCount(json?.usage?.prompt_tokens),
@@ -1222,6 +1511,7 @@ async function callOpenAIChat({
     responseId: typeof json?.id === 'string' ? json.id : null,
     reasoningChars: reasoning.length,
     ...(reasoningTokens !== null ? { reasoningTokens } : {}),
+    ...(truncated ? { truncated } : {}),
   };
 }
 
@@ -1291,8 +1581,13 @@ export function createModelAgent({
     // (below) enforces the documented levels exactly; non-Claude anthropic ids
     // (proxies, stubs) get the permissive superset.
     const allowed =
+      // Provider-level supersets; the per-model capability tables (below)
+      // narrow these to the levels each model documents. The openai superset
+      // carries 'max' because the OpenAI docs document it for the 6
+      // generation; untabled openai ids (proxies, stubs) get the same
+      // permissive superset as untabled anthropic ids.
       provider === 'openai'
-        ? ['low', 'medium', 'high', 'xhigh']
+        ? ['low', 'medium', 'high', 'xhigh', 'max']
         : provider === 'openai-chat'
           ? ['low', 'medium', 'high']
           : ['low', 'medium', 'high', 'xhigh', 'max'];
@@ -1307,27 +1602,42 @@ export function createModelAgent({
       );
     }
   }
-  // Per-model capability validation for Claude model ids on provider
-  // "anthropic". A `claude-*` id that matches no row is refused inside
-  // resolveAnthropicCapability, naming the table, so a new model cannot be
-  // silently run with settings it may reject.
+  // Per-model capability validation. A `claude-*` id that matches no row is
+  // refused inside resolveAnthropicCapability; a `gpt-*` id on provider
+  // "openai" and a `gemini-*` id on provider "openai-chat" that match no row
+  // are refused inside resolveOpenAICapability / resolveGeminiCapability —
+  // each names its table, so a new model cannot be silently run with
+  // settings it may reject. The per-row checks below enforce the documented
+  // effort levels, the sampling-field rules, and (via rowDefaultCap) the
+  // documented default output cap.
   const capability =
-    provider === 'anthropic' ? resolveAnthropicCapability(model) : null;
+    provider === 'anthropic'
+      ? resolveAnthropicCapability(model)
+      : provider === 'openai'
+        ? resolveOpenAICapability(model)
+        : resolveGeminiCapability(model);
+  // The refusal messages name the table for the row's provider.
+  const tableLabel =
+    provider === 'anthropic'
+      ? 'the Anthropic capability table'
+      : provider === 'openai'
+        ? 'the OpenAI capability table'
+        : 'the Gemini capability table';
   if (capability) {
     if (thinkingBudget !== undefined && !capability.manualBudgetAccepted) {
       throw new Error(
-        `createModelAgent: thinkingBudget is not accepted on model ${JSON.stringify(model)} (${capability.name}): the model rejects manual budget_tokens with HTTP 400${capability.effortLevels ? ' — steer thinking with reasoningEffort instead' : ''}. See the Anthropic capability table in harness/model-agent.js and ${capability.docs} (checked ${capability.checked})`
+        `createModelAgent: thinkingBudget is not accepted on model ${JSON.stringify(model)} (${capability.name}): the model rejects manual budget_tokens with HTTP 400${capability.effortLevels ? ' — steer thinking with reasoningEffort instead' : ''}. See ${tableLabel} in harness/model-agent.js and ${capability.docs} (checked ${capability.checked})`
       );
     }
     if (reasoningEffort !== undefined) {
       if (!capability.effortLevels) {
         throw new Error(
-          `createModelAgent: the Anthropic capability table documents no effort levels for model ${JSON.stringify(model)} (${capability.name}), so reasoningEffort is refused rather than guessed. See the table in harness/model-agent.js and ${capability.docs} (checked ${capability.checked})`
+          `createModelAgent: ${tableLabel} documents no effort levels for model ${JSON.stringify(model)} (${capability.name}), so reasoningEffort is refused rather than guessed. See the table in harness/model-agent.js and ${capability.docs} (checked ${capability.checked})`
         );
       }
       if (!capability.effortLevels.includes(reasoningEffort)) {
         throw new Error(
-          `createModelAgent: reasoning effort ${JSON.stringify(reasoningEffort)} is not documented for model ${JSON.stringify(model)} (${capability.name}); the documented levels are ${capability.effortLevels.map((v) => JSON.stringify(v)).join(', ')}. See the Anthropic capability table in harness/model-agent.js and ${capability.docs} (checked ${capability.checked})`
+          `createModelAgent: reasoning effort ${JSON.stringify(reasoningEffort)} is not documented for model ${JSON.stringify(model)} (${capability.name}); the documented levels are ${capability.effortLevels.map((v) => JSON.stringify(v)).join(', ')}. See ${tableLabel} in harness/model-agent.js and ${capability.docs} (checked ${capability.checked})`
         );
       }
     }
@@ -1342,10 +1652,11 @@ export function createModelAgent({
       }
     }
   }
-  // The effective effort is part of the agent's identity: an unset effort on a
-  // model with documented levels is recorded as "provider-default" (and the
-  // documented default is exposed alongside), so runs at different provider
-  // defaults or explicit levels never merge on a leaderboard.
+  // The effective effort is part of the agent's identity: an unset effort on
+  // a model whose capability row documents levels (any provider) is recorded
+  // as "provider-default" (and the documented default is exposed alongside),
+  // so runs at different provider defaults or explicit levels never merge on
+  // a leaderboard.
   const effectiveEffort =
     reasoningEffort !== undefined
       ? reasoningEffort
@@ -1382,13 +1693,15 @@ export function createModelAgent({
     );
   }
   const keyEnv = apiKeyEnv ?? DEFAULT_API_KEY_ENVS[provider];
-  // On the adaptive-thinking rows the row's documented default replaces the
-  // legacy 4096 when the caller passes no maxOutputTokens: thinking rides
-  // inside max_tokens there, so a small default truncates the reply
-  // mid-thought (see ADAPTIVE_OUTPUT_CAP_SOURCE on the rows). An explicit
-  // maxOutputTokens always wins; every other row keeps 4096.
+  // On the rows that carry a documented default (the adaptive-thinking
+  // Anthropic rows, and the OpenAI/Gemini reasoning rows where reasoning
+  // tokens ride inside the output cap) the row's documented default replaces
+  // the legacy 4096 when the caller passes no maxOutputTokens: a small
+  // default truncates the reply mid-thought (see ADAPTIVE_OUTPUT_CAP_SOURCE,
+  // OPENAI_OUTPUT_CAP_SOURCE and GEMINI_OUTPUT_CAP_SOURCE on the rows). An
+  // explicit maxOutputTokens always wins; every other row keeps 4096.
   const rowDefaultCap =
-    capability && capability.adaptiveThinking && capability.defaultMaxOutputTokens
+    capability && capability.defaultMaxOutputTokens
       ? capability.defaultMaxOutputTokens
       : null;
   const limit =

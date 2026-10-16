@@ -533,7 +533,7 @@ test('createModelAgent rejects reasoning settings that do not match the provider
         model: 'stub-model',
         reasoningEffort: /** @type {*} */ ('extreme'),
       }),
-    /reasoningEffort for provider "openai" must be one of "low", "medium", "high", "xhigh", got "extreme"/
+    /reasoningEffort for provider "openai" must be one of "low", "medium", "high", "xhigh", "max", got "extreme"/
   );
   assert.throws(
     () =>

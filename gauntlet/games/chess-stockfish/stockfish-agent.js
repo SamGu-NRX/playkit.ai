@@ -41,7 +41,7 @@ export function createStockfishOpponentAgent({
   enginePath,
   idleTimeoutMs,
 } = /** @type {never} */ ({})) {
-  const params = /** @type {{ nodes: number, searchTimeoutMs?: number }} */ (
+  const params = /** @type {{ nodes: number, searchTimeoutMs?: number, elo?: number }} */ (
     /** @type {*} */ (tier?.params ?? {})
   );
   const nodes = params.nodes;
@@ -51,6 +51,10 @@ export function createStockfishOpponentAgent({
     );
   }
   const searchTimeoutMs = params.searchTimeoutMs;
+  // Optional strength limit: when set, the engine plays under UCI's
+  // documented skill ceiling (UCI_LimitStrength + UCI_Elo) instead of full
+  // strength. Useful for absolute calibration runs (see rating/absolute.js).
+  const elo = params.elo;
 
   /** @type {Promise<*> | null} */
   let enginePromise = null;
@@ -85,6 +89,13 @@ export function createStockfishOpponentAgent({
       await instance.start();
       await instance.setoption('Threads', 1);
       await instance.setoption('Hash', uci.DEFAULT_HASH_MB);
+      if (elo !== undefined) {
+        if (!Number.isInteger(elo)) {
+          throw new Error(`tier params.elo must be an integer UCI_Elo value, got ${JSON.stringify(elo)}`);
+        }
+        await instance.setoption('UCI_LimitStrength', true);
+        await instance.setoption('UCI_Elo', elo);
+      }
       return instance;
     })();
     enginePromise.catch(() => {

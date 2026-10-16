@@ -21,6 +21,7 @@ import { runEpisode } from '../core/runner.js';
 
 import { manifestSha256 } from './plan.js';
 import { estimateSuite, estimateToMarkdown, resolveBaseline, writeEstimate } from './estimate.js';
+import { ESTIMATE_FIT } from './estimate-fit/params.js';
 
 const PRICES = {
   'acme/alpha': { inputPerMTok: 3, outputPerMTok: 15, source: 'test', checked: '2026-10-15' },
@@ -28,7 +29,10 @@ const PRICES = {
 
 test('engine-probe basis: tictactoe, low = an independently replayed baseline mean', async () => {
   const suite = buildSuite([tictactoe], { split: 'public' });
-  const estimate = await estimateSuite({ suite, games: [tictactoe] });
+  // fit:false — tictactoe/perfect-opponent has fitted parameters from real
+  // runs, so the default estimate would use them; this test pins the probe
+  // machinery that remains the fallback for unfitted tiers.
+  const estimate = await estimateSuite({ suite, games: [tictactoe], fit: false });
 
   const tier = tictactoe.spec.tiers.find((t) => t.id === 'perfect-opponent');
   assert.ok(tier, 'tictactoe has the perfect-opponent tier');
@@ -60,6 +64,37 @@ test('engine-probe basis: tictactoe, low = an independently replayed baseline me
   assert.equal(estimate.totals.callsHigh, 8 * tier.maxActions);
   assert.equal(estimate.totals.callsLow, 8 * mean);
   assert.equal(estimate.totals.usdLow, null);
+});
+
+test('model-fit basis: tictactoe uses the fitted parameters from committed runs', async () => {
+  const fitTier = ESTIMATE_FIT.tiers['tictactoe/perfect-opponent'];
+  assert.ok(fitTier, 'the committed fit covers tictactoe/perfect-opponent');
+
+  const suite = buildSuite([tictactoe], { split: 'public' });
+  const estimate = await estimateSuite({ suite, games: [tictactoe] });
+
+  const tier = tictactoe.spec.tiers.find((t) => t.id === 'perfect-opponent');
+  assert.ok(tier);
+  for (const job of estimate.jobs) {
+    assert.equal(job.basis, 'model-fit');
+    // Low = the fitted mean agent actions per episode, exactly as fitted.
+    assert.equal(job.callsLow, fitTier.callsExpected);
+    // High stays the tier budget, fitted or not.
+    assert.equal(job.callsHigh, tier.maxActions);
+    assert.match(/** @type {string} */ (job.note), /fitted mean agent actions/);
+    assert.match(/** @type {string} */ (job.note), /maxActions/);
+  }
+  // Fit provenance is carried on the estimate.
+  assert.ok(estimate.fit, 'fit provenance present when a job used the fit');
+  assert.equal(/** @type {*} */ (estimate.fit).format, ESTIMATE_FIT.format);
+  assert.ok(/** @type {*} */ (estimate.fit).tiers >= 1);
+  assert.ok(Array.isArray(/** @type {*} */ (estimate.fit).sources));
+  assert.match(estimate.note, /runs\/estimate-fit\/fit-report\.md/);
+
+  // Markdown renders the fitted note and stays labeled as an estimate.
+  const md = estimateToMarkdown(estimate);
+  assert.match(md, /Estimate, not a measurement/);
+  assert.match(md, /fitted mean agent actions/);
 });
 
 test('par basis: countdown, low = the per-seed par from state.par', async () => {

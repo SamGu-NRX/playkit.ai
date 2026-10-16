@@ -7,6 +7,7 @@
 
 import tictactoe from './tictactoe/index.js';
 import chess from './chess/index.js';
+import chessPuzzles from './chess-puzzles/index.js';
 
 /** @import { Game } from '../core/types.js' */
 
@@ -14,6 +15,7 @@ import chess from './chess/index.js';
 export const GAMES = {
   tictactoe,
   chess,
+  'chess-puzzles': chessPuzzles,
 };
 
 /**

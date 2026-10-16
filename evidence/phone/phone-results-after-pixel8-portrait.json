@@ -33,6 +33,12 @@
       "panelCoversBoardPct": 91,
       "panelWithinViewport": true
     },
+    "drag": {
+      "panelFollowedPointer": true,
+      "releasedCleanly": true,
+      "cancelDelivered": false,
+      "cancelEndedDrag": true
+    },
     "autoSolve": {
       "movedFive": true,
       "startedByTap": true,
@@ -78,7 +84,7 @@
       "before": {
         "hasRuntime": true,
         "isRunning": true,
-        "moveCount": 5,
+        "moveCount": 6,
         "solverStatus": {
           "mode": "wasm",
           "status": "ready",
@@ -183,7 +189,7 @@
       "resumed": {
         "hasRuntime": true,
         "isRunning": true,
-        "moveCount": 12,
+        "moveCount": 11,
         "solverStatus": {
           "mode": "wasm",
           "status": "ready",
@@ -269,41 +275,7 @@
         "mode": "auto",
         "gameStatus": "Play2048Adapter"
       },
-      "facts": {
-        "hasRuntime": true,
-        "isRunning": true,
-        "moveCount": 1,
-        "solverStatus": {
-          "mode": "wasm",
-          "status": "ready",
-          "lastError": null,
-          "strategy": {
-            "type": "expectimax-depth",
-            "heuristic": "corner",
-            "depth": 4,
-            "probability": 0.0025
-          },
-          "wasm": {
-            "type": "wasm",
-            "status": "ready",
-            "ready": true,
-            "lastError": null,
-            "strategy": {
-              "type": "expectimax-depth",
-              "heuristic": "corner",
-              "depth": 4,
-              "probability": 0.0025
-            }
-          },
-          "naive": {
-            "type": "naive",
-            "ready": true,
-            "strategy": {
-              "bias": 2
-            }
-          }
-        }
-      },
+      "facts": null,
       "panelTransitionDuration": "0s",
       "reducedMotionApplied": true
     },

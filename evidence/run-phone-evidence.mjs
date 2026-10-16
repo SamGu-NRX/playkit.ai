@@ -399,6 +399,51 @@ const serveUrl = `http://127.0.0.1:${globalThis.__phoneServe.port}`;
   await shot(page, "02b-geometry");
   results.steps.geometry = facts;
 
+  // 4b. header drag via Pointer Events: the panel follows the pointer, and a
+  // pointercancel ends the drag without leaving it stuck in dragging state.
+  if (injected) {
+    const start = await page.evaluate(() => {
+      const root = document.querySelector("#ai-2048-solver-hud").shadowRoot;
+      const panel = root.querySelector(".hud-panel").getBoundingClientRect();
+      const header = root.querySelector(".hud-header").getBoundingClientRect();
+      return { px: panel.x, py: panel.y, hx: header.x + header.width / 2, hy: header.y + header.height / 2 };
+    });
+    await page.mouse.move(start.hx, start.hy);
+    await page.mouse.down();
+    await page.mouse.move(start.hx + 46, start.hy + 52, { steps: 6 });
+    const mid = await page.evaluate(() => {
+      const panel = document.querySelector("#ai-2048-solver-hud").shadowRoot.querySelector(".hud-panel");
+      const r = panel.getBoundingClientRect();
+      return { x: r.x, y: r.y, dragging: panel.classList.contains("dragging") };
+    });
+    await page.mouse.up();
+    await page.waitForTimeout(250);
+    const released = await page.evaluate(() =>
+      !document.querySelector("#ai-2048-solver-hud").shadowRoot.querySelector(".hud-panel").classList.contains("dragging")
+    );
+    await page.mouse.move(start.hx + 20, start.hy + 20);
+    await page.mouse.down();
+    await page.mouse.move(start.hx + 60, start.hy + 60, { steps: 4 });
+    // The view registers its cancel handler on the document, so dispatch there.
+    const cancelVisible = await page.evaluate(() => {
+      const panel = document.querySelector("#ai-2048-solver-hud").shadowRoot.querySelector(".hud-panel");
+      if (!panel.classList.contains("dragging")) return false;
+      document.dispatchEvent(new PointerEvent("pointercancel", { bubbles: true, cancelable: true }));
+      return true;
+    });
+    await page.waitForTimeout(250);
+    const cancelled = await page.evaluate(() =>
+      !document.querySelector("#ai-2048-solver-hud").shadowRoot.querySelector(".hud-panel").classList.contains("dragging")
+    );
+    await shot(page, "03b-drag");
+    results.steps.drag = {
+      panelFollowedPointer: mid.dragging && (Math.abs(mid.x - start.px) > 10 || Math.abs(mid.y - start.py) > 10),
+      releasedCleanly: released,
+      cancelDelivered: cancelVisible,
+      cancelEndedDrag: cancelled,
+    };
+  }
+
   // 5. Auto-solve driven by HUD taps: detection auto-starts the driver, so
   // the first tap stops it and the second starts it again — both real HUD
   // toggles, no external state pokes (an external driver.stop() desyncs the
@@ -462,6 +507,10 @@ const serveUrl = `http://127.0.0.1:${globalThis.__phoneServe.port}`;
     s.tabSwitch.driverWasRunningWhenHidden &&
     s.tabSwitch.moveCountFrozenWhilePaused &&
     s.tabSwitch.resumedAndMoving &&
+    s.drag &&
+    s.drag.panelFollowedPointer &&
+    s.drag.releasedCleanly &&
+    s.drag.cancelEndedDrag &&
     s.gameOver &&
     s.gameOver.adapterReportsGameOver &&
     s.gameOver.bannerAtLoad &&

@@ -116,3 +116,77 @@ test('verifyBridgeLog accepts an empty log', () => {
   const result = verifyBridgeLog(log);
   assert.equal(result.ok, true);
 });
+
+
+test('verifyBridgeLog rejects a forged spawn value the rules never produce', () => {
+  // Greptile P1 #4285440488: a one-step log with its spawn changed to 8 (and
+  // boardAfter changed to match) used to verify, because the verifier trusted
+  // the saved spawn and boardAfter. placeTile accepts any value; the rules
+  // only ever spawn a 2 or a 4.
+  const log = cleanLog();
+  const step = log.steps[0];
+  const saved = step.spawn;
+  assert.ok(saved, 'a recorded step carries its spawn');
+  const forged = { r: saved.r, c: saved.c, value: 8 };
+  step.spawn = forged;
+  step.boardAfter = placeTile(step.boardAfter, forged.r, forged.c, forged.value);
+  const result = verifyBridgeLog(log);
+  assert.equal(result.ok, false, 'a spawn value the rules never produce must fail verification');
+  if (!result.ok) {
+    assert.equal(result.index, 0);
+  }
+});
+
+test('verifyBridgeLog rejects a spawn placed on an occupied cell', () => {
+  // Greptile P1 #4285440488: placeTile overwrites any cell, so a spawn onto a
+  // cell the slide had already settled used to verify when boardAfter was
+  // saved to match. The referee requires the spawn to land on an empty cell.
+  const log = createBridgeLog({
+    game: { id: '2048', version: '1.0.0' },
+    agent: { id: '2048-greedy', track: 'baseline' },
+    initialBoard: /** @type {Board} */ ([
+      [4, 0, 2, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]),
+    startedAt: '2026-10-15T00:00:00.000Z',
+  });
+  const initial = log.initialBoard;
+  const slid = slide(initial, 'left').board; // [[4,2,0,0], ...]
+  assert.equal(slid[0][0], 4, 'the forged spawn target must be a settled cell');
+  const after = placeTile(slid, 0, 0, 2); // overwrite the settled 4 with a "spawn"
+  recordStep(log, {
+    turn: 0,
+    boardBefore: initial,
+    boardAfter: after,
+    verdict: {
+      ok: true,
+      direction: 'left',
+      applied: 'left',
+      spawn: { r: 0, c: 0, value: 2 },
+      diverged: false,
+      reason: null,
+    },
+  });
+  endBridgeLog(log, { reason: 'move-cap', turn: 1, finishedAt: '2026-10-15T00:01:00.000Z' });
+  const result = verifyBridgeLog(log);
+  assert.equal(result.ok, false, 'a spawn onto an occupied cell must fail verification');
+  if (!result.ok) {
+    assert.equal(result.index, 0);
+  }
+});
+
+test('verifyBridgeLog rejects a boardBefore that does not match the replayed board', () => {
+  // The verifier replays from the recorded initial board; a step whose saved
+  // boardBefore quietly differs from what the replay produced must fail, or a
+  // spliced log could hide a rewritten transition.
+  const log = cleanLog();
+  log.steps[1].boardBefore[0][0] = 512;
+  const result = verifyBridgeLog(log);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.index, 1);
+    assert.match(result.reason, /boardBefore/);
+  }
+});

@@ -1,0 +1,120 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "deep",
+  "seed": "mastermind/deep/public/0",
+  "split": "public",
+  "agent": {
+    "id": "greedy",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "286ca2199214ac79",
+      "reply": {
+        "text": "guess IAAEAH"
+      },
+      "action": "guess IAAEAH",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "fcf7066f56485960",
+      "reply": {
+        "text": "guess IDHAFG"
+      },
+      "action": "guess IDHAFG",
+      "invalid": false,
+      "usage": null,
+      "ms": 69
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "567586f04b2d8f82",
+      "reply": {
+        "text": "guess GHDIAC"
+      },
+      "action": "guess GHDIAC",
+      "invalid": false,
+      "usage": null,
+      "ms": 5
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "20fb26b9cae33d69",
+      "reply": {
+        "text": "guess HAGDGI"
+      },
+      "action": "guess HAGDGI",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ea9064077ce9dad3",
+      "reply": {
+        "text": "guess DAGHIB"
+      },
+      "action": "guess DAGHIB",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7eb0cebeac724028",
+      "reply": {
+        "text": "guess HBAGDI"
+      },
+      "action": "guess HBAGDI",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "55cdcb9a940fabfc",
+      "reply": {
+        "text": "guess ABIDGH"
+      },
+      "action": "guess ABIDGH",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1
+      ],
+      "raw": [
+        7
+      ],
+      "reason": "solved: the secret was found in 7 guess(es), reference par 7",
+      "solved": true,
+      "par": 7
+    },
+    "agentActions": 7,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:19:47.646Z",
+  "finishedAt": "2026-10-16T06:19:48.226Z"
+}

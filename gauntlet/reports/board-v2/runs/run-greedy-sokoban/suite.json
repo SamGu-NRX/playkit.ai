@@ -1,0 +1,42 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-first1",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "sokoban",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "two-box",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "sokoban/two-box/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "three-box",
+          "rank": 2,
+          "scoring": "efficiency",
+          "seeds": [
+            "sokoban/three-box/public/0"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "four-box",
+          "rank": 3,
+          "scoring": "efficiency",
+          "seeds": [
+            "sokoban/four-box/public/0"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    }
+  ]
+}

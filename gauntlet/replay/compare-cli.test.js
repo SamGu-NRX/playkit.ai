@@ -16,10 +16,7 @@ const CLI = join(here, 'cli.js');
 
 /** @type {Record<string, string>} */
 const FIXTURES = {
-  mastermind: join(
-    here,
-    '../studies/model-separation/runs/qwen2.5-1.5b/mastermind/classic/mastermind/classic/public/0.json'
-  ),
+  mastermind: join(here, 'fixtures/mastermind-forfeit.json'),
 };
 
 const tempRoot = mkdtempSync(join(tmpdir(), 'gauntlet-replay-compare-cli-'));

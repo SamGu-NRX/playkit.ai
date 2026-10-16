@@ -1,0 +1,127 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "tictactoe",
+    "version": "1.2.0"
+  },
+  "tier": "perfect-opponent",
+  "seed": "0",
+  "split": "public",
+  "agent": {
+    "id": "fixture-model",
+    "track": "official",
+    "seat": 1,
+    "dryRun": true
+  },
+  "opponents": [
+    {
+      "seat": 0,
+      "id": "minimax-perfect"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "64ca9b6aa47312da",
+      "reply": {
+        "text": "c2"
+      },
+      "action": "c2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "3407d6f1f9fc2b8d",
+      "reply": {
+        "text": "I should take the centre if it is free, else block along a row. I should take the centre if it is free, else block along a row. I should take the centre if it is free, else block along a row. I should take the centre if it is free, else block along a row. \na1",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": null
+        },
+        "meta": {
+          "scripted": true
+        }
+      },
+      "action": "a1",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "costUsd": null
+      },
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "9c576f6f2cd7889b",
+      "reply": {
+        "text": "c1"
+      },
+      "action": "c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "30fb35a0788ae70b",
+      "reply": {
+        "text": "I should take the centre if it is free, else block along a row. \na2",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": null
+        },
+        "meta": {
+          "scripted": true
+        }
+      },
+      "action": "a2",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "costUsd": null
+      },
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "fb1e81ffa6cdd4e2",
+      "reply": {
+        "text": "c3"
+      },
+      "action": "c3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1,
+        0
+      ],
+      "raw": [
+        "win",
+        "loss"
+      ],
+      "reason": "seat 0 (X) won with three in a row"
+    },
+    "agentActions": 2,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "1970-01-01T00:00:00.000Z",
+  "finishedAt": "1970-01-01T00:00:00.000Z"
+}

@@ -1,0 +1,186 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "classic",
+  "seed": "0",
+  "split": "public",
+  "agent": {
+    "id": "fixture-model",
+    "track": "official",
+    "seat": 0,
+    "dryRun": true
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "27b64ac8f57bb2b0",
+      "reply": {
+        "text": "I will open with AABB.\nguess AABB",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": null
+        },
+        "meta": {
+          "scripted": true,
+          "replyIndex": 0
+        }
+      },
+      "action": "guess AABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "costUsd": null
+      },
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c8c2735958f2c607",
+      "reply": {
+        "text": "Narrowing it down.\nguess ABCC",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": null
+        },
+        "meta": {
+          "scripted": true,
+          "replyIndex": 1
+        }
+      },
+      "action": "guess ABCC",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "costUsd": null
+      },
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4aceaf12f7e207eb",
+      "reply": {
+        "text": "Narrowing it down.\nguess AABC",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": null
+        },
+        "meta": {
+          "scripted": true,
+          "replyIndex": 2
+        }
+      },
+      "action": "guess AABC",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "costUsd": null
+      },
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f98a36bf94c51e4c",
+      "reply": {
+        "text": "The feedback points to ZZZZ.\nguess ZZZZ",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": null
+        },
+        "meta": {
+          "scripted": true,
+          "replyIndex": 3
+        }
+      },
+      "action": "guess ZZZZ",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "costUsd": null
+      },
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f98a36bf94c51e4c",
+      "reply": {
+        "text": "The feedback points to AB.\nguess AB",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": null
+        },
+        "meta": {
+          "scripted": true,
+          "replyIndex": 4
+        }
+      },
+      "action": "guess AB",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "costUsd": null
+      },
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f98a36bf94c51e4c",
+      "reply": {
+        "text": "The feedback points to ZZQQ.\nguess ZZQQ",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": null
+        },
+        "meta": {
+          "scripted": true,
+          "replyIndex": 5
+        }
+      },
+      "action": "guess ZZQQ",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "costUsd": null
+      },
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 6,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "1970-01-01T00:00:00.000Z",
+  "finishedAt": "1970-01-01T00:00:00.000Z"
+}

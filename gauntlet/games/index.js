@@ -6,12 +6,30 @@
  */
 
 import tictactoe from './tictactoe/index.js';
+import chess from './chess/index.js';
+
+import sliding from './sliding/index.js';
+
+import sokoban from './sokoban/index.js';
+
+import connect4 from './connect4/index.js';
+
+import mastermind from './mastermind/index.js';
 
 /** @import { Game } from '../core/types.js' */
 
 /** @type {Record<string, Game<*>>} */
 export const GAMES = {
   tictactoe,
+  chess,
+
+  sliding,
+
+  sokoban,
+
+  connect4,
+
+  mastermind,
 };
 
 /**

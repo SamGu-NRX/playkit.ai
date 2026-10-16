@@ -281,7 +281,7 @@ PRICESEOF
   echo "\$ ${GAUNTLET[*]} run --suite $WORK/suite.stub.json --agent model:openai-chat/stub \\"
   echo "      --base-url $BASE_URL --api-key-env JOURNEY_STUB_KEY --prices $WORK/prices.json \\"
   echo "      --out $WORK/runs/stub/ --concurrency 4 --max-usd 5 --max-output-tokens 512 --call-timeout-ms 30000"
-  node "${GAUNTLET[1]}" run --suite "$WORK/suite.stub.json" \
+  JOURNEY_STUB_KEY=stub-local-key node "${GAUNTLET[1]}" run --suite "$WORK/suite.stub.json" \
     --agent model:openai-chat/stub --base-url "$BASE_URL" \
     --api-key-env JOURNEY_STUB_KEY --prices "$WORK/prices.json" \
     --out "$WORK/runs/stub/" --concurrency 4 --max-usd 5 \
@@ -311,7 +311,7 @@ PRICESEOF
   fi
 
   echo "\$ ${GAUNTLET[*]} run ... --resume   (same command, resumed)"
-  "${GAUNTLET[@]}" run --suite "$WORK/suite.stub.json" \
+  JOURNEY_STUB_KEY=stub-local-key "${GAUNTLET[@]}" run --suite "$WORK/suite.stub.json" \
     --agent model:openai-chat/stub --base-url "$BASE_URL" \
     --api-key-env JOURNEY_STUB_KEY --prices "$WORK/prices.json" \
     --out "$WORK/runs/stub/" --concurrency 4 --max-usd 5 \

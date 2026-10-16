@@ -9,5 +9,10 @@ description = "Python client for the PlayKit Gauntlet wire protocol (standard li
 requires-python = ">=3.10"
 readme = "README.md"
 
+[project.optional-dependencies]
+# The Inspect AI adapter (playkit_gauntlet.inspect_task). The client itself
+# keeps zero dependencies; install with `pip install ".[inspect]"`.
+inspect = ["inspect_ai>=0.3.0"]
+
 [tool.setuptools]
 packages = ["playkit_gauntlet"]

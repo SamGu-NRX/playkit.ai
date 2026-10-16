@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import tictactoe, { CELLS } from './tictactoe/index.js';
 import { runConformance } from '../core/conformance.js';
+import { runEpisode } from '../core/runner.js';
 import { GauntletRuleError } from '../core/errors.js';
 import { getGame } from '../games/index.js';
 
@@ -227,4 +228,171 @@ test('truncate() scores a forced loss for the mover as a loss, not a draw', () =
   assert.deepEqual(outcome.normalized, [1, 0], 'a forced loss for the mover scores a win for the opponent');
   assert.match(outcome.reason, /forced win/);
   assert.doesNotMatch(outcome.reason, /drawn/, 'a decided position must not be reported as drawn');
+});
+
+test('game: the tier ladder pins the on-ramp parameters', () => {
+  const tiers = game.spec.tiers;
+  assert.deepEqual(
+    tiers.map((t) => [t.id, t.rank, t.params, t.maxActions, t.publicSeeds]),
+    [
+      ['random-opponent', 1, { opponent: 'random', tieBreak: 'seeded' }, 20, 16],
+      ['blunder-opponent', 2, { opponent: 'minimax-blunder', blunderRate: 0.3, tieBreak: 'seeded' }, 20, 16],
+      ['perfect-opponent', 3, { opponent: 'minimax-perfect', tieBreak: 'seeded' }, 20, 8],
+    ]
+  );
+});
+
+test('game: observation data keeps the shipped six-key shape on every tier', () => {
+  for (const tier of game.spec.tiers) {
+    const state = game.reset(tier, 'shape-check');
+    const obs = game.observe(state, 0);
+    assert.deepEqual(Object.keys(obs.data).sort(), ['board', 'moveCount', 'status', 'toMove', 'winner', 'you']);
+    assert.equal(obs.data.you, 0);
+    assert.equal('tierId' in obs.data, false, 'tierId is internal and must not leak into observation data');
+  }
+});
+
+test('game: the observation header names the current tier', () => {
+  for (const tier of game.spec.tiers) {
+    const state = game.reset(tier, 'header-check');
+    const obs = game.observe(state, 0);
+    assert.ok(
+      obs.text.startsWith(`Tic-Tac-Toe, tier ${tier.id}. You are seat 0 (X).`),
+      `${tier.id}: ${obs.text.split('\n')[0]}`
+    );
+  }
+  // The pre-existing perfect-opponent header is unchanged so recorded hashes hold.
+  const perfect = game.reset(game.spec.tiers[2], 'header-check');
+  assert.equal(
+    game.observe(perfect, 0).text.split('\n')[0],
+    'Tic-Tac-Toe, tier perfect-opponent. You are seat 0 (X).'
+  );
+});
+
+test('game: three seeded records pin the random-opponent tier', async () => {
+  const tier = /** @type {typeof game.spec.tiers[number]} */ (
+    game.spec.tiers.find((t) => t.id === 'random-opponent')
+  );
+  const scripted = {
+    id: 'scripted-center-first',
+    track: /** @type {'baseline'} */ ('baseline'),
+    async act(/** @type {import('../core/types.js').TurnContext} */ ctx) {
+      const legal = ctx.legalActions ?? [];
+      return { text: legal.includes('b2') ? 'b2' : legal[0] };
+    },
+  };
+  const records = [
+    {
+      seed: 'record-0',
+      agentSeat: 1,
+      actions: ['a3', 'b2', 'c1', 'a1', 'a2', 'b1', 'c2', 'b3'],
+      outcome: [0, 1],
+    },
+    {
+      seed: 'record-1',
+      agentSeat: 0,
+      actions: ['b2', 'c2', 'a1', 'a3', 'a2', 'c3', 'b1', 'c1'],
+      outcome: [0, 1],
+    },
+    {
+      seed: 'record-2',
+      agentSeat: 1,
+      actions: ['a2', 'b2', 'b3', 'a1', 'c1', 'a3', 'c2', 'b1', 'c3'],
+      outcome: [1, 0],
+    },
+  ];
+  for (const record of records) {
+    const trajectory = await runEpisode({
+      game,
+      tierId: tier.id,
+      seed: record.seed,
+      agent: scripted,
+    });
+    assert.equal(trajectory.agent.seat, record.agentSeat, record.seed);
+    assert.deepEqual(trajectory.steps.map((s) => s.action), record.actions, record.seed);
+    const outcome = /** @type {import('../core/types.js').Outcome} */ (trajectory.end.outcome);
+    assert.deepEqual(outcome.normalized, record.outcome, record.seed);
+    assert.equal(trajectory.end.reason, 'terminal', record.seed);
+  }
+});
+
+test('game: three seeded records pin the blunder-opponent tier', async () => {
+  const tier = /** @type {typeof game.spec.tiers[number]} */ (
+    game.spec.tiers.find((t) => t.id === 'blunder-opponent')
+  );
+  const scripted = {
+    id: 'scripted-center-first',
+    track: /** @type {'baseline'} */ ('baseline'),
+    async act(/** @type {import('../core/types.js').TurnContext} */ ctx) {
+      const legal = ctx.legalActions ?? [];
+      return { text: legal.includes('b2') ? 'b2' : legal[0] };
+    },
+  };
+  const records = [
+    {
+      seed: 'record-0',
+      agentSeat: 0,
+      actions: ['b2', 'a2', 'a1', 'c3', 'a3', 'c1', 'b1', 'c2'],
+      outcome: [0, 1],
+    },
+    {
+      seed: 'record-1',
+      agentSeat: 1,
+      actions: ['a2', 'b2', 'c1', 'a1', 'c3', 'a3', 'c2'],
+      outcome: [1, 0],
+    },
+    {
+      seed: 'record-2',
+      agentSeat: 0,
+      actions: ['b2', 'a2', 'a1', 'c3', 'a3', 'c1', 'b1', 'c2'],
+      outcome: [0, 1],
+    },
+  ];
+  for (const record of records) {
+    const trajectory = await runEpisode({
+      game,
+      tierId: tier.id,
+      seed: record.seed,
+      agent: scripted,
+    });
+    assert.equal(trajectory.agent.seat, record.agentSeat, record.seed);
+    assert.deepEqual(trajectory.steps.map((s) => s.action), record.actions, record.seed);
+    const outcome = /** @type {import('../core/types.js').Outcome} */ (trajectory.end.outcome);
+    assert.deepEqual(outcome.normalized, record.outcome, record.seed);
+    assert.equal(trajectory.end.reason, 'terminal', record.seed);
+  }
+});
+
+test('game: the blunder opponent blunders at the seeded rate against a forced win', async () => {
+  const tier = /** @type {typeof game.spec.tiers[number]} */ (
+    game.spec.tiers.find((t) => t.id === 'blunder-opponent')
+  );
+  // X holds a1+a2, O holds b1+b2, X to move: the only non-losing move is the
+  // immediate win a3, so every non-a3 reply is a blunder. Expected blunders is
+  // 200 * 0.3 * 0.8 = 48: the 30% blunder coin, minus the fifth of uniform
+  // blunders that land on a3 anyway.
+  let blunders = 0;
+  for (let i = 0; i < 200; i++) {
+    const seed = `probe-${i}`;
+    let state = game.reset(tier, seed);
+    /** @type {[number, string][]} */
+    const setup = [[0, 'a1'], [1, 'b1'], [0, 'a2'], [1, 'b2']];
+    for (const [seat, cell] of setup) {
+      state = game.step(state, seat, cell);
+    }
+    const opponentOf = /** @type {NonNullable<typeof game.opponent>} */ (game.opponent);
+    const opponent = opponentOf(tier, seed, 0);
+    const reply = await opponent.act({
+      spec: game.spec,
+      tier,
+      seat: 0,
+      turn: 0,
+      observation: game.observe(state, 0),
+      legalActions: game.legalActions(state, 0),
+      feedback: null,
+    });
+    if (reply.text !== 'a3') blunders++;
+  }
+  assert.equal(blunders, 43, 'blunder count over the 200 pinned probes');
+  assert.ok(blunders >= 30 && blunders <= 60, 'and in the plausible band around 48');
 });

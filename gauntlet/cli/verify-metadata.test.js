@@ -55,10 +55,11 @@ test('verify skips estimate.json and estimate.md as metadata', async (t) => {
   await writeFile(join(dir, 'estimate.md'), '# Estimate\n');
 
   const report = await verifyPath(dir);
-  // The cube suite has 18 public episodes (3 tiers x 6 seeds).
+  // The cube suite has 34 public episodes (16 on-ramp seeds on cube-2 plus
+  // 3 tiers x 6 seeds on cube-5/7/9).
   assert.deepEqual(report.failures, [], 'no failures on a bundle that also holds an estimate');
-  assert.equal(report.ok, 18, 'all trajectories verified');
-  assert.equal(report.total, 18, 'the estimate artifacts were not counted as trajectories');
+  assert.equal(report.ok, 34, 'all trajectories verified');
+  assert.equal(report.total, 34, 'the estimate artifacts were not counted as trajectories');
 });
 
 test('verify still fails on an unrecognized stray .json beside the estimate', async (t) => {
@@ -72,8 +73,8 @@ test('verify still fails on an unrecognized stray .json beside the estimate', as
   await writeFile(join(dir, 'stray.json'), '{"not":"a trajectory"}\n');
 
   const report = await verifyPath(dir);
-  assert.equal(report.total, 19, 'the stray file is still collected (18 trajectories + 1 stray)');
-  assert.equal(report.ok, 18, 'all trajectories verified');
+  assert.equal(report.total, 35, 'the stray file is still collected (34 trajectories + 1 stray)');
+  assert.equal(report.ok, 34, 'all trajectories verified');
   assert.equal(report.failures.length, 1, 'exactly the stray file fails');
   assert.match(report.failures[0], /stray\.json/);
 });

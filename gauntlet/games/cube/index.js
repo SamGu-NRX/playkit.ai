@@ -22,6 +22,9 @@
  * Tiers are bands of proven-optimal length (moves with no two turns of the
  * same face in a row, solved exactly by the meet-in-the-middle solver in
  * `solver.js`, accepted only inside the band):
+ * - cube-2: optimal 1-3 turns (the on-ramp tier: a wrong turn is still one
+ *           turn from undone, so a weak agent can finish; random play still
+ *           almost never stumbles onto solved).
  * - cube-5: optimal 4-5 turns.
  * - cube-7: optimal 6-7 turns.
  * - cube-9: optimal 8-9 turns. The task's original sketch allowed up to 10,
@@ -31,7 +34,7 @@
  *   top band was capped at 9 (each candidate there solves in ~0.15s). This is
  *   the "adjust if generation is too slow, and say so" clause.
  * maxActions follows the ARC-AGI-3 5x budget rule: 5 x the tier's maximum
- * par (25 / 35 / 45).
+ * par (15 / 25 / 35 / 45).
  *
  * @module
  */
@@ -217,8 +220,17 @@ export const cube = {
     ].join(' '),
     tiers: /** @type {TierSpec[]} */ ([
       {
-        id: 'cube-5',
+        id: 'cube-2',
         rank: 1,
+        scoring: 'efficiency',
+        parKind: 'optimal',
+        maxActions: 15,
+        publicSeeds: 16,
+        params: { bandMin: 1, bandMax: 3, walkLength: 3 },
+      },
+      {
+        id: 'cube-5',
+        rank: 2,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 25,
@@ -227,7 +239,7 @@ export const cube = {
       },
       {
         id: 'cube-7',
-        rank: 2,
+        rank: 3,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 35,
@@ -236,7 +248,7 @@ export const cube = {
       },
       {
         id: 'cube-9',
-        rank: 3,
+        rank: 4,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 45,

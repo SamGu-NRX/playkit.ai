@@ -27,6 +27,15 @@
 /** The environment variable that overrides engine binary lookup. */
 export const STOCKFISH_ENV_VAR = 'GAUNTLET_STOCKFISH';
 
+/**
+ * Directories probed after PATH when looking an engine up by name. Debian
+ * and Ubuntu install game binaries to /usr/games, and a non-interactive
+ * PATH (CI, cron, systemd) often omits that directory.
+ *
+ * @type {readonly string[]}
+ */
+export const ENGINE_EXTRA_DIRS = ['/usr/games', '/usr/local/games'];
+
 /** Default transposition-table size (MiB) configured on spawned engines. */
 export const DEFAULT_HASH_MB = 16;
 
@@ -178,18 +187,90 @@ function numberOrNull(text) {
 }
 
 /**
- * Locate an engine binary. `GAUNTLET_STOCKFISH` wins when set (and must
- * exist); otherwise each PATH directory is searched for `name` (plus a
- * `.exe` variant). Synchronous and Node-only.
+ * One engine-advertised UCI option.
+ *
+ * @typedef {object} UciOption
+ * @property {string} name Option name (may contain spaces).
+ * @property {string} type UCI type: check, spin, combo, button, string.
+ * @property {string | null} defaultValue Raw default from the engine.
+ * @property {number | null} min Spin minimum.
+ * @property {number | null} max Spin maximum.
+ * @property {string[]} vars Combo choices, in advertisement order.
+ */
+
+/**
+ * Parse one `option name <name> type <type> [default v] [min n] [max n]
+ * [var x]...` line. Option names may contain spaces: every token between the
+ * `name` keyword and the `type` keyword belongs to the name. Returns null
+ * for anything that is not a well-formed option line.
+ *
+ * @param {string} line
+ * @returns {UciOption | null}
+ */
+export function parseOptionLine(line) {
+  if (!line.startsWith('option ')) return null;
+  const tokens = line.split(/\s+/);
+  if (tokens[1] !== 'name') return null;
+  let i = 2;
+  const nameParts = [];
+  while (i < tokens.length && tokens[i] !== 'type') {
+    nameParts.push(tokens[i]);
+    i++;
+  }
+  if (i >= tokens.length || nameParts.length === 0) return null;
+  i++; // skip 'type'
+  const type = tokens[i];
+  if (type === undefined) return null;
+  i++;
+  /** @type {UciOption} */
+  const option = {
+    name: nameParts.join(' '),
+    type,
+    defaultValue: null,
+    min: null,
+    max: null,
+    vars: [],
+  };
+  while (i < tokens.length) {
+    const keyword = tokens[i];
+    i++;
+    if (keyword === 'default' || keyword === 'min' || keyword === 'max') {
+      const value = tokens[i];
+      if (value === undefined) return null;
+      i++;
+      if (keyword === 'default') option.defaultValue = value;
+      else if (keyword === 'min') option.min = Number(value);
+      else option.max = Number(value);
+    } else if (keyword === 'var') {
+      const value = tokens[i];
+      if (value === undefined) return null;
+      i++;
+      option.vars.push(value);
+    } else {
+      return null;
+    }
+  }
+  return option;
+}
+
+/**
+ * Locate an engine binary. For Stockfish lookups (the default name)
+ * `GAUNTLET_STOCKFISH` wins when set and must exist; the override is
+ * deliberately scoped to the Stockfish name so one shared env var cannot
+ * silently replace a different engine the caller asked for by name.
+ * Otherwise PATH is scanned for `name` (plus a `.exe` variant), then
+ * ENGINE_EXTRA_DIRS. Synchronous and Node-only.
  *
  * @param {string} [name] Executable name to look for on PATH. Default "stockfish".
+ * @param {{ searchDirs?: readonly string[] }} [options] Overrides the
+ *   directories probed after PATH (tests inject a temp dir here).
  * @returns {string | null} Absolute-ish path, or null when not configured and
  *   not found. Throws when GAUNTLET_STOCKFISH points at a missing file.
  */
-export function findEngineBinary(name = 'stockfish') {
+export function findEngineBinary(name = 'stockfish', options = {}) {
   if (!cp || !fsMod || !pathMod) throw nodeRequiredError('locating an engine binary');
   const fromEnv = process.env[STOCKFISH_ENV_VAR];
-  if (fromEnv !== undefined && fromEnv !== '') {
+  if (fromEnv !== undefined && fromEnv !== '' && name === 'stockfish') {
     if (!fsMod.existsSync(fromEnv)) {
       throw new Error(
         `${STOCKFISH_ENV_VAR} is set to "${fromEnv}" but that file does not exist`
@@ -197,7 +278,10 @@ export function findEngineBinary(name = 'stockfish') {
     }
     return fromEnv;
   }
-  for (const dir of (process.env.PATH || '').split(pathMod.delimiter)) {
+  for (const dir of [
+    ...(process.env.PATH || '').split(pathMod.delimiter),
+    ...(options.searchDirs ?? ENGINE_EXTRA_DIRS),
+  ]) {
     if (!dir) continue;
     for (const candidate of [pathMod.join(dir, name), pathMod.join(dir, `${name}.exe`)]) {
       try {
@@ -370,6 +454,14 @@ export class UciEngine {
     this.#idleTimeoutMs = options.idleTimeoutMs ?? 60000;
   }
 
+  /** Engine-advertised UCI options from the handshake, keyed by option name. */
+  #options = /** @type {Map<string, UciOption>} */ (new Map());
+
+  /** Engine-advertised UCI options, keyed by option name. */
+  get options() {
+    return this.#options;
+  }
+
   /** The engine's self-reported `id name` line, captured during the handshake. */
   get idName() {
     return this.#idName;
@@ -425,7 +517,18 @@ export class UciEngine {
       liveChildren.delete(child);
       this.#failPending(this.#exitError());
     });
-    await this.#request('uci', (line) => line === 'uciok', this.#commandTimeoutMs);
+    const uciReply = await this.#request(
+      'uci',
+      (line) => line === 'uciok',
+      this.#commandTimeoutMs
+    );
+    // Remember what the engine advertises so callers can pin options only
+    // where they exist (Stockfish builds differ: e.g. Contempt was removed).
+    this.#options = new Map();
+    for (const line of uciReply.lines) {
+      const option = parseOptionLine(line);
+      if (option) this.#options.set(option.name, option);
+    }
     await this.#request('isready', (line) => line === 'readyok', this.#commandTimeoutMs);
     this.#armIdleTimer();
     return this;

@@ -7,67 +7,67 @@
     {
       "gameId": "2048",
       "path": "calibration/tables/2048.json",
-      "sha256": "9dcea95b25dd4837a4fa58626142d4084ccaa8aac3a9b9f08d680c74acb644ef"
+      "sha256": "cb26179364bd4d1b344075a02f50aa03d2e78ecba1c065364beb1d031294886f"
     },
     {
       "gameId": "chess-endgames",
       "path": "calibration/tables/chess-endgames.json",
-      "sha256": "1c719f4cc0ee1795dedab9b02f7725d91cfd50debbfb14f73213168a63d57563"
+      "sha256": "874d8e982e0e86746fa3ba62590cef0e4ad4e85baf2556464d23cc62b998e764"
     },
     {
       "gameId": "chess-puzzles",
       "path": "calibration/tables/chess-puzzles.json",
-      "sha256": "f9cec7418f2effd26db086ef6107c88b9e5906321c4ba39419ccd869ee6a0a1d"
+      "sha256": "d79fc3f2379637d11e18353a65a65f7628c5a3048fec0336e10327778d72ab32"
     },
     {
       "gameId": "chess-stockfish",
       "path": "calibration/tables/chess-stockfish.json",
-      "sha256": "cfb329cb01050f5dae4be77b9d7f4f4f938179dede3e9426854cb4b863283359"
+      "sha256": "52c52a81a39ab63589ece7ddd2fc3a284d527b76a5c0d3c51bdd018248e3c7a0"
     },
     {
       "gameId": "chess",
       "path": "calibration/tables/chess.json",
-      "sha256": "9529c90032d447e68c6ea46fe3efe0e9ba74550b481c6e6a8999ef90dc846e0d"
+      "sha256": "d0cb45bb0fcd85f89e826de408404d72c1bda2446330e87b05b544826f82e8da"
     },
     {
       "gameId": "connect4",
       "path": "calibration/tables/connect4.json",
-      "sha256": "6030c826dd13e2902c1e40fcd2612a08759bfb57d0fc7e4e47c6e0249751fce8"
+      "sha256": "96faa1384e820c9b7337fde8d73b259ad4022efe4c27f3b3c917060b3e091218"
     },
     {
       "gameId": "cube",
       "path": "calibration/tables/cube.json",
-      "sha256": "162ca11c59389659caa190d79f92df60f516cd7b05448147e602df6502ef811d"
+      "sha256": "a39a8a2816e982544a8c462de0fc6b403b07407fbe51e8e2c8e966d7f7c26913"
     },
     {
       "gameId": "holdem",
       "path": "calibration/tables/holdem.json",
-      "sha256": "8babf36f369b8240c34cd50288649b813648cb04d8ee05ab93cd790fad0a4825"
+      "sha256": "72762fdf3eb310f2b2241a478d8a5be801b2274c8cfb9c92c6b7af190a2d6bc9"
     },
     {
       "gameId": "mastermind",
       "path": "calibration/tables/mastermind.json",
-      "sha256": "93561877c6ee891fffc91d213004c6ad1896b49b719ebcc2346adddb44302ddc"
+      "sha256": "2ebd70b1050cf3a60a8a55832b785c0a4c10d411c96268a8d89de1e730de6755"
     },
     {
       "gameId": "minesweeper",
       "path": "calibration/tables/minesweeper.json",
-      "sha256": "f3984d09e415fcb6ad77271dcceae7701ead3015ec21620aab1495e69420e6c7"
+      "sha256": "a47b480e82b8f7b6b5a15237e220ef9462982c0212c156f3c9a2ae3f681efea1"
     },
     {
       "gameId": "sliding",
       "path": "calibration/tables/sliding.json",
-      "sha256": "8370c23500e654664087889f8be000fd1aa4eb146cfd4cb6fb50a6caa32c53b0"
+      "sha256": "fe7827ec5ef38db29b852d3956b2de87bd95f6120143d723da9ca09d5b3b6f1d"
     },
     {
       "gameId": "sokoban",
       "path": "calibration/tables/sokoban.json",
-      "sha256": "c094f30bb543b9ad8d0be0c6b2f5702d791e44550b18674861cdf0bbf6685bf4"
+      "sha256": "9fcb0113cb359a8f16d85d932c427101586fa120e2399906674cb566d786d8bb"
     },
     {
       "gameId": "tictactoe",
       "path": "calibration/tables/tictactoe.json",
-      "sha256": "95604d975a099efe60beb4ce1adabf05e0f22cd7012cc06fd863c16830febfaf"
+      "sha256": "e9e84e8e988d6e96d387a9e5720566916f79e825fbd4c5e6cc0131dc84d4f20b"
     }
   ],
   "games": {
@@ -367,7 +367,7 @@
     },
     "cube": {
       "id": "cube",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "benchmark": true,
       "tiers": {
         "cube-5": {
@@ -401,7 +401,7 @@
     },
     "holdem": {
       "id": "holdem",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "benchmark": true,
       "tiers": {
         "station": {
@@ -415,19 +415,19 @@
         },
         "rules": {
           "scoring": "outcome",
-          "mean": 0.013184,
+          "mean": 0.013901,
           "ci95": [
-            0.003354,
-            0.029461
+            0.003515,
+            0.030342
           ],
           "episodes": 12
         },
         "equity": {
           "scoring": "outcome",
-          "mean": 0.010805,
+          "mean": 0.030808,
           "ci95": [
-            0.002767,
-            0.021347
+            0.002825,
+            0.077091
           ],
           "episodes": 12
         }
@@ -589,7 +589,7 @@
     },
     "tictactoe": {
       "id": "tictactoe",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "benchmark": false,
       "tiers": {
         "perfect-opponent": {

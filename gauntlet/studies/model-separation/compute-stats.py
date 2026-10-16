@@ -28,7 +28,10 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-RUNS = Path("/home/user/work/gauntlet-runs")
+# Run root: argv[1] overrides, else the committed run bundles shipped beside
+# this file. Nothing outside the checkout is read, so the statistics are
+# reproducible from the study's own files (Codex P1 on PR #43).
+RUNS = HERE / "runs"
 MODELS = ["qwen2.5-0.5b", "qwen2.5-1.5b", "qwen2.5-7b"]
 MODEL_RUN_DIRS = {
     "qwen2.5-0.5b": ["qwen2.5-0.5b"],
@@ -102,6 +105,9 @@ def seeds_needed(a, b):
 
 
 def main():
+    global RUNS
+    if len(sys.argv) > 1:
+        RUNS = Path(sys.argv[1])
     rng = random.Random(20261015)
     stats = {}
     for m in MODELS:
@@ -154,7 +160,7 @@ def main():
         seeds[g] = {"observed_gap": round(b["mean"] - a["mean"], 6), "seeds_per_tier": raw}
     out = HERE / "stats.json"
     out.write_text(json.dumps({"per_model": stats, "seeds_per_tier_1p5_vs_7b": seeds}, indent=2) + "\n")
-    print(f"wrote {out}")
+    print(f"wrote {out} (runs: {RUNS})")
     for m in MODELS:
         o = stats[m]["overall"]
         print(f"{m}: overall {o['mean']:.4f} CI{o['ci95']} invalid {o['invalid_rate']*100:.1f}% "

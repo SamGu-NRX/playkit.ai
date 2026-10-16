@@ -37,8 +37,10 @@ class GauntletClientEndToEnd(unittest.TestCase):
         ids = [game["id"] for game in games]
         self.assertIn("tictactoe", ids)
         tictactoe = next(game for game in games if game["id"] == "tictactoe")
-        self.assertEqual([tier["id"] for tier in tictactoe["tiers"]], ["perfect-opponent"])
-        self.assertEqual(tictactoe["tiers"][0]["maxActions"], 20)
+        tier_ids = [tier["id"] for tier in tictactoe["tiers"]]
+        self.assertIn("perfect-opponent", tier_ids)
+        perfect = next(tier for tier in tictactoe["tiers"] if tier["id"] == "perfect-opponent")
+        self.assertEqual(perfect["maxActions"], 20)
 
     def test_full_community_episode(self) -> None:
         rng = random.Random(SEED_0)

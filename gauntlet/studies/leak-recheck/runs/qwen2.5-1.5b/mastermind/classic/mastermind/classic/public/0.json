@@ -1,0 +1,375 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "classic",
+  "seed": "mastermind/classic/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "27b64ac8f57bb2b0",
+      "reply": {
+        "text": "guess ABCDE",
+        "usage": {
+          "inputTokens": 450,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-QTXP7Lmc0iiBiIbObLdKlJUAOZAzf6h1",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABCDE",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 450,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 1631
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "27b64ac8f57bb2b0",
+      "reply": {
+        "text": "guess ABCD",
+        "usage": {
+          "inputTokens": 493,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-351wzKNBhMj4McXEINl4V9TUnOcDxkFP",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABCD",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 493,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 686
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "446ce5ddc9e0e7c1",
+      "reply": {
+        "text": "guess ABCD",
+        "usage": {
+          "inputTokens": 466,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-20c7xPEo7nyvOId4E1DfokwPEMqlzqbU",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABCD",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 466,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 539
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d7eaefe858362f87",
+      "reply": {
+        "text": "guess ABEF",
+        "usage": {
+          "inputTokens": 480,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-l3X7zwHVIHJlIkFCnIPJV2zVphV9bZgz",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEF",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 480,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 316
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5cd10e836f7c8e3c",
+      "reply": {
+        "text": "guess ABEF",
+        "usage": {
+          "inputTokens": 496,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-gw7yOH0zYHQJsZxxxVLbmGetG8HtC5PO",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEF",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 496,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 668
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4cb90bbbfa6d64ee",
+      "reply": {
+        "text": "guess ABEF",
+        "usage": {
+          "inputTokens": 511,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-xVvcbgaKMZTGBKtbVWJRyRlpdsoieXUg",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEF",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 511,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 302
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "589d51be69e59ea5",
+      "reply": {
+        "text": "guess ABEF",
+        "usage": {
+          "inputTokens": 526,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-JhhgxEOcaelZyXclh8aVanoFXb4FNeiw",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEF",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 526,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 297
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "8c12f5b0682755b1",
+      "reply": {
+        "text": "guess ABEF",
+        "usage": {
+          "inputTokens": 541,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-5wWz0Y30vEqpNCDqharyLD9GKlKvmEIn",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEF",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 541,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 305
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "46f6ed20aaa43a84",
+      "reply": {
+        "text": "guess ABEF",
+        "usage": {
+          "inputTokens": 556,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-aRqGEiYkjx057VRFxcu2jFY5cT2646dz",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEF",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 556,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 313
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3a828c5b752a7c4c",
+      "reply": {
+        "text": "guess ABEF",
+        "usage": {
+          "inputTokens": 571,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-Dmgrod1SA2hEgA9mqXsAqh9DH4Rl7Dch",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEF",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 571,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 310
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6992a4af0bd6e8f4",
+      "reply": {
+        "text": "guess ABEI",
+        "usage": {
+          "inputTokens": 587,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-bvvofeadtzjtloqp40lj7dJwjcxaUY8u",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEI",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 587,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 317
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6992a4af0bd6e8f4",
+      "reply": {
+        "text": "guess ABEI",
+        "usage": {
+          "inputTokens": 630,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-ETOmyBo6YjLazSHBn3jp54FFuqYdu5xB",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEI",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 630,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 1125
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6992a4af0bd6e8f4",
+      "reply": {
+        "text": "guess ABEI",
+        "usage": {
+          "inputTokens": 630,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-3jAKIq0ZVMSJHk1iz5Rh2b7OF91EPSh1",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABEI",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 630,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 151
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 13,
+    "invalidActions": 4
+  },
+  "startedAt": "2026-10-16T05:53:50.885Z",
+  "finishedAt": "2026-10-16T05:53:57.850Z"
+}

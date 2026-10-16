@@ -60,6 +60,19 @@ python3 -m playkit_gauntlet.example_random --track official
 payload in `e.response`) and transport failures. `close()` (or the context
 manager) ends the server process.
 
+### Reads: blocking by default, optional watchdog
+
+By default a read blocks until the server answers — the bundled server is a
+deterministic local process, so that is the right default for episode runs.
+Pass `request_timeout=<seconds>` to bound each read: a response that never
+arrives raises `GauntletError` instead of hanging forever, terminates the
+server, and leaves the client unusable (after a timed-out read the response
+stream can no longer be trusted, so start a new client):
+
+```python
+client = GauntletClient(request_timeout=30.0)  # one episode step must answer within 30 s
+```
+
 ## Tests
 
 End-to-end: every test drives the real Node server over real pipes through

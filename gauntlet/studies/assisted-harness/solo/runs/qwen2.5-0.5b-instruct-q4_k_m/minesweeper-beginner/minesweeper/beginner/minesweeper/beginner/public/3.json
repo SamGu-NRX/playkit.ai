@@ -1,0 +1,169 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/3",
+  "split": "public",
+  "agent": {
+    "id": "community-assisted:openai-chat/qwen2.5-0.5b-instruct-q4_k_m:retries=2",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-0.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b538ff8d32f9032c",
+      "reply": {
+        "text": "ACTION: reveal 0 8",
+        "usage": {
+          "inputTokens": 1177,
+          "outputTokens": 8,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-tT5EzHMEsLfTKRgHsWV1hipzsMCZK5Ab",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 0 8",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1177,
+        "outputTokens": 8,
+        "costUsd": null
+      },
+      "ms": 4624
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d3590f60ac4f6c0c",
+      "reply": {
+        "text": "ACTION: reveal 0 8",
+        "usage": {
+          "inputTokens": 3654,
+          "outputTokens": 24,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-XFirGursKbgq8MdvM6VABsQuaLh1zD6f",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 0 8",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3654,
+        "outputTokens": 24,
+        "costUsd": null
+      },
+      "ms": 9612
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d3590f60ac4f6c0c",
+      "reply": {
+        "text": "ACTION: reveal 0 8",
+        "usage": {
+          "inputTokens": 3676,
+          "outputTokens": 24,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-0gTwF39eivHgJ44tNZCeqMAlwCAUnm5L",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 0 8",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3676,
+        "outputTokens": 24,
+        "costUsd": null
+      },
+      "ms": 5952
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d3590f60ac4f6c0c",
+      "reply": {
+        "text": "ACTION: reveal 0 8",
+        "usage": {
+          "inputTokens": 3676,
+          "outputTokens": 24,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-QP4E25S2oxpWWvjcrBqrQjdbQ5leDt6K",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 0 8",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3676,
+        "outputTokens": 24,
+        "costUsd": null
+      },
+      "ms": 1140
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 4,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T18:59:35.753Z",
+  "finishedAt": "2026-10-16T18:59:57.084Z"
+}

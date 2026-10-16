@@ -1,0 +1,137 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "mini",
+  "seed": "mastermind/mini/public/2",
+  "split": "public",
+  "agent": {
+    "id": "community-assisted:openai-chat/qwen2.5-0.5b-instruct-q4_k_m:retries=2",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-0.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "ACTION: guess ABCD",
+        "usage": {
+          "inputTokens": 3065,
+          "outputTokens": 18,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-V9E3UPsxL5ufkH0MciZUtNPgOvHXv6YG",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess ABCD",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3065,
+        "outputTokens": 18,
+        "costUsd": null
+      },
+      "ms": 843
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "ACTION: guess ABCD",
+        "usage": {
+          "inputTokens": 3109,
+          "outputTokens": 18,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-n3ZLWgRU16cipaCydI4qXyd1nhgoQUOC",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess ABCD",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3109,
+        "outputTokens": 18,
+        "costUsd": null
+      },
+      "ms": 847
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "ACTION: guess ABCD",
+        "usage": {
+          "inputTokens": 3109,
+          "outputTokens": 18,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-V4ibr2y7OljvxJ0ZvElfCMb9R5zMeNpk",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess ABCD",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3109,
+        "outputTokens": 18,
+        "costUsd": null
+      },
+      "ms": 875
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T18:57:55.121Z",
+  "finishedAt": "2026-10-16T18:57:57.687Z"
+}

@@ -1,0 +1,136 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "mini",
+  "seed": "mastermind/mini/public/0",
+  "split": "public",
+  "agent": {
+    "id": "community-assisted:openai-chat/qwen2.5-7b-instruct-q4_k_m:retries=2",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "ACTION: guess AAA",
+        "usage": {
+          "inputTokens": 987,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 1,
+            "responseId": "chatcmpl-UjTqY2nmdEFkvi5u4lOTrSPhIvwxnYHu",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAA",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 987,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 63493
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "65a86e2fe0348369",
+      "reply": {
+        "text": "ACTION: guess ABA",
+        "usage": {
+          "inputTokens": 1003,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-WiYMq5xhFUf12lfjFQHQHPQFIruaqPAe",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess ABA",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1003,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 42122
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "de9370dda9d432b1",
+      "reply": {
+        "text": "guess AAC\nACTION: guess AAC",
+        "usage": {
+          "inputTokens": 1018,
+          "outputTokens": 8,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-FJdsHrE4fe9jWDczgGClzKzQrIE1HuFt",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAC",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1018,
+        "outputTokens": 8,
+        "costUsd": null
+      },
+      "ms": 42950
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1
+      ],
+      "raw": [
+        3
+      ],
+      "reason": "solved: the secret was found in 3 guess(es), reference par 4",
+      "solved": true,
+      "par": 4
+    },
+    "agentActions": 3,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T19:18:59.718Z",
+  "finishedAt": "2026-10-16T19:21:28.286Z"
+}

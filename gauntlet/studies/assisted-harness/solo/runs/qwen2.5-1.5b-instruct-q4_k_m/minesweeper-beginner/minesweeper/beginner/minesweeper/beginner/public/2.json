@@ -1,0 +1,169 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/2",
+  "split": "public",
+  "agent": {
+    "id": "community-assisted:openai-chat/qwen2.5-1.5b-instruct-q4_k_m:retries=2",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "de2706bc8a277ebd",
+      "reply": {
+        "text": "ACTION: flag 3 4",
+        "usage": {
+          "inputTokens": 2350,
+          "outputTokens": 15,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 2,
+            "retried": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-qCEOLHJ8XfSQxwUeeRkXjZVeaXtny1ck",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "flag 3 4",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 2350,
+        "outputTokens": 15,
+        "costUsd": null
+      },
+      "ms": 21830
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "34856d87f86680f9",
+      "reply": {
+        "text": "ACTION: flag 3 4\nACTION: reveal 3 4",
+        "usage": {
+          "inputTokens": 3533,
+          "outputTokens": 40,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-aSZ4GxAFbcMWX0EhcWcOdmDsjpY6h7Js",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 3 4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3533,
+        "outputTokens": 40,
+        "costUsd": null
+      },
+      "ms": 32263
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "34856d87f86680f9",
+      "reply": {
+        "text": "ACTION: flag 3 4\nACTION: reveal 3 4",
+        "usage": {
+          "inputTokens": 3564,
+          "outputTokens": 40,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-W0qxFfBH2Hfg5iBAveE8U1PlOeU8GsLJ",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 3 4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3564,
+        "outputTokens": 40,
+        "costUsd": null
+      },
+      "ms": 14216
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "34856d87f86680f9",
+      "reply": {
+        "text": "ACTION: flag 3 4\nACTION: reveal 3 4",
+        "usage": {
+          "inputTokens": 3564,
+          "outputTokens": 40,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-NTDXKDRmkJxnWQb3ncz5T8KguYem8AYg",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 3 4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3564,
+        "outputTokens": 40,
+        "costUsd": null
+      },
+      "ms": 3696
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 4,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T19:07:49.674Z",
+  "finishedAt": "2026-10-16T19:09:01.682Z"
+}

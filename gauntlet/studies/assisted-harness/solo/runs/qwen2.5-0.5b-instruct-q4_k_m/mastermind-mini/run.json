@@ -1,0 +1,60 @@
+{
+  "format": "playkit-gauntlet-run/1",
+  "suite": {
+    "id": "gauntlet-public-assisted-v1-qwen2.5-0.5b-instruct-q4_k_m-mastermind-mini-8",
+    "split": "public",
+    "manifestSha256": "2cc845eef9797dd9a57a6fbcfe26f8916882ddb8da6db3f68350743c6a44b2ab"
+  },
+  "git": {
+    "commit": "df354eaf8278173ab2cfaa4c25b4b8fec384474d"
+  },
+  "node": "v20.20.2",
+  "agent": {
+    "id": "community-assisted:openai-chat/qwen2.5-0.5b-instruct-q4_k_m:retries=2",
+    "track": "community",
+    "provider": "openai-chat",
+    "model": "qwen2.5-0.5b-instruct-q4_k_m"
+  },
+  "prices": {
+    "sha256": null
+  },
+  "startedAt": "2026-10-16T18:57:35.473Z",
+  "finishedAt": "2026-10-16T18:58:10.351Z",
+  "concurrency": 1,
+  "limits": {
+    "maxUsd": null,
+    "maxCalls": 2500,
+    "requestsPerMinute": null,
+    "maxOutputTokens": 256,
+    "callTimeoutMs": 60000,
+    "thinkingBudget": null,
+    "reasoningEffort": null
+  },
+  "spendUsd": 0,
+  "unknownCostSteps": 24,
+  "calls": 24,
+  "total": {
+    "episodes": 8,
+    "calls": 24,
+    "tokens": {
+      "input": 74264,
+      "output": 432
+    },
+    "spendUsd": 0,
+    "unknownCostSteps": 24
+  },
+  "counts": {
+    "jobs": 8,
+    "played": 8,
+    "skipped": 0,
+    "replayed": 0,
+    "unplayed": 0,
+    "failed": 0
+  },
+  "skipped": [],
+  "replayed": [],
+  "unplayed": [],
+  "failed": [],
+  "stopped": null,
+  "stopReason": null
+}

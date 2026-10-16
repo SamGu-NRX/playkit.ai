@@ -460,6 +460,15 @@ export async function parseAgentSpec(text, options = {}) {
         `agent spec "${text}": reasoning-effort is a model-agent setting and cannot be combined with --dry-run`
       );
     }
+    if (
+      provider === 'anthropic' &&
+      effectiveThinkingBudget !== undefined &&
+      effectiveReasoningEffort !== undefined
+    ) {
+      throw new Error(
+        `agent spec "${text}": thinking-budget and reasoning-effort both steer Anthropic thinking; set one or the other (manual budget mode for pre-4.6 models, adaptive thinking with effort for 4.6 and later)`
+      );
+    }
 
     // Canonical settings suffix for the agent identity: the same model with
     // different settings is a different leaderboard entry. With settings set

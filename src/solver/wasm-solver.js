@@ -3,6 +3,7 @@
  */
 
 import { BoardEncoder } from "./board-utils.js";
+import { getInlineSolverAssetUrls } from "../bookmarklet/inline-assets.js";
 
 const DEFAULT_STRATEGY = {
   type: "expectimax-depth",
@@ -65,6 +66,18 @@ function resolveAssetUrl(filename, options = {}) {
   if (options.baseUrl) {
     return new URL(filename, options.baseUrl).toString();
   }
+  // Standalone bookmarklet: the solver payloads are inlined in the bundle and
+  // registered at load. Blob URLs of those bytes win over every URL-based
+  // strategy, so the engine starts with no host, CDN, or extension runtime.
+  const inlineUrls = getInlineSolverAssetUrls();
+  if (inlineUrls) {
+    if (filename === "solver.mjs" && inlineUrls.moduleUrl) {
+      return inlineUrls.moduleUrl;
+    }
+    if (filename === "solver.wasm" && inlineUrls.wasmUrl) {
+      return inlineUrls.wasmUrl;
+    }
+  }
   const runtime = getRuntimeAPI();
   if (runtime) {
     return runtime.getURL(`wasm/${filename}`);
@@ -103,6 +116,10 @@ function sanitizeStrategy(config = {}) {
  * absent, so we let the module load attempt proceed unchanged.
  */
 async function assertWasmArtifactPresent(wasmUrl) {
+  if (/^(blob:|data:)/.test(wasmUrl)) {
+    // Inlined payload carried in the bundle itself: nothing to fetch.
+    return;
+  }
   try {
     const response = await fetch(wasmUrl, { method: "HEAD" });
     if (!response.ok) {

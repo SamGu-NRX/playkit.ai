@@ -30,8 +30,11 @@
  * @module
  */
 
-/** The table format constant, matched by worker output. */
-export const TABLE_FORMAT = 'playkit-gauntlet-calibration-table/1';
+/** The table format constant, matched by worker output. Version 2 drops the
+ * top-level `seedsPerTier` field, which recorded the requested seed limit and
+ * read as coverage; executed coverage lives per baseline per tier. */
+/** @type {'playkit-gauntlet-calibration-table/2'} */
+export const TABLE_FORMAT = 'playkit-gauntlet-calibration-table/2';
 
 /** The three baseline tracks, in floor-to-ceiling order. */
 export const BASELINE_KINDS = /** @type {const} */ (['random', 'greedy', 'engine']);
@@ -58,12 +61,13 @@ const EPSILON = 1e-9;
  * A per-game calibration table, as written by the worker.
  *
  * @typedef {object} CalibrationTable
- * @property {'playkit-gauntlet-calibration-table/1'} format
+ * @property {'playkit-gauntlet-calibration-table/2'} format
  * @property {{ id: string, version: string, benchmark: boolean }} game
  * @property {'public'} split
- * @property {number} seedsPerTier Number of seeds run per tier.
  * @property {Record<string, { tiers: Record<string, TierBlock> }>} baselines
- *   Keyed by baseline kind (`random`, `greedy`, `engine`).
+ *   Keyed by baseline kind (`random`, `greedy`, `engine`). Executed coverage
+ *   is each tier block's `episodes`; there is deliberately no top-level
+ *   seeds-per-tier field (a cap can leave baselines with different counts).
  */
 
 /**

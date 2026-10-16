@@ -1,0 +1,2638 @@
+{
+ "params": {
+  "format": "playkit-gauntlet-estimate-fit/1",
+  "note": "Fitted per (game, tier) to committed real-model runs (playkit-gauntlet-estimate-fit/1). callsExpected = mean agent actions per episode; the worst case is the tier maxActions budget. in/out tokens per call = mean and observed maximum of the runs' recorded provider usage. See runs/estimate-fit/fit-report.md for the hold-out error tables.",
+  "tiers": {
+   "2048/t1024": {
+    "callsExpected": 203,
+    "inExpected": 562,
+    "inWorst": 584,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0.0074,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 1200
+   },
+   "2048/t2048": {
+    "callsExpected": 119.5,
+    "inExpected": 558.1,
+    "inWorst": 576,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0.0335,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 2400
+   },
+   "2048/t256": {
+    "callsExpected": 130,
+    "inExpected": 558.6,
+    "inWorst": 576,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0.0115,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 300
+   },
+   "2048/t512": {
+    "callsExpected": 98,
+    "inExpected": 556.1,
+    "inWorst": 572,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0.0153,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 600
+   },
+   "chess-endgames/kbbk": {
+    "callsExpected": 5,
+    "inExpected": 690.7,
+    "inWorst": 722,
+    "outExpected": 5,
+    "outWorst": 5,
+    "invalidRate": 0.6,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 48
+   },
+   "chess-endgames/kbnk": {
+    "callsExpected": 13,
+    "inExpected": 648.4,
+    "inWorst": 673,
+    "outExpected": 5,
+    "outWorst": 5,
+    "invalidRate": 0.3462,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 1,
+     "terminal": 1
+    },
+    "callsCap": 83
+   },
+   "chess-endgames/kqk": {
+    "callsExpected": 5,
+    "inExpected": 715.2,
+    "inWorst": 735,
+    "outExpected": 5.1,
+    "outWorst": 6,
+    "invalidRate": 0.5,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 1,
+     "forfeit-invalid": 1
+    },
+    "callsCap": 25
+   },
+   "chess-endgames/krk": {
+    "callsExpected": 26.5,
+    "inExpected": 633.4,
+    "inWorst": 679,
+    "outExpected": 4.96,
+    "outWorst": 5,
+    "invalidRate": 0.1132,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 1,
+     "budget-exhausted": 1
+    },
+    "callsCap": 40
+   },
+   "chess-puzzles/r0400": {
+    "callsExpected": 3,
+    "inExpected": 1065,
+    "inWorst": 1072,
+    "outExpected": 5,
+    "outWorst": 5,
+    "invalidRate": 1,
+    "budgetBound": false,
+    "episodes": 1,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 1
+    },
+    "callsCap": 8
+   },
+   "chess-puzzles/r1000": {
+    "callsExpected": 3,
+    "inExpected": 1025,
+    "inWorst": 1032,
+    "outExpected": 5,
+    "outWorst": 5,
+    "invalidRate": 1,
+    "budgetBound": false,
+    "episodes": 1,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 1
+    },
+    "callsCap": 8
+   },
+   "chess-puzzles/r1400": {
+    "callsExpected": 1,
+    "inExpected": 874,
+    "inWorst": 874,
+    "outExpected": 5,
+    "outWorst": 5,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 1,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2"
+    ],
+    "endReasons": {
+     "terminal": 1
+    },
+    "callsCap": 8
+   },
+   "chess-puzzles/r1800": {
+    "callsExpected": 2,
+    "inExpected": 1010.5,
+    "inWorst": 1033,
+    "outExpected": 4,
+    "outWorst": 5,
+    "invalidRate": 0.5,
+    "budgetBound": false,
+    "episodes": 1,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2"
+    ],
+    "endReasons": {
+     "terminal": 1
+    },
+    "callsCap": 8
+   },
+   "chess-puzzles/r2200": {
+    "callsExpected": 3,
+    "inExpected": 1070,
+    "inWorst": 1093,
+    "outExpected": 4.33,
+    "outWorst": 5,
+    "invalidRate": 0.6667,
+    "budgetBound": false,
+    "episodes": 1,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2"
+    ],
+    "endReasons": {
+     "terminal": 1
+    },
+    "callsCap": 8
+   },
+   "chess-puzzles/r2600": {
+    "callsExpected": 1,
+    "inExpected": 988,
+    "inWorst": 988,
+    "outExpected": 5,
+    "outWorst": 5,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 1,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2"
+    ],
+    "endReasons": {
+     "terminal": 1
+    },
+    "callsCap": 8
+   },
+   "chess-stockfish/sf-100k": {
+    "callsExpected": 8.5,
+    "inExpected": 707.8,
+    "inWorst": 748,
+    "outExpected": 4.41,
+    "outWorst": 5,
+    "invalidRate": 0.5882,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 150
+   },
+   "chess-stockfish/sf-10k": {
+    "callsExpected": 4.5,
+    "inExpected": 738.9,
+    "inWorst": 762,
+    "outExpected": 3.89,
+    "outWorst": 5,
+    "invalidRate": 0.8889,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 150
+   },
+   "chess-stockfish/sf-1k": {
+    "callsExpected": 6,
+    "inExpected": 700.5,
+    "inWorst": 735,
+    "outExpected": 3.67,
+    "outWorst": 5,
+    "invalidRate": 0.75,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 150
+   },
+   "chess-stockfish/sf-1m": {
+    "callsExpected": 4,
+    "inExpected": 674.8,
+    "inWorst": 705,
+    "outExpected": 4.5,
+    "outWorst": 5,
+    "invalidRate": 0.75,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 150
+   },
+   "chess-stockfish/sf-250": {
+    "callsExpected": 3,
+    "inExpected": 683,
+    "inWorst": 690,
+    "outExpected": 5,
+    "outWorst": 5,
+    "invalidRate": 1,
+    "budgetBound": false,
+    "episodes": 1,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 1
+    },
+    "callsCap": 150
+   },
+   "chess/granite": {
+    "callsExpected": 3,
+    "inExpected": 704.7,
+    "inWorst": 720,
+    "outExpected": 3,
+    "outWorst": 3,
+    "invalidRate": 1,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 150
+   },
+   "chess/paper": {
+    "callsExpected": 4.5,
+    "inExpected": 690.9,
+    "inWorst": 720,
+    "outExpected": 3.44,
+    "outWorst": 5,
+    "invalidRate": 0.7778,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 150
+   },
+   "chess/steel": {
+    "callsExpected": 3.5,
+    "inExpected": 699.6,
+    "inWorst": 731,
+    "outExpected": 3.86,
+    "outWorst": 5,
+    "invalidRate": 0.8571,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 150
+   },
+   "chess/wood": {
+    "callsExpected": 4,
+    "inExpected": 643.5,
+    "inWorst": 669,
+    "outExpected": 3.5,
+    "outWorst": 5,
+    "invalidRate": 0.875,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 150
+   },
+   "connect4/forced-win": {
+    "callsExpected": 1,
+    "inExpected": 469,
+    "inWorst": 470,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 30
+   },
+   "connect4/ladder-1": {
+    "callsExpected": 4.35,
+    "inExpected": 443.2,
+    "inWorst": 446,
+    "outExpected": 2.53,
+    "outWorst": 4,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 26,
+    "models": [
+     "qwen0.5b",
+     "qwen1.5b",
+     "qwen7b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run",
+     "leak-recheck-0.5b",
+     "leak-recheck-1.5b",
+     "leak-recheck-7b",
+     "model-separation-0.5b",
+     "model-separation-1.5b",
+     "model-separation-7b"
+    ],
+    "endReasons": {
+     "terminal": 26
+    },
+    "callsCap": 30
+   },
+   "connect4/ladder-2": {
+    "callsExpected": 4.5,
+    "inExpected": 442.3,
+    "inWorst": 444,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 30
+   },
+   "connect4/ladder-3": {
+    "callsExpected": 6,
+    "inExpected": 443.4,
+    "inWorst": 446,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 30
+   },
+   "connect4/ladder-4": {
+    "callsExpected": 3.5,
+    "inExpected": 442.3,
+    "inWorst": 443,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 30
+   },
+   "cube/cube-5": {
+    "callsExpected": 25,
+    "inExpected": 929,
+    "inWorst": 1011,
+    "outExpected": 2.66,
+    "outWorst": 6,
+    "invalidRate": 0.0055,
+    "budgetBound": true,
+    "episodes": 22,
+    "models": [
+     "qwen0.5b",
+     "qwen1.5b",
+     "qwen7b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run",
+     "leak-recheck-0.5b",
+     "leak-recheck-1.5b",
+     "model-separation-0.5b",
+     "model-separation-1.5b",
+     "model-separation-7b-part2"
+    ],
+    "endReasons": {
+     "budget-exhausted": 22
+    },
+    "callsCap": 25
+   },
+   "cube/cube-7": {
+    "callsExpected": 35,
+    "inExpected": 930,
+    "inWorst": 933,
+    "outExpected": 3.13,
+    "outWorst": 4,
+    "invalidRate": 0,
+    "budgetBound": true,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "budget-exhausted": 2
+    },
+    "callsCap": 35
+   },
+   "cube/cube-9": {
+    "callsExpected": 45,
+    "inExpected": 929.5,
+    "inWorst": 935,
+    "outExpected": 3.02,
+    "outWorst": 4,
+    "invalidRate": 0,
+    "budgetBound": true,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "budget-exhausted": 2
+    },
+    "callsCap": 45
+   },
+   "holdem/equity": {
+    "callsExpected": 130.5,
+    "inExpected": 1505.9,
+    "inWorst": 2423,
+    "outExpected": 2.51,
+    "outWorst": 4,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 400
+   },
+   "holdem/rules": {
+    "callsExpected": 92,
+    "inExpected": 1456.7,
+    "inWorst": 2411,
+    "outExpected": 2.33,
+    "outWorst": 4,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 400
+   },
+   "holdem/station": {
+    "callsExpected": 127.5,
+    "inExpected": 1520.1,
+    "inWorst": 2474,
+    "outExpected": 2.36,
+    "outWorst": 4,
+    "invalidRate": 0,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 2
+    },
+    "callsCap": 400
+   },
+   "mastermind/classic": {
+    "callsExpected": 10.92,
+    "inExpected": 570.3,
+    "inWorst": 816,
+    "outExpected": 4.32,
+    "outWorst": 5,
+    "invalidRate": 0.2782,
+    "budgetBound": false,
+    "episodes": 26,
+    "models": [
+     "qwen0.5b",
+     "qwen1.5b",
+     "qwen7b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run",
+     "leak-recheck-0.5b",
+     "leak-recheck-1.5b",
+     "leak-recheck-7b",
+     "model-separation-0.5b",
+     "model-separation-1.5b",
+     "model-separation-7b"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 20,
+     "budget-exhausted": 4,
+     "terminal": 2
+    },
+    "callsCap": 25
+   },
+   "mastermind/deep": {
+    "callsExpected": 3,
+    "inExpected": 483.5,
+    "inWorst": 499,
+    "outExpected": 4.67,
+    "outWorst": 5,
+    "invalidRate": 1,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 45
+   },
+   "mastermind/wide": {
+    "callsExpected": 6,
+    "inExpected": 495.9,
+    "inWorst": 544,
+    "outExpected": 4.92,
+    "outWorst": 6,
+    "invalidRate": 0.5833,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 40
+   },
+   "minesweeper/beginner": {
+    "callsExpected": 7.77,
+    "inExpected": 849.1,
+    "inWorst": 933,
+    "outExpected": 6.17,
+    "outWorst": 7,
+    "invalidRate": 0.5322,
+    "budgetBound": false,
+    "episodes": 22,
+    "models": [
+     "qwen0.5b",
+     "qwen1.5b",
+     "qwen7b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run",
+     "leak-recheck-0.5b",
+     "leak-recheck-1.5b",
+     "model-separation-0.5b",
+     "model-separation-1.5b",
+     "model-separation-7b-part2"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 18,
+     "terminal": 3,
+     "budget-exhausted": 1
+    },
+    "callsCap": 101
+   },
+   "minesweeper/expert": {
+    "callsExpected": 2.5,
+    "inExpected": 1710.4,
+    "inWorst": 1724,
+    "outExpected": 6,
+    "outWorst": 6,
+    "invalidRate": 0.6,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "terminal": 1,
+     "forfeit-invalid": 1
+    },
+    "callsCap": 500
+   },
+   "minesweeper/intermediate": {
+    "callsExpected": 3.5,
+    "inExpected": 1225.1,
+    "inWorst": 1236,
+    "outExpected": 6,
+    "outWorst": 6,
+    "invalidRate": 0.8571,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 276
+   },
+   "minesweeper/torus": {
+    "callsExpected": 3.5,
+    "inExpected": 1300,
+    "inWorst": 1347,
+    "outExpected": 6,
+    "outWorst": 6,
+    "invalidRate": 0.8571,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 276
+   },
+   "sliding/p15-long": {
+    "callsExpected": 36.5,
+    "inExpected": 565.2,
+    "inWorst": 594,
+    "outExpected": 2.04,
+    "outWorst": 3,
+    "invalidRate": 0.3699,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 245
+   },
+   "sliding/p15-mid": {
+    "callsExpected": 7.5,
+    "inExpected": 568.5,
+    "inWorst": 597,
+    "outExpected": 2.4,
+    "outWorst": 4,
+    "invalidRate": 0.5333,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 195
+   },
+   "sliding/p15-short": {
+    "callsExpected": 7.5,
+    "inExpected": 568.8,
+    "inWorst": 597,
+    "outExpected": 2.4,
+    "outWorst": 4,
+    "invalidRate": 0.5333,
+    "budgetBound": false,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 2
+    },
+    "callsCap": 145
+   },
+   "sliding/p8": {
+    "callsExpected": 88,
+    "inExpected": 527.9,
+    "inWorst": 607,
+    "outExpected": 2.02,
+    "outWorst": 45,
+    "invalidRate": 0.0186,
+    "budgetBound": false,
+    "episodes": 22,
+    "models": [
+     "qwen0.5b",
+     "qwen1.5b",
+     "qwen7b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run",
+     "leak-recheck-0.5b",
+     "leak-recheck-1.5b",
+     "model-separation-0.5b",
+     "model-separation-1.5b",
+     "model-separation-7b"
+    ],
+    "endReasons": {
+     "forfeit-invalid": 10,
+     "budget-exhausted": 12
+    },
+    "callsCap": 155
+   },
+   "sokoban/four-box": {
+    "callsExpected": 225,
+    "inExpected": 452.6,
+    "inWorst": 473,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0.0133,
+    "budgetBound": true,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "budget-exhausted": 2
+    },
+    "callsCap": 225
+   },
+   "sokoban/three-box": {
+    "callsExpected": 200,
+    "inExpected": 452.4,
+    "inWorst": 473,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0.0925,
+    "budgetBound": true,
+    "episodes": 2,
+    "models": [
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run"
+    ],
+    "endReasons": {
+     "budget-exhausted": 2
+    },
+    "callsCap": 200
+   },
+   "sokoban/two-box": {
+    "callsExpected": 87.78,
+    "inExpected": 447.6,
+    "inWorst": 466,
+    "outExpected": 2,
+    "outWorst": 2,
+    "invalidRate": 0.2203,
+    "budgetBound": false,
+    "episodes": 18,
+    "models": [
+     "qwen0.5b",
+     "qwen1.5b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run",
+     "leak-recheck-0.5b",
+     "leak-recheck-1.5b",
+     "model-separation-0.5b",
+     "model-separation-1.5b"
+    ],
+    "endReasons": {
+     "budget-exhausted": 10,
+     "forfeit-invalid": 8
+    },
+    "callsCap": 150
+   },
+   "tictactoe/perfect-opponent": {
+    "callsExpected": 3,
+    "inExpected": 321.5,
+    "inWorst": 336,
+    "outExpected": 3.37,
+    "outWorst": 4,
+    "invalidRate": 0.1795,
+    "budgetBound": false,
+    "episodes": 26,
+    "models": [
+     "qwen0.5b",
+     "qwen1.5b",
+     "qwen7b"
+    ],
+    "sources": [
+     "board-v2",
+     "first-model-run",
+     "leak-recheck-0.5b",
+     "leak-recheck-1.5b",
+     "leak-recheck-7b",
+     "model-separation-0.5b",
+     "model-separation-1.5b",
+     "model-separation-7b"
+    ],
+    "endReasons": {
+     "terminal": 22,
+     "forfeit-invalid": 4
+    },
+    "callsCap": 20
+   }
+  },
+  "sources": [
+   "board-v2",
+   "first-model-run",
+   "leak-recheck-0.5b",
+   "leak-recheck-1.5b",
+   "leak-recheck-7b",
+   "model-separation-0.5b",
+   "model-separation-1.5b",
+   "model-separation-7b",
+   "model-separation-7b-part2"
+  ]
+ },
+ "holdout": {
+  "perModel": {
+   "qwen0.5b": {
+    "tiers": [
+     {
+      "tier": "connect4/ladder-1",
+      "episodes": 8,
+      "measuredCalls": 3.75,
+      "fittedCalls": 4.61,
+      "beforeCalls": 2.133,
+      "afterCalls": 1.229,
+      "measuredIn": 444.5,
+      "fittedIn": 442.7,
+      "beforeTokens": 0.854,
+      "afterTokens": 0.996
+     },
+     {
+      "tier": "cube/cube-5",
+      "episodes": 8,
+      "measuredCalls": 25,
+      "fittedCalls": 25,
+      "beforeCalls": null,
+      "afterCalls": 1,
+      "measuredIn": 929.2,
+      "fittedIn": 928.9,
+      "beforeTokens": 0.867,
+      "afterTokens": 1
+     },
+     {
+      "tier": "mastermind/classic",
+      "episodes": 8,
+      "measuredCalls": 3,
+      "fittedCalls": 14.44,
+      "beforeCalls": null,
+      "afterCalls": 4.813,
+      "measuredIn": 478.8,
+      "fittedIn": 578.8,
+      "beforeTokens": null,
+      "afterTokens": 1.209
+     },
+     {
+      "tier": "minesweeper/beginner",
+      "episodes": 8,
+      "measuredCalls": 3.75,
+      "fittedCalls": 10.07,
+      "beforeCalls": null,
+      "afterCalls": 2.685,
+      "measuredIn": 785.8,
+      "fittedIn": 862.6,
+      "beforeTokens": null,
+      "afterTokens": 1.098
+     },
+     {
+      "tier": "sliding/p8",
+      "episodes": 8,
+      "measuredCalls": 155,
+      "fittedCalls": 49.71,
+      "beforeCalls": null,
+      "afterCalls": 0.321,
+      "measuredIn": 527.8,
+      "fittedIn": 528,
+      "beforeTokens": 0.979,
+      "afterTokens": 1
+     },
+     {
+      "tier": "sokoban/two-box",
+      "episodes": 8,
+      "measuredCalls": 10,
+      "fittedCalls": 150,
+      "beforeCalls": null,
+      "afterCalls": 15,
+      "measuredIn": 444.1,
+      "fittedIn": 447.8,
+      "beforeTokens": 1.027,
+      "afterTokens": 1.008
+     },
+     {
+      "tier": "tictactoe/perfect-opponent",
+      "episodes": 8,
+      "measuredCalls": 3.63,
+      "fittedCalls": 2.72,
+      "beforeCalls": 1.379,
+      "afterCalls": 0.75,
+      "measuredIn": 323.2,
+      "fittedIn": 320.6,
+      "beforeTokens": 0.807,
+      "afterTokens": 0.992
+     }
+    ],
+    "games": [
+     {
+      "game": "connect4",
+      "episodes": 8,
+      "beforeCalls": 2.133,
+      "afterCalls": 1.229,
+      "beforeTokens": 0.854,
+      "afterTokens": 0.996
+     },
+     {
+      "game": "cube",
+      "episodes": 8,
+      "beforeCalls": null,
+      "afterCalls": 1,
+      "beforeTokens": 0.867,
+      "afterTokens": 1
+     },
+     {
+      "game": "mastermind",
+      "episodes": 8,
+      "beforeCalls": null,
+      "afterCalls": 4.813,
+      "beforeTokens": null,
+      "afterTokens": 1.209
+     },
+     {
+      "game": "minesweeper",
+      "episodes": 8,
+      "beforeCalls": null,
+      "afterCalls": 2.685,
+      "beforeTokens": null,
+      "afterTokens": 1.098
+     },
+     {
+      "game": "sliding",
+      "episodes": 8,
+      "beforeCalls": null,
+      "afterCalls": 0.321,
+      "beforeTokens": 0.979,
+      "afterTokens": 1
+     },
+     {
+      "game": "sokoban",
+      "episodes": 8,
+      "beforeCalls": null,
+      "afterCalls": 15,
+      "beforeTokens": 1.027,
+      "afterTokens": 1.008
+     },
+     {
+      "game": "tictactoe",
+      "episodes": 8,
+      "beforeCalls": 1.379,
+      "afterCalls": 0.75,
+      "beforeTokens": 0.807,
+      "afterTokens": 0.992
+     }
+    ]
+   },
+   "qwen1.5b": {
+    "tiers": [
+     {
+      "tier": "2048/t1024",
+      "episodes": 2,
+      "measuredCalls": 203,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 562,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "2048/t2048",
+      "episodes": 2,
+      "measuredCalls": 119.5,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 558.1,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "2048/t256",
+      "episodes": 2,
+      "measuredCalls": 130,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 558.6,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "2048/t512",
+      "episodes": 2,
+      "measuredCalls": 98,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 556.1,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-endgames/kbbk",
+      "episodes": 2,
+      "measuredCalls": 5,
+      "fittedCalls": null,
+      "beforeCalls": 0.2,
+      "afterCalls": null,
+      "measuredIn": 690.7,
+      "fittedIn": null,
+      "beforeTokens": 0.686,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-endgames/kbnk",
+      "episodes": 2,
+      "measuredCalls": 13,
+      "fittedCalls": null,
+      "beforeCalls": 0.154,
+      "afterCalls": null,
+      "measuredIn": 648.4,
+      "fittedIn": null,
+      "beforeTokens": 0.698,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-endgames/kqk",
+      "episodes": 2,
+      "measuredCalls": 5,
+      "fittedCalls": null,
+      "beforeCalls": 0.2,
+      "afterCalls": null,
+      "measuredIn": 715.2,
+      "fittedIn": null,
+      "beforeTokens": 0.672,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-endgames/krk",
+      "episodes": 2,
+      "measuredCalls": 26.5,
+      "fittedCalls": null,
+      "beforeCalls": 0.151,
+      "afterCalls": null,
+      "measuredIn": 633.4,
+      "fittedIn": null,
+      "beforeTokens": 0.726,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-puzzles/r0400",
+      "episodes": 1,
+      "measuredCalls": 3,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 1065,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-puzzles/r1000",
+      "episodes": 1,
+      "measuredCalls": 3,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 1025,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-puzzles/r1400",
+      "episodes": 1,
+      "measuredCalls": 1,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 874,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-puzzles/r1800",
+      "episodes": 1,
+      "measuredCalls": 2,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 1010.5,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-puzzles/r2200",
+      "episodes": 1,
+      "measuredCalls": 3,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 1070,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-puzzles/r2600",
+      "episodes": 1,
+      "measuredCalls": 1,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 988,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-stockfish/sf-100k",
+      "episodes": 2,
+      "measuredCalls": 8.5,
+      "fittedCalls": null,
+      "beforeCalls": 11.059,
+      "afterCalls": null,
+      "measuredIn": 707.8,
+      "fittedIn": null,
+      "beforeTokens": 0.841,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-stockfish/sf-10k",
+      "episodes": 2,
+      "measuredCalls": 4.5,
+      "fittedCalls": null,
+      "beforeCalls": 15.556,
+      "afterCalls": null,
+      "measuredIn": 738.9,
+      "fittedIn": null,
+      "beforeTokens": 0.782,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-stockfish/sf-1k",
+      "episodes": 2,
+      "measuredCalls": 6,
+      "fittedCalls": null,
+      "beforeCalls": 11.833,
+      "afterCalls": null,
+      "measuredIn": 700.5,
+      "fittedIn": null,
+      "beforeTokens": 0.831,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-stockfish/sf-1m",
+      "episodes": 2,
+      "measuredCalls": 4,
+      "fittedCalls": null,
+      "beforeCalls": 8.75,
+      "afterCalls": null,
+      "measuredIn": 674.8,
+      "fittedIn": null,
+      "beforeTokens": 0.787,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess-stockfish/sf-250",
+      "episodes": 1,
+      "measuredCalls": 3,
+      "fittedCalls": null,
+      "beforeCalls": 50,
+      "afterCalls": null,
+      "measuredIn": 683,
+      "fittedIn": null,
+      "beforeTokens": 0.99,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess/granite",
+      "episodes": 2,
+      "measuredCalls": 3,
+      "fittedCalls": null,
+      "beforeCalls": 5.333,
+      "afterCalls": null,
+      "measuredIn": 704.7,
+      "fittedIn": null,
+      "beforeTokens": 0.621,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess/paper",
+      "episodes": 2,
+      "measuredCalls": 4.5,
+      "fittedCalls": null,
+      "beforeCalls": 12.444,
+      "afterCalls": null,
+      "measuredIn": 690.9,
+      "fittedIn": null,
+      "beforeTokens": 0.68,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess/steel",
+      "episodes": 2,
+      "measuredCalls": 3.5,
+      "fittedCalls": null,
+      "beforeCalls": 15.429,
+      "afterCalls": null,
+      "measuredIn": 699.6,
+      "fittedIn": null,
+      "beforeTokens": 0.689,
+      "afterTokens": null
+     },
+     {
+      "tier": "chess/wood",
+      "episodes": 2,
+      "measuredCalls": 4,
+      "fittedCalls": null,
+      "beforeCalls": 20,
+      "afterCalls": null,
+      "measuredIn": 643.5,
+      "fittedIn": null,
+      "beforeTokens": 0.805,
+      "afterTokens": null
+     },
+     {
+      "tier": "connect4/forced-win",
+      "episodes": 2,
+      "measuredCalls": 1,
+      "fittedCalls": null,
+      "beforeCalls": 11,
+      "afterCalls": null,
+      "measuredIn": 469,
+      "fittedIn": null,
+      "beforeTokens": 0.861,
+      "afterTokens": null
+     },
+     {
+      "tier": "connect4/ladder-1",
+      "episodes": 10,
+      "measuredCalls": 4.5,
+      "fittedCalls": 4.25,
+      "beforeCalls": 1.778,
+      "afterCalls": 0.944,
+      "measuredIn": 442.8,
+      "fittedIn": 443.5,
+      "beforeTokens": 0.857,
+      "afterTokens": 1.002
+     },
+     {
+      "tier": "connect4/ladder-2",
+      "episodes": 2,
+      "measuredCalls": 4.5,
+      "fittedCalls": null,
+      "beforeCalls": 0.667,
+      "afterCalls": null,
+      "measuredIn": 442.3,
+      "fittedIn": null,
+      "beforeTokens": 0.859,
+      "afterTokens": null
+     },
+     {
+      "tier": "connect4/ladder-3",
+      "episodes": 2,
+      "measuredCalls": 6,
+      "fittedCalls": null,
+      "beforeCalls": 3,
+      "afterCalls": null,
+      "measuredIn": 443.4,
+      "fittedIn": null,
+      "beforeTokens": 0.854,
+      "afterTokens": null
+     },
+     {
+      "tier": "connect4/ladder-4",
+      "episodes": 2,
+      "measuredCalls": 3.5,
+      "fittedCalls": null,
+      "beforeCalls": 5.143,
+      "afterCalls": null,
+      "measuredIn": 442.3,
+      "fittedIn": null,
+      "beforeTokens": 0.855,
+      "afterTokens": null
+     },
+     {
+      "tier": "cube/cube-5",
+      "episodes": 10,
+      "measuredCalls": 25,
+      "fittedCalls": 25,
+      "beforeCalls": null,
+      "afterCalls": 1,
+      "measuredIn": 928.7,
+      "fittedIn": 929.2,
+      "beforeTokens": 0.868,
+      "afterTokens": 1
+     },
+     {
+      "tier": "cube/cube-7",
+      "episodes": 2,
+      "measuredCalls": 35,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 930,
+      "fittedIn": null,
+      "beforeTokens": 0.867,
+      "afterTokens": null
+     },
+     {
+      "tier": "cube/cube-9",
+      "episodes": 2,
+      "measuredCalls": 45,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 929.5,
+      "fittedIn": null,
+      "beforeTokens": 0.867,
+      "afterTokens": null
+     },
+     {
+      "tier": "holdem/equity",
+      "episodes": 2,
+      "measuredCalls": 130.5,
+      "fittedCalls": null,
+      "beforeCalls": 1.31,
+      "afterCalls": null,
+      "measuredIn": 1505.9,
+      "fittedIn": null,
+      "beforeTokens": 0.794,
+      "afterTokens": null
+     },
+     {
+      "tier": "holdem/rules",
+      "episodes": 2,
+      "measuredCalls": 92,
+      "fittedCalls": null,
+      "beforeCalls": 1.902,
+      "afterCalls": null,
+      "measuredIn": 1456.7,
+      "fittedIn": null,
+      "beforeTokens": 0.967,
+      "afterTokens": null
+     },
+     {
+      "tier": "holdem/station",
+      "episodes": 2,
+      "measuredCalls": 127.5,
+      "fittedCalls": null,
+      "beforeCalls": 1.255,
+      "afterCalls": null,
+      "measuredIn": 1520.1,
+      "fittedIn": null,
+      "beforeTokens": 0.926,
+      "afterTokens": null
+     },
+     {
+      "tier": "mastermind/classic",
+      "episodes": 10,
+      "measuredCalls": 8.9,
+      "fittedCalls": 12.19,
+      "beforeCalls": null,
+      "afterCalls": 1.37,
+      "measuredIn": 529.8,
+      "fittedIn": 588.8,
+      "beforeTokens": null,
+      "afterTokens": 1.111
+     },
+     {
+      "tier": "mastermind/deep",
+      "episodes": 2,
+      "measuredCalls": 3,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 483.5,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "mastermind/wide",
+      "episodes": 2,
+      "measuredCalls": 6,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 495.9,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "minesweeper/beginner",
+      "episodes": 10,
+      "measuredCalls": 12.8,
+      "fittedCalls": 3.58,
+      "beforeCalls": null,
+      "afterCalls": 0.28,
+      "measuredIn": 874.9,
+      "fittedIn": 772.3,
+      "beforeTokens": null,
+      "afterTokens": 0.883
+     },
+     {
+      "tier": "minesweeper/expert",
+      "episodes": 2,
+      "measuredCalls": 2.5,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 1710.4,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "minesweeper/intermediate",
+      "episodes": 2,
+      "measuredCalls": 3.5,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 1225.1,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "minesweeper/torus",
+      "episodes": 2,
+      "measuredCalls": 3.5,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 1300,
+      "fittedIn": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "tier": "sliding/p15-long",
+      "episodes": 2,
+      "measuredCalls": 36.5,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 565.2,
+      "fittedIn": null,
+      "beforeTokens": 0.931,
+      "afterTokens": null
+     },
+     {
+      "tier": "sliding/p15-mid",
+      "episodes": 2,
+      "measuredCalls": 7.5,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 568.5,
+      "fittedIn": null,
+      "beforeTokens": 0.923,
+      "afterTokens": null
+     },
+     {
+      "tier": "sliding/p15-short",
+      "episodes": 2,
+      "measuredCalls": 7.5,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 568.8,
+      "fittedIn": null,
+      "beforeTokens": 0.923,
+      "afterTokens": null
+     },
+     {
+      "tier": "sliding/p8",
+      "episodes": 10,
+      "measuredCalls": 7.6,
+      "fittedCalls": 155,
+      "beforeCalls": null,
+      "afterCalls": 20.395,
+      "measuredIn": 534.9,
+      "fittedIn": 527.6,
+      "beforeTokens": 0.966,
+      "afterTokens": 0.986
+     },
+     {
+      "tier": "sokoban/four-box",
+      "episodes": 2,
+      "measuredCalls": 225,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 452.6,
+      "fittedIn": null,
+      "beforeTokens": 1.031,
+      "afterTokens": null
+     },
+     {
+      "tier": "sokoban/three-box",
+      "episodes": 2,
+      "measuredCalls": 200,
+      "fittedCalls": null,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "measuredIn": 452.4,
+      "fittedIn": null,
+      "beforeTokens": 1.019,
+      "afterTokens": null
+     },
+     {
+      "tier": "sokoban/two-box",
+      "episodes": 10,
+      "measuredCalls": 150,
+      "fittedCalls": 10,
+      "beforeCalls": null,
+      "afterCalls": 0.067,
+      "measuredIn": 447.8,
+      "fittedIn": 444.1,
+      "beforeTokens": 1.018,
+      "afterTokens": 0.992
+     },
+     {
+      "tier": "tictactoe/perfect-opponent",
+      "episodes": 10,
+      "measuredCalls": 2.7,
+      "fittedCalls": 3.19,
+      "beforeCalls": 1.852,
+      "afterCalls": 1.181,
+      "measuredIn": 320.3,
+      "fittedIn": 322.2,
+      "beforeTokens": 0.815,
+      "afterTokens": 1.006
+     }
+    ],
+    "games": [
+     {
+      "game": "2048",
+      "episodes": 8,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "game": "chess",
+      "episodes": 8,
+      "beforeCalls": 11.963,
+      "afterCalls": null,
+      "beforeTokens": 0.696,
+      "afterTokens": null
+     },
+     {
+      "game": "chess-endgames",
+      "episodes": 8,
+      "beforeCalls": 0.175,
+      "afterCalls": null,
+      "beforeTokens": 0.695,
+      "afterTokens": null
+     },
+     {
+      "game": "chess-puzzles",
+      "episodes": 6,
+      "beforeCalls": null,
+      "afterCalls": null,
+      "beforeTokens": null,
+      "afterTokens": null
+     },
+     {
+      "game": "chess-stockfish",
+      "episodes": 9,
+      "beforeCalls": 15.486,
+      "afterCalls": null,
+      "beforeTokens": 0.843,
+      "afterTokens": null
+     },
+     {
+      "game": "connect4",
+      "episodes": 18,
+      "beforeCalls": 2.889,
+      "afterCalls": 0.944,
+      "beforeTokens": 0.857,
+      "afterTokens": 1.002
+     },
+     {
+      "game": "cube",
+      "episodes": 14,
+      "beforeCalls": null,
+      "afterCalls": 1,
+      "beforeTokens": 0.867,
+      "afterTokens": 1
+     },
+     {
+      "game": "holdem",
+      "episodes": 6,
+      "beforeCalls": 1.462,
+      "afterCalls": null,
+      "beforeTokens": 0.893,
+      "afterTokens": null
+     },
+     {
+      "game": "mastermind",
+      "episodes": 14,
+      "beforeCalls": null,
+      "afterCalls": 1.37,
+      "beforeTokens": null,
+      "afterTokens": 1.111
+     },
+     {
+      "game": "minesweeper",
+      "episodes": 16,
+      "beforeCalls": null,
+      "afterCalls": 0.28,
+      "beforeTokens": null,
+      "afterTokens": 0.883
+     },
+     {
+      "game": "sliding",
+      "episodes": 16,
+      "beforeCalls": null,
+      "afterCalls": 20.395,
+      "beforeTokens": 0.936,
+      "afterTokens": 0.986
+     },
+     {
+      "game": "sokoban",
+      "episodes": 14,
+      "beforeCalls": null,
+      "afterCalls": 0.067,
+      "beforeTokens": 1.023,
+      "afterTokens": 0.992
+     },
+     {
+      "game": "tictactoe",
+      "episodes": 10,
+      "beforeCalls": 1.852,
+      "afterCalls": 1.181,
+      "beforeTokens": 0.815,
+      "afterTokens": 1.006
+     }
+    ]
+   },
+   "qwen7b": {
+    "tiers": [
+     {
+      "tier": "connect4/ladder-1",
+      "episodes": 8,
+      "measuredCalls": 4.75,
+      "fittedCalls": 4.17,
+      "beforeCalls": 1.684,
+      "afterCalls": 0.878,
+      "measuredIn": 442.7,
+      "fittedIn": 443.5,
+      "beforeTokens": 0.858,
+      "afterTokens": 1.002
+     },
+     {
+      "tier": "cube/cube-5",
+      "episodes": 4,
+      "measuredCalls": 25,
+      "fittedCalls": 25,
+      "beforeCalls": null,
+      "afterCalls": 1,
+      "measuredIn": 929.2,
+      "fittedIn": 928.9,
+      "beforeTokens": 0.867,
+      "afterTokens": 1
+     },
+     {
+      "tier": "mastermind/classic",
+      "episodes": 8,
+      "measuredCalls": 21.38,
+      "fittedCalls": 6.28,
+      "beforeCalls": null,
+      "afterCalls": 0.294,
+      "measuredIn": 604.3,
+      "fittedIn": 519,
+      "beforeTokens": null,
+      "afterTokens": 0.859
+     },
+     {
+      "tier": "minesweeper/beginner",
+      "episodes": 4,
+      "measuredCalls": 3.25,
+      "fittedCalls": 8.78,
+      "beforeCalls": null,
+      "afterCalls": 2.702,
+      "measuredIn": 741.2,
+      "fittedIn": 858,
+      "beforeTokens": null,
+      "afterTokens": 1.158
+     },
+     {
+      "tier": "sliding/p8",
+      "episodes": 4,
+      "measuredCalls": 155,
+      "fittedCalls": 73.11,
+      "beforeCalls": null,
+      "afterCalls": 0.472,
+      "measuredIn": 527.2,
+      "fittedIn": 528.2,
+      "beforeTokens": 0.98,
+      "afterTokens": 1.002
+     },
+     {
+      "tier": "tictactoe/perfect-opponent",
+      "episodes": 8,
+      "measuredCalls": 2.75,
+      "fittedCalls": 3.11,
+      "beforeCalls": 1.818,
+      "afterCalls": 1.131,
+      "measuredIn": 320.9,
+      "fittedIn": 321.8,
+      "beforeTokens": 0.813,
+      "afterTokens": 1.003
+     }
+    ],
+    "games": [
+     {
+      "game": "connect4",
+      "episodes": 8,
+      "beforeCalls": 1.684,
+      "afterCalls": 0.878,
+      "beforeTokens": 0.858,
+      "afterTokens": 1.002
+     },
+     {
+      "game": "cube",
+      "episodes": 4,
+      "beforeCalls": null,
+      "afterCalls": 1,
+      "beforeTokens": 0.867,
+      "afterTokens": 1
+     },
+     {
+      "game": "mastermind",
+      "episodes": 8,
+      "beforeCalls": null,
+      "afterCalls": 0.294,
+      "beforeTokens": null,
+      "afterTokens": 0.859
+     },
+     {
+      "game": "minesweeper",
+      "episodes": 4,
+      "beforeCalls": null,
+      "afterCalls": 2.702,
+      "beforeTokens": null,
+      "afterTokens": 1.158
+     },
+     {
+      "game": "sliding",
+      "episodes": 4,
+      "beforeCalls": null,
+      "afterCalls": 0.472,
+      "beforeTokens": 0.98,
+      "afterTokens": 1.002
+     },
+     {
+      "game": "tictactoe",
+      "episodes": 8,
+      "beforeCalls": 1.818,
+      "afterCalls": 1.131,
+      "beforeTokens": 0.813,
+      "afterTokens": 1.003
+     }
+    ]
+   }
+  },
+  "summary": [
+   {
+    "game": "connect4",
+    "model": "qwen0.5b",
+    "metric": "calls",
+    "before": 2.133,
+    "after": 1.229
+   },
+   {
+    "game": "connect4",
+    "model": "qwen0.5b",
+    "metric": "tokens",
+    "before": 0.854,
+    "after": 0.996
+   },
+   {
+    "game": "cube",
+    "model": "qwen0.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 1
+   },
+   {
+    "game": "cube",
+    "model": "qwen0.5b",
+    "metric": "tokens",
+    "before": 0.867,
+    "after": 1
+   },
+   {
+    "game": "mastermind",
+    "model": "qwen0.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 4.813
+   },
+   {
+    "game": "mastermind",
+    "model": "qwen0.5b",
+    "metric": "tokens",
+    "before": null,
+    "after": 1.209
+   },
+   {
+    "game": "minesweeper",
+    "model": "qwen0.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 2.685
+   },
+   {
+    "game": "minesweeper",
+    "model": "qwen0.5b",
+    "metric": "tokens",
+    "before": null,
+    "after": 1.098
+   },
+   {
+    "game": "sliding",
+    "model": "qwen0.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 0.321
+   },
+   {
+    "game": "sliding",
+    "model": "qwen0.5b",
+    "metric": "tokens",
+    "before": 0.979,
+    "after": 1
+   },
+   {
+    "game": "sokoban",
+    "model": "qwen0.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 15
+   },
+   {
+    "game": "sokoban",
+    "model": "qwen0.5b",
+    "metric": "tokens",
+    "before": 1.027,
+    "after": 1.008
+   },
+   {
+    "game": "tictactoe",
+    "model": "qwen0.5b",
+    "metric": "calls",
+    "before": 1.379,
+    "after": 0.75
+   },
+   {
+    "game": "tictactoe",
+    "model": "qwen0.5b",
+    "metric": "tokens",
+    "before": 0.807,
+    "after": 0.992
+   },
+   {
+    "game": "2048",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": null,
+    "after": null
+   },
+   {
+    "game": "2048",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": null,
+    "after": null
+   },
+   {
+    "game": "chess",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": 11.963,
+    "after": null
+   },
+   {
+    "game": "chess",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": 0.696,
+    "after": null
+   },
+   {
+    "game": "chess-endgames",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": 0.175,
+    "after": null
+   },
+   {
+    "game": "chess-endgames",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": 0.695,
+    "after": null
+   },
+   {
+    "game": "chess-puzzles",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": null,
+    "after": null
+   },
+   {
+    "game": "chess-puzzles",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": null,
+    "after": null
+   },
+   {
+    "game": "chess-stockfish",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": 15.486,
+    "after": null
+   },
+   {
+    "game": "chess-stockfish",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": 0.843,
+    "after": null
+   },
+   {
+    "game": "connect4",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": 2.889,
+    "after": 0.944
+   },
+   {
+    "game": "connect4",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": 0.857,
+    "after": 1.002
+   },
+   {
+    "game": "cube",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 1
+   },
+   {
+    "game": "cube",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": 0.867,
+    "after": 1
+   },
+   {
+    "game": "holdem",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": 1.462,
+    "after": null
+   },
+   {
+    "game": "holdem",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": 0.893,
+    "after": null
+   },
+   {
+    "game": "mastermind",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 1.37
+   },
+   {
+    "game": "mastermind",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": null,
+    "after": 1.111
+   },
+   {
+    "game": "minesweeper",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 0.28
+   },
+   {
+    "game": "minesweeper",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": null,
+    "after": 0.883
+   },
+   {
+    "game": "sliding",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 20.395
+   },
+   {
+    "game": "sliding",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": 0.936,
+    "after": 0.986
+   },
+   {
+    "game": "sokoban",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": null,
+    "after": 0.067
+   },
+   {
+    "game": "sokoban",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": 1.023,
+    "after": 0.992
+   },
+   {
+    "game": "tictactoe",
+    "model": "qwen1.5b",
+    "metric": "calls",
+    "before": 1.852,
+    "after": 1.181
+   },
+   {
+    "game": "tictactoe",
+    "model": "qwen1.5b",
+    "metric": "tokens",
+    "before": 0.815,
+    "after": 1.006
+   },
+   {
+    "game": "connect4",
+    "model": "qwen7b",
+    "metric": "calls",
+    "before": 1.684,
+    "after": 0.878
+   },
+   {
+    "game": "connect4",
+    "model": "qwen7b",
+    "metric": "tokens",
+    "before": 0.858,
+    "after": 1.002
+   },
+   {
+    "game": "cube",
+    "model": "qwen7b",
+    "metric": "calls",
+    "before": null,
+    "after": 1
+   },
+   {
+    "game": "cube",
+    "model": "qwen7b",
+    "metric": "tokens",
+    "before": 0.867,
+    "after": 1
+   },
+   {
+    "game": "mastermind",
+    "model": "qwen7b",
+    "metric": "calls",
+    "before": null,
+    "after": 0.294
+   },
+   {
+    "game": "mastermind",
+    "model": "qwen7b",
+    "metric": "tokens",
+    "before": null,
+    "after": 0.859
+   },
+   {
+    "game": "minesweeper",
+    "model": "qwen7b",
+    "metric": "calls",
+    "before": null,
+    "after": 2.702
+   },
+   {
+    "game": "minesweeper",
+    "model": "qwen7b",
+    "metric": "tokens",
+    "before": null,
+    "after": 1.158
+   },
+   {
+    "game": "sliding",
+    "model": "qwen7b",
+    "metric": "calls",
+    "before": null,
+    "after": 0.472
+   },
+   {
+    "game": "sliding",
+    "model": "qwen7b",
+    "metric": "tokens",
+    "before": 0.98,
+    "after": 1.002
+   },
+   {
+    "game": "tictactoe",
+    "model": "qwen7b",
+    "metric": "calls",
+    "before": 1.818,
+    "after": 1.131
+   },
+   {
+    "game": "tictactoe",
+    "model": "qwen7b",
+    "metric": "tokens",
+    "before": 0.813,
+    "after": 1.003
+   }
+  ]
+ },
+ "verdicts": [
+  {
+   "game": "2048",
+   "models": 0,
+   "callsWorst": null,
+   "tokensWorst": null,
+   "callsTransfer": "n/a",
+   "tokensTransfer": "n/a"
+  },
+  {
+   "game": "chess",
+   "models": 0,
+   "callsWorst": null,
+   "tokensWorst": null,
+   "callsTransfer": "n/a",
+   "tokensTransfer": "n/a"
+  },
+  {
+   "game": "chess-endgames",
+   "models": 0,
+   "callsWorst": null,
+   "tokensWorst": null,
+   "callsTransfer": "n/a",
+   "tokensTransfer": "n/a"
+  },
+  {
+   "game": "chess-puzzles",
+   "models": 0,
+   "callsWorst": null,
+   "tokensWorst": null,
+   "callsTransfer": "n/a",
+   "tokensTransfer": "n/a"
+  },
+  {
+   "game": "chess-stockfish",
+   "models": 0,
+   "callsWorst": null,
+   "tokensWorst": null,
+   "callsTransfer": "n/a",
+   "tokensTransfer": "n/a"
+  },
+  {
+   "game": "connect4",
+   "models": 3,
+   "callsWorst": 1.23,
+   "tokensWorst": 1,
+   "callsTransfer": "yes",
+   "tokensTransfer": "yes"
+  },
+  {
+   "game": "cube",
+   "models": 3,
+   "callsWorst": 1,
+   "tokensWorst": 1,
+   "callsTransfer": "yes",
+   "tokensTransfer": "yes"
+  },
+  {
+   "game": "holdem",
+   "models": 0,
+   "callsWorst": null,
+   "tokensWorst": null,
+   "callsTransfer": "n/a",
+   "tokensTransfer": "n/a"
+  },
+  {
+   "game": "mastermind",
+   "models": 3,
+   "callsWorst": 4.81,
+   "tokensWorst": 1.21,
+   "callsTransfer": "no",
+   "tokensTransfer": "yes"
+  },
+  {
+   "game": "minesweeper",
+   "models": 3,
+   "callsWorst": 3.57,
+   "tokensWorst": 1.16,
+   "callsTransfer": "no",
+   "tokensTransfer": "yes"
+  },
+  {
+   "game": "sliding",
+   "models": 3,
+   "callsWorst": 20.4,
+   "tokensWorst": 1.01,
+   "callsTransfer": "no",
+   "tokensTransfer": "yes"
+  },
+  {
+   "game": "sokoban",
+   "models": 2,
+   "callsWorst": 15,
+   "tokensWorst": 1.01,
+   "callsTransfer": "no",
+   "tokensTransfer": "yes"
+  },
+  {
+   "game": "tictactoe",
+   "models": 3,
+   "callsWorst": 1.33,
+   "tokensWorst": 1.01,
+   "callsTransfer": "yes",
+   "tokensTransfer": "yes"
+  }
+ ],
+ "tokenSizeFit": {
+  "2048": {
+   "calls": 1101,
+   "slopeTokensPerChar": 0.29495,
+   "interceptTokens": 13.2,
+   "r2": 0.382,
+   "impliedCharsPerToken": 3.39
+  },
+  "chess": {
+   "calls": 30,
+   "slopeTokensPerChar": 0.52867,
+   "interceptTokens": -246,
+   "r2": 0.884,
+   "impliedCharsPerToken": 1.89
+  },
+  "chess-endgames": {
+   "calls": 99,
+   "slopeTokensPerChar": 0.6289,
+   "interceptTokens": -513.5,
+   "r2": 0.896,
+   "impliedCharsPerToken": 1.59
+  },
+  "chess-puzzles": {
+   "calls": 13,
+   "slopeTokensPerChar": 0.6164,
+   "interceptTokens": -978,
+   "r2": 0.93,
+   "impliedCharsPerToken": 1.62
+  },
+  "chess-stockfish": {
+   "calls": 49,
+   "slopeTokensPerChar": 0.48585,
+   "interceptTokens": -257.3,
+   "r2": 0.86,
+   "impliedCharsPerToken": 2.06
+  },
+  "connect4": {
+   "calls": 142,
+   "slopeTokensPerChar": 0.23569,
+   "interceptTokens": 84.9,
+   "r2": 0.805,
+   "impliedCharsPerToken": 4.24
+  },
+  "cube": {
+   "calls": 0,
+   "note": "too few hash-verified calls for a fit"
+  },
+  "holdem": {
+   "calls": 700,
+   "slopeTokensPerChar": 0.36035,
+   "interceptTokens": -264.6,
+   "r2": 0.999,
+   "impliedCharsPerToken": 2.78
+  },
+  "mastermind": {
+   "calls": 302,
+   "slopeTokensPerChar": 0.42867,
+   "interceptTokens": -325.4,
+   "r2": 0.99,
+   "impliedCharsPerToken": 2.33
+  },
+  "minesweeper": {
+   "calls": 186,
+   "slopeTokensPerChar": 0.64538,
+   "interceptTokens": -856.4,
+   "r2": 0.966,
+   "impliedCharsPerToken": 1.55
+  },
+  "sliding": {
+   "calls": 2039,
+   "slopeTokensPerChar": 0.36659,
+   "interceptTokens": -228.8,
+   "r2": 0.822,
+   "impliedCharsPerToken": 2.73
+  },
+  "sokoban": {
+   "calls": 2430,
+   "slopeTokensPerChar": 0.23385,
+   "interceptTokens": 16.5,
+   "r2": 0.953,
+   "impliedCharsPerToken": 4.28
+  },
+  "tictactoe": {
+   "calls": 75,
+   "slopeTokensPerChar": 0.21816,
+   "interceptTokens": 90.2,
+   "r2": 0.672,
+   "impliedCharsPerToken": 4.58
+  }
+ }
+}

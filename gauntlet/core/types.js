@@ -190,6 +190,12 @@
  * @property {string} [provider]
  * @property {boolean} [dryRun] True for harness shakedowns that must not hit
  *   paid APIs.
+ * @property {(ctx: TurnContext) => number | null} [quoteWorstCaseUsd] Upper
+ *   bound on one act() call's cost in USD, computable before the call starts
+ *   (the request's size times the input price plus the output-token limit
+ *   times the output price), or null when there is no price entry. The run
+ *   engine reserves this quote against a maxUsd cap before admitting the
+ *   call, so concurrent in-flight calls cannot jointly overshoot the cap.
  */
 
 /**

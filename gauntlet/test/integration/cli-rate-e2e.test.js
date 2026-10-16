@@ -251,7 +251,7 @@ test('leaderboard --scoring-profile: one board per profile, invalid refused, rat
   assert.match(invalid.stderr, /rhae-v1, chance-adjusted, squared-outcome/);
 
   // The rating column rates a chess-only entry: real chess episodes against
-  // the committed ladder — paper and wood are ladder rungs, steel and
+  // the committed ladder — sand, paper and wood are ladder rungs; steel and
   // granite sit above the fitted ladder and are skipped.
   const chessSuite = join(root, 'suite-chess.json');
   assert.equal(
@@ -269,7 +269,7 @@ test('leaderboard --scoring-profile: one board per profile, invalid refused, rat
   const chessEntry = chessBoard.tracks.baseline[0];
   assert.equal(chessEntry.agent.id, 'random');
   assert.ok(chessEntry.rating, 'a chess-trajectory agent carries a rating');
-  assert.equal(chessEntry.rating.games, 2, 'paper and wood are ladder-known; steel and granite are not');
+  assert.equal(chessEntry.rating.games, 3, 'sand, paper and wood are ladder-known; steel and granite are not');
   assert.ok(chessEntry.rating.rating !== null || chessEntry.rating.direction !== null);
   const chessRow = readFileSync(join(lbChess, 'leaderboard.md'), 'utf8')
     .split('\n')

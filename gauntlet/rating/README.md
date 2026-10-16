@@ -47,18 +47,22 @@ Plays every adjacent ladder pair (plus the `paper`–`sf-1k` skip pair) with
 balanced colours on the seeded episode runner, fits the anchored MLE, and
 writes `ladder-results.json` with per-game results, raw scores, fit and
 bootstrap intervals, and provenance (engine id, spec versions, git commit).
+With `--merge-from=PATH` a partial run carries a prior results file's pairs
+into the fit, so a new rung is rated without replaying the old pairs.
 
 ```
 node rating/ladder.js [--games-per-colour=20] [--replicates=2000]
-                      [--builtin-only] [--out=PATH]
+                      [--pairs=csv] [--merge-from=PATH] [--builtin-only]
+                      [--out=PATH]
 ```
 
 Rungs and pairs:
 
 | pair | game | agent rung | opponent rung |
 |---|---|---|---|
+| sand-vs-paper | chess | chess-sand | chess-paper |
 | paper-vs-wood | chess | chess-wood | chess-paper |
-| wood-vs-sf-1k | chess-stockfish | chess-wood | chess-stockfish-sf-1k |
+| wood-vs-sf-250 | chess-stockfish | chess-wood | chess-stockfish-sf-250 |
 | sf-1k-vs-sf-10k | chess-stockfish | sf-1k | sf-10k |
 | sf-10k-vs-sf-100k | chess-stockfish | sf-10k | sf-100k |
 | skip-paper-vs-sf-1k | chess-stockfish | chess-paper | sf-1k |

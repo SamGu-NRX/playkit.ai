@@ -199,7 +199,13 @@ export async function parseAgentSpec(text, options = {}) {
             `agent spec "${text}" only plays game "${gameId}", not "${context.game.spec.id}"`
           );
         }
-        return factory(kind, context);
+        // One run is one entry: every trajectory in the run bundle is
+        // attributed to the spec the researcher asked for, never to a game
+        // packet's tier-resolved id (chess names its engine per tier,
+        // engine-<tier>). A run spanning several tiers would otherwise mix
+        // agent identities in one bundle, and bundle verify's agent-identity
+        // rule and the leaderboard's single-entry scoring would refuse it.
+        return factory(kind, context).then((agent) => ({ ...agent, id: text }));
       },
     };
   }

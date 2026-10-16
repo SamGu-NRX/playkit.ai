@@ -199,6 +199,66 @@ test('process wiring: after quit, further commands say the engine is not running
   }
 });
 
+test('process wiring: repeated commands do not accumulate stdin error listeners', async () => {
+  const fake = fakeEngine('while IFS= read -r line; do printf \'= 1\\n\\n\'; done');
+  try {
+    const engine = new GtpEngine({ binaryPath: fake });
+    await engine.start();
+    for (let i = 0; i < 15; i++) {
+      await engine.command('is_legal black C3');
+    }
+    // The protective no-op stdin error handler is attached once at start.
+    // One per command grows without bound across an episode (hundreds of
+    // commands) and trips Node's MaxListenersExceededWarning on the 11th.
+    assert.equal(
+      engine.stdinErrorListenerCount,
+      1,
+      'stdin error handler must be attached once at start, not once per command',
+    );
+    await engine.quit();
+    assert.equal(engine.stdinErrorListenerCount, 0, 'quit detaches the child');
+  } finally {
+    cleanupFake();
+  }
+});
+
+test('process wiring: a late reply to a timed-out command is not misattributed to the next command', async () => {
+  // The fake echoes ids like GNU Go does (=1 SlowGo), so the client can hold
+  // it to id discipline. The genmove reply is sent from a backgrounded
+  // subshell 300ms out — after the client's 100ms deadline but before the
+  // next command's (slower) real reply — so the stale LATE block arrives
+  // exactly in the window where a naive client would misattribute it.
+  const fake = fakeEngine(
+    'namecount=0\n' +
+      'while IFS= read -r line; do\n' +
+      '  cmd=$(printf \'%s\' "$line" | sed -E \'s/^[0-9]+ //\')\n' +
+      '  id=$(printf \'%s\' "$line" | sed -nE \'s/^([0-9]+) .*/\\1/p\')\n' +
+      '  case "$cmd" in\n' +
+      '    name)\n' +
+      '      namecount=$((namecount + 1))\n' +
+      '      if [ "$namecount" -ge 2 ]; then sleep 0.5; fi\n' +
+      '      if [ -n "$id" ]; then printf \'=%s SlowGo\\n\\n\' "$id"; else printf \'= SlowGo\\n\\n\'; fi ;;\n' +
+      '    version) if [ -n "$id" ]; then printf \'=%s 1.0\\n\\n\' "$id"; else printf \'= 1.0\\n\\n\'; fi ;;\n' +
+      '    genmove*) if [ -n "$id" ]; then (sleep 0.3; printf \'=%s LATE\\n\\n\' "$id") & else (sleep 0.3; printf \'= LATE\\n\\n\') & fi ;;\n' +
+      '    *) if [ -n "$id" ]; then printf \'=%s ok\\n\\n\' "$id"; else printf \'= ok\\n\\n\'; fi ;;\n' +
+      '  esac\n' +
+      'done',
+  );
+  const engine = new GtpEngine({ binaryPath: fake, commandTimeoutMs: 100 });
+  try {
+    await engine.start();
+    await assert.rejects(engine.command('genmove black'), /timed out after 100ms/);
+    // The stale LATE block arrives while "name" is pending; id discipline
+    // drops it and "name" settles from its own reply.
+    assert.equal(await engine.command('name', { timeoutMs: 1500 }), 'SlowGo');
+  } finally {
+    // Even on a failed assertion: a live engine's open stdio pipe would hold
+    // the test process open past the runner's exit.
+    await engine.quit().catch(() => {});
+    cleanupFake();
+  }
+});
+
 const REAL_BINARY = findGtpBinary();
 
 test('real gnugo: the protocol starts, identifies itself, and accepts setup', { skip: REAL_BINARY ? false : 'no GNU Go binary found (set GAUNTLET_GNUGO or install gnugo)' }, async () => {

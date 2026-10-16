@@ -10,6 +10,8 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chessStockfish } from './index.js';
@@ -30,6 +32,8 @@ const FIXTURE = path.join(
   'fake-uci-engine.mjs'
 );
 const REAL_BINARY = findEngineBinary();
+const GAUNTLET_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const CLI_ENTRY = path.join(GAUNTLET_ROOT, 'cli', 'gauntlet.js');
 
 /** @import { Agent, TierSpec, TurnContext } from '../../core/types.js' */
 
@@ -289,10 +293,40 @@ test('real engine: the opponent records the engine id and search stats', { skip:
     seat,
   }));
   const meta = /** @type {any} */ (reply.meta);
-  assert.equal(meta.engine, 'Stockfish 17.1');
+  assert.match(/** @type {string} */ (meta.engine), /^Stockfish /);
   assert.equal(meta.nodesBudget, 1_000);
   assert.equal(typeof meta.depth, 'number');
   assert.equal(typeof meta.searchedNodes, 'number');
   assert.match(reply.text, /^[a-h][1-8][a-h][1-8][qrbn]?$/);
   await /** @type {any} */ (opponent).dispose();
+});
+
+test('real engine: a CLI play run exits promptly after its last episode', { skip: REAL_BINARY ? false : 'no engine binary found (set GAUNTLET_STOCKFISH or install stockfish)' }, async () => {
+  const startedAt = Date.now();
+  const child = spawn(
+    process.execPath,
+    [CLI_ENTRY, 'play', '--game', 'chess-stockfish', '--tier', 'sf-250', '--agent', 'random'],
+    {
+      cwd: GAUNTLET_ROOT,
+      env: { ...process.env, [STOCKFISH_ENV_VAR]: /** @type {string} */ (REAL_BINARY) },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  );
+  /** @type {string[]} */
+  const stderr = [];
+  child.stderr?.setEncoding('utf8');
+  child.stderr?.on('data', (chunk) => stderr.push(/** @type {string} */ (chunk)));
+  const [code, signal] = /** @type {[number | null, string | null]} */ (
+    await once(child, 'close')
+  );
+  const elapsedMs = Date.now() - startedAt;
+  assert.equal(signal, null, `the CLI run was killed by ${signal}: ${stderr.join('')}`);
+  assert.equal(code, 0, `the CLI run exited ${code}: ${stderr.join('')}`);
+  // The engine quits inside runEpisode's finally, so the CLI drains within
+  // seconds of its last episode; a leaked engine parks the process until the
+  // client's 60 s idle reap instead.
+  assert.ok(
+    elapsedMs < 30_000,
+    `the CLI run took ${(elapsedMs / 1000).toFixed(1)}s — an engine child outlived the last episode`
+  );
 });

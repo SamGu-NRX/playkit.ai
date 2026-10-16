@@ -46,6 +46,10 @@ import { parseAgentSpec } from './agents.js';
  *   token cap for live model specs, also recorded in run.json's limits.
  * @property {number} [callTimeoutMs] --call-timeout-ms: per-attempt timeout
  *   for live model specs, also recorded in run.json's limits.
+ * @property {number} [episodeTimeLimitMs] --episode-time-limit-ms: wall-clock
+ *   cap on each episode, enforced by the runner (a timed-out episode ends
+ *   with a `time-limit` trajectory that scores like a forfeit and still
+ *   replays) and recorded in run.json's limits.
  * @property {number} [thinkingBudget] --thinking-budget: Anthropic
  *   extended-thinking budget (budget_tokens), provider "anthropic" specs
  *   only; rides on top of the reply's output cap, is part of the worst-case
@@ -117,6 +121,9 @@ export async function runSuite(options) {
     ...(options.callTimeoutMs !== undefined
       ? { callTimeoutMs: options.callTimeoutMs }
       : {}),
+    ...(options.episodeTimeLimitMs !== undefined
+      ? { episodeTimeLimitMs: options.episodeTimeLimitMs }
+      : {}),
     ...(options.thinkingBudget !== undefined
       ? { thinkingBudget: options.thinkingBudget }
       : {}),
@@ -152,6 +159,9 @@ export async function runSuite(options) {
       : {}),
     ...(options.callTimeoutMs !== undefined
       ? { callTimeoutMs: options.callTimeoutMs }
+      : {}),
+    ...(options.episodeTimeLimitMs !== undefined
+      ? { episodeTimeLimitMs: options.episodeTimeLimitMs }
       : {}),
     ...(options.thinkingBudget !== undefined
       ? { thinkingBudget: options.thinkingBudget }

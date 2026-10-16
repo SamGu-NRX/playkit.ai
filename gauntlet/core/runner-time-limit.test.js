@@ -60,8 +60,8 @@ test('an episode whose agent hangs past the limit ends with reason time-limit an
   });
   assert.equal(trajectory.end.reason, 'time-limit');
   assert.equal(trajectory.end.timeLimitMs, 120);
-  assert.equal(typeof trajectory.end.elapsedMs, 'number');
-  assert.ok(trajectory.end.elapsedMs >= 120, `elapsed ${trajectory.end.elapsedMs} below the limit`);
+  const elapsedMs = /** @type {number} */ (trajectory.end.elapsedMs);
+  assert.ok(elapsedMs >= 120, `elapsed ${elapsedMs} below the limit`);
   assert.ok(trajectory.steps.length >= 1, 'the fast first call is recorded');
   // The game's forfeit outcome: the agent scores 0, every other seat 1.
   const outcome = /** @type {import('./types.js').Outcome} */ (trajectory.end.outcome);
@@ -85,7 +85,7 @@ test('an agent that ignores the abort signal is still bounded by the grace windo
   assert.equal(trajectory.end.reason, 'time-limit');
   // The runner did not wait out the 30 s call: the episode ended at the
   // limit plus the short grace, not at the call's natural completion.
-  assert.ok(trajectory.end.elapsedMs < 5000, `elapsed ${trajectory.end.elapsedMs} waited for the call`);
+  assert.ok(/** @type {number} */ (trajectory.end.elapsedMs) < 5000, `elapsed ${trajectory.end.elapsedMs} waited for the call`);
   const verdict = await verifyTrajectory(game, trajectory);
   assert.deepEqual(verdict, { ok: true });
 });

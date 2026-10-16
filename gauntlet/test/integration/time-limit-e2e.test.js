@@ -84,13 +84,20 @@ test('cli run --episode-time-limit-ms: slow agent, replayable timeouts, leaderbo
 
   // The stub replies instantly to an episode's first call (so each trajectory
   // records a real, replayable step) and delays every later call past the
-  // episode limit. The model agent carries its previous reply into the next
-  // request, so the messages array grows one turn per call: a length of 2 is
-  // the episode's first call.
+  // episode limit. The model agent is single-turn: each request carries the
+  // previous reply embedded in its user text — "(none)" on an episode's first
+  // call — so that marker, not the messages array length, tells the stub
+  // which call to stall. Replies are parsed from the observation's
+  // "Legal actions (...): a, b, ..." line — the stub never knows the board,
+  // so a fixed reply would go illegal after move one and end the episode
+  // forfeit-invalid before the limit ever fires.
   const stub = await startStubServer(
     /** @param {import('node:http').IncomingMessage} req @param {import('node:http').ServerResponse} res @param {*} body */
     (req, res, body) => {
-      const messages = /** @type {{ messages?: unknown[] }} */ (body)?.messages ?? [];
+      const messages = /** @type {{ messages?: { content?: unknown }[] }} */ (body)?.messages ?? [];
+      const content = JSON.stringify(messages[messages.length - 1]?.content ?? '');
+      const legalMatch = content.match(/Legal actions \([^)]*\): ([^\\"]+)/);
+      const move = legalMatch ? legalMatch[1].split(', ')[0] : 'a1';
       const reply = () =>
         sendJson(res, 200, {
           id: 'chatcmpl-stub',
@@ -98,11 +105,11 @@ test('cli run --episode-time-limit-ms: slow agent, replayable timeouts, leaderbo
           created: 1,
           model: 'stub-model',
           choices: [
-            { index: 0, message: { role: 'assistant', content: 'a1' }, finish_reason: 'stop' },
+            { index: 0, message: { role: 'assistant', content: move }, finish_reason: 'stop' },
           ],
           usage: { prompt_tokens: 10, completion_tokens: 1 },
         });
-      if (messages.length <= 2) {
+      if (content.includes('(none)')) {
         reply();
       } else {
         setTimeout(reply, SLOW_MS);
@@ -111,9 +118,18 @@ test('cli run --episode-time-limit-ms: slow agent, replayable timeouts, leaderbo
   );
   t.after(() => stub.close());
 
+  // A benchmark-flagged game: bundle verify recomputes the benchmark score,
+  // and it refuses a suite with none (a smoke-only suite scores undefined).
   const suiteFile = join(root, 'suite.json');
-  await gauntlet('suite', 'build', '--split', 'public', '--games', 'tictactoe', '--seeds-per-tier', '1', '--out', suiteFile);
+  await gauntlet('suite', 'build', '--split', 'public', '--games', 'connect4', '--seeds-per-tier', '1', '--out', suiteFile);
   const suite = JSON.parse(readFileSync(suiteFile, 'utf8'));
+  // Drop connect4's forced-win tier: it hands the mover a win on the first
+  // (instant) call, so the episode ends terminal before a deadline could
+  // matter. Every other tier stalls on the second call and times out.
+  suite.games[0].tiers = suite.games[0].tiers.filter(
+    /** @param {*} tier */ (tier) => tier.id !== 'forced-win'
+  );
+  writeFileSync(suiteFile, JSON.stringify(suite, null, 2) + '\n');
   const episodeCount = suite.games.reduce(
     (/** @type {number} */ n, /** @type {*} */ g) => n + g.tiers.reduce(
       (/** @type {number} */ m, /** @type {*} */ tier) => m + tier.seeds.length, 0), 0);

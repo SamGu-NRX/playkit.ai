@@ -1,7 +1,8 @@
 /**
  * The episode runner. Seats the agent at `agentSeat` and the game's opponents
  * elsewhere, extracts the action from each reply, records invalid attempts,
- * and ends episodes on terminal state, forfeit, or budget exhaustion.
+ * and ends episodes on terminal state, forfeit, budget exhaustion, or the
+ * run's wall-clock limit (`episodeTimeLimitMs`).
  * No `node:*` imports.
  *
  * @module
@@ -22,6 +23,15 @@ import { TRAJECTORY_FORMAT } from './trajectory.js';
  * @property {string} [split] 'public' or 'eval'.
  * @property {Agent} agent
  * @property {number} [maxConsecutiveInvalid] Default 3.
+ * @property {number} [episodeTimeLimitMs] Wall-clock cap on the whole episode,
+ *   in milliseconds. When it passes, the episode ends with the `time-limit`
+ *   end reason and the forfeit outcome (the agent scores 0, every other seat
+ *   1). Off by default, so earlier runs and leaderboards are unchanged.
+ * @property {number} [timeLimitGraceMs] When the episode time limit fires
+ *   during an agent call: how long the runner waits for the in-flight call to
+ *   settle (an abort-aware agent returns or throws promptly; one that ignores
+ *   the signal is cut off at the grace). Only meaningful with
+ *   `episodeTimeLimitMs`; default 1000.
  * @property {() => number} [now] Millisecond clock for timings and timestamps.
  */
 
@@ -134,6 +144,28 @@ export function judgeReply(game, state, seat, legalActions, replyText) {
 }
 
 /**
+ * The episode hit the run's wall-clock limit: like a forfeit, the agent
+ * scores 0 and every other seat scores 1. The outcome's `reason` is
+ * `time-limit` so a scored trajectory shows why it ended, while `end.reason`
+ * carries the same string. Defined beside the runner (rather than
+ * outcomes.js) so the runner and the replay verifier share one constructor
+ * without widening the outcomes module's contract.
+ *
+ * @param {number} seats
+ * @param {number} agentSeat
+ * @returns {import('./types.js').Outcome}
+ */
+export function timeLimitOutcome(seats, agentSeat) {
+  return {
+    normalized: Array.from({ length: seats }, (_, seat) => (seat === agentSeat ? 0 : 1)),
+    raw: null,
+    reason: 'time-limit',
+    solved: false,
+    par: null,
+  };
+}
+
+/**
  * @param {Game<*>} game
  * @param {TierSpec} tier
  * @param {*} state
@@ -207,6 +239,8 @@ export async function runEpisode({
   split = 'public',
   agent,
   maxConsecutiveInvalid = 3,
+  episodeTimeLimitMs,
+  timeLimitGraceMs = 1000,
   now = Date.now,
 }) {
   if (!agent || typeof agent.act !== 'function') {
@@ -214,6 +248,19 @@ export async function runEpisode({
   }
   if (!Number.isInteger(maxConsecutiveInvalid) || maxConsecutiveInvalid < 1) {
     throw new Error('runEpisode: maxConsecutiveInvalid must be a positive integer');
+  }
+  if (
+    episodeTimeLimitMs !== undefined &&
+    (!Number.isInteger(episodeTimeLimitMs) || episodeTimeLimitMs < 1)
+  ) {
+    throw new Error(
+      `runEpisode: episodeTimeLimitMs must be a positive integer (milliseconds), got ${JSON.stringify(episodeTimeLimitMs)}`
+    );
+  }
+  if (!Number.isInteger(timeLimitGraceMs) || timeLimitGraceMs < 0) {
+    throw new Error(
+      `runEpisode: timeLimitGraceMs must be a non-negative integer (milliseconds), got ${JSON.stringify(timeLimitGraceMs)}`
+    );
   }
   const spec = game.spec;
   const tier = findTier(game, tierId);
@@ -262,8 +309,36 @@ export async function runEpisode({
   const startedAtMs = now();
 
   /**
-   * @type {{ reason: 'terminal' | 'forfeit-invalid' | 'budget-exhausted',
-   *          outcome: import('./types.js').Outcome } | null}
+   * Wall-clock deadline. The real-clock timer fires once via `deadlinePromise`;
+   * the per-turn check compares `now()` against the deadline so an injected
+   * clock fires it too (and tests can drive it without sleeping).
+   */
+  const deadlineMs = episodeTimeLimitMs !== undefined ? startedAtMs + episodeTimeLimitMs : null;
+  let deadlineFired = false;
+  let fireDeadline = () => {};
+  const deadlinePromise =
+    deadlineMs === null
+      ? null
+      : new Promise((/** @type {(value: void) => void} */ resolve) => {
+          fireDeadline = () => {
+            resolve();
+          };
+        });
+  // The delay is computed on the episode's own clock (`now`): with an
+  // injected clock, `deadlineMs - Date.now()` compares two different epochs
+  // and goes negative, which would fire the timer immediately and make the
+  // race resolve time-limit before any reply could win.
+  const deadlineTimer =
+    deadlineMs === null ? null : setTimeout(fireDeadline, Math.max(0, deadlineMs - now()));
+  // Passed to every actor in the turn context: an abort-aware agent cancels
+  // its in-flight work when the limit passes (a model agent's fetch can adopt
+  // the signal; the harness owns that wiring).
+  const timeLimitController = deadlineMs === null ? null : new AbortController();
+
+  /**
+   * @type {{ reason: 'terminal' | 'forfeit-invalid' | 'budget-exhausted' | 'time-limit',
+   *          outcome: import('./types.js').Outcome,
+   *          timeLimitMs?: number, elapsedMs?: number } | null}
    */
   let end = null;
 
@@ -291,6 +366,21 @@ export async function runEpisode({
         };
         break;
       }
+      // Wall-clock check between turns: the deadline can pass between two
+      // calls just as it can inside one. Checked only once the episode has
+      // recorded at least one step — setup time (reset, statics, engine
+      // seeding) must not end an episode at zero steps, which would leave a
+      // trajectory with nothing to replay. `now()` is consulted, not only the
+      // real-clock timer, so an injected clock fires the limit too.
+      if (deadlineMs !== null && steps.length >= 1 && now() >= deadlineMs) {
+        end = {
+          reason: 'time-limit',
+          outcome: timeLimitOutcome(seats, agentSeat),
+          timeLimitMs: episodeTimeLimitMs,
+          elapsedMs: now() - startedAtMs,
+        };
+        break;
+      }
       const actor = actors[seat];
       if (!actor) {
         throw new Error(`game "${spec.id}": no agent seated for seat ${seat}`);
@@ -306,13 +396,56 @@ export async function runEpisode({
         observation,
         legalActions: actor.track === 'official' ? null : legalActions,
         feedback,
+        ...(timeLimitController ? { signal: timeLimitController.signal } : {}),
       };
       turns[seat] = turns[seat] + 1;
 
       const startedAt = now();
       let reply = /** @type {AgentReply | null} */ (null);
       try {
-        reply = await actor.act(ctx);
+        if (deadlinePromise === null) {
+          reply = await actor.act(ctx);
+        } else {
+          // Race the call against the wall-clock deadline. A win for the
+          // deadline ends the episode even though the call is still in
+          // flight; a win for the call proceeds exactly as before.
+          const inflight = /** @type {Promise<AgentReply>} */ (actor.act(ctx));
+          const verdict = await Promise.race([
+            inflight,
+            deadlinePromise.then(() => TIME_LIMIT),
+          ]);
+          if (verdict === TIME_LIMIT) {
+            // Ask the actor to cancel its in-flight work (abort-aware agents
+            // do; the rest are cut off at the grace), then wait for the call
+            // to settle — its rejection must be absorbed and an abort-aware
+            // agent's prompt settlement keeps the accounting honest — without
+            // ever waiting longer than the grace.
+            timeLimitController?.abort(
+              new Error(`episode time limit ${episodeTimeLimitMs}ms reached`)
+            );
+            await new Promise((/** @type {(value: void) => void} */ resolve) => {
+              const graceTimer = setTimeout(resolve, timeLimitGraceMs);
+              inflight.then(
+                () => {
+                  clearTimeout(graceTimer);
+                  resolve();
+                },
+                () => {
+                  clearTimeout(graceTimer);
+                  resolve();
+                }
+              );
+            });
+            end = {
+              reason: 'time-limit',
+              outcome: timeLimitOutcome(seats, agentSeat),
+              timeLimitMs: episodeTimeLimitMs,
+              elapsedMs: now() - startedAtMs,
+            };
+            break;
+          }
+          reply = /** @type {AgentReply} */ (verdict);
+        }
       } catch (err) {
         if (!isAgent) {
           throw new Error(
@@ -384,6 +517,9 @@ export async function runEpisode({
       state = game.step(state, seat, /** @type {string} */ (canonical));
     }
   } finally {
+    // The deadline timer must not outlive the episode: a finished trajectory
+    // never leaves a pending timer parked on the event loop.
+    if (deadlineTimer !== null) clearTimeout(deadlineTimer);
     // Engine-backed actors are shut down here, on success and on throw, so a
     // finished episode never leaves a child process parked until the client's
     // 60 s idle reap. disposeActors absorbs cleanup rejections on purpose: the
@@ -409,6 +545,13 @@ export async function runEpisode({
       agentActions,
       invalidActions,
       forfeitThreshold: maxConsecutiveInvalid,
+      // Recorded only for a time-limit end, and self-reported like usage: the
+      // verifier cannot re-derive a wall clock from (game, tier, seed), so it
+      // checks these fields' shape and trusts the recording run for the
+      // numbers.
+      ...(end.reason === 'time-limit'
+        ? { timeLimitMs: end.timeLimitMs, elapsedMs: end.elapsedMs }
+        : {}),
     },
     startedAt: new Date(startedAtMs).toISOString(),
     finishedAt: new Date(finishedAtMs).toISOString(),
@@ -418,3 +561,6 @@ export async function runEpisode({
 // Re-exported so harnesses can catch runner-facing rule errors without
 // importing errors.js separately.
 export { GauntletRuleError };
+
+/** Sentinel the deadline race resolves with when the wall clock wins. */
+const TIME_LIMIT = Symbol('time-limit');

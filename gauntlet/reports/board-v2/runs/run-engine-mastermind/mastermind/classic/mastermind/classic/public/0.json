@@ -1,0 +1,96 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "classic",
+  "seed": "mastermind/classic/public/0",
+  "split": "public",
+  "agent": {
+    "id": "engine",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "27b64ac8f57bb2b0",
+      "reply": {
+        "text": "guess AABB"
+      },
+      "action": "guess AABB",
+      "invalid": false,
+      "usage": null,
+      "ms": 136
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "8e4ebf50257bee1f",
+      "reply": {
+        "text": "guess BCDD"
+      },
+      "action": "guess BCDD",
+      "invalid": false,
+      "usage": null,
+      "ms": 28
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ff9904ebd3e21963",
+      "reply": {
+        "text": "guess CEAF"
+      },
+      "action": "guess CEAF",
+      "invalid": false,
+      "usage": null,
+      "ms": 5
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bc4e6b72c489a8b2",
+      "reply": {
+        "text": "guess DEEA"
+      },
+      "action": "guess DEEA",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "822f646657cb751a",
+      "reply": {
+        "text": "guess FBEF"
+      },
+      "action": "guess FBEF",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1
+      ],
+      "raw": [
+        5
+      ],
+      "reason": "solved: the secret was found in 5 guess(es), reference par 5",
+      "solved": true,
+      "par": 5
+    },
+    "agentActions": 5,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:19:58.800Z",
+  "finishedAt": "2026-10-16T06:19:58.975Z"
+}

@@ -1,0 +1,115 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-puzzles",
+    "version": "1.0.0"
+  },
+  "tier": "r1000",
+  "seed": "chess-puzzles/r1000/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "87ce3ce2ffd7d9e8",
+      "reply": {
+        "text": "h6h5",
+        "usage": {
+          "inputTokens": 1011,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-V2Lzdiot0T7TM21aA58L6SOomrIg7mMn",
+          "reasoningChars": 0
+        }
+      },
+      "action": "h6h5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 1011,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 7156
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "87ce3ce2ffd7d9e8",
+      "reply": {
+        "text": "h6h5",
+        "usage": {
+          "inputTokens": 1032,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-tSF5mD1qpfcloPDaoTJQn31F2gNJ7NPg",
+          "reasoningChars": 0
+        }
+      },
+      "action": "h6h5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 1032,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 3505
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "87ce3ce2ffd7d9e8",
+      "reply": {
+        "text": "h6h5",
+        "usage": {
+          "inputTokens": 1032,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-nVcYB7nVEJjQB3bqBCr7leU2A6lgmSgm",
+          "reasoningChars": 0
+        }
+      },
+      "action": "h6h5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 1032,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 6274
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3
+  },
+  "startedAt": "2026-10-16T05:44:33.102Z",
+  "finishedAt": "2026-10-16T05:44:50.042Z"
+}

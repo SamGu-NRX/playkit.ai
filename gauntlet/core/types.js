@@ -243,7 +243,7 @@ export {};
  * @property {{ id: string, track: AgentTrack, seat: number, model?: string, provider?: string, dryRun?: boolean }} agent
  * @property {{ seat: number, id: string }[]} opponents
  * @property {TrajectoryStep[]} steps
- * @property {{ reason: string, outcome: Outcome | null, agentActions: number, invalidActions: number }} end
+ * @property {{ reason: string, outcome: Outcome | null, agentActions: number, invalidActions: number, forfeitThreshold: number }} end
  * @property {string} startedAt
  * @property {string} finishedAt
  */

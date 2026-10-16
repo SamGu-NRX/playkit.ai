@@ -8,16 +8,15 @@ Baseline calibration over the gauntlet's public seeds: every game is played by a
 
 | | |
 |---|---|
-| Run at | 2026-10-15T17:30:21.344Z |
+| Run at | 2026-10-16T02:16:11.288Z |
 | Node | v20.20.2 |
 | Machine | linux 6.1.158+ x64, Intel(R) Xeon(R) Processor @ 2.60GHz, 8 cores, 7.8 GiB |
-| Worker parallelism | 8 |
+| Worker parallelism | 7 |
 | Seeds per tier | all public seeds |
 | Per-game wall cap | 1200s |
-| Total wall time | 1381.6s |
-| HEAD | bd4d2f94edc04acb9667ca4ea76ccccdb28d1da5 |
-| Base | adce6509d7a32318e041f1c933ba4eb0060fdc5b |
-| Merge parents of HEAD | bbd323d5a0fe322488c3d51a3e02f7cc888a387c, 2c54afa91dca4ab8c3fdc72fa0cbbecf824da0ee |
+| Total wall time | 1466.3s |
+| HEAD | 9f57887723cd |
+| Base | 7ae951622ca4 |
 
 Reproduce from `gauntlet/` with `node calibration/run.js` (flags: `--games=`, `--seeds=`, `--per-game-cap=`, `--out=`, `--report=`). One worker process per game; deterministic end to end — same seeds and code produce byte-identical tables.
 
@@ -32,7 +31,7 @@ Reproduce from `gauntlet/` with `node calibration/run.js` (flags: `--games=`, `-
 | t1024 (3) | outcome | 0.191 [0.171, 0.211] | 0.258 [0.23, 0.285] | 1 [1, 1] | — |
 | t2048 (4) | outcome | 0.125 [0.109, 0.142] | 0.208 [0.183, 0.233] | 0.774 [0.639, 0.905] | — |
 
-_Run:_ 240 episodes, 14.5s.
+_Run:_ 240 episodes, 14.6s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -40,14 +39,14 @@ _Run:_ 240 episodes, 14.5s.
 
 | tier (rank) | scoring | random | greedy | engine | engine solved |
 |---|---|---|---|---|---|
-| paper (1) | outcome | 0 [0, 0] | 0.1 [0, 0.3] | — | — |
-| wood (2) | outcome | 0 [0, 0] | 0 [0, 0] | — | — |
-| steel (3) | outcome | 0 [0, 0] | 0 [0, 0] | — | — |
+| paper (1) | outcome | 0 [0, 0] | 0.1 [0, 0.3] | 0.5 [0.1, 0.9] | — |
+| wood (2) | outcome | 0 [0, 0] | 0 [0, 0] | 0.3 [0.1, 0.5] | — |
+| steel (3) | outcome | 0 [0, 0] | 0 [0, 0] | 1 [1, 1] | — |
 | granite (4) | outcome | 0 [0, 0] | 0 [0, 0] | — | — |
 
-_Run:_ ⚠️ the 1200s wall cap stopped this worker early (36 episodes run) — remaining cells are empty and the checks below skip them.
+_Run:_ ⚠️ the 1200s wall cap stopped this worker early (52 episodes run) — remaining cells are empty and the checks below skip them.
 
-✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
+⚠️ ordering checks skipped — cells are empty after the cap (episodes stopped before they could be scored), so nothing was checked there.
 
 ### connect4 (v1.0.0)
 
@@ -59,7 +58,7 @@ _Run:_ ⚠️ the 1200s wall cap stopped this worker early (36 episodes run) —
 | ladder-4 (4) | outcome | 0 [0, 0] | 0.375 [0.125, 0.625] | 0.875 [0.667, 1] | — |
 | forced-win (5) | outcome | 0.042 [0, 0.125] | 0.417 [0.167, 0.667] | 1 [1, 1] | — |
 
-_Run:_ 180 episodes, 44.7s.
+_Run:_ 180 episodes, 45.7s.
 
 ❌ **b-monotonic** — random rises from 0 on ladder-4 (rank 4) to 0.041667 on forced-win (rank 5)
 
@@ -81,7 +80,7 @@ _Run:_ 180 episodes, 44.7s.
 | rules (2) | outcome | 0.45 [0.341, 0.565] | 0.373 [0.182, 0.575] | 0.731 [0.542, 0.887] | — |
 | equity (3) | outcome | 0.011 [0.003, 0.021] | 0.171 [0.005, 0.409] | 0.318 [0.119, 0.547] | — |
 
-_Run:_ 108 episodes, 20.5s.
+_Run:_ 108 episodes, 20.3s.
 
 ❌ **a-order** — greedy 0.37318 < random 0.449807 on tier rules (rank 2)
 
@@ -99,7 +98,7 @@ _Run:_ 108 episodes, 20.5s.
 | wide (2) | efficiency | 0 [0, 0] | 0.817 [0.728, 0.909] | 1 [1, 1] | 100% |
 | deep (3) | efficiency | 0 [0, 0] | 0.883 [0.788, 0.969] | 1 [1, 1] | 100% |
 
-_Run:_ 225 episodes, 23.3s.
+_Run:_ 225 episodes, 23.9s.
 
 ❌ **b-monotonic** — greedy rises from 0.817146 on wide (rank 2) to 0.883068 on deep (rank 3)
 
@@ -114,7 +113,7 @@ _Run:_ 225 episodes, 23.3s.
 | expert (3) | outcome | 0.135 [0.102, 0.173] | 1 [1, 1] | 1 [1, 1] | — |
 | torus (4) | outcome | 0.412 [0.355, 0.471] | 1 [1, 1] | 1 [1, 1] | — |
 
-_Run:_ 300 episodes, 36.2s.
+_Run:_ 300 episodes, 37.2s.
 
 ❌ **b-monotonic** — random rises from 0.135118 on expert (rank 3) to 0.412222 on torus (rank 4)
 
@@ -131,7 +130,7 @@ _Baselines:_ `greedy` is the packet's probability agent (proven-safe cells first
 | p15-mid (3) | efficiency | 0 [0, 0] | 0 [0, 0] | 0.612 [0.25, 0.875] | 62.5% |
 | p15-long (4) | efficiency | 0 [0, 0] | 0 [0, 0] | 0.375 [0.125, 0.75] | 37.5% |
 
-_Run:_ 96 episodes, 646.6s.
+_Run:_ 96 episodes, 281.1s.
 
 ❌ **c-solved** — engine solves 0.625 of seeds on efficiency tier p15-short (rank 2); floor is 0.95
 
@@ -155,7 +154,7 @@ _Baselines:_ The sliding packet ships no greedy baseline: `greedy` here minimize
 | three-box (2) | efficiency | 0 [0, 0] | 0.04 [0, 0.121] | 1 [1, 1] | 100% |
 | four-box (3) | efficiency | 0 [0, 0] | 0 [0, 0] | 1 [1, 1] | 100% |
 
-_Run:_ 225 episodes, 320.3s.
+_Run:_ 225 episodes, 203.7s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -165,7 +164,7 @@ _Run:_ 225 episodes, 320.3s.
 |---|---|---|---|---|---|
 | perfect-opponent (1) | outcome | 0.063 [0, 0.188] | 0.438 [0.313, 0.5] | 0.5 [0.5, 0.5] | — |
 
-_Run:_ 24 episodes, 2.9s.
+_Run:_ 24 episodes, 3.1s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 

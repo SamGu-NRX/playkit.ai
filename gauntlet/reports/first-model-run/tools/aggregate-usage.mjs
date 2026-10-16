@@ -12,8 +12,16 @@
  * - the most common rejected (invalid) replies, with one example each
  *
  * When `--estimate <estimate.json>` is passed, also joins the pre-run
- * estimate's per-game low/high call bounds and tokens-per-call against the
- * measured values and prints the per-game error. Read-only over the run dir;
+ * estimate's per-game low/high call bounds against the measured values and
+ * prints the per-game error. Both sides are normalized to calls per episode:
+ * the estimate's bounds are suite totals over its `jobs` episodes, so the
+ * join divides them by `jobs`, and the measured side divides by the played
+ * count encoded in the perGame `episodes` string. Tokens per call are
+ * derived only from a *priced* estimate as usdLow/callsLow*1e6 (combined
+ * input+output tokens per call at equal in/out rates); a zero-price
+ * estimate carries usdLow === 0 and yields no token basis (null). Point
+ * --estimate at the check-price estimate for the token columns.
+ * Read-only over the run dir;
  * writes nothing. Node 20+, no dependencies.
  *
  * Usage:
@@ -161,20 +169,34 @@ function estimatorJoin() {
   return list.map((e) => {
     const id = e.gameId ?? e.game;
     const m = perGame.find((g) => g.gameId === id);
+    const jobs = e.jobs ?? null;
     const lowCalls = e.calls?.low ?? e.callsLow ?? null;
     const highCalls = e.calls?.high ?? e.callsHigh ?? null;
-    const estInPerCall = e.tokens?.input?.mean ?? e.inputTokensPerCall ?? null;
+    // The estimate's call bounds are suite totals over `jobs` episodes;
+    // normalize both sides to calls per episode before comparing.
+    const lowCallsPerEp = lowCalls != null && jobs ? lowCalls / jobs : null;
+    const highCallsPerEp = highCalls != null && jobs ? highCalls / jobs : null;
+    // perGame records the played count inside the "played/planned" episodes
+    // string; there is no numeric `played` field.
+    const played = m ? Number(String(m.episodes ?? '').split('/')[0]) : 0;
+    const complete = m?.complete === true && played > 0;
+    const callsPerEp = complete ? r6(m.calls / played) : null;
+    // Tokens per call only from a priced estimate: combined (in+out) tokens
+    // per call = usdLow / callsLow * 1e6 at equal in/out rates. The
+    // zero-price official estimate has usdLow === 0, i.e. no token basis.
+    const usdLow = e.usd?.low ?? e.usdLow ?? null;
+    const estInPerCall = usdLow > 0 && lowCalls ? r6((usdLow / lowCalls) * 1e6) : null;
     return {
       gameId: id,
-      estLowCalls: lowCalls,
-      estHighCalls: highCalls,
-      measuredCallsPerEpisode: m && m.complete ? r6(m.calls / m.played) : null,
+      estLowCallsPerEp: lowCallsPerEp === null ? null : r6(lowCallsPerEp),
+      estHighCallsPerEp: highCallsPerEp === null ? null : r6(highCallsPerEp),
+      measuredCallsPerEpisode: callsPerEp,
       callErrorVsLowPct:
-        m && m.complete && lowCalls ? r6(((m.calls / m.played) - lowCalls) / lowCalls * 100) : null,
+        callsPerEp !== null && lowCallsPerEp ? r6((callsPerEp - lowCallsPerEp) / lowCallsPerEp * 100) : null,
       estInputTokPerCall: estInPerCall,
       measuredInputTokPerCall: m?.inputTokPerCall ?? null,
       inputTokPerCallErrorPct:
-        estInPerCall && m?.inputTokPerCall ? r6((m.inputTokPerCall - estInPerCall) / estInPerCall * 100) : null,
+        estInPerCall !== null && m?.inputTokPerCall ? r6((m.inputTokPerCall - estInPerCall) / estInPerCall * 100) : null,
     };
   });
 }
@@ -191,9 +213,9 @@ else {
   process.stdout.write('\nTop rejected replies:\n');
   for (const r of topRejections) process.stdout.write(`- ${r.count}× ${JSON.stringify(r.text)} (${r.where})\n`);
   if (result.estimatorJoin) {
-    process.stdout.write('\nEstimator check (measured vs pre-run estimate):\n\n| game | est calls low–high | measured calls/ep | call err vs low | est in tok/call | measured in tok/call | tok err |\n|---|---|---:|---:|---:|---:|---:|\n');
+    process.stdout.write('\nEstimator check (measured vs pre-run estimate):\n\n| game | est calls/ep low–high | measured calls/ep | call err vs low | est in tok/call | measured in tok/call | tok err |\n|---|---|---:|---:|---:|---:|---:|\n');
     for (const e of result.estimatorJoin) {
-      process.stdout.write(`| ${e.gameId} | ${e.estLowCalls ?? '—'}–${e.estHighCalls ?? '—'} | ${e.measuredCallsPerEpisode ?? '—'} | ${e.callErrorVsLowPct === null ? '—' : e.callErrorVsLowPct + '%'} | ${e.estInputTokPerCall ?? '—'} | ${e.measuredInputTokPerCall ?? '—'} | ${e.inputTokPerCallErrorPct === null ? '—' : e.inputTokPerCallErrorPct + '%'} |\n`);
+      process.stdout.write(`| ${e.gameId} | ${e.estLowCallsPerEp ?? '—'}–${e.estHighCallsPerEp ?? '—'} | ${e.measuredCallsPerEpisode ?? '—'} | ${e.callErrorVsLowPct === null ? '—' : e.callErrorVsLowPct + '%'} | ${e.estInputTokPerCall ?? '—'} | ${e.measuredInputTokPerCall ?? '—'} | ${e.inputTokPerCallErrorPct === null ? '—' : e.inputTokPerCallErrorPct + '%'} |\n`);
     }
   }
 }

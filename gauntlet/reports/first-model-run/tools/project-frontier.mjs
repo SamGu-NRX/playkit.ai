@@ -97,7 +97,13 @@ for (const [gameId, m] of measured) {
   if (m.callsPerEp && est?.callsLow) ratios.push(m.callsPerEp / (est.callsLow / est.jobs));
 }
 ratios.sort((a, b) => a - b);
-const medianRatio = ratios.length ? ratios[Math.floor(ratios.length / 2)] : 1;
+// Median: average the two middle values for an even-length array instead of
+// picking the upper middle.
+const medianRatio = ratios.length
+  ? (ratios.length % 2
+      ? ratios[(ratios.length - 1) / 2]
+      : (ratios[ratios.length / 2 - 1] + ratios[ratios.length / 2]) / 2)
+  : 1;
 
 const rows = [];
 for (const [gameId, est] of estGames) {

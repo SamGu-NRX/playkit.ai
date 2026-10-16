@@ -1,6 +1,6 @@
 {
   "method": "floor = estimator low calls (engine/greedy baseline basis) x estimator tokens/call (check-price back-out) at frontier prices. qwen-corrected = floor x per-game measured/floor call ratio where the local run completed the game (median ratio otherwise). Bracket, not point estimate: stronger models survive longer in engine-opponent games, pushing calls above the corrected column; invalid-action forfeits push them below.",
-  "qwenMedianRatio": 0.8,
+  "qwenMedianRatio": 0.7,
   "perGame": [
     {
       "gameId": "tictactoe",
@@ -27,7 +27,7 @@
       "estCallsHighPerEp": 36.7,
       "estTokPerCall": 577,
       "measuredCallsPerEp": 11,
-      "qwenRatio": 0.8
+      "qwenRatio": 0.7
     },
     {
       "gameId": "connect4",
@@ -72,7 +72,7 @@
       "estCallsHighPerEp": 150,
       "estTokPerCall": 580,
       "measuredCallsPerEp": 5.8,
-      "qwenRatio": 0.8
+      "qwenRatio": 0.7
     },
     {
       "gameId": "sliding",
@@ -90,7 +90,7 @@
       "estCallsHighPerEp": 288.3,
       "estTokPerCall": 1293,
       "measuredCallsPerEp": 3.8,
-      "qwenRatio": 0.8
+      "qwenRatio": 0.7
     },
     {
       "gameId": "holdem",
@@ -108,7 +108,7 @@
       "estCallsHighPerEp": 1125,
       "estTokPerCall": 559,
       "measuredCallsPerEp": 111.8,
-      "qwenRatio": 0.8
+      "qwenRatio": 0.7
     }
   ],
   "projections": [

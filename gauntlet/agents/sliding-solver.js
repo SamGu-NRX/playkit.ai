@@ -1,19 +1,23 @@
 /**
- * The sliding-puzzle reference agent: plays the proven-optimal line. On each
- * turn it re-solves the board in `observation.data` (the state this game
- * publishes, including the current board) and returns the first move of an
- * optimal solution, so it stays correct even after it is seated into a
- * mid-game board. IDA* with an admissible Manhattan + linear-conflict
- * heuristic is fast for these tier sizes (worst observed solve well under a
- * second); the agent re-solves whenever the board changes and keeps the last
- * solution only to answer a repeated call on the same board.
+ * The sliding-puzzle reference agent: plays the proven-optimal line. On its
+ * first turn it solves the board in `observation.data` (the state this game
+ * publishes, including the current board) and then FOLLOWS that plan move by
+ * move, advancing the expected board with the game's own move semantics. It
+ * re-solves only when the actual board differs from the expected one — when
+ * seated into a mid-game board, after a detour, or on any other surprise — so
+ * one episode costs one solve (re-solving every turn costs a full IDA* search
+ * per move, and on the long 15-puzzle tiers those searches dominate the
+ * calibration wall time).
+ *
+ * The underlying IDA* is admissible-heuristic optimal, so the plan is a
+ * proven-optimal line and following it scores the tier's efficiency 1.0.
  *
  * No `node:*`.
  *
  * @module
  */
 
-import { solve } from '../games/sliding/solver.js';
+import { applyTileMove, solve } from '../games/sliding/solver.js';
 
 /** @import { Agent } from '../core/types.js' */
 
@@ -26,15 +30,23 @@ import { solve } from '../games/sliding/solver.js';
  */
 
 /**
+ * @param {number[][]} board
+ * @returns {string}
+ */
+function boardKey(board) {
+  return JSON.stringify(board);
+}
+
+/**
  * Build the reference solver agent.
  * @param {SlidingSolverAgentOptions} [options]
  * @returns {Agent}
  */
 export function createSlidingSolverAgent({ id = 'sliding-solver', track = 'baseline' } = {}) {
-  /** @type {string[] | null} */
+  /** Remaining moves of the current plan. @type {string[] | null} */
   let plan = null;
-  /** @type {string | null} */
-  let planKey = null;
+  /** The board the remaining plan starts from. @type {number[][] | null} */
+  let planBoard = null;
   return {
     id,
     track,
@@ -49,20 +61,30 @@ export function createSlidingSolverAgent({ id = 'sliding-solver', track = 'basel
           `solver agent "${id}" needs observation.data.board and observation.data.size; sliding publishes both`
         );
       }
-      const key = JSON.stringify(board);
-      if (plan && planKey === key && plan.length > 0) {
-        return { text: plan[0] };
+      if (plan && planBoard && boardKey(planBoard) === boardKey(board)) {
+        if (plan.length === 0) {
+          throw new Error(`solver agent "${id}" was asked to act on a solved board`);
+        }
+      } else {
+        // The board is not where our plan expected it (mid-game seating, a
+        // detour, a different seat count of turns): re-solve from here.
+        const result = solve(board);
+        if (result.status !== 'solved') {
+          throw new Error(`solver agent "${id}": solve() returned ${result.status}`);
+        }
+        plan = result.moves.map((move) => /** @type {string} */ (move));
+        planBoard = board.map((row) => row.slice());
       }
-      if (plan && planKey === key && plan.length === 0) {
-        throw new Error(`solver agent "${id}" was asked to act on a solved board`);
+      const move = /** @type {string} */ (plan[0]);
+      // Advance the tracked board along the move we are about to play, so the
+      // next turn's key check follows the plan without another solve.
+      const next = applyTileMove(/** @type {number[][]} */ (planBoard), /** @type {import('../games/sliding/solver.js').Direction} */ (move));
+      if (!next) {
+        throw new Error(`solver agent "${id}": planned move ${move} is not legal on the tracked board`);
       }
-      const result = solve(board);
-      if (result.status !== 'solved') {
-        throw new Error(`solver agent "${id}": solve() returned ${result.status}`);
-      }
-      plan = result.moves.slice();
-      planKey = key;
-      return { text: plan[0] };
+      plan = plan.slice(1);
+      planBoard = next;
+      return { text: move };
     },
   };
 }

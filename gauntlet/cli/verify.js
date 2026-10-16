@@ -2,7 +2,8 @@
  * `gauntlet verify`: replay-verify one trajectory file or every trajectory in
  * a directory — recursively, so both the legacy flat layout and the
  * engine-written bundle layout (`<game>/<tier>/<seed>.json`) work. Bundle
- * metadata (`run.json`, `suite.json`, `_`-prefixed summaries) is skipped.
+ * Bundle metadata (`run.json`, `suite.json`, `estimate.json`/`estimate.md`,
+ * `_`-prefixed summaries) is skipped.
  * Exit code 1 when anything fails. Node-only.
  *
  * @module
@@ -16,7 +17,7 @@ import { getGame } from '../games/index.js';
 /** @import { Trajectory } from '../core/types.js' */
 
 /** The bundle metadata files a run directory holds besides its trajectories. */
-const METADATA_NAMES = new Set(['run.json', 'suite.json']);
+const METADATA_NAMES = new Set(['run.json', 'suite.json', 'estimate.json', 'estimate.md']);
 
 /**
  * Collect trajectory files under a path: `*.json` files that are not bundle

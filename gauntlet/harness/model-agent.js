@@ -59,6 +59,11 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  *   "openai-chat" (some local servers need no key) — when unset, no
  *   Authorization header is sent.
  * @property {number} [maxOutputTokens] Per-reply cap. Default 4096.
+ * @property {number} [callTimeoutMs] Per-attempt timeout in milliseconds.
+ *   Default: no per-attempt timeout. A timed-out attempt counts as a
+ *   transport error and retries with the same backoff as a network failure;
+ *   the exhaustion error names the model and the timeout. Values that are not
+ *   positive finite numbers are ignored (no timeout).
  * @property {Record<string, *>} [params] Extra provider parameters merged into
  *   the request body (temperature, top_p, ...). Required protocol fields win
  *   over anything in `params`.
@@ -204,6 +209,9 @@ async function responseExcerpt(response) {
  * @param {number} options.retryBaseDelayMs
  * @param {(ms: number) => Promise<void>} options.sleep
  * @param {string} options.provider For error messages only.
+ * @param {string} [options.model] For timeout error messages only.
+ * @param {number} [options.callTimeoutMs] Per-attempt timeout in ms; absent
+ *   for no timeout.
  * @returns {Promise<{ json: *, retries: number }>}
  */
 async function requestWithRetries({
@@ -215,6 +223,8 @@ async function requestWithRetries({
   retryBaseDelayMs,
   sleep,
   provider,
+  model,
+  callTimeoutMs,
 }) {
   let retries = 0;
   for (;;) {
@@ -225,9 +235,23 @@ async function requestWithRetries({
         method: 'POST',
         headers,
         body: JSON.stringify(body),
+        ...(callTimeoutMs !== undefined
+          ? { signal: AbortSignal.timeout(callTimeoutMs) }
+          : {}),
       });
     } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
+      // AbortSignal.timeout rejects with a TimeoutError (or AbortError on
+      // older runtimes); an abort here can only be ours — no other signal is
+      // ever passed.
+      const timedOut =
+        callTimeoutMs !== undefined &&
+        err instanceof Error &&
+        (err.name === 'TimeoutError' || err.name === 'AbortError');
+      const reason = timedOut
+        ? `model "${model}" call timed out after ${callTimeoutMs}ms per attempt`
+        : err instanceof Error
+          ? err.message
+          : String(err);
       if (retries >= maxRetries) {
         throw retryError(
           `model agent: ${provider} request failed after ${retries} retr${retries === 1 ? 'y' : 'ies'}: ${reason}`,
@@ -345,6 +369,7 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  * @property {number} maxRetries
  * @property {number} retryBaseDelayMs
  * @property {(ms: number) => Promise<void>} sleep
+ * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.
  */
 
 /**
@@ -380,6 +405,7 @@ async function callAnthropic({
   maxRetries,
   retryBaseDelayMs,
   sleep,
+  callTimeoutMs,
 }) {
   const body = {
     ...(params ?? {}),
@@ -402,6 +428,8 @@ async function callAnthropic({
     retryBaseDelayMs,
     sleep,
     provider: 'anthropic',
+    model,
+    callTimeoutMs,
   });
   const blocks = Array.isArray(/** @type {*} */ (json)?.content)
     ? /** @type {Array<any>} */ (json.content)
@@ -436,6 +464,7 @@ async function callOpenAI({
   maxRetries,
   retryBaseDelayMs,
   sleep,
+  callTimeoutMs,
 }) {
   const body = {
     ...(params ?? {}),
@@ -457,6 +486,8 @@ async function callOpenAI({
     retryBaseDelayMs,
     sleep,
     provider: 'openai',
+    model,
+    callTimeoutMs,
   });
   const items = Array.isArray(/** @type {*} */ (json)?.output)
     ? /** @type {Array<any>} */ (json.output)
@@ -495,6 +526,7 @@ async function callOpenAI({
  * @property {number} maxRetries
  * @property {number} retryBaseDelayMs
  * @property {(ms: number) => Promise<void>} sleep
+ * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.
  */
 
 /**
@@ -536,6 +568,7 @@ async function callOpenAIChat({
   maxRetries,
   retryBaseDelayMs,
   sleep,
+  callTimeoutMs,
 }) {
   const body = {
     ...(params ?? {}),
@@ -560,6 +593,8 @@ async function callOpenAIChat({
     retryBaseDelayMs,
     sleep,
     provider: 'openai-chat',
+    model,
+    callTimeoutMs,
   });
   const choice = Array.isArray(/** @type {*} */ (json)?.choices)
     ? /** @type {Array<any>} */ (json.choices)[0]
@@ -599,6 +634,7 @@ export function createModelAgent({
   baseUrl,
   apiKeyEnv,
   maxOutputTokens,
+  callTimeoutMs,
   params,
   prices,
   fetchImpl,
@@ -630,6 +666,12 @@ export function createModelAgent({
     typeof maxOutputTokens === 'number' && maxOutputTokens > 0
       ? maxOutputTokens
       : DEFAULT_MAX_OUTPUT_TOKENS;
+  const timeoutMs =
+    typeof callTimeoutMs === 'number' &&
+    Number.isFinite(callTimeoutMs) &&
+    callTimeoutMs > 0
+      ? callTimeoutMs
+      : undefined;
   const retries =
     typeof maxRetries === 'number' && maxRetries >= 0
       ? maxRetries
@@ -653,6 +695,27 @@ export function createModelAgent({
     model,
     provider,
     dryRun: false,
+    quoteWorstCaseUsd(ctx) {
+      // Upper bound on one act() call's USD cost, computable before the call
+      // starts: the request text is priced at a conservative token estimate
+      // (at most one token per two UTF-8 bytes) and the reply at the
+      // output-token limit. The settled cost always comes from the provider's
+      // reported usage, never from this estimate. null without a usable price
+      // entry, mirroring computeCostUsd.
+      if (!prices) return null;
+      const entry = prices[`${provider}/${model}`];
+      if (!entry) return null;
+      const inputPerMTok = Number(entry.inputPerMTok);
+      const outputPerMTok = Number(entry.outputPerMTok);
+      if (!Number.isFinite(inputPerMTok) || !Number.isFinite(outputPerMTok)) {
+        return null;
+      }
+      const userMessage = buildOfficialTurnMessage(ctx, previousReply);
+      const requestBytes = new TextEncoder().encode(userMessage).length;
+      return (
+        ((requestBytes / 2) * inputPerMTok + limit * outputPerMTok) / 1_000_000
+      );
+    },
     async act(ctx) {
       const userMessage = buildOfficialTurnMessage(ctx, previousReply);
       const apiKey =
@@ -672,6 +735,7 @@ export function createModelAgent({
               maxRetries: retries,
               retryBaseDelayMs: backoff,
               sleep: wait,
+              callTimeoutMs: timeoutMs,
             })
           : provider === 'openai'
             ? await callOpenAI({
@@ -685,6 +749,7 @@ export function createModelAgent({
                 maxRetries: retries,
                 retryBaseDelayMs: backoff,
                 sleep: wait,
+                callTimeoutMs: timeoutMs,
               })
             : await callOpenAIChat({
                 baseUrl: base,
@@ -697,6 +762,7 @@ export function createModelAgent({
                 maxRetries: retries,
                 retryBaseDelayMs: backoff,
                 sleep: wait,
+                callTimeoutMs: timeoutMs,
               });
       previousReply = result.text;
       /** @type {Usage} */

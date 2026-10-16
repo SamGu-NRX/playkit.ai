@@ -7,10 +7,13 @@
  *    plays a suite against the stub, writes run.json plus nested trajectories,
  *    and sends the `Authorization: Bearer <key>` header read from the
  *    environment variable named by `--api-key-env`.
- * 2. `--max-usd` stops the run mid-flight (`stopped: budget`, exit 1) and the
- *    bundle stays valid; `bundle verify` reports the missing episodes.
- * 3. Re-running the same command with `--resume` replays only what is missing
- *    (skipped trajectories are re-verified, not recomputed) and completes.
+ * 2. `--max-usd` below one call's worst-case quote refuses every call before
+ *    it starts (`stopped: budget`, exit 1, zero spend) — reservation
+ *    semantics: the cap can no longer be overshot by calls in flight.
+ * 3. `--max-calls` stops the run mid-flight (`stopped: calls`, exit 1) with a
+ *    completed episode; re-running the same command with `--resume` replays
+ *    only what is missing (skipped trajectories are re-verified, not
+ *    recomputed) and completes.
  * 4. `bundle verify` passes on the completed bundle and fails after a
  *    trajectory is tampered with.
  * 5. `estimate` prices the suite from a price file (and stays unpriced
@@ -184,36 +187,52 @@ test('cli engine-backed run: stub provider, budget stop, resume, bundle verify, 
   assert.ok(stub.authHeaders.length > 0, 'the stub saw requests');
   assert.ok(stub.authHeaders.every((h) => h === 'Bearer stub-secret'), 'every call carries the api-key-env bearer header');
 
-  // 2. Budget stop: $0.0013 per call. A $0.005 cap lets the first episode
-  // forfeit (3 calls = $0.0039, a written trajectory) and stops the second
-  // before it completes.
+  // 2. Budget stop under worst-case reservation. The agent quotes each call
+  // at ~(requestBytes/2)*$10/MTok + 4096*$30/MTok ≈ $0.1234 — far above the
+  // $0.005 cap — so the very first call is refused before it starts: zero
+  // spend, zero completed episodes, and no overshoot of the cap.
   const cappedDir = join(root, 'run-capped');
   const capped = await gauntlet(...runArgs, '--out', cappedDir, '--max-usd', '0.005');
   assert.equal(capped.status, 1, 'a budget-stopped run exits 1');
   assert.match(capped.stdout, /stopped\s+budget/);
   const cappedRecord = JSON.parse(readFileSync(join(cappedDir, 'run.json'), 'utf8'));
   assert.equal(cappedRecord.stopped, 'budget');
-  assert.ok(cappedRecord.counts.played >= 1, 'at least one episode completed before the stop');
-  assert.ok(cappedRecord.counts.unplayed >= 1, 'at least one episode was left unplayed');
-  assert.ok(cappedRecord.spendUsd >= 0.005 - 1e-9, 'spend reached the cap');
+  assert.equal(cappedRecord.calls, 0, 'every call was refused before starting');
+  assert.equal(cappedRecord.spendUsd, 0, "a cap below one call's worst case admits nothing");
+  assert.equal(cappedRecord.counts.played, 0);
+  assert.equal(cappedRecord.counts.unplayed, episodeCount);
   const cappedVerify = await gauntlet('bundle', 'verify', cappedDir);
   assert.equal(cappedVerify.status, 1, 'an incomplete bundle fails bundle verify');
 
-  // 3. Resume the capped bundle: skip verified episodes, replay the rest.
-  const resumed = await gauntlet(...runArgs, '--out', cappedDir, '--resume');
+  // 3. A mid-run call-cap stop leaves a resumable bundle with a completed
+  // episode: sliding forfeits after 3 invalid replies (3 calls = $0.0039),
+  // and the next episode's second call is refused at the 4-call cap.
+  const callsDir = join(root, 'run-calls');
+  const callsRun = await gauntlet(...runArgs, '--out', callsDir, '--max-calls', '4');
+  assert.equal(callsRun.status, 1, 'a call-cap-stopped run exits 1');
+  assert.match(callsRun.stdout, /stopped\s+calls/);
+  const callsRecord = JSON.parse(readFileSync(join(callsDir, 'run.json'), 'utf8'));
+  assert.equal(callsRecord.stopped, 'calls');
+  assert.equal(callsRecord.calls, 4, 'exactly maxCalls calls were admitted');
+  assert.ok(callsRecord.counts.played >= 1, 'at least one episode completed before the stop');
+  assert.ok(callsRecord.counts.unplayed >= 1, 'at least one episode was left unplayed');
+  assert.ok(callsRecord.spendUsd <= 4 * 0.0013 + 1e-9, 'spend stayed within the admitted calls');
+
+  // Resume the call-cap bundle: skip verified episodes, replay the rest.
+  const resumed = await gauntlet(...runArgs, '--out', callsDir, '--resume');
   assert.equal(resumed.status, 0, `resume completes:\n${resumed.stdout}\n${resumed.stderr}`);
   assert.match(resumed.stdout, /done\s+every planned episode has a trajectory/);
-  const resumedRecord = JSON.parse(readFileSync(join(cappedDir, 'run.json'), 'utf8'));
+  const resumedRecord = JSON.parse(readFileSync(join(callsDir, 'run.json'), 'utf8'));
   assert.equal(resumedRecord.stopped, null);
   assert.ok(resumedRecord.counts.skipped >= 1, 'resume skipped the already-played episodes');
   assert.ok(resumedRecord.counts.played >= 1, 'resume played the missing episodes');
   assert.equal(resumedRecord.counts.unplayed, 0);
   /** @type {string[]} */ const resumedFiles = [];
-  collectTrajectories(cappedDir, resumedFiles);
+  collectTrajectories(callsDir, resumedFiles);
   assert.equal(resumedFiles.length, episodeCount);
 
   // 4. Bundle verify passes on the completed bundle; fails once tampered.
-  const clean = await gauntlet('bundle', 'verify', cappedDir);
+  const clean = await gauntlet('bundle', 'verify', callsDir);
   assert.equal(clean.status, 0, `clean bundle verify:\n${clean.stdout}`);
   assert.match(clean.stdout, /manifest ok/);
   assert.match(clean.stdout, /strays\s+none/);
@@ -228,7 +247,7 @@ test('cli engine-backed run: stub provider, budget stop, resume, bundle verify, 
   // doctored hash must fail verification regardless of the steps' validity.
   /** @type {JsonObject} */ (step0).observationHash = 'f'.repeat(16);
   writeFileSync(victim, JSON.stringify(tampered, null, 2) + '\n');
-  const sabotaged = await gauntlet('bundle', 'verify', cappedDir);
+  const sabotaged = await gauntlet('bundle', 'verify', callsDir);
   assert.equal(sabotaged.status, 1, 'a tampered trajectory fails bundle verify');
   assert.match(sabotaged.stdout, /FAILED/);
   writeFileSync(victim, original);
@@ -257,7 +276,7 @@ test('cli engine-backed run: stub provider, budget stop, resume, bundle verify, 
 
   // 6. The leaderboard lists the stub agent on the official track, ranked.
   const lbDir = join(root, 'lb');
-  const lb = await gauntlet('leaderboard', '--suite', suiteFile, '--out', lbDir, cappedDir);
+  const lb = await gauntlet('leaderboard', '--suite', suiteFile, '--out', lbDir, callsDir);
   assert.equal(lb.status, 0, lb.stderr);
   const board = JSON.parse(readFileSync(join(lbDir, 'leaderboard.json'), 'utf8'));
   assert.equal(board.format, 'playkit-gauntlet-leaderboard/1');

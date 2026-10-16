@@ -128,7 +128,7 @@ function usage() {
       '                      [--call-timeout-ms <ms>] [--thinking-budget <n>] [--reasoning-effort low|medium|high]',
       '                      [--prices <file>] [--dry-run --script <file>]',
       '       gauntlet page --agent <spec> --out <dir> [--base-url <url>] [--api-key-env <var>]',
-      '                      [--moves <n>] [--seed <s>] [--timeout-ms <ms>]'
+      '                      [--moves <n>] [--seed <s>] [--timeout-ms <ms>]',
       '       gauntlet leaderboard --suite <file> [--out <dir>] [--scoring-profile rhae-v1] [--json] <dirs...>',
       '       gauntlet rate <dirs...> [--ladder <file>] [--json]',
       '       gauntlet serve',

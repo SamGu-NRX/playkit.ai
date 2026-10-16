@@ -1,0 +1,517 @@
+{
+  "format": "playkit-gauntlet-onramp-rung-gaps/1",
+  "source": "calibration/tables/{tictactoe,connect4}.json — the deterministic baseline dial",
+  "games": {
+    "tictactoe": {
+      "version": "1.2.0",
+      "baselines": {
+        "random": {
+          "rungs": [
+            {
+              "tierId": "random-opponent",
+              "rank": 1,
+              "score": 0.46875,
+              "ci95": [
+                0.25,
+                0.6875
+              ],
+              "episodes": 16,
+              "se": 0.11160714285714286
+            },
+            {
+              "tierId": "blunder-opponent",
+              "rank": 2,
+              "score": 0.1875,
+              "ci95": [
+                0.0625,
+                0.34375
+              ],
+              "episodes": 16,
+              "se": 0.07174744897959184
+            },
+            {
+              "tierId": "perfect-opponent",
+              "rank": 3,
+              "score": 0.0625,
+              "ci95": [
+                0,
+                0.1875
+              ],
+              "episodes": 8,
+              "se": 0.04783163265306122
+            }
+          ],
+          "gaps": [
+            {
+              "from": "random-opponent",
+              "to": "blunder-opponent",
+              "delta": 0.28125,
+              "se": 0.13268,
+              "separated": true,
+              "monotonic": true
+            },
+            {
+              "from": "blunder-opponent",
+              "to": "perfect-opponent",
+              "delta": 0.125,
+              "se": 0.08623,
+              "separated": false,
+              "monotonic": true
+            }
+          ]
+        },
+        "greedy": {
+          "rungs": [
+            {
+              "tierId": "random-opponent",
+              "rank": 1,
+              "score": 0.84375,
+              "ci95": [
+                0.71875,
+                0.9375
+              ],
+              "episodes": 16,
+              "se": 0.05580357142857143
+            },
+            {
+              "tierId": "blunder-opponent",
+              "rank": 2,
+              "score": 0.625,
+              "ci95": [
+                0.5,
+                0.75
+              ],
+              "episodes": 16,
+              "se": 0.06377551020408163
+            },
+            {
+              "tierId": "perfect-opponent",
+              "rank": 3,
+              "score": 0.4375,
+              "ci95": [
+                0.3125,
+                0.5
+              ],
+              "episodes": 8,
+              "se": 0.04783163265306122
+            }
+          ],
+          "gaps": [
+            {
+              "from": "random-opponent",
+              "to": "blunder-opponent",
+              "delta": 0.21875,
+              "se": 0.084743,
+              "separated": true,
+              "monotonic": true
+            },
+            {
+              "from": "blunder-opponent",
+              "to": "perfect-opponent",
+              "delta": 0.1875,
+              "se": 0.079719,
+              "separated": true,
+              "monotonic": true
+            }
+          ]
+        },
+        "engine": {
+          "rungs": [
+            {
+              "tierId": "random-opponent",
+              "rank": 1,
+              "score": 0.96875,
+              "ci95": [
+                0.90625,
+                1
+              ],
+              "episodes": 16,
+              "se": 0.02391581632653061
+            },
+            {
+              "tierId": "blunder-opponent",
+              "rank": 2,
+              "score": 0.6875,
+              "ci95": [
+                0.5625,
+                0.8125
+              ],
+              "episodes": 16,
+              "se": 0.06377551020408163
+            },
+            {
+              "tierId": "perfect-opponent",
+              "rank": 3,
+              "score": 0.5,
+              "ci95": [
+                0.5,
+                0.5
+              ],
+              "episodes": 8,
+              "se": 0
+            }
+          ],
+          "gaps": [
+            {
+              "from": "random-opponent",
+              "to": "blunder-opponent",
+              "delta": 0.28125,
+              "se": 0.068112,
+              "separated": true,
+              "monotonic": true
+            },
+            {
+              "from": "blunder-opponent",
+              "to": "perfect-opponent",
+              "delta": 0.1875,
+              "se": 0.063776,
+              "separated": true,
+              "monotonic": true
+            }
+          ]
+        }
+      }
+    },
+    "connect4": {
+      "version": "1.1.0",
+      "baselines": {
+        "random": {
+          "rungs": [
+            {
+              "tierId": "ladder-1",
+              "rank": 1,
+              "score": 0.416667,
+              "ci95": [
+                0.166667,
+                0.666667
+              ],
+              "episodes": 12,
+              "se": 0.12755102040816327
+            },
+            {
+              "tierId": "ladder-0",
+              "rank": 2,
+              "score": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 16,
+              "se": 0
+            },
+            {
+              "tierId": "ladder-2",
+              "rank": 3,
+              "score": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 12,
+              "se": 0
+            },
+            {
+              "tierId": "ladder-3",
+              "rank": 4,
+              "score": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 12,
+              "se": 0
+            },
+            {
+              "tierId": "ladder-4",
+              "rank": 5,
+              "score": 0,
+              "ci95": [
+                0,
+                0
+              ],
+              "episodes": 12,
+              "se": 0
+            },
+            {
+              "tierId": "forced-win",
+              "rank": 6,
+              "score": 0.041667,
+              "ci95": [
+                0,
+                0.125
+              ],
+              "episodes": 12,
+              "se": 0.03188775510204082
+            }
+          ],
+          "gaps": [
+            {
+              "from": "ladder-1",
+              "to": "ladder-0",
+              "delta": 0.416667,
+              "se": 0.127551,
+              "separated": true,
+              "monotonic": true
+            },
+            {
+              "from": "ladder-0",
+              "to": "ladder-2",
+              "delta": 0,
+              "se": 0,
+              "separated": false,
+              "monotonic": true
+            },
+            {
+              "from": "ladder-2",
+              "to": "ladder-3",
+              "delta": 0,
+              "se": 0,
+              "separated": false,
+              "monotonic": true
+            },
+            {
+              "from": "ladder-3",
+              "to": "ladder-4",
+              "delta": 0,
+              "se": 0,
+              "separated": false,
+              "monotonic": true
+            },
+            {
+              "from": "ladder-4",
+              "to": "forced-win",
+              "delta": -0.041667,
+              "se": 0.031888,
+              "separated": false,
+              "monotonic": false
+            }
+          ]
+        },
+        "greedy": {
+          "rungs": [
+            {
+              "tierId": "ladder-1",
+              "rank": 1,
+              "score": 1,
+              "ci95": [
+                1,
+                1
+              ],
+              "episodes": 12,
+              "se": 0
+            },
+            {
+              "tierId": "ladder-0",
+              "rank": 2,
+              "score": 0.21875,
+              "ci95": [
+                0.0625,
+                0.4375
+              ],
+              "episodes": 16,
+              "se": 0.09566326530612244
+            },
+            {
+              "tierId": "ladder-2",
+              "rank": 3,
+              "score": 0.5,
+              "ci95": [
+                0.25,
+                0.75
+              ],
+              "episodes": 12,
+              "se": 0.12755102040816327
+            },
+            {
+              "tierId": "ladder-3",
+              "rank": 4,
+              "score": 0.291667,
+              "ci95": [
+                0.083333,
+                0.541667
+              ],
+              "episodes": 12,
+              "se": 0.11692193877551021
+            },
+            {
+              "tierId": "ladder-4",
+              "rank": 5,
+              "score": 0.375,
+              "ci95": [
+                0.125,
+                0.625
+              ],
+              "episodes": 12,
+              "se": 0.12755102040816327
+            },
+            {
+              "tierId": "forced-win",
+              "rank": 6,
+              "score": 0.083333,
+              "ci95": [
+                0,
+                0.208333
+              ],
+              "episodes": 12,
+              "se": 0.053146173469387756
+            }
+          ],
+          "gaps": [
+            {
+              "from": "ladder-1",
+              "to": "ladder-0",
+              "delta": 0.78125,
+              "se": 0.095663,
+              "separated": true,
+              "monotonic": true
+            },
+            {
+              "from": "ladder-0",
+              "to": "ladder-2",
+              "delta": -0.28125,
+              "se": 0.159439,
+              "separated": false,
+              "monotonic": false
+            },
+            {
+              "from": "ladder-2",
+              "to": "ladder-3",
+              "delta": 0.208333,
+              "se": 0.173032,
+              "separated": false,
+              "monotonic": true
+            },
+            {
+              "from": "ladder-3",
+              "to": "ladder-4",
+              "delta": -0.083333,
+              "se": 0.173032,
+              "separated": false,
+              "monotonic": false
+            },
+            {
+              "from": "ladder-4",
+              "to": "forced-win",
+              "delta": 0.291667,
+              "se": 0.13818,
+              "separated": true,
+              "monotonic": true
+            }
+          ]
+        },
+        "engine": {
+          "rungs": [
+            {
+              "tierId": "ladder-1",
+              "rank": 1,
+              "score": 1,
+              "ci95": [
+                1,
+                1
+              ],
+              "episodes": 12,
+              "se": 0
+            },
+            {
+              "tierId": "ladder-0",
+              "rank": 2,
+              "score": 0.90625,
+              "ci95": [
+                0.75,
+                1
+              ],
+              "episodes": 16,
+              "se": 0.06377551020408163
+            },
+            {
+              "tierId": "ladder-2",
+              "rank": 3,
+              "score": 0.916667,
+              "ci95": [
+                0.791667,
+                1
+              ],
+              "episodes": 12,
+              "se": 0.053146173469387756
+            },
+            {
+              "tierId": "ladder-3",
+              "rank": 4,
+              "score": 0.833333,
+              "ci95": [
+                0.583333,
+                1
+              ],
+              "episodes": 12,
+              "se": 0.10629260204081634
+            },
+            {
+              "tierId": "ladder-4",
+              "rank": 5,
+              "score": 0.875,
+              "ci95": [
+                0.666667,
+                1
+              ],
+              "episodes": 12,
+              "se": 0.08503392857142857
+            },
+            {
+              "tierId": "forced-win",
+              "rank": 6,
+              "score": 1,
+              "ci95": [
+                1,
+                1
+              ],
+              "episodes": 12,
+              "se": 0
+            }
+          ],
+          "gaps": [
+            {
+              "from": "ladder-1",
+              "to": "ladder-0",
+              "delta": 0.09375,
+              "se": 0.063776,
+              "separated": false,
+              "monotonic": true
+            },
+            {
+              "from": "ladder-0",
+              "to": "ladder-2",
+              "delta": -0.010417,
+              "se": 0.083017,
+              "separated": false,
+              "monotonic": false
+            },
+            {
+              "from": "ladder-2",
+              "to": "ladder-3",
+              "delta": 0.083334,
+              "se": 0.118839,
+              "separated": false,
+              "monotonic": true
+            },
+            {
+              "from": "ladder-3",
+              "to": "ladder-4",
+              "delta": -0.041667,
+              "se": 0.136121,
+              "separated": false,
+              "monotonic": false
+            },
+            {
+              "from": "ladder-4",
+              "to": "forced-win",
+              "delta": -0.125,
+              "se": 0.085034,
+              "separated": false,
+              "monotonic": false
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,191 @@
+{
+  "format": "playkit-gauntlet-calibration-table/2",
+  "game": {
+    "id": "chess",
+    "version": "1.1.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "baselines": {
+    "random": {
+      "tiers": {
+        "paper": {
+          "id": "paper",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "wood": {
+          "id": "wood",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "steel": {
+          "id": "steel",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "granite": {
+          "id": "granite",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "paper": {
+          "id": "paper",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "wood": {
+          "id": "wood",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "steel": {
+          "id": "steel",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "granite": {
+          "id": "granite",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "paper": {
+          "id": "paper",
+          "rank": 1,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.4,
+            "ci95": [
+              0.1,
+              0.7
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "wood": {
+          "id": "wood",
+          "rank": 2,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.4,
+            "ci95": [
+              0.2,
+              0.5
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "steel": {
+          "id": "steel",
+          "rank": 3,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.7,
+            "ci95": [
+              0.3,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        },
+        "granite": {
+          "id": "granite",
+          "rank": 4,
+          "scoring": "outcome",
+          "score": {
+            "value": 0.7,
+            "ci95": [
+              0.3,
+              1
+            ]
+          },
+          "solvedFraction": null,
+          "episodes": 5
+        }
+      }
+    }
+  }
+}

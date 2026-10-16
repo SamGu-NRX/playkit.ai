@@ -1,0 +1,46 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-puzzles",
+    "version": "1.0.0"
+  },
+  "tier": "r2200",
+  "seed": "chess-puzzles/r2200/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "34310a342053b6fd",
+      "reply": {
+        "text": "f8d8"
+      },
+      "action": "f8d8",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": [
+        "loss"
+      ],
+      "reason": "puzzle jad7i failed: played f8d8, the line expects h2d6"
+    },
+    "agentActions": 1,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:18:47.258Z",
+  "finishedAt": "2026-10-16T06:18:47.259Z"
+}

@@ -18,7 +18,7 @@ import {
   legalCols,
 } from './rules.js';
 import { chooseExactMove, chooseMove, solveExact } from './engine.js';
-import game from './index.js';
+import game, { MIN_WIN_PLIES, MAX_WIN_PLIES } from './index.js';
 import { createEngineAgent, createGreedyAgent } from './baselines.js';
 import { runEpisode } from '../../core/runner.js';
 import { runConformance } from '../../core/conformance.js';
@@ -200,23 +200,33 @@ test('game: the tier ladder has ascending engine depths and a forced-win tier', 
   const tiers = game.spec.tiers;
   assert.deepEqual(
     tiers.map((t) => t.id),
-    ['ladder-1', 'ladder-2', 'ladder-3', 'ladder-4', 'forced-win']
+    ['ladder-1', 'ladder-0', 'ladder-2', 'ladder-3', 'ladder-4', 'forced-win']
+  );
+  assert.deepEqual(
+    tiers.map((t) => t.rank),
+    [1, 2, 3, 4, 5, 6]
   );
   assert.deepEqual(
     tiers.map((t) => t.params),
     [
       { opponent: 'random' },
+      { opponent: 'engine', depth: 2 },
       { opponent: 'engine', depth: 4 },
       { opponent: 'engine', depth: 8 },
       { opponent: 'engine', depth: 12 },
-      { opponent: 'engine', depth: 12, exact: true, minWinPlies: 7, maxWinPlies: 15 },
+      { opponent: 'engine', depth: 12, exact: true, minWinPlies: 17, maxWinPlies: 21 },
     ]
   );
   for (const tier of tiers) {
     assert.equal(tier.scoring, 'outcome');
     assert.equal(tier.maxActions, 30);
-    assert.equal(tier.publicSeeds, 12);
   }
+  // ladder-0 carries 16 public seeds so an on-ramp verdict has the >= 16
+  // scored episodes it needs; the rest keep 12.
+  assert.deepEqual(
+    tiers.map((t) => t.publicSeeds),
+    [12, 16, 12, 12, 12, 12]
+  );
   assert.deepEqual(COLUMNS, ['1', '2', '3', '4', '5', '6', '7']);
   assert.ok(game.spec.rulesText.includes('7-column by 6-row'));
   assert.ok(game.spec.rulesText.includes('e.g. "4"'));
@@ -237,14 +247,19 @@ test('game: forced-win positions are generated, legal, and announced', () => {
     game.spec.tiers.find((t) => t.id === 'forced-win')
   );
   let wins = 0;
-  for (const seed of ['public-0', 'public-1', 'public-2']) {
+  // public-10 and public-56 are the seeds whose first generation pass finds
+  // no position; they exercise the retry pass, which must stay inside the
+  // advertised band.
+  for (const seed of ['public-0', 'public-1', 'public-2', 'public-10', 'public-56']) {
     const state = game.reset(tier, seed);
     assert.equal(state.status, 'playing');
     assert.ok(state.discs >= 18, `too few discs: ${state.discs}`);
     assert.equal(state.toMove, state.agentSeat);
     assert.ok(
-      state.forcedWinPlies !== null && state.forcedWinPlies >= 5 && state.forcedWinPlies <= 21,
-      `win distance out of range: ${state.forcedWinPlies}`
+      state.forcedWinPlies !== null &&
+        state.forcedWinPlies >= tier.params.minWinPlies &&
+        state.forcedWinPlies <= tier.params.maxWinPlies,
+      `win distance out of the advertised band: ${state.forcedWinPlies}`
     );
     const value = solveExact(state);
     assert.equal(value.verdict, 'win');
@@ -255,7 +270,16 @@ test('game: forced-win positions are generated, legal, and announced', () => {
     assert.ok(game.legalActions(state, seat).length > 0);
     wins++;
   }
-  assert.equal(wins, 3);
+  assert.equal(wins, 5);
+});
+
+test('game: the forced-win band constants are the exported tier contract', () => {
+  // The band must never go shallow again: the calibration defect this tier
+  // fixes came from positions weak agents could convert by luck.
+  assert.equal(typeof MIN_WIN_PLIES, 'number');
+  assert.equal(typeof MAX_WIN_PLIES, 'number');
+  assert.ok(MIN_WIN_PLIES >= 13, `band floor must stay deep, got ${MIN_WIN_PLIES}`);
+  assert.ok(MAX_WIN_PLIES >= MIN_WIN_PLIES, `band must be non-empty, got ${MIN_WIN_PLIES}..${MAX_WIN_PLIES}`);
 });
 
 test('game: reset is deterministic per tier and seed', () => {
@@ -418,4 +442,42 @@ test('the full conformance kit passes for connect4', async () => {
   const report = await runConformance(game);
   assert.equal(report.ok, true);
   assert.ok(report.checks > 50, `expected a substantial check count, got ${report.checks}`);
+});
+
+test('game: three seeded records pin the ladder-0 rung', async () => {
+  const tier = /** @type {typeof game.spec.tiers[number]} */ (
+    game.spec.tiers.find((t) => t.id === 'ladder-0')
+  );
+  /** Center-then-first scripted agent: plays 4 while legal, else the first legal column. */
+  const scripted = {
+    id: 'scripted-center-first',
+    track: /** @type {'baseline'} */ ('baseline'),
+    async act(/** @type {import('../../core/types.js').TurnContext} */ ctx) {
+      const legal = ctx.legalActions ?? [];
+      return { text: legal.includes('4') ? '4' : legal[0] };
+    },
+  };
+  const records = [
+    { seed: 'record-0', agentSeat: 1, actions: ['4', '1', '4', '1'], outcome: [1, 0] },
+    {
+      seed: 'record-1',
+      agentSeat: 0,
+      actions: ['4', '4', '4', '4', '4', '4', '6', '1', '6', '1', '5', '1', '3'],
+      outcome: [0, 1],
+    },
+    { seed: 'record-2', agentSeat: 1, actions: ['4', '4', '6'], outcome: [1, 0] },
+  ];
+  for (const record of records) {
+    const trajectory = await runEpisode({
+      game,
+      tierId: tier.id,
+      seed: record.seed,
+      agent: scripted,
+    });
+    assert.equal(trajectory.agent.seat, record.agentSeat, record.seed);
+    assert.deepEqual(trajectory.steps.map((s) => s.action), record.actions, record.seed);
+    const outcome = /** @type {import('../../core/types.js').Outcome} */ (trajectory.end.outcome);
+    assert.deepEqual(outcome.normalized, record.outcome, record.seed);
+    assert.equal(trajectory.end.reason, 'terminal', record.seed);
+  }
 });

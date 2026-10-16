@@ -1,0 +1,42 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-first1",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "mastermind",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "classic",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "mastermind/classic/public/0"
+          ],
+          "parKind": "reference"
+        },
+        {
+          "id": "wide",
+          "rank": 2,
+          "scoring": "efficiency",
+          "seeds": [
+            "mastermind/wide/public/0"
+          ],
+          "parKind": "reference"
+        },
+        {
+          "id": "deep",
+          "rank": 3,
+          "scoring": "efficiency",
+          "seeds": [
+            "mastermind/deep/public/0"
+          ],
+          "parKind": "reference"
+        }
+      ]
+    }
+  ]
+}

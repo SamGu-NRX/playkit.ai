@@ -48,21 +48,22 @@ export function jobKey(gameId, tierId, seed) {
 }
 
 /**
- * Path segments must be safe to join under the run directory: non-empty, no
- * current/parent segments, no leading separator.
+ * Path segments must be safe to join under the run directory: a non-empty
+ * string with no leading separator, and — because segments may contain
+ * separators (a seed is a composite path like `<game>/<tier>/<split>/<i>`) —
+ * no `/`-component may be empty, `.`, or `..`. Any of those would let a
+ * trajectory path climb out of the run directory.
  *
  * @param {string} step
  * @param {string} segment
  * @returns {string}
  */
 function safeSegment(step, segment) {
-  if (
-    typeof segment !== 'string' ||
-    segment.length === 0 ||
-    segment === '.' ||
-    segment === '..' ||
-    segment.startsWith('/')
-  ) {
+  if (typeof segment !== 'string' || segment.length === 0 || segment.startsWith('/')) {
+    refuse('safe-segment', `manifest produced an unsafe path segment ${JSON.stringify(segment)}`);
+  }
+  const components = segment.split('/');
+  if (components.some((c) => c.length === 0 || c === '.' || c === '..')) {
     refuse('safe-segment', `manifest produced an unsafe path segment ${JSON.stringify(segment)}`);
   }
   void step;

@@ -174,6 +174,27 @@ function agentRecord(agent, seat) {
 }
 
 /**
+ * Shut down every actor that offers a dispose(): the opponents the runner
+ * builds per episode, and the agent when it holds resources too. Dispose
+ * rejections are absorbed on purpose — cleanup must never mask the
+ * episode's own error, and the UCI client's idle reap stays the backstop
+ * for an engine that ignores its quit.
+ *
+ * @param {readonly import('./types.js').Agent[]} actors
+ * @returns {Promise<void>}
+ */
+async function disposeActors(actors) {
+  await Promise.allSettled(
+    actors.map((actor) => {
+      const dispose = /** @type {undefined | (() => unknown)} */ (
+        /** @type {*} */ (actor).dispose
+      );
+      return typeof dispose === 'function' ? dispose.call(actor) : Promise.resolve();
+    })
+  );
+}
+
+/**
  * Run one episode and return its recorded trajectory.
  *
  * @param {RunEpisodeOptions} options
@@ -246,120 +267,129 @@ export async function runEpisode({
    */
   let end = null;
 
-  while (!end) {
-    const seat = game.toAct(state);
-    if (seat === null) {
-      const outcome = game.outcome(state);
-      if (!outcome) {
-        throw new Error(
-          `game "${spec.id}": toAct is null but outcome() returned nothing`
-        );
-      }
-      end = { reason: 'terminal', outcome };
-      break;
-    }
-    if (!Number.isInteger(seat) || seat < 0 || seat >= seats) {
-      throw new Error(`game "${spec.id}": toAct returned invalid seat ${seat}`);
-    }
-    const isAgent = seat === agentSeat;
-    if (isAgent && agentActions >= tier.maxActions) {
-      end = {
-        reason: 'budget-exhausted',
-        outcome: budgetOutcome(game, tier, state, agentSeat),
-      };
-      break;
-    }
-    const actor = actors[seat];
-    if (!actor) {
-      throw new Error(`game "${spec.id}": no agent seated for seat ${seat}`);
-    }
-    const observation = /** @type {Observation} */ (game.observe(state, seat));
-    const legalActions = /** @type {string[]} */ (game.legalActions(state, seat));
-    /** @type {TurnContext} */
-    const ctx = {
-      spec,
-      tier,
-      seat,
-      turn: turns[seat],
-      observation,
-      legalActions: actor.track === 'official' ? null : legalActions,
-      feedback,
-    };
-    turns[seat] = turns[seat] + 1;
-
-    const startedAt = now();
-    let reply = /** @type {AgentReply | null} */ (null);
-    try {
-      reply = await actor.act(ctx);
-    } catch (err) {
-      if (!isAgent) {
-        throw new Error(
-          `opponent "${actor.id}" threw during act(): ${err instanceof Error ? err.message : String(err)}`
-        );
-      }
-      throw err;
-    }
-    const ms = now() - startedAt;
-
-    const decision = judgeReply(
-      game,
-      state,
-      seat,
-      legalActions,
-      reply && typeof reply.text === 'string' ? reply.text : ''
-    );
-    const attempted = decision.attempted;
-    const canonical = decision.canonical;
-    const invalid = decision.invalid;
-    const invalidReason = decision.reason;
-
-    if (!isAgent && invalid) {
-      throw new Error(
-        `opponent "${actor.id}" produced an invalid action (${invalidReason}); this is a bug in the opponent, not the agent`
-      );
-    }
-
-    /** @type {TrajectoryStep} */
-    const stepRecord = {
-      seat,
-      by: isAgent ? 'agent' : 'opponent',
-      observationHash: hashObservation(observation),
-      reply:
-        reply && typeof reply.text === 'string'
-          ? {
-              text: reply.text,
-              ...(reply.usage !== undefined ? { usage: reply.usage } : {}),
-              ...(reply.meta !== undefined ? { meta: reply.meta } : {}),
-            }
-          : { text: String(reply && reply.text !== undefined ? reply.text : '') },
-      action: invalid ? /** @type {string} */ (attempted) : /** @type {string} */ (canonical),
-      invalid,
-      /** @type {Usage | null} */
-      usage: reply && reply.usage ? reply.usage : null,
-      ms,
-    };
-    steps.push(stepRecord);
-
-    if (invalid) {
-      invalidActions++;
-      if (isAgent) {
-        agentActions++;
-        consecutiveInvalid++;
-        feedback = /** @type {string} */ (invalidReason);
-        if (consecutiveInvalid >= maxConsecutiveInvalid) {
-          end = {
-            reason: 'forfeit-invalid',
-            outcome: forfeitOutcome(seats, agentSeat),
-          };
+  try {
+    while (!end) {
+      const seat = game.toAct(state);
+      if (seat === null) {
+        const outcome = game.outcome(state);
+        if (!outcome) {
+          throw new Error(
+            `game "${spec.id}": toAct is null but outcome() returned nothing`
+          );
         }
+        end = { reason: 'terminal', outcome };
+        break;
       }
-      continue;
-    }
+      if (!Number.isInteger(seat) || seat < 0 || seat >= seats) {
+        throw new Error(`game "${spec.id}": toAct returned invalid seat ${seat}`);
+      }
+      const isAgent = seat === agentSeat;
+      if (isAgent && agentActions >= tier.maxActions) {
+        end = {
+          reason: 'budget-exhausted',
+          outcome: budgetOutcome(game, tier, state, agentSeat),
+        };
+        break;
+      }
+      const actor = actors[seat];
+      if (!actor) {
+        throw new Error(`game "${spec.id}": no agent seated for seat ${seat}`);
+      }
+      const observation = /** @type {Observation} */ (game.observe(state, seat));
+      const legalActions = /** @type {string[]} */ (game.legalActions(state, seat));
+      /** @type {TurnContext} */
+      const ctx = {
+        spec,
+        tier,
+        seat,
+        turn: turns[seat],
+        observation,
+        legalActions: actor.track === 'official' ? null : legalActions,
+        feedback,
+      };
+      turns[seat] = turns[seat] + 1;
 
-    consecutiveInvalid = 0;
-    feedback = null;
-    if (isAgent) agentActions++;
-    state = game.step(state, seat, /** @type {string} */ (canonical));
+      const startedAt = now();
+      let reply = /** @type {AgentReply | null} */ (null);
+      try {
+        reply = await actor.act(ctx);
+      } catch (err) {
+        if (!isAgent) {
+          throw new Error(
+            `opponent "${actor.id}" threw during act(): ${err instanceof Error ? err.message : String(err)}`
+          );
+        }
+        throw err;
+      }
+      const ms = now() - startedAt;
+
+      const decision = judgeReply(
+        game,
+        state,
+        seat,
+        legalActions,
+        reply && typeof reply.text === 'string' ? reply.text : ''
+      );
+      const attempted = decision.attempted;
+      const canonical = decision.canonical;
+      const invalid = decision.invalid;
+      const invalidReason = decision.reason;
+
+      if (!isAgent && invalid) {
+        throw new Error(
+          `opponent "${actor.id}" produced an invalid action (${invalidReason}); this is a bug in the opponent, not the agent`
+        );
+      }
+
+      /** @type {TrajectoryStep} */
+      const stepRecord = {
+        seat,
+        by: isAgent ? 'agent' : 'opponent',
+        observationHash: hashObservation(observation),
+        reply:
+          reply && typeof reply.text === 'string'
+            ? {
+                text: reply.text,
+                ...(reply.usage !== undefined ? { usage: reply.usage } : {}),
+                ...(reply.meta !== undefined ? { meta: reply.meta } : {}),
+              }
+            : { text: String(reply && reply.text !== undefined ? reply.text : '') },
+        action: invalid ? /** @type {string} */ (attempted) : /** @type {string} */ (canonical),
+        invalid,
+        /** @type {Usage | null} */
+        usage: reply && reply.usage ? reply.usage : null,
+        ms,
+      };
+      steps.push(stepRecord);
+
+      if (invalid) {
+        invalidActions++;
+        if (isAgent) {
+          agentActions++;
+          consecutiveInvalid++;
+          feedback = /** @type {string} */ (invalidReason);
+          if (consecutiveInvalid >= maxConsecutiveInvalid) {
+            end = {
+              reason: 'forfeit-invalid',
+              outcome: forfeitOutcome(seats, agentSeat),
+            };
+          }
+        }
+        continue;
+      }
+
+      consecutiveInvalid = 0;
+      feedback = null;
+      if (isAgent) agentActions++;
+      state = game.step(state, seat, /** @type {string} */ (canonical));
+    }
+  } finally {
+    // Engine-backed actors are shut down here, on success and on throw, so a
+    // finished episode never leaves a child process parked until the client's
+    // 60 s idle reap. disposeActors absorbs cleanup rejections on purpose: the
+    // episode's own error must keep priority, and a finished trajectory must
+    // not be discarded over a cleanup failure.
+    await disposeActors(actors);
   }
 
   const finishedAtMs = now();
@@ -378,6 +408,7 @@ export async function runEpisode({
       outcome: end.outcome,
       agentActions,
       invalidActions,
+      forfeitThreshold: maxConsecutiveInvalid,
     },
     startedAt: new Date(startedAtMs).toISOString(),
     finishedAt: new Date(finishedAtMs).toISOString(),

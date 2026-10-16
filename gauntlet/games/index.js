@@ -9,7 +9,9 @@ import tictactoe from './tictactoe/index.js';
 import chess from './chess/index.js';
 import chessEndgames from './chess-endgames/index.js';
 import chessStockfish from './chess-stockfish/index.js';
+import chessPuzzles from './chess-puzzles/index.js';
 import minesweeper from './minesweeper/index.js';
+import nonogram from './nonogram/index.js';
 import twoZeroFourEight from './2048/index.js';
 import sliding from './sliding/index.js';
 import sokoban from './sokoban/index.js';
@@ -26,6 +28,7 @@ export const GAMES = {
   chess,
   'chess-endgames': chessEndgames,
   'chess-stockfish': chessStockfish,
+  'chess-puzzles': chessPuzzles,
   'cube': cube,
   minesweeper,
   '2048': twoZeroFourEight,
@@ -34,6 +37,7 @@ export const GAMES = {
   connect4,
   mastermind,
   holdem,
+  nonogram,
 };
 
 /**

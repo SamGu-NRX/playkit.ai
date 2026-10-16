@@ -2,13 +2,26 @@
  * Cost estimation for a suite run, produced before any model call is made.
  *
  * The numbers are estimates, never measurements, and are labeled as such in
- * every output. Per job:
+ * every output. Where the game/tier has fitted parameters
+ * (`runs/estimate-fit/params.js`, fitted to committed real-model runs — see
+ * `runs/estimate-fit/fit-report.md` for the hold-out error tables), the
+ * **model-fit** basis is used:
+ *
+ * - **low (expected) calls**: the fitted mean agent actions per episode of
+ *   the committed runs for that game and tier.
+ * - **high (worst-case) calls**: the tier's `maxActions` (every episode runs
+ *   out of budget) — the number a dollar cap should be set from, because a
+ *   model that flails pins the episode to the budget no matter what the fit
+ *   saw.
+ * - **tokens per call**: the fitted mean (expected) and observed maximum
+ *   (worst) of the runs' recorded provider usage for that tier.
+ *
+ * Without fitted parameters the old bases apply, unchanged:
  *
  * - **low** calls: the game's engine or greedy baseline plays two of the
  *   tier's seeds and the estimate averages its agent-action counts; where no
  *   baseline exists, the episode's `par` is used instead.
- * - **high** calls: the tier's `maxActions` (every episode runs out of
- *   budget).
+ * - **high** calls: the tier's `maxActions`.
  * - **tokens per call**: the official system prompt plus the real per-turn
  *   user message, rendered with `harness/official.js` along the baseline
  *   episode, at 4 characters per token (input); the baseline's reply text
@@ -18,13 +31,13 @@
  * `"<provider>/<model>"`), the estimate prices low and high per game and in
  * total, as JSON and Markdown.
  *
- * Baseline resolution order: an optional `game.baselineAgent(tier, seed)`
- * hook; else the bundled engine every two-seat game must provide
- * (`game.opponent` seated at the agent's seat); else `par` from
- * `tier.params.par` or the game's reset state (`state.par`, the convention
- * the fixture and efficiency games use). A probe failure degrades to the par
- * fallback, and no par means the low estimate is reported as unknown rather
- * than guessed.
+ * Baseline resolution order (unfitted tiers only): an optional
+ * `game.baselineAgent(tier, seed)` hook; else the bundled engine every
+ * two-seat game must provide (`game.opponent` seated at the agent's seat);
+ * else `par` from `tier.params.par` or the game's reset state (`state.par`,
+ * the convention the fixture and efficiency games use). A probe failure
+ * degrades to the par fallback, and no par means the low estimate is reported
+ * as unknown rather than guessed.
  *
  * @module
  */
@@ -33,12 +46,43 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from '../harness/off
 import { runEpisode } from '../core/runner.js';
 import { findSuiteTier, SUITE_FORMAT } from '../scoring/suite.js';
 
+import { ESTIMATE_FIT } from './estimate-fit/params.js';
 import { manifestSha256, normalizeGames, planJobs } from './plan.js';
 import { atomicWriteFile } from './fsutil.js';
 
 /** @import { Agent, Game, TierSpec } from '../core/types.js' */
 /** @import { SuiteManifest } from '../scoring/suite.js' */
 /** @import { Job } from './plan.js' */
+
+/**
+ * Fitted per-(game, tier) parameters, produced by `runs/estimate-fit/fit.mjs`
+ * from committed real-model run data.
+ *
+ * @typedef {object} EstimateFitTier
+ * @property {number} callsExpected Mean agent actions per episode across the
+ *   fitted runs.
+ * @property {number | null} inExpected Mean recorded input tokens per call.
+ * @property {number | null} inWorst Maximum recorded input tokens per call.
+ * @property {number | null} outExpected Mean recorded output tokens per call.
+ * @property {number | null} outWorst Maximum recorded output tokens per call.
+ * @property {number} invalidRate Share of fitted calls that were invalid.
+ * @property {boolean} budgetBound True when every fitted episode exhausted
+ *   the tier budget (the fitted mean IS the cap).
+ * @property {number} episodes Fitted episode count.
+ * @property {string[]} models Models the fit saw for this tier.
+ * @property {string[]} sources Committed run bundles the fit used.
+ * @property {Record<string, number>} endReasons Episode counts by end reason.
+ * @property {number | null} [callsCap] The tier's current maxActions (report
+ *   only).
+ */
+
+/**
+ * @typedef {object} EstimateFit
+ * @property {string} format
+ * @property {string} note
+ * @property {Record<string, EstimateFitTier>} tiers Keyed `"<gameId>/<tierId>"`.
+ * @property {string[]} sources Committed run bundles the fit was made from.
+ */
 
 /** Estimates are labeled with this format so no reader mistakes them for data. */
 export const ESTIMATE_FORMAT = 'playkit-gauntlet-estimate/1';
@@ -66,11 +110,11 @@ function refuse(step, message) {
 
 /**
  * @typedef {object} TierProbe
- * @property {'engine-probe' | 'par' | 'none'} basis How the low estimate is
- *   derived.
+ * @property {'engine-probe' | 'par' | 'none' | 'model-fit'} basis How the low
+ *   estimate is derived.
  * @property {number | null} callsPerEpisode Low-call figure per episode
- *   (engine-probe mean); null for the par basis (par is per seed) and the
- *   none basis.
+ *   (engine-probe mean or fitted mean); null for the par basis (par is per
+ *   seed) and the none basis.
  * @property {TokenStats | null} tokens Tokens per call from the probe.
  * @property {string | null} note Human-readable caveat.
  */
@@ -294,6 +338,10 @@ export async function probeTier(game, tier, seeds, split) {
  * @property {Record<string, *>} [prices] Price file keyed `"<provider>/<model>"`.
  * @property {string} [pricingKey] Which entry to price with, e.g.
  *   `"anthropic/claude-sonnet-4-5"`. Required for any USD figure.
+ * @property {boolean} [fit] Use the fitted parameters from committed
+ *   real-model runs where a game/tier has them (default true; the
+ *   engine-probe/par bases apply where it does not, and `false` disables the
+ *   fit entirely).
  * @property {() => number} [now]
  */
 
@@ -303,7 +351,7 @@ export async function probeTier(game, tier, seeds, split) {
  * @property {string} gameId
  * @property {string} tierId
  * @property {string} seed
- * @property {'engine-probe' | 'par' | 'none'} basis
+ * @property {'engine-probe' | 'par' | 'none' | 'model-fit'} basis
  * @property {number | null} callsLow
  * @property {number} callsHigh
  * @property {number | null} usdLow
@@ -328,6 +376,9 @@ export async function probeTier(game, tier, seeds, split) {
  * @property {string} note
  * @property {{ id: string, split: string, manifestSha256: string }} suite
  * @property {{ key: string | null, priced: boolean }} pricing
+ * @property {{ format: string, tiers: number, sources: string[] } | null} fit
+ *   Provenance of the fitted parameters behind any `model-fit` basis jobs;
+ *   null when the fit was disabled or covers no job in the suite.
  * @property {string} generatedAt
  * @property {EstimateGame[]} games
  * @property {EstimateJob[]} jobs
@@ -354,13 +405,41 @@ function sumNullable(rows, get) {
 }
 
 /**
- * Estimate a whole suite. Probes each tier once (two baseline episodes where
- * a baseline exists), then derives per-job figures.
+ * A TierProbe built from the fitted parameters for one tier (no local probe
+ * episode is played: the fit already carries the runs' measured calls and
+ * provider-recorded usage).
+ *
+ * @param {EstimateFitTier} fitTier
+ * @returns {TierProbe}
+ */
+function fittedProbe(fitTier) {
+  const note =
+    `expected = the fitted mean agent actions over ${fitTier.episodes} committed real-model ` +
+    `episode(s) (models: ${fitTier.models.join(', ')}); worst = the tier's maxActions budget` +
+    (fitTier.budgetBound ? ' (every fitted episode exhausted the budget)' : '') +
+    '; tokens = fitted means/maxima of the runs\' recorded provider usage';
+  return {
+    basis: 'model-fit',
+    callsPerEpisode: fitTier.callsExpected,
+    tokens:
+      fitTier.inExpected === null || fitTier.outExpected === null
+        ? null
+        : {
+            input: { mean: fitTier.inExpected, max: fitTier.inWorst ?? fitTier.inExpected },
+            output: { mean: fitTier.outExpected, max: fitTier.outWorst ?? fitTier.outExpected },
+          },
+    note,
+  };
+}
+
+/**
+ * Estimate a whole suite. Tiers with fitted parameters use the fit; the rest
+ * are probed (two baseline episodes where a baseline exists, par where not).
  *
  * @param {EstimateOptions} options
  * @returns {Promise<Estimate>}
  */
-export async function estimateSuite({ suite, games, prices, pricingKey, now = Date.now }) {
+export async function estimateSuite({ suite, games, prices, pricingKey, fit = true, now = Date.now }) {
   if (!suite || suite.format !== SUITE_FORMAT) {
     refuse(
       'suite-format',
@@ -392,15 +471,20 @@ export async function estimateSuite({ suite, games, prices, pricingKey, now = Da
     const probeKey = `${job.gameId}|${job.tierId}`;
     let probe = tierProbes.get(probeKey);
     if (!probe) {
-      const suiteTier = findSuiteTier(suite, job.gameId, job.tierId);
-      if (!suiteTier) {
-        refuse('suite-tier', `planJobs derived a job for ${job.gameId}/${job.tierId} but the suite has no such tier`);
+      const fitTier = fit ? ESTIMATE_FIT.tiers[`${job.gameId}/${job.tierId}`] : undefined;
+      if (fitTier) {
+        probe = fittedProbe(fitTier);
+      } else {
+        const suiteTier = findSuiteTier(suite, job.gameId, job.tierId);
+        if (!suiteTier) {
+          refuse('suite-tier', `planJobs derived a job for ${job.gameId}/${job.tierId} but the suite has no such tier`);
+        }
+        const game = /** @type {Game<*>} */ (gameMap.get(job.gameId));
+        const tier = /** @type {TierSpec} */ (
+          game.spec.tiers.find((t) => t.id === job.tierId)
+        );
+        probe = await probeTier(game, tier, suiteTier.seeds, suite.split);
       }
-      const game = /** @type {Game<*>} */ (gameMap.get(job.gameId));
-      const tier = /** @type {TierSpec} */ (
-        game.spec.tiers.find((t) => t.id === job.tierId)
-      );
-      probe = await probeTier(game, tier, suiteTier.seeds, suite.split);
       tierProbes.set(probeKey, probe);
     }
 
@@ -408,7 +492,7 @@ export async function estimateSuite({ suite, games, prices, pricingKey, now = Da
     let callsLow = null;
     /** @type {string | null} */
     let note = probe.note;
-    if (probe.basis === 'engine-probe') {
+    if (probe.basis === 'engine-probe' || probe.basis === 'model-fit') {
       callsLow = probe.callsPerEpisode;
     } else if (probe.basis === 'par') {
       const game = /** @type {Game<*>} */ (gameMap.get(job.gameId));
@@ -475,12 +559,19 @@ export async function estimateSuite({ suite, games, prices, pricingKey, now = Da
     format: ESTIMATE_FORMAT,
     kind: 'estimate',
     note:
-      'Estimates, not measurements. Low calls: the game engine/greedy baseline\'s mean agent actions on two ' +
-      "seeds of the tier, or the episode par where no baseline exists. High calls: the tier's maxActions. " +
-      `Tokens per call: the official system prompt plus the per-turn official user message (harness/official.js) ` +
+      'Estimates, not measurements. Where runs/estimate-fit/params.js has fitted parameters for the ' +
+      'game/tier (fitted to committed real-model runs; hold-out error tables in ' +
+      'runs/estimate-fit/fit-report.md): low calls = the fitted mean agent actions per episode, high ' +
+      "calls = the tier's maxActions budget, tokens per call = the fitted means/maxima of the runs' " +
+      'recorded provider usage. Unfitted tiers: low calls = the game engine/greedy baseline\'s mean ' +
+      'agent actions on two seeds of the tier, or the episode par where no baseline exists; tokens per ' +
+      `call = the official system prompt plus the per-turn official user message (harness/official.js) ` +
       `rendered along the baseline episode at ${CHARS_PER_TOKEN} characters per token. Real runs may cost more.`,
     suite: { id: suite.id, split: suite.split, manifestSha256: manifestSha256(suite) },
     pricing: { key: priced ? /** @type {string} */ (pricingKey) : null, priced },
+    fit: jobEstimates.some((j) => j.basis === 'model-fit')
+      ? { format: ESTIMATE_FIT.format, tiers: Object.keys(ESTIMATE_FIT.tiers).length, sources: ESTIMATE_FIT.sources }
+      : null,
     generatedAt: new Date(now()).toISOString(),
     games: gameEstimates,
     jobs: jobEstimates,

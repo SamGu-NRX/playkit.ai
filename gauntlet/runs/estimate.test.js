@@ -21,6 +21,7 @@ import { runEpisode } from '../core/runner.js';
 
 import { manifestSha256 } from './plan.js';
 import { estimateSuite, estimateToMarkdown, resolveBaseline, writeEstimate } from './estimate.js';
+import { ESTIMATE_FIT } from './estimate-fit/params.js';
 
 const PRICES = {
   'acme/alpha': { inputPerMTok: 3, outputPerMTok: 15, source: 'test', checked: '2026-10-15' },
@@ -28,38 +29,81 @@ const PRICES = {
 
 test('engine-probe basis: tictactoe, low = an independently replayed baseline mean', async () => {
   const suite = buildSuite([tictactoe], { split: 'public' });
-  const estimate = await estimateSuite({ suite, games: [tictactoe] });
+  // fit:false — tictactoe/perfect-opponent has fitted parameters from real
+  // runs, so the default estimate would use them; this test pins the probe
+  // machinery that remains the fallback for unfitted tiers.
+  const estimate = await estimateSuite({ suite, games: [tictactoe], fit: false });
 
-  const tier = tictactoe.spec.tiers.find((t) => t.id === 'perfect-opponent');
-  assert.ok(tier, 'tictactoe has the perfect-opponent tier');
-  assert.equal(estimate.jobs.length, 8);
+  assert.equal(estimate.jobs.length, 40);
 
-  // Independent measurement: replay the engine baseline directly through the
-  // core runner on the same two seeds the estimate probes.
-  const probeSeeds = suite.games[0].tiers[0].seeds.slice(0, 2);
-  assert.equal(probeSeeds.length, 2);
-  let sum = 0;
-  for (const seed of probeSeeds) {
-    const seat = tictactoe.agentSeat(tier, seed);
-    const baseline = tictactoe.opponent(tier, seed, seat);
-    const trajectory = await runEpisode({ game: tictactoe, tierId: tier.id, seed, agent: baseline });
-    sum += trajectory.end.agentActions;
+  // Independent measurement: for every tier, replay that tier's own engine
+  // baseline through the core runner on the same two seeds the probe uses.
+  const tierMeans = new Map();
+  for (const st of suite.games[0].tiers) {
+    const tier = /** @type {*} */ (tictactoe.spec.tiers.find((t) => t.id === st.id));
+    assert.ok(tier, `tictactoe has the ${st.id} tier`);
+    const probeSeeds = st.seeds.slice(0, 2);
+    assert.equal(probeSeeds.length, 2);
+    let sum = 0;
+    for (const seed of probeSeeds) {
+      const seat = tictactoe.agentSeat(tier, seed);
+      const baseline = tictactoe.opponent(tier, seed, seat);
+      const trajectory = await runEpisode({ game: tictactoe, tierId: tier.id, seed, agent: baseline });
+      sum += trajectory.end.agentActions;
+    }
+    tierMeans.set(st.id, sum / probeSeeds.length);
   }
-  const mean = sum / probeSeeds.length;
 
+  let lowSum = 0;
+  let highSum = 0;
   for (const job of estimate.jobs) {
     assert.equal(job.basis, 'engine-probe');
-    assert.ok(Math.abs(/** @type {number} */ (job.callsLow) - mean) < 1e-9, `callsLow ${job.callsLow} vs measured ${mean}`);
+    const mean = /** @type {number} */ (tierMeans.get(job.tierId));
+    assert.ok(Math.abs(/** @type {number} */ (job.callsLow) - mean) < 1e-9, `callsLow ${job.callsLow} vs measured ${mean} on ${job.tierId}`);
+    const tier = /** @type {*} */ (tictactoe.spec.tiers.find((t) => t.id === job.tierId));
     assert.equal(job.callsHigh, tier.maxActions);
     // No prices given: every USD figure stays unknown rather than guessed.
     assert.equal(job.usdLow, null);
     assert.equal(job.usdHigh, null);
     assert.match(/** @type {string} */ (job.note), /engine baseline/);
+    lowSum += /** @type {number} */ (job.callsLow);
+    highSum += /** @type {number} */ (job.callsHigh);
   }
   assert.equal(estimate.suite.manifestSha256, manifestSha256(suite));
-  assert.equal(estimate.totals.callsHigh, 8 * tier.maxActions);
-  assert.equal(estimate.totals.callsLow, 8 * mean);
+  assert.equal(estimate.totals.callsHigh, highSum);
+  assert.equal(estimate.totals.callsLow, lowSum);
   assert.equal(estimate.totals.usdLow, null);
+});
+
+test('model-fit basis: tictactoe uses the fitted parameters from committed runs', async () => {
+  const fitTier = ESTIMATE_FIT.tiers['tictactoe/perfect-opponent'];
+  assert.ok(fitTier, 'the committed fit covers tictactoe/perfect-opponent');
+
+  const suite = buildSuite([tictactoe], { split: 'public' });
+  const estimate = await estimateSuite({ suite, games: [tictactoe] });
+
+  const tier = tictactoe.spec.tiers.find((t) => t.id === 'perfect-opponent');
+  assert.ok(tier);
+  for (const job of estimate.jobs) {
+    assert.equal(job.basis, 'model-fit');
+    // Low = the fitted mean agent actions per episode, exactly as fitted.
+    assert.equal(job.callsLow, fitTier.callsExpected);
+    // High stays the tier budget, fitted or not.
+    assert.equal(job.callsHigh, tier.maxActions);
+    assert.match(/** @type {string} */ (job.note), /fitted mean agent actions/);
+    assert.match(/** @type {string} */ (job.note), /maxActions/);
+  }
+  // Fit provenance is carried on the estimate.
+  assert.ok(estimate.fit, 'fit provenance present when a job used the fit');
+  assert.equal(/** @type {*} */ (estimate.fit).format, ESTIMATE_FIT.format);
+  assert.ok(/** @type {*} */ (estimate.fit).tiers >= 1);
+  assert.ok(Array.isArray(/** @type {*} */ (estimate.fit).sources));
+  assert.match(estimate.note, /runs\/estimate-fit\/fit-report\.md/);
+
+  // Markdown renders the fitted note and stays labeled as an estimate.
+  const md = estimateToMarkdown(estimate);
+  assert.match(md, /Estimate, not a measurement/);
+  assert.match(md, /fitted mean agent actions/);
 });
 
 test('par basis: countdown, low = the per-seed par from state.par', async () => {

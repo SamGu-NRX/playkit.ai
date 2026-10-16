@@ -117,6 +117,32 @@ class ServerHandle {
     }
     return this.proc.exitCode ?? -1;
   }
+
+  /**
+   * Wait for the process to exit on its own, failing after `deadlineMs`.
+   *
+   * @param {number} deadlineMs
+   * @returns {Promise<number>} exit code
+   */
+  waitForExit(deadlineMs) {
+    if (this.proc.exitCode !== null) return Promise.resolve(this.proc.exitCode);
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.proc.removeListener('exit', onExit);
+        reject(
+          new Error(
+            `the server did not exit within ${deadlineMs} ms; stdin was left open, ` +
+              `stderr: ${this.stderr.join('')}`
+          )
+        );
+      }, deadlineMs);
+      const onExit = /** @type {(code: number) => void} */ ((code) => {
+        clearTimeout(timer);
+        resolve(code);
+      });
+      this.proc.once('exit', onExit);
+    });
+  }
 }
 
 /**
@@ -173,7 +199,7 @@ test('list advertises registered games over the wire', async () => {
     assert.ok(game, 'tictactoe must be listed');
     assert.deepEqual(
       game.tiers.map((/** @type {any} */ t) => t.id),
-      ['perfect-opponent']
+      ['random-opponent', 'blunder-opponent', 'perfect-opponent']
     );
     assert.equal(game.tiers[0].maxActions, 20);
   } finally {
@@ -435,3 +461,18 @@ test('close exits the server cleanly', async () => {
   const code = await server.stop();
   assert.equal(code, 0);
 });
+
+test('close exits the process while stdin stays open (README contract)', async () => {
+  const server = new ServerHandle();
+  try {
+    const close = await server.request({ id: 1, op: 'close' });
+    assert.equal(close.ok, true);
+    // Deliberately leave stdin open: the documented contract is that close
+    // ends the server, so the process must exit on its own.
+    const code = await server.waitForExit(5_000);
+    assert.equal(code, 0);
+  } finally {
+    server.proc.kill();
+  }
+});
+

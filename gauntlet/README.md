@@ -66,11 +66,14 @@ hashes, counts, or the outcome.
   turn's message stays within size limits.
 - `model-agent.js` — provider-backed agents for Anthropic Messages, OpenAI
   Responses, and any OpenAI-compatible chat-completions server (`openai-chat`,
-  pointed at `--base-url`) over global `fetch` (no SDKs). Keys are read from
-  the environment at call time and never logged; 429/5xx/network errors retry
-  with exponential backoff and surface the retry count in the reply's
-  metadata; token usage is recorded, and costs are computed only from a
-  caller-supplied, sourced price file (`prices.example.json` shows the shape).
+  pointed at `--base-url`) over global `fetch` (no SDKs) — the same provider
+  behind the local-server browser sessions in `bridge/browser` (see
+  `harness/PROVIDERS.md` for the per-provider request shape and serve
+  commands). Keys are read from the environment at call time and never logged;
+  429/5xx/network errors retry with exponential backoff and surface the retry
+  count in the reply's metadata; token usage is recorded, and costs are
+  computed only from a caller-supplied, sourced price file
+  (`prices.example.json` shows the shape).
 - `dry-run.js` — offline agents: a scripted agent (static list or function)
   and a replay agent that re-plays a recorded trajectory against the same
   `(game, tier, seed)`, refusing on an observation-hash mismatch. Both record
@@ -86,7 +89,7 @@ A **suite manifest** (`scoring/suite.js`, format
 `playkit-gauntlet-suite/1`) pins the benchmark: the split, the games, and —
 per tier — the exact seed list an entry must cover. Public suites list public
 seeds; eval suites derive salted seeds from a secret salt and record only the
-salt commitment. The twelve registered games span 42 tiers and 564 public
+salt commitment. The thirteen registered games span 52 tiers and 977 public
 seeds; tic-tac-toe is the smoke game (scored, but `benchmark: false`, so it
 excludes entries from the benchmark-score aggregate while still counting
 toward coverage).
@@ -103,7 +106,11 @@ unranked, with the reason recorded.
 `community` (recorded/bridged agents), and `baseline` (bundled agents)
 tracks, ranks ranked entries by benchmark score, and renders both the JSON
 leaderboard (`playkit-gauntlet-leaderboard/1`) and a Markdown table, including
-a score-vs-cost view when a sourced price file provided costs.
+a score-vs-cost view when a sourced price file provided costs. When
+`rating/ladder-results.json` is present, the CLI also renders a display-only
+chess rating column — each entry's `rateAgent` rating over its ladder-known
+trajectories; it never changes ranking, and agents with no chess trajectories
+show `—`.
 
 ## The CLI
 
@@ -143,8 +150,22 @@ node cli/gauntlet.js run --suite suite.public.json --agent random \
 node cli/gauntlet.js bundle verify results/random/
 
 # Verify and rank: JSON + Markdown written to --out (or printed with --json).
+# A chess rating column appears when rating/ladder-results.json exists; it is
+# display-only and never affects ranking.
 node cli/gauntlet.js verify results/random/
 node cli/gauntlet.js leaderboard --suite suite.public.json --out lb/ results/random/
+
+# Rank under a scoring profile: rhae-v1 (default), chance-adjusted, or
+# squared-outcome. chance-adjusted rescales against the committed random
+# baseline (scoring/baselines/random-public.json) and records its hash.
+node cli/gauntlet.js leaderboard --suite suite.public.json --scoring-profile chance-adjusted \
+  --out lb-chance/ results/random/
+
+# Elo-rate chess trajectories against the fitted ladder (rating/ladder-results.json
+# by default, --ladder to point elsewhere). Trajectories on rungs the ladder does
+# not know are skipped and reported per agent; an agent that won or lost every game
+# reports the divergence direction instead of a rating.
+node cli/gauntlet.js rate results/random/ --json
 
 # The wire protocol (JSON Lines over stdin/stdout) for out-of-process clients.
 node cli/gauntlet.js serve

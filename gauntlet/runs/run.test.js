@@ -22,6 +22,7 @@ import { buildSuite } from '../scoring/suite.js';
 import { countdown, takeOrPass } from '../scoring/fixtures.js';
 
 import { createRateLimiter, runSuite } from './run.js';
+import { printRunSummary } from '../cli/run.js';
 import { manifestSha256, planJobs } from './plan.js';
 import { trajectoryPath } from './fsutil.js';
 
@@ -296,6 +297,49 @@ test('a null costUsd with maxUsd set refuses the run instead of guessing spend',
   }
 });
 
+test('an unpriced agent call without a cap set keeps spendUsd a finite sum of known costs', async () => {
+  const outDir = await tempDir('no-usage');
+  try {
+    const jobs = planJobs(SUITE);
+    const result = await runSuite({
+      suite: SUITE,
+      games: GAMES,
+      agentFactory: () => {
+        let called = 0;
+        return /** @type {Agent} */ ({
+          id: 'partially-priced',
+          track: 'community',
+          async act(ctx) {
+            called += 1;
+            return {
+              text: /** @type {string[]} */ (ctx.legalActions)[0],
+              // Usage on the episode's first call only; later calls return no
+              // usage object at all. No cap is set, so the null-cost refusal
+              // does not apply — the spend must still account sanely.
+              ...(called === 1 ? { usage: { inputTokens: 10, outputTokens: 2, costUsd: 0.25 } } : {}),
+            };
+          },
+        });
+      },
+      outDir,
+    });
+    // Exactly one priced call per episode: 0.25 each. Unpriced calls count as
+    // zero rather than poisoning the sum into NaN (recorded as null).
+    const expected = jobs.length * 0.25;
+    assert.ok(Number.isFinite(result.spendUsd), `spendUsd ${result.spendUsd} should stay finite`);
+    assert.ok(
+      Math.abs(result.spendUsd - expected) < 1e-9,
+      `spendUsd ${result.spendUsd} vs expected ${expected}`
+    );
+    assert.equal(result.run.spendUsd, result.spendUsd);
+    const run = JSON.parse(await readFile(path.join(outDir, 'run.json'), 'utf8'));
+    assert.equal(typeof run.spendUsd, 'number');
+    assert.ok(Math.abs(run.spendUsd - expected) < 1e-9);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
 test('maxCalls stops the run at the cap and resume continues with a fresh counter', async () => {
   const outDir = await tempDir('calls');
   try {
@@ -396,5 +440,44 @@ test('createRateLimiter spaces acquisitions by 60000/rpm under a fake clock', as
   assert.equal(stamps[0], 1000); // first request never waits
   for (let i = 1; i < stamps.length; i++) {
     assert.equal(stamps[i] - stamps[i - 1], 100);
+  }
+});
+
+test('usage reported without a priced cost stays unknown in the run record and summary', async () => {
+  const outDir = await mkdtemp(path.join(tmpdir(), 'gauntlet-run-unknown-cost-'));
+  try {
+    // No maxUsd: the null-cost refusal must NOT fire, but the steps must not
+    // read as free either — they are unknown, separately counted, and the
+    // summary says unknown instead of printing the known-cost sum as spend.
+    const result = await runSuite({
+      suite: SUITE,
+      games: GAMES,
+      agentFactory: pricedFactory({ costUsd: null }),
+      outDir,
+    });
+    const usageSteps = result.trajectories.reduce(
+      (a, t) => a + t.steps.filter((s) => s.usage).length,
+      0,
+    );
+    assert.ok(usageSteps > 0, 'the fixture suite produced usage-bearing steps');
+    assert.equal(result.run.spendUsd, 0, 'the known-cost sum has nothing to sum');
+    assert.equal(result.run.unknownCostSteps, usageSteps, 'every usage-bearing step with no cost is counted as unknown');
+
+    let captured = '';
+    const orig = process.stdout.write.bind(process.stdout);
+    process.stdout.write = (chunk) => {
+      captured += typeof chunk === 'string' ? chunk : String(chunk);
+      return true;
+    };
+    try {
+      printRunSummary(result);
+    } finally {
+      process.stdout.write = orig;
+    }
+    assert.match(captured, /spend    unknown \(/);
+    assert.match(captured, /known-cost sum 0\.000000/);
+    assert.doesNotMatch(captured, /spend    0\.000000/, 'unknown spend is never printed as a bare 0');
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
   }
 });

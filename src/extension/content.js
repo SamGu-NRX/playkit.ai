@@ -1182,22 +1182,30 @@
     
     // Base adapter interface and utilities
     const __reExport0 = require("./src/adapters/adapter.js");
-    exports.Adapter = __reExport0.Adapter;
-    exports.Direction = __reExport0.Direction;
-    exports.BoardUtils = __reExport0.BoardUtils;
+    const Adapter = __reExport0.Adapter;
+    exports.Adapter = Adapter;
+    const Direction = __reExport0.Direction;
+    exports.Direction = Direction;
+    const BoardUtils = __reExport0.BoardUtils;
+    exports.BoardUtils = BoardUtils;
     
     // Specific adapter implementations
     const __reExport1 = require("./src/adapters/play2048-adapter.js");
-    exports.Play2048Adapter = __reExport1.Play2048Adapter;
+    const Play2048Adapter = __reExport1.Play2048Adapter;
+    exports.Play2048Adapter = Play2048Adapter;
     const __reExport2 = require("./src/adapters/generic-adapter.js");
-    exports.GenericAdapter = __reExport2.GenericAdapter;
+    const GenericAdapter = __reExport2.GenericAdapter;
+    exports.GenericAdapter = GenericAdapter;
     const __reExport3 = require("./src/adapters/getmit-adapter.js");
-    exports.GetMITAdapter = __reExport3.GetMITAdapter;
+    const GetMITAdapter = __reExport3.GetMITAdapter;
+    exports.GetMITAdapter = GetMITAdapter;
     
     // Registry system
     const __reExport4 = require("./src/adapters/adapter-registry.js");
-    exports.AdapterRegistry = __reExport4.AdapterRegistry;
-    exports.globalAdapterRegistry = __reExport4.globalAdapterRegistry;
+    const AdapterRegistry = __reExport4.AdapterRegistry;
+    exports.AdapterRegistry = AdapterRegistry;
+    const globalAdapterRegistry = __reExport4.globalAdapterRegistry;
+    exports.globalAdapterRegistry = globalAdapterRegistry;
     
     /**
      * Convenience function to detect and get the best adapter for current page
@@ -1342,7 +1350,11 @@
                 continue;
               }
     
-              const scoreText = (scoreElement.textContent || "").trim();
+              // Read the element's own text: the game adds a transient
+              // .score-addition child (e.g. "+8") during score animations, and
+              // textContent would concatenate it onto the score ("2428+8" then
+              // strips to 24288).
+              const scoreText = this._readOwnScoreText(scoreElement);
               if (!scoreText) continue;
     
               const sanitized = scoreText.replace(/[^\d]/g, "");
@@ -1358,6 +1370,19 @@
         } catch (error) {
           return null;
         }
+      }
+    
+      /**
+       * Read a score container's own text, excluding transient child elements
+       * such as the "+N" .score-addition animation node.
+       * @private
+       * @param {Element} element Score container element
+       * @returns {string} The container's own score text
+       */
+      _readOwnScoreText(element) {
+        const clone = element.cloneNode(true);
+        clone.querySelectorAll(".score-addition").forEach((node) => node.remove());
+        return (clone.textContent || "").trim();
       }
     
       /**
@@ -1996,8 +2021,10 @@
      */
     
     const __reExport0 = require("./src/driver/driver.js");
-    exports.Driver = __reExport0.Driver;
-    exports.createDriver = __reExport0.createDriver;
+    const Driver = __reExport0.Driver;
+    exports.Driver = Driver;
+    const createDriver = __reExport0.createDriver;
+    exports.createDriver = createDriver;
     
   },
   "./src/hud/config.js": function (exports, module, require) {
@@ -2096,6 +2123,9 @@
         this.controller = null;
         this.isAutoSolving = false;
         this.autoSolveTimeout = null;
+        // True while the page is hidden (VisibilityHandler contract). Paused
+        // state is remembered so resume() restarts only what was running.
+        this.visibilityPaused = false;
     
         this.directionPriority = [...DEFAULT_DIRECTION_PRIORITY];
         this.solverConfig = { ...DEFAULT_SOLVER_CONFIG };
@@ -2425,6 +2455,36 @@
       }
     
       /**
+       * Suspend HUD-side timers when the page becomes hidden. The Visibility
+       * Handler requires every managed component to expose pause()/resume();
+       * without these, Runtime.init() threw "Component must have pause() and
+       * resume() methods" and the overlay never initialized (ported from draft
+       * PR #1, obv/products-playkit-hardening-20261009, FIX-9). Controller-driven
+       * driving pauses via the Driver itself; this guards the HUD's local
+       * fallback loop and its timers.
+       */
+      pause() {
+        this.visibilityPaused = true;
+        if (this.autoSolveTimeout) {
+          clearTimeout(this.autoSolveTimeout);
+          this.autoSolveTimeout = null;
+        }
+      }
+    
+      /**
+       * Allow HUD timers again when the page becomes visible. Restarts the
+       * HUD-local fallback auto-solve loop only if it was actually running.
+       */
+      resume() {
+        this.visibilityPaused = false;
+        if (this.isAutoSolving && !this.autoSolveTimeout && !this.controller) {
+          this.autoSolveTimeout = setTimeout(() => {
+            this.autoSolveLoop();
+          }, 0);
+        }
+      }
+    
+      /**
        * Stop auto-solving
        * @private
        */
@@ -2622,10 +2682,14 @@
      */
     
     const __reExport0 = require("./src/hud/hud.js");
-    exports.HUD = __reExport0.HUD;
-    exports.initHUD = __reExport0.initHUD;
-    exports.getHUD = __reExport0.getHUD;
-    exports.destroyHUD = __reExport0.destroyHUD;
+    const HUD = __reExport0.HUD;
+    exports.HUD = HUD;
+    const initHUD = __reExport0.initHUD;
+    exports.initHUD = initHUD;
+    const getHUD = __reExport0.getHUD;
+    exports.getHUD = getHUD;
+    const destroyHUD = __reExport0.destroyHUD;
+    exports.destroyHUD = destroyHUD;
     
   },
   "./src/hud/templates.js": function (exports, module, require) {
@@ -3469,12 +3533,17 @@
      */
     
     const __reExport0 = require("./src/observer/mutation-observer.js");
-    exports.GameMutationObserver = __reExport0.GameMutationObserver;
-    exports.createGameObserver = __reExport0.createGameObserver;
+    const GameMutationObserver = __reExport0.GameMutationObserver;
+    exports.GameMutationObserver = GameMutationObserver;
+    const createGameObserver = __reExport0.createGameObserver;
+    exports.createGameObserver = createGameObserver;
     const __reExport1 = require("./src/observer/visibility-handler.js");
-    exports.VisibilityHandler = __reExport1.VisibilityHandler;
-    exports.getVisibilityHandler = __reExport1.getVisibilityHandler;
-    exports.destroyVisibilityHandler = __reExport1.destroyVisibilityHandler;
+    const VisibilityHandler = __reExport1.VisibilityHandler;
+    exports.VisibilityHandler = VisibilityHandler;
+    const getVisibilityHandler = __reExport1.getVisibilityHandler;
+    exports.getVisibilityHandler = getVisibilityHandler;
+    const destroyVisibilityHandler = __reExport1.destroyVisibilityHandler;
+    exports.destroyVisibilityHandler = destroyVisibilityHandler;
     
   },
   "./src/observer/mutation-observer.js": function (exports, module, require) {
@@ -4940,14 +5009,19 @@
      */
     
     const __reExport0 = require("./src/solver/board-utils.js");
-    exports.BoardEncoder = __reExport0.BoardEncoder;
+    const BoardEncoder = __reExport0.BoardEncoder;
+    exports.BoardEncoder = BoardEncoder;
     const __reExport1 = require("./src/solver/naive-solver.js");
-    exports.NaiveSolverEngine = __reExport1.NaiveSolverEngine;
+    const NaiveSolverEngine = __reExport1.NaiveSolverEngine;
+    exports.NaiveSolverEngine = NaiveSolverEngine;
     const __reExport2 = require("./src/solver/wasm-solver.js");
-    exports.WASMSolverEngine = __reExport2.WASMSolverEngine;
+    const WASMSolverEngine = __reExport2.WASMSolverEngine;
+    exports.WASMSolverEngine = WASMSolverEngine;
     const __reExport3 = require("./src/solver/solver-manager.js");
-    exports.SolverManager = __reExport3.SolverManager;
-    exports.createSolverManager = __reExport3.createSolverManager;
+    const SolverManager = __reExport3.SolverManager;
+    exports.SolverManager = SolverManager;
+    const createSolverManager = __reExport3.createSolverManager;
+    exports.createSolverManager = createSolverManager;
     
     
   },

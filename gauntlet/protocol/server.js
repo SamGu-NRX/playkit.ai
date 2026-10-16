@@ -423,6 +423,15 @@ export async function serve(streams = {}) {
   if (session.state === 'playing') {
     log('stdin closed with an episode still in progress; the episode is abandoned');
   }
+  // A close op must end the process (protocol/README.md) even while the
+  // client keeps its stdin pipe open: detach the interface (for-await already
+  // closed it on break) and release the input stream so the event loop has
+  // nothing left to wait on. Optional chaining keeps embedded transports —
+  // whose streams are not process.stdin — working unchanged.
+  /** @type {{ unref?: () => void }} */
+  const detachable = /** @type {{ unref?: () => void }} */ (input);
+  detachable.unref?.();
+  input.destroy?.();
 }
 
 // Run the server only when executed directly, so importing the module is safe.

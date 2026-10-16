@@ -29,6 +29,8 @@
  * @param {string} [options.id] Agent id recorded in trajectories.
  * @param {string} [options.enginePath] Explicit engine binary. Defaults to
  *   GAUNTLET_STOCKFISH, then a PATH search.
+ * @param {string[]} [options.engineArgs] Extra argv passed to the spawned
+ *   engine (tests use it to turn on fixture recording).
  * @param {number} [options.idleTimeoutMs] Idle reap timeout for the engine
  *   process (tests shrink this).
  * @returns {Agent & { dispose: () => Promise<void> }}
@@ -39,6 +41,7 @@ export function createStockfishOpponentAgent({
   seat,
   id,
   enginePath,
+  engineArgs,
   idleTimeoutMs,
 } = /** @type {never} */ ({})) {
   const params = /** @type {{ nodes: number, searchTimeoutMs?: number, elo?: number }} */ (
@@ -62,6 +65,8 @@ export function createStockfishOpponentAgent({
   let episodeStarted = false;
   /** @type {import('../../engines/uci/client.js').UciEngine | null} */
   let currentEngine = null;
+  /** Options actually sent to this episode's engine; recorded in every meta. */
+  let configuredOptions = /** @type {Record<string, number | boolean>} */ ({});
   void seed;
   void seat;
 
@@ -83,18 +88,43 @@ export function createStockfishOpponentAgent({
       }
       const instance = new uci.UciEngine({
         binaryPath: resolvedPath,
+        engineArgs,
         idleTimeoutMs,
       });
       currentEngine = instance;
       await instance.start();
-      await instance.setoption('Threads', 1);
-      await instance.setoption('Hash', uci.DEFAULT_HASH_MB);
+      // Pin exactly the documented configuration, but only for options the
+      // engine actually advertises: recent Stockfish releases dropped
+      // Contempt, and the client is engine-generic. Whatever was sent is
+      // recorded in every reply's meta.
+      configuredOptions = {};
+      /** @type {Array<[string, number]>} */
+      const pinned = [
+        ['Threads', 1],
+        ['Hash', uci.DEFAULT_HASH_MB],
+        ['MultiPV', 1],
+        ['Contempt', 0],
+      ];
+      for (const [optionName, value] of pinned) {
+        if (!instance.options.has(optionName)) continue;
+        await instance.setoption(optionName, value);
+        configuredOptions[optionName] = value;
+      }
       if (elo !== undefined) {
         if (!Number.isInteger(elo)) {
           throw new Error(`tier params.elo must be an integer UCI_Elo value, got ${JSON.stringify(elo)}`);
         }
-        await instance.setoption('UCI_LimitStrength', true);
+        if (!instance.options.has('UCI_Elo')) {
+          throw new Error(
+            `tier params.elo was set, but the engine at "${resolvedPath}" does not advertise a UCI_Elo option`
+          );
+        }
+        if (instance.options.has('UCI_LimitStrength')) {
+          await instance.setoption('UCI_LimitStrength', true);
+          configuredOptions.UCI_LimitStrength = true;
+        }
         await instance.setoption('UCI_Elo', elo);
+        configuredOptions.UCI_Elo = elo;
       }
       return instance;
     })();
@@ -130,13 +160,24 @@ export function createStockfishOpponentAgent({
           `Stockfish returned no move for position ${state.fen} (moves: ${state.moves.length})`
         );
       }
+      const info = best.info;
+      const score =
+        info?.scoreMate != null
+          ? { mate: info.scoreMate }
+          : info?.scoreCp != null
+            ? { cp: info.scoreCp }
+            : null;
       return {
         text: best.bestmove,
         meta: {
           engine: engine.idName,
+          binaryPath: engine.binaryPath,
           nodesBudget: nodes,
-          depth: best.info?.depth ?? null,
-          searchedNodes: best.info?.nodes ?? null,
+          depth: info?.depth ?? null,
+          searchedNodes: info?.nodes ?? null,
+          nps: info?.nps ?? null,
+          score,
+          options: configuredOptions,
         },
       };
     },

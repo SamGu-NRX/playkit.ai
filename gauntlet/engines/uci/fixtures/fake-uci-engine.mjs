@@ -8,6 +8,7 @@
  * Modes:
  *   (default)          proper handshake; `go` answers info lines + bestmove
  *   --bestmove=MOVE    the move `go` answers with (default e7e5)
+ *   --record=FILE      append every received engine line to FILE
  *   --crash-handshake  exit(3) immediately, before speaking any UCI
  *   --crash-on-go      handshake completes, then exit(7) on the first `go`
  *   --hang-on-go       handshake completes, then never answer `go`
@@ -19,12 +20,27 @@
  */
 
 import readline from 'node:readline';
+import { appendFileSync } from 'node:fs';
 
 const argv = process.argv.slice(2);
 /** @param {string} flag */
 const has = (flag) => argv.includes(flag);
 const bestmoveArg = argv.find((a) => a.startsWith('--bestmove='));
 const BESTMOVE = bestmoveArg ? bestmoveArg.slice('--bestmove='.length) : 'e7e5';
+const recordArg = argv.find((a) => a.startsWith('--record='));
+const RECORD = recordArg ? recordArg.slice('--record='.length) : null;
+
+// A Stockfish-shaped option advertisement: the options the agent pins, plus
+// the strength-limit pair. Tests assert the exact setoption lines these
+// advertise.
+const ADVERTISED_OPTIONS = [
+  'option name Threads type spin default 1 min 1 max 1024',
+  'option name Hash type spin default 16 min 1 max 33554432',
+  'option name MultiPV type spin default 1 min 1 max 500',
+  'option name Contempt type spin default 0 min -100 max 100',
+  'option name UCI_LimitStrength type check default false',
+  'option name UCI_Elo type spin default 1350 min 1350 max 2850',
+];
 
 if (has('--crash-handshake')) {
   process.exit(3);
@@ -39,6 +55,7 @@ if (has('--garbage')) {
 
 out('id name FakeFish 1.0');
 out('id author fake');
+for (const optionLine of ADVERTISED_OPTIONS) out(optionLine);
 out('uciok');
 
 const crashOnGo = has('--crash-on-go');
@@ -48,12 +65,14 @@ const rl = readline.createInterface({ input: process.stdin, terminal: false });
 rl.on('line', (line) => {
   const text = line.trim();
   if (!text) return;
+  if (RECORD) appendFileSync(RECORD, `${text}\n`);
   if (text === 'isready') {
     out('readyok');
     return;
   }
   if (text === 'uci') {
     out('id name FakeFish 1.0');
+    for (const optionLine of ADVERTISED_OPTIONS) out(optionLine);
     out('uciok');
     return;
   }

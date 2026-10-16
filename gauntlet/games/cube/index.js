@@ -7,10 +7,12 @@
  * and replies with one face turn per action. Scoring is action efficiency
  * against the proven-optimal turn count (`parKind: "optimal"`): an episode's
  * efficiency score is `solved ? min(1, (par / agentActions)^2) : 0` — you
- * cannot beat the optimal line, so the cap is 1.0. The runner counts invalid
- * attempts in agentActions; this game's outcome() only sees its own valid
- * turn count, so outcome.normalized reports the score over valid turns and
- * the scoring layer recomputes from the trajectory's agentActions count.
+ * cannot beat the optimal line, so the cap is 1.0. Invalid replies burn
+ * budget but are invisible to the score: the runner records them in
+ * `trajectory.end.agentActions` (and its budget accounting), while
+ * `outcome()` is computed from the game state alone and scores over valid
+ * turns only. Nothing recomputes `normalized` from total attempts — the
+ * scoring layer that would do that does not exist in this stack.
  *
  * Clockwise is the convention solvers and models get wrong, so it is pinned
  * in rulesText, restated in every observation, and fixed by hand-written net
@@ -20,6 +22,9 @@
  * Tiers are bands of proven-optimal length (moves with no two turns of the
  * same face in a row, solved exactly by the meet-in-the-middle solver in
  * `solver.js`, accepted only inside the band):
+ * - cube-2: optimal 1-3 turns (the on-ramp tier: a wrong turn is still one
+ *           turn from undone, so a weak agent can finish; random play still
+ *           almost never stumbles onto solved).
  * - cube-5: optimal 4-5 turns.
  * - cube-7: optimal 6-7 turns.
  * - cube-9: optimal 8-9 turns. The task's original sketch allowed up to 10,
@@ -29,7 +34,7 @@
  *   top band was capped at 9 (each candidate there solves in ~0.15s). This is
  *   the "adjust if generation is too slow, and say so" clause.
  * maxActions follows the ARC-AGI-3 5x budget rule: 5 x the tier's maximum
- * par (25 / 35 / 45).
+ * par (15 / 25 / 35 / 45).
  *
  * @module
  */
@@ -194,7 +199,7 @@ const NOTATION_LINE =
 export const cube = {
   spec: {
     id: 'cube',
-    version: '1.0.0',
+    version: '1.1.0',
     title: "Rubik's Cube",
     seats: /** @type {1 | 2} */ (1),
     information: /** @type {InformationMode} */ ('perfect'),
@@ -211,12 +216,21 @@ export const cube = {
       "Accepted alternates: Ui or U- for U' (the i or - suffix means prime), U2' for U2, and surrounding quotes or backticks ('R', \"R'\", `R`) with extra internal whitespace (R 2) are tolerated.",
       'Lowercase face letters (r, u, f...) are rejected: in cube notation lowercase means a wide two-layer turn, which this game does not use.',
       "A sequence such as R U R' is rejected: one turn per reply.",
-      'Scoring: efficiency against the proven-optimal (par) turn count for your scramble. Solving with exactly par turns scores 1.0; every extra turn multiplies the score by (par/turns)^2, capped at 1.0. Invalid replies consume turns.',
+      'Scoring: efficiency against the proven-optimal (par) turn count for your scramble. Solving with exactly par turns scores 1.0; every extra turn multiplies the score by (par/turns)^2, capped at 1.0. Invalid replies consume action budget but do not count as turns when scoring: the score is computed over your valid turns only.',
     ].join(' '),
     tiers: /** @type {TierSpec[]} */ ([
       {
-        id: 'cube-5',
+        id: 'cube-2',
         rank: 1,
+        scoring: 'efficiency',
+        parKind: 'optimal',
+        maxActions: 15,
+        publicSeeds: 16,
+        params: { bandMin: 1, bandMax: 3, walkLength: 3 },
+      },
+      {
+        id: 'cube-5',
+        rank: 2,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 25,
@@ -225,7 +239,7 @@ export const cube = {
       },
       {
         id: 'cube-7',
-        rank: 2,
+        rank: 3,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 35,
@@ -234,7 +248,7 @@ export const cube = {
       },
       {
         id: 'cube-9',
-        rank: 3,
+        rank: 4,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 45,
@@ -302,7 +316,6 @@ export const cube = {
       ].join('\n'),
       data: {
         facelets: state.facelets,
-        par: state.par,
         moveCount: state.moveCount,
         maxActions: state.maxActions,
         solved: solved(state),

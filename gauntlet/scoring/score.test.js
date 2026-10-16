@@ -66,7 +66,7 @@ test('full-dec entry: outcome, tier, rank weighting and benchmark scores by hand
 
   assert.equal(result.ranked, true);
   assert.equal(result.unrankedReason, null);
-  assert.equal(result.episodes, 18);
+  assert.equal(result.episodes, 50);
 
   // Reference tier: par = start, agentActions = start -> e = 1 every seed.
   const reference = result.games.countdown.tiers['reference-par'];
@@ -102,10 +102,13 @@ test('full-dec entry: outcome, tier, rank weighting and benchmark scores by hand
   // Tic-tac-toe is benchmark: false: scored per tier from the recorded
   // outcomes, but excluded from B.
   const tictactoeTrajs = trajectories.filter((t) => t.game.id === 'tictactoe');
-  assert.equal(tictactoeTrajs.length, 8);
+  assert.equal(tictactoeTrajs.length, 40);
+  // The tier mean covers the perfect-opponent tier's own 8 episodes.
+  const perfectTrajs = tictactoeTrajs.filter((t) => t.tier === 'perfect-opponent');
+  assert.equal(perfectTrajs.length, 8);
   const expectedTT =
-    tictactoeTrajs.reduce((sum, t) => sum + /** @type {number} */ (t.end.outcome?.normalized[t.agent.seat]), 0) /
-    tictactoeTrajs.length;
+    perfectTrajs.reduce((sum, t) => sum + /** @type {number} */ (t.end.outcome?.normalized[t.agent.seat]), 0) /
+    perfectTrajs.length;
   assertClose(
     /** @type {number} */ (result.games.tictactoe.tiers['perfect-opponent'].score.value),
     expectedTT,

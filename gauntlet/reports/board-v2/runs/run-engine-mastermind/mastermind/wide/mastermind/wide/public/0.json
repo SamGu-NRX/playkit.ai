@@ -1,0 +1,108 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "wide",
+  "seed": "mastermind/wide/public/0",
+  "split": "public",
+  "agent": {
+    "id": "engine",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ea20131f2a8901f7",
+      "reply": {
+        "text": "guess AABBC"
+      },
+      "action": "guess AABBC",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4203d2e730899f5a",
+      "reply": {
+        "text": "guess CDAHH"
+      },
+      "action": "guess CDAHH",
+      "invalid": false,
+      "usage": null,
+      "ms": 21
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "70311ebd052f88d2",
+      "reply": {
+        "text": "guess CFFDB"
+      },
+      "action": "guess CFFDB",
+      "invalid": false,
+      "usage": null,
+      "ms": 10
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d7e3f0fd3c43a333",
+      "reply": {
+        "text": "guess BCEHE"
+      },
+      "action": "guess BCEHE",
+      "invalid": false,
+      "usage": null,
+      "ms": 5
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c4f72d4af4c18d8d",
+      "reply": {
+        "text": "guess BDGAG"
+      },
+      "action": "guess BDGAG",
+      "invalid": false,
+      "usage": null,
+      "ms": 3
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "91153b54821a53ee",
+      "reply": {
+        "text": "guess BDDAD"
+      },
+      "action": "guess BDDAD",
+      "invalid": false,
+      "usage": null,
+      "ms": 3
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1
+      ],
+      "raw": [
+        6
+      ],
+      "reason": "solved: the secret was found in 6 guess(es), reference par 6",
+      "solved": true,
+      "par": 6
+    },
+    "agentActions": 6,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:19:58.977Z",
+  "finishedAt": "2026-10-16T06:19:59.054Z"
+}

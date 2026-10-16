@@ -8,12 +8,20 @@
  * Node-only (`node:*` imports; the games it plays stay browser-safe).
  *
  * Budget and call-cap semantics: the shared counters are checked *before*
- * each agent call, so no call starts once a cap is reached. Calls already in
- * flight when a threshold is crossed complete and are charged, so realized
- * spend can overshoot `maxUsd` by at most the cost of the in-flight calls
- * (one per worker). With `maxUsd` set, the first agent step whose
- * `usage.costUsd` is null stops the run with an error: a cap cannot be
- * enforced over unknown prices, and guessing would hide real spend.
+ * each agent call, so no call starts once a cap is reached. A quote-carrying
+ * agent makes the dollar cap hold under concurrency: an agent exposing
+ * `quoteWorstCaseUsd` (see core/types.js) prices its next call's worst case —
+ * the request text at a conservative token estimate plus the output-token
+ * limit — and the engine reserves that quote while the call is in flight,
+ * admitting a call only when settled spend plus all outstanding reservations
+ * plus the new quote fit under `maxUsd`. Realized spend therefore cannot
+ * overshoot the cap; each reservation is settled to the provider's actual
+ * reported usage when the call returns. Agents without a quote keep the
+ * settled-only check: the cap is then enforced on completed calls only, and
+ * concurrent in-flight calls can overshoot `maxUsd` by at most the cost of
+ * the in-flight calls (one per worker). With `maxUsd` set, the first agent
+ * step whose `usage.costUsd` is null stops the run with an error: a cap
+ * cannot be enforced over unknown prices, and guessing would hide real spend.
  *
  * @module
  */
@@ -192,8 +200,13 @@ function gitCommit() {
  * @property {string} startedAt
  * @property {string} finishedAt
  * @property {number} concurrency
- * @property {{ maxUsd: number | null, maxCalls: number | null, requestsPerMinute: number | null }} limits
- * @property {number} spendUsd
+ * @property {{ maxUsd: number | null, maxCalls: number | null, requestsPerMinute: number | null, maxOutputTokens: number | null, callTimeoutMs: number | null, thinkingBudget: number | null, reasoningEffort: string | null }} limits
+ * @property {number} spendUsd Sum of the steps' known costs. A step that
+ *   reported usage without a priced cost counts here as 0 and separately in
+ *   unknownCostSteps — unknown stays unknown, it is never folded into 0.
+ * @property {number} unknownCostSteps Steps whose reply carried usage with a
+ *   null (or non-finite) costUsd: usage was reported, so the cost is unknown,
+ *   not zero.
  * @property {number} calls
  * @property {RunCounts} counts
  * @property {string[]} skipped
@@ -218,6 +231,19 @@ function gitCommit() {
  * @property {number} [maxUsd] Hard dollar cap on summed usage.costUsd.
  * @property {number} [maxCalls] Hard cap on agent calls across the run.
  * @property {number} [requestsPerMinute] Shared rate limit on agent calls.
+ * @property {number} [maxOutputTokens] Recorded in run.json's limits for
+ *   provenance; the per-reply output cap itself is applied by the agent layer
+ *   (the agent spec's --max-output-tokens).
+ * @property {number} [callTimeoutMs] Recorded in run.json's limits for
+ *   provenance; the per-attempt timeout itself is applied by the agent layer
+ *   (the agent spec's --call-timeout-ms).
+ * @property {number} [thinkingBudget] Recorded in run.json's limits for
+ *   provenance; the Anthropic extended-thinking budget itself is applied by
+ *   the agent layer (thinking.budget_tokens; the wire max_tokens is the reply
+ *   cap plus this budget) and the worst-case cost quote includes it.
+ * @property {'low' | 'medium' | 'high'} [reasoningEffort] Recorded in
+ *   run.json's limits for provenance; the OpenAI reasoning effort itself is
+ *   applied by the agent layer (reasoning.effort / reasoning_effort).
  * @property {boolean} [resume] Verify existing trajectory files and skip the
  *   verified ones. Default false.
  * @property {AbortSignal} [signal] Abort to stop after the calls in flight.
@@ -246,7 +272,8 @@ function gitCommit() {
  * @property {{ key: string, error: string }[]} failed
  * @property {StopReason | null} stopped
  * @property {string | null} stopReason
- * @property {number} spendUsd
+ * @property {number} spendUsd Known-cost sum; see RunRecord.
+ * @property {number} unknownCostSteps Steps with usage but unknown cost.
  * @property {number} calls
  */
 
@@ -268,6 +295,10 @@ export async function runSuite({
   maxUsd,
   maxCalls,
   requestsPerMinute,
+  maxOutputTokens,
+  callTimeoutMs,
+  thinkingBudget,
+  reasoningEffort,
   resume = false,
   signal,
   prices,
@@ -301,6 +332,31 @@ export async function runSuite({
   ) {
     throw new Error(
       `[gauntlet/runs/run.js] requestsPerMinute: must be a positive finite number, got ${JSON.stringify(requestsPerMinute)}`
+    );
+  }
+  if (maxOutputTokens !== undefined && (!Number.isInteger(maxOutputTokens) || maxOutputTokens < 1)) {
+    throw new Error(
+      `[gauntlet/runs/run.js] maxOutputTokens: must be a positive integer, got ${JSON.stringify(maxOutputTokens)}`
+    );
+  }
+  if (callTimeoutMs !== undefined && (!Number.isInteger(callTimeoutMs) || callTimeoutMs < 1)) {
+    throw new Error(
+      `[gauntlet/runs/run.js] callTimeoutMs: must be a positive integer, got ${JSON.stringify(callTimeoutMs)}`
+    );
+  }
+  if (thinkingBudget !== undefined && (!Number.isInteger(thinkingBudget) || thinkingBudget < 1)) {
+    throw new Error(
+      `[gauntlet/runs/run.js] thinkingBudget: must be a positive integer (the agent layer enforces the Anthropic minimum of 1024), got ${JSON.stringify(thinkingBudget)}`
+    );
+  }
+  if (
+    reasoningEffort !== undefined &&
+    reasoningEffort !== 'low' &&
+    reasoningEffort !== 'medium' &&
+    reasoningEffort !== 'high'
+  ) {
+    throw new Error(
+      `[gauntlet/runs/run.js] reasoningEffort: must be "low", "medium" or "high", got ${JSON.stringify(reasoningEffort)}`
     );
   }
 
@@ -382,14 +438,19 @@ export async function runSuite({
 
   //
   // Shared run state, mutated from the worker pool. JS is single-threaded, so
-  // counter updates between awaits are safe; calls already in flight when a
-  // threshold is crossed are the documented overshoot.
+  // counter updates between awaits are safe. `reservedUsd` holds the summed
+  // worst-case quotes of the calls in flight: admission adds the new call's
+  // quote and settlement removes it, so settled spend plus reservations can
+  // never exceed a cap that admitted them. Quote-less agents keep the
+  // settled-only overshoot documented in the header.
   //
   const stopped = /** @type {{ reason: StopReason | null, detail: string | null }} */ ({
     reason: null,
     detail: null,
   });
   let spendUsd = 0;
+  let unknownCostSteps = 0;
+  let reservedUsd = 0;
   let calls = 0;
   let fatalError = /** @type {UnknownCostError | null} */ (null);
   const limiter =
@@ -419,27 +480,62 @@ export async function runSuite({
           stopped.detail = stopped.detail ?? `${job.key}: maxCalls ${maxCalls} reached`;
           throw new RunAbortedError('calls', `maxCalls ${maxCalls} reached at ${job.key}`);
         }
-        if (maxUsd !== undefined && spendUsd >= maxUsd) {
-          stopped.reason = stopped.reason ?? 'budget';
-          stopped.detail = stopped.detail ?? `${job.key}: maxUsd ${maxUsd} reached (spend ${spendUsd})`;
-          throw new RunAbortedError('budget', `maxUsd ${maxUsd} reached at ${job.key} (spend ${spendUsd})`);
+        // Worst-case admission for the dollar cap: a quote-carrying agent
+        // reserves its next call's upper-bound cost, so concurrent in-flight
+        // calls cannot jointly push spend past `maxUsd`. A quote-less agent
+        // keeps the settled-only check (its quote is null).
+        const quote =
+          maxUsd !== undefined && typeof base.quoteWorstCaseUsd === 'function'
+            ? base.quoteWorstCaseUsd(ctx)
+            : null;
+        if (maxUsd !== undefined) {
+          const projected = spendUsd + reservedUsd + (quote ?? 0);
+          const overBudget = projected > maxUsd || spendUsd >= maxUsd;
+          if (overBudget) {
+            stopped.reason = stopped.reason ?? 'budget';
+            stopped.detail =
+              stopped.detail ??
+              `${job.key}: maxUsd ${maxUsd} reached (settled ${spendUsd}, reserved ${reservedUsd}, next-call worst case ${quote ?? 'unknown'})`;
+            throw new RunAbortedError(
+              'budget',
+              `maxUsd ${maxUsd} would be exceeded at ${job.key} (settled ${spendUsd}, reserved ${reservedUsd}, next-call worst case ${quote ?? 'unknown'})`
+            );
+          }
         }
         if (limiter) await limiter.acquire();
         calls += 1;
-        const reply = await base.act(ctx);
-        const cost = reply?.usage?.costUsd;
-        if (maxUsd !== undefined && !(typeof cost === 'number' && Number.isFinite(cost))) {
-          const message =
-            `[gauntlet/runs/run.js] budget: episode ${job.key} step returned costUsd ` +
-            `${JSON.stringify(cost === undefined ? null : cost)} with maxUsd ${maxUsd} set; the cap cannot be ` +
-            `enforced without a price entry for ${base.id ?? 'this agent'} — add the provider/model to the ` +
-            'prices file, or run without maxUsd';
-          stopped.reason = 'error';
-          stopped.detail = message;
-          throw new UnknownCostError(message);
+        if (quote !== null) reservedUsd += quote;
+        try {
+          const reply = await base.act(ctx);
+          const cost = reply?.usage?.costUsd;
+          if (maxUsd !== undefined && !(typeof cost === 'number' && Number.isFinite(cost))) {
+            const message =
+              `[gauntlet/runs/run.js] budget: episode ${job.key} step returned costUsd ` +
+              `${JSON.stringify(cost === undefined ? null : cost)} with maxUsd ${maxUsd} set; the cap cannot be ` +
+              `enforced without a price entry for ${base.id ?? 'this agent'} — add the provider/model to the ` +
+              'prices file, or run without maxUsd';
+            stopped.reason = 'error';
+            stopped.detail = message;
+            throw new UnknownCostError(message);
+          }
+          // Only a finite, defined cost counts toward spend. With a cap set
+          // the null-cost refusal above already fired; without a cap an
+          // unpriced call (costUsd null or undefined) is treated as free in
+          // the sum rather than poisoning it into NaN. A call that DID report
+          // usage but without a cost is not free — it is unknown — so it is
+          // counted separately and the summary says unknown instead of
+          // printing a known-cost sum as if it were the whole spend.
+          if (typeof cost === 'number' && Number.isFinite(cost)) {
+            spendUsd += cost;
+          } else if (reply && reply.usage) {
+            unknownCostSteps += 1;
+          }
+          return reply;
+        } finally {
+          // Settle the reservation: the call's actual cost has been added to
+          // spendUsd (or the call failed), so the worst-case hold is released.
+          if (quote !== null) reservedUsd = Math.max(0, reservedUsd - quote);
         }
-        spendUsd += /** @type {number} */ (cost);
-        return reply;
       },
     };
   }
@@ -538,8 +634,13 @@ export async function runSuite({
       maxUsd: maxUsd ?? null,
       maxCalls: maxCalls ?? null,
       requestsPerMinute: requestsPerMinute ?? null,
+      maxOutputTokens: maxOutputTokens ?? null,
+      callTimeoutMs: callTimeoutMs ?? null,
+      thinkingBudget: thinkingBudget ?? null,
+      reasoningEffort: reasoningEffort ?? null,
     },
     spendUsd,
+    unknownCostSteps,
     calls,
     counts: {
       jobs: jobs.length,
@@ -570,6 +671,7 @@ export async function runSuite({
     stopped: stopped.reason,
     stopReason: stopped.detail,
     spendUsd,
+    unknownCostSteps,
     calls,
   };
 }

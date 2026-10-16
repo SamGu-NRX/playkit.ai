@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import random
 import re
+import tempfile
+import time
 import unittest
+from pathlib import Path
 
 from playkit_gauntlet import GauntletClient, GauntletError
 from playkit_gauntlet.example_random import legal_actions_from_text
@@ -34,8 +37,10 @@ class GauntletClientEndToEnd(unittest.TestCase):
         ids = [game["id"] for game in games]
         self.assertIn("tictactoe", ids)
         tictactoe = next(game for game in games if game["id"] == "tictactoe")
-        self.assertEqual([tier["id"] for tier in tictactoe["tiers"]], ["perfect-opponent"])
-        self.assertEqual(tictactoe["tiers"][0]["maxActions"], 20)
+        tier_ids = [tier["id"] for tier in tictactoe["tiers"]]
+        self.assertIn("perfect-opponent", tier_ids)
+        perfect = next(tier for tier in tictactoe["tiers"] if tier["id"] == "perfect-opponent")
+        self.assertEqual(perfect["maxActions"], 20)
 
     def test_full_community_episode(self) -> None:
         rng = random.Random(SEED_0)
@@ -197,6 +202,61 @@ class GauntletClientEndToEnd(unittest.TestCase):
         with GauntletClient() as client:
             client.list_games()
         self.assertIsNotNone(client.process.poll())
+
+
+class WedgedServer:
+    """A fake protocol server that reads stdin and never answers."""
+
+    def __init__(self) -> None:
+        self._file = tempfile.NamedTemporaryFile(
+            "w", suffix=".js", delete=False, encoding="utf-8"
+        )
+        self._file.write("process.stdin.resume();\n")
+        self._file.close()
+
+    @property
+    def path(self) -> str:
+        return self._file.name
+
+    def cleanup(self) -> None:
+        Path(self._file.name).unlink(missing_ok=True)
+
+
+class RequestTimeoutTests(unittest.TestCase):
+    """request_timeout bounds reads: a wedged server fails fast instead of
+    hanging the harness forever."""
+
+    def test_wedged_server_times_out_and_poisons_the_client(self) -> None:
+        wedged = WedgedServer()
+        try:
+            client = GauntletClient(
+                server_path=wedged.path, node_executable="node", request_timeout=0.5
+            )
+            started = time.monotonic()
+            with self.assertRaises(GauntletError) as caught:
+                client.list_games()
+            elapsed = time.monotonic() - started
+            self.assertRegex(str(caught.exception), r"no response within 0\.5")
+            self.assertLess(elapsed, 5.0, "the read was not bounded by request_timeout")
+            # The stream can no longer be trusted, so the server was killed and
+            # every further request fails fast instead of blocking.
+            self.assertIsNotNone(client.process.poll())
+            with self.assertRaises(GauntletError) as caught_again:
+                client.list_games()
+            self.assertIn("unusable", str(caught_again.exception))
+            client.close()
+        finally:
+            wedged.cleanup()
+
+    def test_default_client_keeps_blocking_reads(self) -> None:
+        # Without request_timeout the behavior is unchanged: the real server
+        # answers promptly and no timeout machinery interferes.
+        client = GauntletClient()
+        try:
+            self.assertIsNone(client.request_timeout)
+            self.assertIn("tictactoe", [game["id"] for game in client.list_games()])
+        finally:
+            client.close()
 
 
 if __name__ == "__main__":

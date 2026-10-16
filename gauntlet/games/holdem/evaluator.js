@@ -151,8 +151,20 @@ export function categorize(rankMask, suitMasks, counts) {
   }
 
   if (quad >= 0) {
-    // Best non-quad rank: a trip beats a pair beats a singleton.
-    const best = trips.length > 0 ? trips[0] : pairs.length > 0 ? pairs[0] : kicker1;
+    // The quads kicker is simply the highest non-quad card: the best
+    // five-card hand from quads plus three side cards always plays the quad
+    // with its single highest remaining card, whatever that card is part of.
+    // Ranking groups first (a pair of deuces over a lone ace) reverses real
+    // winners and manufactures false ones; differential tests in
+    // test/reference/holdem-evaluator.test.js pin this against a best-of-21
+    // reference.
+    let best = -1;
+    for (let rank = 12; rank >= 0; rank--) {
+      if (rank !== quad && counts[rank] > 0) {
+        best = rank;
+        break;
+      }
+    }
     return packValue(7, [quad, best]);
   }
   if (trips.length > 0 && (trips.length > 1 || pairs.length > 0)) {
@@ -174,7 +186,10 @@ export function categorize(rankMask, suitMasks, counts) {
     // One pair from 7 cards has three kickers.
     return packValue(1, [pairs[0], kicker1, kicker2, kicker3(counts, pairs[0], kicker1, kicker2)]);
   }
-  return packValue(0, [kicker1, kicker2, kicker3(counts, -1, kicker1, kicker2)]);
+  // No-pair: every rank is a singleton, so the top five ranks of the mask
+  // are exactly the best-five kickers. Packing all five matters — the third
+  // and below decide most showdowns where both players miss the board.
+  return TOP5[rankMask & 8191];
 }
 
 /**

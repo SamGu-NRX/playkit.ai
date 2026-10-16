@@ -1,0 +1,141 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.0.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/2",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-0.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "de2706bc8a277ebd",
+      "reply": {
+        "text": "flag 0 8",
+        "usage": {
+          "inputTokens": 909,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-dMc8PORvXOFZ8aVQQi8k2xOMMiSPDI62",
+          "reasoningChars": 0
+        }
+      },
+      "action": "flag 0 8",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 909,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 867
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b391b739b3979313",
+      "reply": {
+        "text": "flag 0 8",
+        "usage": {
+          "inputTokens": 916,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-WnHaLZUXJAMlmV3obtwqxOgJic8WVnBD",
+          "reasoningChars": 0
+        }
+      },
+      "action": "flag 0 8",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 916,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 950
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b391b739b3979313",
+      "reply": {
+        "text": "flag 0 8",
+        "usage": {
+          "inputTokens": 933,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-ML7N33xwMQ0oBrqHQybfOgsEpu5mJDpa",
+          "reasoningChars": 0
+        }
+      },
+      "action": "flag 0 8",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 933,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 974
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b391b739b3979313",
+      "reply": {
+        "text": "flag 0 8",
+        "usage": {
+          "inputTokens": 933,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-VN6YoAG6FyCYtrSfpvN6VaXESacKDk6a",
+          "reasoningChars": 0
+        }
+      },
+      "action": "flag 0 8",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 933,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 87
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 4,
+    "invalidActions": 3
+  },
+  "startedAt": "2026-10-16T05:45:43.261Z",
+  "finishedAt": "2026-10-16T05:45:46.141Z"
+}

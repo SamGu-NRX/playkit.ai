@@ -121,7 +121,8 @@ node gauntlet/cli/gauntlet.js verify <trajectory.json>
 {"id": 6, "ok": true}
 ```
 
-The server exits. An episode still in progress is abandoned.
+The server exits — even if the client keeps its stdin pipe open. An episode
+still in progress is abandoned.
 
 ## Tracks
 

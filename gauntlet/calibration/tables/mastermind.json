@@ -1,0 +1,191 @@
+{
+  "format": "playkit-gauntlet-calibration-table/2",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0",
+    "benchmark": true
+  },
+  "split": "public",
+  "baselines": {
+    "random": {
+      "tiers": {
+        "mini": {
+          "id": "mini",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.029847,
+            "ci95": [
+              0.0004,
+              0.07955
+            ]
+          },
+          "solvedFraction": 0.16,
+          "episodes": 25
+        },
+        "classic": {
+          "id": "classic",
+          "rank": 2,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 25
+        },
+        "wide": {
+          "id": "wide",
+          "rank": 3,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 25
+        },
+        "deep": {
+          "id": "deep",
+          "rank": 4,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "solvedFraction": 0,
+          "episodes": 25
+        }
+      }
+    },
+    "greedy": {
+      "tiers": {
+        "mini": {
+          "id": "mini",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.723733,
+            "ci95": [
+              0.590564,
+              0.855458
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
+        "classic": {
+          "id": "classic",
+          "rank": 2,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.909378,
+            "ci95": [
+              0.830711,
+              0.982
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
+        "wide": {
+          "id": "wide",
+          "rank": 3,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.817146,
+            "ci95": [
+              0.729755,
+              0.908667
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
+        "deep": {
+          "id": "deep",
+          "rank": 4,
+          "scoring": "efficiency",
+          "score": {
+            "value": 0.883068,
+            "ci95": [
+              0.791221,
+              0.968436
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        }
+      }
+    },
+    "engine": {
+      "tiers": {
+        "mini": {
+          "id": "mini",
+          "rank": 1,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
+        "classic": {
+          "id": "classic",
+          "rank": 2,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
+        "wide": {
+          "id": "wide",
+          "rank": 3,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        },
+        "deep": {
+          "id": "deep",
+          "rank": 4,
+          "scoring": "efficiency",
+          "score": {
+            "value": 1,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "solvedFraction": 1,
+          "episodes": 25
+        }
+      }
+    }
+  }
+}

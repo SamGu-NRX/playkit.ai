@@ -82,8 +82,8 @@ test('the registered sliding game is a single-seat benchmark', () => {
 
 test('reset is deterministic and carries par plus the tier budget', () => {
   const tier = game.spec.tiers[0];
-  const a = game.reset(tier, publicSeed('sliding', 'p8', 0));
-  const b = game.reset(tier, publicSeed('sliding', 'p8', 0));
+  const a = game.reset(tier, publicSeed('sliding', 'p8-short', 0));
+  const b = game.reset(tier, publicSeed('sliding', 'p8-short', 0));
   assert.deepEqual(a, b);
   assert.equal(a.size, 3);
   assert.equal(a.maxActions, tier.maxActions);
@@ -96,6 +96,18 @@ test('p8 par equals an independent BFS reference on the public seeds', () => {
   for (let i = 0; i < tier.publicSeeds; i++) {
     const state = game.reset(tier, publicSeed('sliding', 'p8', i));
     assert.equal(state.par, bfsOptimalLength(state.board), `seed ${i}`);
+  }
+});
+
+test('p8-short pars are pinned on the first public seeds', () => {
+  // Golden pins for the on-ramp tier: the banded generator plus the proven
+  // solver must reproduce these exact pars (all inside the 4-8 band).
+  const tier = tierOf('p8-short');
+  const expected = [8, 4, 8];
+  for (let i = 0; i < expected.length; i++) {
+    const state = game.reset(tier, publicSeed('sliding', 'p8-short', i));
+    assert.equal(state.par, expected[i], `p8-short seed ${i}`);
+    assert.equal(state.maxActions, 40);
   }
 });
 
@@ -312,6 +324,134 @@ test('the reference solver agent drives a full optimal episode on p8', async () 
   assert.equal(trajectory.end.agentActions, outcome.par);
 });
 
+/**
+ * Exact optimal distance from every solvable 3x3 state to the goal, via BFS
+ * from the goal over the full 181,440-state component.
+ * @returns {Map<string, number>} flat board key -> optimal move count
+ */
+function bfsDistanceMap3x3() {
+  const goal = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+  const dist = new Map([[goal.join(','), 0]]);
+  /** @type {number[][]} */
+  let frontier = [goal];
+  for (let depth = 1; frontier.length > 0; depth++) {
+    /** @type {number[][]} */
+    const next = [];
+    for (const state of frontier) {
+      const blank = state.indexOf(0);
+      const r = Math.floor(blank / 3);
+      const c = blank % 3;
+      /** @type {[number, number][]} */
+      const steps = [];
+      if (r > 0) steps.push([-1, 0]);
+      if (r < 2) steps.push([1, 0]);
+      if (c > 0) steps.push([0, -1]);
+      if (c < 2) steps.push([0, 1]);
+      for (const [dr, dc] of steps) {
+        const copy = state.slice();
+        const from = (r + dr) * 3 + (c + dc);
+        copy[blank] = state[from];
+        copy[from] = 0;
+        const key = copy.join(',');
+        if (!dist.has(key)) {
+          dist.set(key, depth);
+          next.push(copy);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return dist;
+}
+
+test('solver plans are BFS-optimal, including interior-blank roots', () => {
+  // The IDA* search root disables the undo-prune, so a board whose blank sits
+  // on an interior square has FOUR children at the root; regression: only the
+  // first three were snapshotted, so the optimal first move was silently
+  // dropped whenever it sorted last (suboptimal plans, inflated pars).
+  const dist = bfsDistanceMap3x3();
+  /** @type {string[]} */
+  const interiorKeys = [];
+  /** @type {string[]} */
+  const allKeys = [];
+  for (const key of dist.keys()) {
+    allKeys.push(key);
+    if (key.split(',')[4] === '0') interiorKeys.push(key);
+  }
+  assert.ok(interiorKeys.length > 10000, 'expected a large interior-blank population');
+  /**
+   * Evenly spaced deterministic sample across a key list.
+   * @param {string[]} keys
+   * @param {number} count
+   * @returns {string[]}
+   */
+  const pick = (keys, count) => {
+    const chosen = [];
+    const step = Math.max(1, Math.floor(keys.length / count));
+    for (let i = keys.length - 1; i >= 0 && chosen.length < count; i -= step) chosen.push(keys[i]);
+    return chosen;
+  };
+  const sampled = [...pick(interiorKeys, 300), ...pick(allKeys, 300)];
+  for (const key of sampled) {
+    const flat = key.split(',').map(Number);
+    const board = [
+      [flat[0], flat[1], flat[2]],
+      [flat[3], flat[4], flat[5]],
+      [flat[6], flat[7], flat[8]],
+    ];
+    const result = solve(board);
+    assert.equal(result.status, 'solved');
+    assert.equal(result.moves.length, dist.get(key), `board ${key} must solve at the BFS-optimal length`);
+  }
+});
+
+test('the reference agent follows its plan and scores 1.0 on every public banded seed', async () => {
+  for (const tier of game.spec.tiers) {
+    if (tier.params.generation !== 'banded') continue;
+    for (let i = 0; i < tier.publicSeeds; i++) {
+      const seed = publicSeed('sliding', tier.id, i);
+      const trajectory = await runEpisode({
+        game,
+        tierId: tier.id,
+        seed,
+        agent: createSlidingSolverAgent({ episodeSeed: seed }),
+      });
+      assert.equal(trajectory.end.reason, 'terminal', `${tier.id} seed ${i}`);
+      const outcome = /** @type {import('../core/types.js').Outcome} */ (trajectory.end.outcome);
+      assert.ok(outcome, `${tier.id} seed ${i}`);
+      assert.deepEqual(outcome.normalized, [1], `${tier.id} seed ${i} scores 1.0`);
+      assert.equal(trajectory.end.agentActions, outcome.par, `${tier.id} seed ${i} plays the optimal length`);
+    }
+  }
+});
+
+test('the reference agent re-solves when seated into an unexpected board', async () => {
+  const tier = tierOf('p8');
+  const seed = publicSeed('sliding', 'p8', 3);
+  const agent = createSlidingSolverAgent({ episodeSeed: seed });
+  const state = game.reset(tier, seed);
+  const actCtx = (/** @type {ReturnType<typeof game.reset>} */ st, /** @type {number} */ turn) => ({
+    spec: game.spec,
+    tier,
+    seat: 0,
+    turn,
+    observation: game.observe(st, 0),
+    legalActions: game.legalActions(st, 0),
+    feedback: null,
+  });
+  const planned = await agent.act(actCtx(state, 0));
+  assert.ok(planned.text, 'first act returns a move');
+  // Seat the agent into a board its plan did not predict: play anything except
+  // the planned move. The agent must notice the mismatch and re-solve.
+  const alternatives = game.legalActions(state, 0).filter((d) => d !== planned.text);
+  assert.ok(alternatives.length > 0, 'a scrambled board has a non-planned legal move');
+  const surprise = game.step(state, 0, alternatives[0]);
+  const replanned = await agent.act(actCtx(surprise, 1));
+  assert.ok(replanned.text, 're-plan returns a move');
+  const parsed = game.parseAction(surprise, 0, /** @type {string} */ (replanned.text));
+  assert.ok(parsed.ok, 'the re-planned move is legal on the surprise board');
+});
+
 test('the reference solver agent also solves every banded tier', async () => {
   for (const tier of game.spec.tiers) {
     if (tier.params.generation !== 'banded') continue;
@@ -345,5 +485,42 @@ test('the full conformance kit passes for sliding', async () => {
   const report = await runConformance(game);
   assert.equal(report.ok, true);
   assert.ok(report.checks > 50, `expected a substantial check count, got ${report.checks}`);
+});
+
+test('every public seed par is the proven-optimal solve length', () => {
+  // Pins the par computation against the solver's proven-optimal plan for
+  // every public seed of every tier, plus a golden pin on the one public seed
+  // whose par this packet actually corrected: p15-short seed 7 was 28 at base
+  // (the buggy three-child snapshot inflated it) and is 26 at head, where the
+  // 26-move plan replays legally to the goal. The general equality is
+  // self-referential at base — reset and solve shared the buggy solver — so
+  // the golden pin is what actually fails on the old code.
+  const shortTier = game.spec.tiers.find((t) => t.id === 'p15-short');
+  assert.ok(shortTier, 'p15-short tier exists');
+  const corrected = game.reset(shortTier, publicSeed('sliding', 'p15-short', 7));
+  const correctedSolve = solve(corrected.board);
+  assert.equal(correctedSolve.status, 'solved');
+  assert.equal(corrected.par, 26, 'p15-short seed 7 keeps its corrected par');
+  assert.equal(correctedSolve.moves.length, 26);
+  let cur = corrected.board.map((/** @type {number[]} */ row) => row.slice());
+  for (const move of correctedSolve.moves) {
+    cur = applyTileMove(cur, move);
+    assert.ok(cur, 'the corrected plan replays legally');
+  }
+  assert.ok(isSolved(cur), 'the corrected plan reaches the goal');
+
+  for (const tier of game.spec.tiers) {
+    for (let i = 0; i < tier.publicSeeds; i++) {
+      const seed = publicSeed('sliding', tier.id, i);
+      const state = game.reset(tier, seed);
+      const result = solve(state.board);
+      assert.equal(result.status, 'solved', `${tier.id} seed ${i} solves`);
+      assert.equal(
+        state.par,
+        result.moves.length,
+        `${tier.id} seed ${i} par matches the proven-optimal plan length`,
+      );
+    }
+  }
 });
 

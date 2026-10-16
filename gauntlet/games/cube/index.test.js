@@ -6,20 +6,22 @@ import { CANONICAL_MOVES, SOLVED } from './cube.js';
 import { buildDistanceTable, solveOptimal } from './solver.js';
 import { runConformance } from '../../core/conformance.js';
 import { runEpisode } from '../../core/runner.js';
+import { getGame, listGames } from '../index.js';
 
 /** Warm the solver once so per-seed reset timing excludes the table build. */
 buildDistanceTable();
 
-test('spec declares three efficiency tiers with optimal par and the 5x budget rule', () => {
+test('spec declares four efficiency tiers with optimal par and the 5x budget rule', () => {
   const { spec } = cube;
   assert.equal(spec.id, 'cube');
   assert.equal(spec.benchmark, true);
   assert.equal(spec.stochastic, false);
-  assert.equal(spec.tiers.length, 3);
+  assert.equal(spec.tiers.length, 4);
   const expected = [
-    { id: 'cube-5', rank: 1, maxActions: 25 },
-    { id: 'cube-7', rank: 2, maxActions: 35 },
-    { id: 'cube-9', rank: 3, maxActions: 45 },
+    { id: 'cube-2', rank: 1, maxActions: 15 },
+    { id: 'cube-5', rank: 2, maxActions: 25 },
+    { id: 'cube-7', rank: 3, maxActions: 35 },
+    { id: 'cube-9', rank: 4, maxActions: 45 },
   ];
   for (const [i, tier] of spec.tiers.entries()) {
     assert.equal(tier.id, expected[i].id);
@@ -27,14 +29,14 @@ test('spec declares three efficiency tiers with optimal par and the 5x budget ru
     assert.equal(tier.scoring, 'efficiency');
     assert.equal(tier.parKind, 'optimal');
     assert.equal(tier.maxActions, expected[i].maxActions);
-    assert.equal(tier.publicSeeds, 6);
-    // the budget is 5 x the band maximum (bands 5, 7, 9)
-    assert.equal(tier.maxActions, 5 * [5, 7, 9][i]);
+    assert.equal(tier.publicSeeds, i === 0 ? 16 : 6);
+    // the budget is 5 x the band maximum (bands 3, 5, 7, 9)
+    assert.equal(tier.maxActions, 5 * [3, 5, 7, 9][i]);
   }
   assert.ok(spec.rulesText.includes('clockwise'));
 });
 
-test('the full conformance kit passes on three seeds per tier', async () => {
+test('the full conformance kit passes on every tier', async () => {
   await runConformance(cube);
 });
 
@@ -73,6 +75,18 @@ test('reset is fast on every public seed: under 2 s per seed per tier', () => {
   }
 });
 
+test('cube-2 pars are pinned on the first public seeds', () => {
+  // Golden pins for the on-ramp tier: band 1-3, budget 15, 16 public seeds.
+  const tier = cube.spec.tiers.find((t) => t.id === 'cube-2');
+  assert.ok(tier, 'cube-2 tier exists');
+  const expected = [3, 3, 3];
+  for (let i = 0; i < expected.length; i++) {
+    const state = cube.reset(tier, 'cube/cube-2/public/' + i);
+    assert.equal(state.par, expected[i], `cube-2 seed ${i}`);
+    assert.equal(solveOptimal(state.facelets).solution.length, expected[i], `cube-2 seed ${i} solves at par`);
+  }
+});
+
 test('the observation shows the net, notation, budget, and the full legal list', () => {
   const tier = cube.spec.tiers[0];
   const state = cube.reset(tier, '0');
@@ -86,7 +100,9 @@ test('the observation shows the net, notation, budget, and the full legal list',
   // the net renders nine lines
   assert.equal(obs.text.split('\n').length, 9 + 6);
   assert.equal(obs.data.facelets, state.facelets);
-  assert.equal(obs.data.par, state.par);
+  // the proven-optimal par is scoring metadata: it must not reach the agent
+  // through the observation (the outcome reports it after the episode ends)
+  assert.ok(!('par' in obs.data), 'the observation must not leak the proven-optimal par');
   assert.equal(obs.data.you, 0);
 });
 
@@ -225,4 +241,53 @@ test('the greedy baseline stays legal and deterministic; report per-tier scores'
     );
   }
   console.log(`greedy baseline per tier:\n${report.join('\n')}`);
+});
+
+test('the game is registered in the games registry so getGame("cube") resolves', () => {
+  const registered = getGame('cube');
+  assert.equal(registered.spec.id, 'cube');
+  assert.ok(listGames().includes(registered));
+});
+
+test('rulesText states the real scoring semantics for invalid replies', () => {
+  // the score is computed over valid turns only; invalid replies burn budget
+  assert.ok(
+    cube.spec.rulesText.includes('do not count as turns when scoring'),
+    'rulesText must say invalid replies do not count as turns when scoring'
+  );
+  assert.ok(
+    !cube.spec.rulesText.includes('Invalid replies consume turns.'),
+    'the bare consume-turns phrasing misdescribes the score and must go'
+  );
+});
+
+test('invalid attempts burn budget but leave the efficiency score untouched', async () => {
+  const tier = cube.spec.tiers[0];
+  const seed = '0';
+  const solution = solveOptimal(cube.reset(tier, seed).facelets).solution;
+  // interleave the invalid replies with optimal turns: the runner forfeits at
+  // 3 consecutive invalid attempts (maxConsecutiveInvalid, default 3), and a
+  // valid turn resets that counter, so junk before each of the first three
+  // optimal moves is safe while 3 in a row is not
+  const replies = /** @type {string[]} */ ([]);
+  for (let k = 0; k < solution.length; k += 1) {
+    if (k < 3) replies.push('this is not a legal turn');
+    replies.push(solution[k]);
+  }
+  let next = 0;
+  /** @type {import('../../core/types.js').Agent} */
+  const invalidThenOptimal = {
+    id: 'invalid-then-optimal',
+    track: 'baseline',
+    async act() {
+      return { text: replies[next++] ?? '' };
+    },
+  };
+  const trajectory = await runEpisode({ game: cube, tierId: tier.id, seed, agent: invalidThenOptimal });
+  assert.equal(trajectory.end.reason, 'terminal');
+  const outcome = /** @type {NonNullable<typeof trajectory.end.outcome>} */ (trajectory.end.outcome);
+  assert.equal(outcome.solved, true);
+  assert.equal(trajectory.end.agentActions, 3 + solution.length, 'invalid attempts count toward the action budget');
+  assert.equal(trajectory.end.invalidActions, 3);
+  assert.equal(outcome.normalized[0], 1, 'the score is computed over valid turns only');
 });

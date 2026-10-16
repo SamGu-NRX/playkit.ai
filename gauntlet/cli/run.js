@@ -42,6 +42,19 @@ import { parseAgentSpec } from './agents.js';
  * @property {number} [maxUsd] Hard dollar cap on summed usage.costUsd.
  * @property {number} [maxCalls] Hard cap on agent calls across the run.
  * @property {number} [requestsPerMinute] Shared rate limit on agent calls.
+ * @property {number} [maxOutputTokens] --max-output-tokens: per-reply output
+ *   token cap for live model specs, also recorded in run.json's limits.
+ * @property {number} [callTimeoutMs] --call-timeout-ms: per-attempt timeout
+ *   for live model specs, also recorded in run.json's limits.
+ * @property {number} [thinkingBudget] --thinking-budget: Anthropic
+ *   extended-thinking budget (budget_tokens), provider "anthropic" specs
+ *   only; rides on top of the reply's output cap, is part of the worst-case
+ *   cost quote, and is recorded in run.json's limits.
+ * @property {'low' | 'medium' | 'high'} [reasoningEffort] --reasoning-effort:
+ *   OpenAI reasoning effort (provider openai: reasoning.effort; provider
+ *   openai-chat: the chat-completions reasoning_effort field, which is how
+ *   Google's Gemini OpenAI-compatible endpoint takes it), recorded in
+ *   run.json's limits.
  * @property {boolean} [resume] Verify existing trajectory files and skip
  *   them; replay only missing or unverifiable ones.
  * @property {AbortSignal} [signal] Abort signal; a signalled run stops after
@@ -97,6 +110,18 @@ export async function runSuite(options) {
     ...(options.script ? { script: options.script } : {}),
     ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
     ...(options.apiKeyEnv ? { apiKeyEnv: options.apiKeyEnv } : {}),
+    ...(options.maxOutputTokens !== undefined
+      ? { maxOutputTokens: options.maxOutputTokens }
+      : {}),
+    ...(options.callTimeoutMs !== undefined
+      ? { callTimeoutMs: options.callTimeoutMs }
+      : {}),
+    ...(options.thinkingBudget !== undefined
+      ? { thinkingBudget: options.thinkingBudget }
+      : {}),
+    ...(options.reasoningEffort !== undefined
+      ? { reasoningEffort: options.reasoningEffort }
+      : {}),
   };
   const spec = await parseAgentSpec(options.agentSpecText, specOptions);
   const manifest = deriveManifest(suite, spec.gameId, options.limit);
@@ -121,6 +146,18 @@ export async function runSuite(options) {
     ...(options.requestsPerMinute !== undefined
       ? { requestsPerMinute: options.requestsPerMinute }
       : {}),
+    ...(options.maxOutputTokens !== undefined
+      ? { maxOutputTokens: options.maxOutputTokens }
+      : {}),
+    ...(options.callTimeoutMs !== undefined
+      ? { callTimeoutMs: options.callTimeoutMs }
+      : {}),
+    ...(options.thinkingBudget !== undefined
+      ? { thinkingBudget: options.thinkingBudget }
+      : {}),
+    ...(options.reasoningEffort !== undefined
+      ? { reasoningEffort: options.reasoningEffort }
+      : {}),
     ...(options.resume ? { resume: true } : {}),
     ...(options.signal ? { signal: options.signal } : {}),
     ...(options.prices ? { pricesPath: /** @type {string} */ (options.prices) } : {}),
@@ -136,11 +173,21 @@ export async function runSuite(options) {
  */
 export function printRunSummary(result) {
   const { run } = result;
+  // Unknown stays unknown: a step that reported usage without a priced cost
+  // means the real spend is not known, so the line says unknown (with the
+  // known-cost sum kept visible) instead of printing that sum — or 0 — as if
+  // it were the whole spend.
+  const spendText =
+    !Number.isFinite(run.spendUsd)
+      ? 'unknown (no cost data)'
+      : run.unknownCostSteps > 0
+        ? `unknown (${run.unknownCostSteps} call(s) reported usage without a priced cost; known-cost sum ${run.spendUsd.toFixed(6)})`
+        : run.spendUsd.toFixed(6);
   const lines = [
     `suite    ${run.suite.id} (${run.suite.split}) — manifest ${run.suite.manifestSha256.slice(0, 12)}…`,
     `episodes ${run.counts.jobs} planned, ${run.counts.played} played, ${run.counts.skipped} skipped (verified on resume), ${run.counts.replayed} replayed, ${run.counts.unplayed} unplayed, ${run.counts.failed} failed`,
     `calls    ${run.calls}${run.limits.maxCalls !== null ? ` / cap ${run.limits.maxCalls}` : ''}`,
-    `spend    ${Number.isFinite(run.spendUsd) ? `${run.spendUsd.toFixed(6)}` : 'unknown (no cost data)'}${run.limits.maxUsd !== null ? ` / cap ${run.limits.maxUsd}` : ''}`,
+    `spend    ${spendText}${run.limits.maxUsd !== null ? ` / cap ${run.limits.maxUsd}` : ''}`,
     `record   run.json (format ${run.format})`,
   ];
   if (result.stopped) {

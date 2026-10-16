@@ -12,9 +12,23 @@ import { createEngineAgent, createGreedyAgent } from './baselines.js';
 if (defaultGame !== game) throw new Error('default export mismatch');
 void defaultGame;
 
-const classic = game.spec.tiers[0];
-const wide = game.spec.tiers[1];
-const deep = game.spec.tiers[2];
+const mini = game.spec.tiers[0];
+const classic = game.spec.tiers[1];
+const wide = game.spec.tiers[2];
+const deep = game.spec.tiers[3];
+
+test('mini pars are pinned on the first public seeds', () => {
+  // Golden pins for the on-ramp tier: 3 pegs over 4 colors, par is the
+  // reference strategy's guess count, budget max(10, 5 * measured maxPar).
+  const expected = [4, 4, 3];
+  for (let i = 0; i < expected.length; i++) {
+    const seed = publicSeed('mastermind', 'mini', i);
+    const state = game.reset(mini, seed);
+    assert.equal(state.secret.length, 3);
+    assert.equal(mini.maxActions, 25);
+    assert.equal(referenceGuessCount(3, 4, seed, state.secret), expected[i], `mini seed ${i}`);
+  }
+});
 
 test('feedback scoring on hand-checked cases, including repeated colors', () => {
   /** @type {[string, string, number, number][]} */
@@ -193,11 +207,12 @@ test('step throws GauntletRuleError for non-canonical or malformed actions', () 
 });
 
 test('tier budgets cover 5x par and rise with rank', () => {
+  assert.equal(mini.maxActions, Math.max(10, 5 * 5)); // measured reference maxPar is 5 over 300 seeds
   assert.equal(classic.maxActions, Math.max(10, 5 * 5)); // Knuth worst case is 5
   assert.ok(wide.maxActions >= 10);
   assert.ok(deep.maxActions >= wide.maxActions);
   for (let i = 0; i < 20; i++) {
-    for (const tier of [classic, wide, deep]) {
+    for (const tier of [mini, classic, wide, deep]) {
       const state = game.reset(tier, `${tier.id}/budget-check/${i}`);
       const par = referenceGuessCount(tier.params.pegs, tier.params.colors, `${tier.id}/budget-check/${i}`, state.secret);
       assert.ok(tier.maxActions >= 5 * par, `${tier.id}: budget ${tier.maxActions} < 5x par ${par}`);

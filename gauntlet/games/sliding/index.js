@@ -18,14 +18,16 @@
  * blank rightward. Stated in rulesText and pinned by tests.
  *
  * Tiers are efficiency-scored with parKind "optimal":
+ * - p8-short:  3 x 3, optimal length 4-8 (the on-ramp tier: short scrambles
+ *              a weak agent can solve, but random play still floors out).
  * - p8:        3 x 3, uniformly random solvable (par 1..31).
  * - p15-short: 4 x 4, optimal length 20-29.
  * - p15-mid:   4 x 4, optimal length 30-39.
  * - p15-long:  4 x 4, optimal length 40-49.
  * maxActions follows ARC-AGI-3's 5x budget rule: 5 x the largest possible par
  * in the tier (the runner takes one static budget per tier, so the per-seed
- * rule max(20, 5 x par) is implemented as the 5x worst case: p8 155,
- * p15-short 145, p15-mid 195, p15-long 245).
+ * rule max(20, 5 x par) is implemented as the 5x worst case: p8-short 40,
+ * p8 155, p15-short 145, p15-mid 195, p15-long 245).
  *
  * @module
  */
@@ -118,7 +120,7 @@ function solved(state) {
 export const sliding = {
   spec: {
     id: 'sliding',
-    version: '1.0.0',
+    version: '1.1.0',
     title: 'Sliding Tile Puzzle',
     seats: /** @type {1 | 2} */ (1),
     information: /** @type {InformationMode} */ ('perfect'),
@@ -137,8 +139,17 @@ export const sliding = {
     ].join(' '),
     tiers: /** @type {TierSpec[]} */ ([
       {
-        id: 'p8',
+        id: 'p8-short',
         rank: 1,
+        scoring: 'efficiency',
+        parKind: 'optimal',
+        maxActions: 40,
+        publicSeeds: 16,
+        params: { size: 3, generation: 'banded', bandMin: 4, bandMax: 8, walkLength: 12 },
+      },
+      {
+        id: 'p8',
+        rank: 2,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 155,
@@ -147,7 +158,7 @@ export const sliding = {
       },
       {
         id: 'p15-short',
-        rank: 2,
+        rank: 3,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 145,
@@ -156,7 +167,7 @@ export const sliding = {
       },
       {
         id: 'p15-mid',
-        rank: 3,
+        rank: 4,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 195,
@@ -165,7 +176,7 @@ export const sliding = {
       },
       {
         id: 'p15-long',
-        rank: 4,
+        rank: 5,
         scoring: 'efficiency',
         parKind: 'optimal',
         maxActions: 245,

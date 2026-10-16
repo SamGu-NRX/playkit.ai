@@ -1,0 +1,63 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "expert",
+  "seed": "minesweeper/expert/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3e9f0530f3b24229",
+      "reply": {
+        "text": "reveal 3 4",
+        "usage": {
+          "inputTokens": 1701,
+          "outputTokens": 6,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-46aW0IH4OSbnlru2twm14D51BlJwRQVy",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 3 4",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1701,
+        "outputTokens": 6,
+        "costUsd": 0
+      },
+      "ms": 7363
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.03937007874015748
+      ],
+      "raw": [
+        15
+      ],
+      "reason": "mine revealed at row 3, column 4 — episode ends with 15 of 381 safe cells revealed"
+    },
+    "agentActions": 1,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T05:46:49.207Z",
+  "finishedAt": "2026-10-16T05:46:56.572Z"
+}

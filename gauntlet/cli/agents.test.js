@@ -1,4 +1,7 @@
 import { BASELINE_FACTORIES, parseAgentSpec } from './agents.js';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getGame } from '../games/index.js';
@@ -123,4 +126,104 @@ test('reasoning-effort still refuses --dry-run', async () => {
     () => parseAgentSpec('model:openai/gpt-5.2', { dryRun: true, reasoningEffort: 'high' }),
     /cannot be combined with --dry-run/
   );
+});
+
+// Community-assisted specs: the community-track assisted harness
+// (community/assisted-agent.js). Every case here is red before the packet:
+// the spec form does not exist at the base commit.
+
+// A real replies.json fixture: importScriptFile loads it eagerly at parse
+// time, so the dry-run spec tests need an actual file on disk.
+const repliesFile = join(mkdtempSync(join(tmpdir(), 'assisted-')), 'replies.json');
+writeFileSync(repliesFile, JSON.stringify(['ACTION: up']));
+
+test('community-assisted parses on the community track with the retries suffix in the id', async () => {
+  const spec = await parseAgentSpec('community-assisted:openai-chat/stub-model:retries=1', {
+    dryRun: true,
+    script: repliesFile,
+  });
+  assert.equal(spec.track, 'community');
+  assert.equal(spec.dryRun, true);
+  const agent = await spec.createForEpisode({
+    game: getGame('tictactoe'),
+    tier: getGame('tictactoe').spec.tiers[0],
+    seed: 's0',
+    agentSeat: 0,
+  });
+  assert.equal(agent.track, 'community');
+  assert.equal(agent.id, 'community-assisted:openai-chat/stub-model:retries=1');
+});
+
+test('community-assisted defaults to retries=2 in the agent id', async () => {
+  const spec = await parseAgentSpec('community-assisted:openai-chat/stub-model', {
+    dryRun: true,
+    script: repliesFile,
+  });
+  const agent = await spec.createForEpisode({
+    game: getGame('tictactoe'),
+    tier: getGame('tictactoe').spec.tiers[0],
+    seed: 's0',
+    agentSeat: 0,
+  });
+  assert.equal(agent.id, 'community-assisted:openai-chat/stub-model:retries=2');
+});
+
+test('community-assisted keeps Ollama-style colon tags as part of the model id', async () => {
+  const spec = await parseAgentSpec('community-assisted:openai-chat/qwen2.5:7b', {
+    dryRun: true,
+    script: repliesFile,
+  });
+  const agent = await spec.createForEpisode({
+    game: getGame('tictactoe'),
+    tier: getGame('tictactoe').spec.tiers[0],
+    seed: 's0',
+    agentSeat: 0,
+  });
+  assert.equal(agent.id, 'community-assisted:openai-chat/qwen2.5:7b:retries=2');
+});
+
+test('community-assisted openai-chat requires --base-url when live, like model specs', async () => {
+  await assert.rejects(
+    () => parseAgentSpec('community-assisted:openai-chat/stub-model'),
+    /requires --base-url/
+  );
+});
+
+test('community-assisted refuses thinking and effort settings', async () => {
+  await assert.rejects(
+    () =>
+      parseAgentSpec('community-assisted:openai-chat/stub-model', {
+        dryRun: true,
+        script: repliesFile,
+        reasoningEffort: 'high',
+      }),
+    /thinking-budget and reasoning-effort do not apply/
+  );
+  await assert.rejects(
+    () =>
+      parseAgentSpec('community-assisted:anthropic/claude-opus-4-5', {
+        dryRun: true,
+        script: repliesFile,
+        thinkingBudget: 1024,
+      }),
+    /thinking-budget and reasoning-effort do not apply/
+  );
+});
+
+test('a live community-assisted spec builds a community-track wrapper around a model agent', async () => {
+  const spec = await parseAgentSpec('community-assisted:openai-chat/stub-model:retries=3', {
+    baseUrl: 'http://127.0.0.1:9',
+  });
+  assert.equal(spec.track, 'community');
+  assert.equal(spec.dryRun, false);
+  const agent = await spec.createForEpisode({
+    game: getGame('tictactoe'),
+    tier: getGame('tictactoe').spec.tiers[0],
+    seed: 's0',
+    agentSeat: 0,
+  });
+  assert.equal(agent.track, 'community');
+  assert.equal(agent.id, 'community-assisted:openai-chat/stub-model:retries=3');
+  assert.equal(agent.provider, 'openai-chat');
+  assert.equal(agent.model, 'stub-model');
 });

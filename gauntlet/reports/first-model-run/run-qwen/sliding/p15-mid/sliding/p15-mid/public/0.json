@@ -1,0 +1,115 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "sliding",
+    "version": "1.0.0"
+  },
+  "tier": "p15-mid",
+  "seed": "sliding/p15-mid/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "beefdd0e1b17f995",
+      "reply": {
+        "text": "right, up",
+        "usage": {
+          "inputTokens": 559,
+          "outputTokens": 4,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-58uGodwRLkygUmmEVvdng701UQdzQuS0",
+          "reasoningChars": 0
+        }
+      },
+      "action": "right, up",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 559,
+        "outputTokens": 4,
+        "costUsd": 0
+      },
+      "ms": 4779
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "beefdd0e1b17f995",
+      "reply": {
+        "text": "right, down",
+        "usage": {
+          "inputTokens": 597,
+          "outputTokens": 4,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-u0JoZdSi7L2jrg5dLrhPI7LWHj0Y0Wtk",
+          "reasoningChars": 0
+        }
+      },
+      "action": "right, down",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 597,
+        "outputTokens": 4,
+        "costUsd": 0
+      },
+      "ms": 3450
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "beefdd0e1b17f995",
+      "reply": {
+        "text": "right, down",
+        "usage": {
+          "inputTokens": 597,
+          "outputTokens": 4,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-uKN9vGKooYMt4X7bfkB7J9RT91XI4c5z",
+          "reasoningChars": 0
+        }
+      },
+      "action": "right, down",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 597,
+        "outputTokens": 4,
+        "costUsd": 0
+      },
+      "ms": 3183
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3
+  },
+  "startedAt": "2026-10-15T20:20:04.995Z",
+  "finishedAt": "2026-10-15T20:20:16.407Z"
+}

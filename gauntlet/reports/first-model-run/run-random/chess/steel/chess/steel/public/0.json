@@ -1,0 +1,233 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess",
+    "version": "1.0.0"
+  },
+  "tier": "steel",
+  "seed": "chess/steel/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [
+    {
+      "seat": 1,
+      "id": "chess-engine-steel"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "7630e80b95d16c99",
+      "reply": {
+        "text": "b2b3"
+      },
+      "action": "b2b3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "947a683b8b974026",
+      "reply": {
+        "text": "b8d7"
+      },
+      "action": "b8d7",
+      "invalid": false,
+      "usage": null,
+      "ms": 3614
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f2175372841eacc0",
+      "reply": {
+        "text": "h1g1"
+      },
+      "action": "h1g1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "29504b348a865775",
+      "reply": {
+        "text": "e6e5"
+      },
+      "action": "e6e5",
+      "invalid": false,
+      "usage": null,
+      "ms": 3372
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a57eb00cce21e516",
+      "reply": {
+        "text": "c1a3"
+      },
+      "action": "c1a3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "03e0dbed095a1b13",
+      "reply": {
+        "text": "e5d4"
+      },
+      "action": "e5d4",
+      "invalid": false,
+      "usage": null,
+      "ms": 2141
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "946837b8d086e8c0",
+      "reply": {
+        "text": "d1g4"
+      },
+      "action": "d1g4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "6edfdb244ae46368",
+      "reply": {
+        "text": "f6g4"
+      },
+      "action": "f6g4",
+      "invalid": false,
+      "usage": null,
+      "ms": 2962
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "45b9d5c13c6e87b3",
+      "reply": {
+        "text": "f1e2"
+      },
+      "action": "f1e2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "1244b8805c7c1864",
+      "reply": {
+        "text": "d8a5"
+      },
+      "action": "d8a5",
+      "invalid": false,
+      "usage": null,
+      "ms": 1570
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2e8eadab3b42d811",
+      "reply": {
+        "text": "f2f3"
+      },
+      "action": "f2f3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "3e3d3e07e9db181f",
+      "reply": {
+        "text": "a5c3"
+      },
+      "action": "a5c3",
+      "invalid": false,
+      "usage": null,
+      "ms": 1274
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "cc9b439a9de9a219",
+      "reply": {
+        "text": "e1d1"
+      },
+      "action": "e1d1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "0a084567003570cd",
+      "reply": {
+        "text": "g4e3"
+      },
+      "action": "g4e3",
+      "invalid": false,
+      "usage": null,
+      "ms": 741
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "12c03e32512ac618",
+      "reply": {
+        "text": "d1c1"
+      },
+      "action": "d1c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "opponent",
+      "observationHash": "2a5e922782f9cba7",
+      "reply": {
+        "text": "c3c2"
+      },
+      "action": "c3c2",
+      "invalid": false,
+      "usage": null,
+      "ms": 894
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0,
+        1
+      ],
+      "raw": [
+        "loss",
+        "win"
+      ],
+      "reason": "black wins by checkmate"
+    },
+    "agentActions": 8,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-15T21:09:12.146Z",
+  "finishedAt": "2026-10-15T21:09:28.905Z"
+}

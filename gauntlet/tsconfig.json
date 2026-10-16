@@ -9,5 +9,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["**/*.js"]
+  "include": ["**/*.js"],
+  "exclude": ["bridge/browser/node_modules", "bridge/browser/vendor/2048"]
 }

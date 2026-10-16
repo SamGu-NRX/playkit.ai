@@ -1,0 +1,120 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "deep",
+  "seed": "mastermind/deep/public/0",
+  "split": "public",
+  "agent": {
+    "id": "engine",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "286ca2199214ac79",
+      "reply": {
+        "text": "guess AABBCC"
+      },
+      "action": "guess AABBCC",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c0e135756d402560",
+      "reply": {
+        "text": "guess AIGFIA"
+      },
+      "action": "guess AIGFIA",
+      "invalid": false,
+      "usage": null,
+      "ms": 72
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9044e079a2956dac",
+      "reply": {
+        "text": "guess AEAGAD"
+      },
+      "action": "guess AEAGAD",
+      "invalid": false,
+      "usage": null,
+      "ms": 51
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a9fb61b50f3bdd5d",
+      "reply": {
+        "text": "guess AGIEGB"
+      },
+      "action": "guess AGIEGB",
+      "invalid": false,
+      "usage": null,
+      "ms": 52
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5bd5f680a85f53ef",
+      "reply": {
+        "text": "guess ABFEGE"
+      },
+      "action": "guess ABFEGE",
+      "invalid": false,
+      "usage": null,
+      "ms": 45
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f9d752952f4f2b6c",
+      "reply": {
+        "text": "guess ACHEGI"
+      },
+      "action": "guess ACHEGI",
+      "invalid": false,
+      "usage": null,
+      "ms": 44
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4a3e8f447f5cc008",
+      "reply": {
+        "text": "guess ABIDGH"
+      },
+      "action": "guess ABIDGH",
+      "invalid": false,
+      "usage": null,
+      "ms": 45
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1
+      ],
+      "raw": [
+        7
+      ],
+      "reason": "solved: the secret was found in 7 guess(es), reference par 7",
+      "solved": true,
+      "par": 7
+    },
+    "agentActions": 7,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:19:59.056Z",
+  "finishedAt": "2026-10-16T06:19:59.851Z"
+}

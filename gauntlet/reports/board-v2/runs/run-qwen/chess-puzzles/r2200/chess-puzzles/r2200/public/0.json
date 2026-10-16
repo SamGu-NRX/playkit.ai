@@ -1,0 +1,115 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "chess-puzzles",
+    "version": "1.0.0"
+  },
+  "tier": "r2200",
+  "seed": "chess-puzzles/r2200/public/0",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "34310a342053b6fd",
+      "reply": {
+        "text": "e5",
+        "usage": {
+          "inputTokens": 1048,
+          "outputTokens": 3,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-83m1RVCEmtTYe271EXxWSM37J2Rmybw6",
+          "reasoningChars": 0
+        }
+      },
+      "action": "e5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 1048,
+        "outputTokens": 3,
+        "costUsd": 0
+      },
+      "ms": 6492
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "34310a342053b6fd",
+      "reply": {
+        "text": "g7h5",
+        "usage": {
+          "inputTokens": 1093,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-zt2YIwEjIBQed8Vu6LTh2FUrxgpYRMBg",
+          "reasoningChars": 0
+        }
+      },
+      "action": "g7h5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 1093,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 10815
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "34310a342053b6fd",
+      "reply": {
+        "text": "h2g3",
+        "usage": {
+          "inputTokens": 1069,
+          "outputTokens": 5,
+          "costUsd": 0
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-PBV9YPMVJnlXftAlNlPqA9GIVA0ysOw0",
+          "reasoningChars": 0
+        }
+      },
+      "action": "h2g3",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1069,
+        "outputTokens": 5,
+        "costUsd": 0
+      },
+      "ms": 6165
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": [
+        "loss"
+      ],
+      "reason": "puzzle jad7i failed: played h2g3, the line expects h2d6"
+    },
+    "agentActions": 3,
+    "invalidActions": 2
+  },
+  "startedAt": "2026-10-16T05:44:50.054Z",
+  "finishedAt": "2026-10-16T05:45:13.530Z"
+}

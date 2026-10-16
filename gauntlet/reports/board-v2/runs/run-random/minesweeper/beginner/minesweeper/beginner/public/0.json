@@ -1,0 +1,226 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/0",
+  "split": "public",
+  "agent": {
+    "id": "random",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9200f002dd187689",
+      "reply": {
+        "text": "flag 7 6"
+      },
+      "action": "flag 7 6",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "961441c78990f3c9",
+      "reply": {
+        "text": "flag 8 0"
+      },
+      "action": "flag 8 0",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "df3f429b4befe711",
+      "reply": {
+        "text": "flag 8 1"
+      },
+      "action": "flag 8 1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "460671c0239ba7dc",
+      "reply": {
+        "text": "reveal 8 4"
+      },
+      "action": "reveal 8 4",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b454eb8c218c5360",
+      "reply": {
+        "text": "reveal 8 2"
+      },
+      "action": "reveal 8 2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c4e17ff7cc128a9d",
+      "reply": {
+        "text": "flag 7 3"
+      },
+      "action": "flag 7 3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e6b32a592547ac1b",
+      "reply": {
+        "text": "flag 0 1"
+      },
+      "action": "flag 0 1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "245d7e689229a958",
+      "reply": {
+        "text": "flag 3 8"
+      },
+      "action": "flag 3 8",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6bf11ad81ca1350a",
+      "reply": {
+        "text": "unflag 8 0"
+      },
+      "action": "unflag 8 0",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6a26e03b54269886",
+      "reply": {
+        "text": "flag 6 0"
+      },
+      "action": "flag 6 0",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d9d4adb981110c86",
+      "reply": {
+        "text": "flag 7 1"
+      },
+      "action": "flag 7 1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5c8f28d847b2bd38",
+      "reply": {
+        "text": "flag 5 2"
+      },
+      "action": "flag 5 2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "59c78f590fe95499",
+      "reply": {
+        "text": "flag 6 8"
+      },
+      "action": "flag 6 8",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6f67c96089c175cd",
+      "reply": {
+        "text": "reveal 6 1"
+      },
+      "action": "reveal 6 1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "45cc80278448fc6f",
+      "reply": {
+        "text": "flag 1 0"
+      },
+      "action": "flag 1 0",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bd6cea63bdd15e3b",
+      "reply": {
+        "text": "reveal 8 3"
+      },
+      "action": "reveal 8 3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.6197183098591549
+      ],
+      "raw": [
+        44
+      ],
+      "reason": "mine revealed at row 8, column 3 — episode ends with 44 of 71 safe cells revealed"
+    },
+    "agentActions": 16,
+    "invalidActions": 0
+  },
+  "startedAt": "2026-10-16T06:18:48.934Z",
+  "finishedAt": "2026-10-16T06:18:48.939Z"
+}

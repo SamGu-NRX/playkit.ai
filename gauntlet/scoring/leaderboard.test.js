@@ -177,6 +177,24 @@ test('leaderboard: ranking, tracks, costs, unranked entries, JSON and Markdown',
   }
 });
 
+test('leaderboard: agent labels with Markdown metacharacters render escaped, not as formatting', async () => {
+  // An agent id is data, not Markdown: a raw `|` would shift every following
+  // table column, `*`/`_` would flip emphasis, a newline would split the row.
+  const hostile = 'evil|id\nline *x*_y_';
+  const entries = [
+    {
+      agent: { id: hostile, track: 'official' },
+      trajectories: await runSuite(SUITE, gameList, () => officialAgent(hostile)),
+    },
+  ];
+  const { markdown } = await leaderboard(SUITE, entries, gameList);
+  assert.ok(
+    markdown.includes('evil\\|id<br>line \\*x\\*\\_y\\_'),
+    'pipe, newline, star and underscore all render escaped inside one row',
+  );
+  assert.ok(!markdown.includes('evil|id'), 'the raw id never reaches the Markdown');
+});
+
 test('leaderboard: an entry whose trajectories fail verification is refused, not listed', async () => {
   const good = await runSuite(SUITE, gameList, () =>
     scriptedAgent(['take'], { id: 'honest', track: 'community' })

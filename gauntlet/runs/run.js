@@ -201,7 +201,12 @@ function gitCommit() {
  * @property {string} finishedAt
  * @property {number} concurrency
  * @property {{ maxUsd: number | null, maxCalls: number | null, requestsPerMinute: number | null, maxOutputTokens: number | null, callTimeoutMs: number | null }} limits
- * @property {number} spendUsd
+ * @property {number} spendUsd Sum of the steps' known costs. A step that
+ *   reported usage without a priced cost counts here as 0 and separately in
+ *   unknownCostSteps — unknown stays unknown, it is never folded into 0.
+ * @property {number} unknownCostSteps Steps whose reply carried usage with a
+ *   null (or non-finite) costUsd: usage was reported, so the cost is unknown,
+ *   not zero.
  * @property {number} calls
  * @property {RunCounts} counts
  * @property {string[]} skipped
@@ -260,7 +265,8 @@ function gitCommit() {
  * @property {{ key: string, error: string }[]} failed
  * @property {StopReason | null} stopped
  * @property {string | null} stopReason
- * @property {number} spendUsd
+ * @property {number} spendUsd Known-cost sum; see RunRecord.
+ * @property {number} unknownCostSteps Steps with usage but unknown cost.
  * @property {number} calls
  */
 
@@ -419,6 +425,7 @@ export async function runSuite({
     detail: null,
   });
   let spendUsd = 0;
+  let unknownCostSteps = 0;
   let reservedUsd = 0;
   let calls = 0;
   let fatalError = /** @type {UnknownCostError | null} */ (null);
@@ -490,8 +497,15 @@ export async function runSuite({
           // Only a finite, defined cost counts toward spend. With a cap set
           // the null-cost refusal above already fired; without a cap an
           // unpriced call (costUsd null or undefined) is treated as free in
-          // the sum rather than poisoning it into NaN.
-          if (typeof cost === 'number' && Number.isFinite(cost)) spendUsd += cost;
+          // the sum rather than poisoning it into NaN. A call that DID report
+          // usage but without a cost is not free — it is unknown — so it is
+          // counted separately and the summary says unknown instead of
+          // printing a known-cost sum as if it were the whole spend.
+          if (typeof cost === 'number' && Number.isFinite(cost)) {
+            spendUsd += cost;
+          } else if (reply && reply.usage) {
+            unknownCostSteps += 1;
+          }
           return reply;
         } finally {
           // Settle the reservation: the call's actual cost has been added to
@@ -600,6 +614,7 @@ export async function runSuite({
       callTimeoutMs: callTimeoutMs ?? null,
     },
     spendUsd,
+    unknownCostSteps,
     calls,
     counts: {
       jobs: jobs.length,
@@ -630,6 +645,7 @@ export async function runSuite({
     stopped: stopped.reason,
     stopReason: stopped.detail,
     spendUsd,
+    unknownCostSteps,
     calls,
   };
 }

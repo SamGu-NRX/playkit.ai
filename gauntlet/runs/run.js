@@ -438,7 +438,10 @@ export async function runSuite({
           stopped.detail = message;
           throw new UnknownCostError(message);
         }
-        spendUsd += /** @type {number} */ (cost);
+        // Only a finite, defined cost counts toward spend. With a cap set the
+        // null-cost refusal above already fired; without a cap an unpriced
+        // call is treated as free rather than poisoning the sum into NaN.
+        if (typeof cost === 'number' && Number.isFinite(cost)) spendUsd += cost;
         return reply;
       },
     };

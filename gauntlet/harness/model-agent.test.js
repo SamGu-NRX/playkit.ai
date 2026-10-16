@@ -1119,20 +1119,23 @@ test('end to end: a provider that omits usage records null usage on every step a
   }
 });
 
-test('provider anthropic sends reasoningEffort as adaptive thinking plus effort', async () => {
+// Effort is the Messages API field output_config.effort, not a top-level
+// `effort`; the per-model capability table (frontier-effort.test.js) decides
+// which models take which levels, and claude-opus-4-5 documents none.
+test('provider anthropic sends reasoningEffort as output_config.effort', async () => {
   const stub = await anthropicStub([ANTHROPIC_OK]);
   try {
     const agent = createModelAgent({
       provider: 'anthropic',
-      model: 'claude-opus-4-5',
+      model: 'claude-opus-4-8',
       baseUrl: stub.url,
       apiKeyEnv: 'GAUNTLET_TEST_KEY',
       reasoningEffort: 'xhigh',
     });
     const reply = await agent.act(CTX);
     assert.equal(reply.text, 'I play the center.\naction: b2');
-    assert.deepEqual(stub.requests[0].body.thinking, { type: 'adaptive' });
-    assert.equal(stub.requests[0].body.effort, 'xhigh');
+    assert.deepEqual(stub.requests[0].body.output_config, { effort: 'xhigh' });
+    assert.equal(stub.requests[0].body.effort, undefined);
   } finally {
     await stub.close();
   }

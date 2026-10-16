@@ -23,13 +23,23 @@
  *   separately as message.reasoning_content or message.reasoning).
  *
  * Reasoning settings (all pages checked 2026-10-16):
- * - Anthropic extended thinking: https://platform.claude.com/docs/en/build-with-claude/extended-thinking
- *   and https://platform.claude.com/docs/en/api/messages — request
- *   `thinking: {type: "enabled", budget_tokens: N}` with budget_tokens >= 1024
- *   and < max_tokens; thinking tokens count toward max_tokens and are billed
- *   as output tokens; `usage.output_tokens_details.thinking_tokens` is the
- *   breakdown; replies carry `thinking` and `redacted_thinking` content
- *   blocks that are never part of the reply text.
+ * - Anthropic thinking and effort: https://platform.claude.com/docs/en/build-with-claude/effort
+ *   and https://platform.claude.com/docs/en/models/overview — effort is
+ *   `output_config: {effort: "low"|"medium"|"high"|"xhigh"|"max"}`; the
+ *   documented default is `medium` on Claude Opus 5.5 and Claude Haiku 5.5
+ *   and `high` on every other model that supports effort. On the
+ *   adaptive-thinking models (the 5.5 generation, Claude Fable 5/5.1, and
+ *   Claude Opus 5/4.8/4.7/Sonnet 5) manual budgets
+ *   (`thinking: {type: "enabled", budget_tokens: N}`) are not accepted —
+ *   HTTP 400 — and no `thinking` field is sent at all. On models whose rows
+ *   keep manual mode (the 4.6 generation and earlier) the budget rides on
+ *   top of the text cap as before. Thinking tokens count toward max_tokens
+ *   and are billed as output tokens;
+ *   `usage.output_tokens_details.thinking_tokens` is the breakdown; replies
+ *   carry `thinking` and `redacted_thinking` content blocks that are never
+ *   part of the reply text. A declined request arrives as HTTP 200 with
+ *   `stop_reason: "refusal"` and a `stop_details` object
+ *   (https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback).
  * - OpenAI Responses reasoning: https://platform.openai.com/docs/guides/reasoning
  *   — request `reasoning: {effort: "low"|"medium"|"high"|"xhigh"|"max"}`; max_output_tokens
  *   bounds reasoning and answer tokens together; `usage.output_tokens`
@@ -79,24 +89,35 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  *   "openai-chat" (some local servers need no key) — when unset, no
  *   Authorization header is sent.
  * @property {number} [maxOutputTokens] Per-reply cap. Default 4096. For
- *   "anthropic" with a thinkingBudget, this caps the reply's text and the
+ *   "anthropic": on models whose capability row keeps manual thinking mode
+ *   (the 4.6 generation and earlier) this caps the reply's text and the
  *   request's max_tokens is maxOutputTokens + thinkingBudget (thinking tokens
- *   count toward max_tokens, so the budget rides on top of the text cap).
+ *   count toward max_tokens, so the budget rides on top of the text cap). On
+ *   the adaptive-thinking models there is no separate budget — max_tokens is
+ *   a hard limit on the whole reply, thinking plus text (the docs recommend
+ *   starting around 64k at `xhigh`/`max` effort) — so the wire max_tokens is
+ *   maxOutputTokens itself.
  * @property {number} [thinkingBudget] Anthropic extended-thinking budget in
  *   tokens, sent as `thinking: {type: "enabled", budget_tokens}`. Provider
  *   "anthropic" only — passing it to another provider is an error, and the
- *   Anthropic minimum budget is 1024. Per the model docs (checked 2026-10-16)
- *   the manual budget mode is deprecated on Claude 4.6 models and not
- *   accepted by later ones, which steer thinking with `effort` instead; pass
- *   `params: { thinking: { type: 'adaptive' }, effort: 'medium' }` for those.
+ *   Anthropic minimum budget is 1024. Only models whose capability row
+ *   accepts manual mode take it (deprecated on the 4.6 generation); on the
+ *   adaptive-thinking models (Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable
+ *   5/5.1, Opus 5/4.8/4.7, Sonnet 5) the API rejects manual budgets with
+ *   HTTP 400, so constructing the agent throws — use reasoningEffort there.
+ *   See resolveAnthropicCapability / ANTHROPIC_CAPABILITIES below.
  * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
- *   Reasoning effort for every provider: `reasoning: {effort}` for provider
- *   "openai", the chat-completions body field `reasoning_effort` for provider
- *   "openai-chat" (Google's Gemini OpenAI-compatible endpoint maps it to
- *   thinking_level / thinking_budget), and adaptive thinking steered by
- *   `effort` for provider "anthropic" (per the model docs checked 2026-10-16,
- *   Claude 4.6 models and later steer thinking with `effort`; the manual
- *   budget mode is deprecated there, and passing both settings is an error).
+ *   Reasoning effort. Provider "anthropic": `output_config: {effort}`, with
+ *   the documented per-model levels and default enforced from the capability
+ *   table (an unset effort on a model with documented levels is recorded as
+ *   "provider-default" in the agent id, so runs at different provider
+ *   defaults never merge on a leaderboard). Provider "openai":
+ *   `reasoning: {effort}` (the docs' per-model value sets vary; the harness
+ *   accepts low/medium/high/xhigh). Provider "openai-chat": the
+ *   chat-completions body field `reasoning_effort` (Google's Gemini
+ *   OpenAI-compatible endpoint maps low/medium/high to thinking_level).
+ *   On provider "anthropic", passing both thinkingBudget and reasoningEffort
+ *   is an error: both steer Anthropic thinking.
  * @property {number} [callTimeoutMs] Per-attempt timeout in milliseconds.
  *   Default: no per-attempt timeout. A timed-out attempt counts as a
  *   transport error and retries with the same backoff as a network failure;
@@ -113,7 +134,11 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  * @property {number} [retryBaseDelayMs] Exponential backoff base. Default 500.
  * @property {(ms: number) => Promise<void>} [sleep] Delay function, injectable
  *   for fast tests.
- * @property {string} [id] Agent id. Default "<provider>/<model>".
+ * @property {string} [id] Agent id. Default "<provider>/<model>", plus
+ *   ":reasoning-effort=<level>" (or ":reasoning-effort=provider-default")
+ *   when the Anthropic model has documented effort levels — the effective
+ *   effort is part of the identity, so runs at different effort levels or
+ *   different provider defaults never merge on a leaderboard.
  */
 
 const ANTHROPIC_VERSION = '2023-06-01';
@@ -131,6 +156,236 @@ const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_RETRY_BASE_DELAY_MS = 500;
 const ERROR_EXCERPT_CHARS = 500;
 const UNPARSEABLE_BODY_EXCERPT_CHARS = 200;
+
+// ---------------------------------------------------------------------------
+// Anthropic model-capability table.
+//
+// One row per documented Claude model-id pattern. Each row records what the
+// model accepts on the wire, per the Anthropic docs, with the pages and the
+// date the row was checked: the accepted thinking modes (manual budget_tokens
+// vs. adaptive thinking steered by output_config.effort), the documented
+// effort levels and API default, and whether sampling fields
+// (temperature/top_p/top_k) are allowed. A `claude-*` model id that matches
+// no row is refused at construction with a message naming this table, so a
+// new model cannot be silently run with settings it rejects. Ids that are not
+// Claude model ids on provider "anthropic" (proxies, stubs) are not tabled
+// and keep the permissive default. Where the docs are silent the row records
+// the permissive value (sampling allowed) rather than a guess.
+//
+// Checked 2026-10-16 against:
+// - Models overview: https://platform.claude.com/docs/en/models/overview
+//   (thinking mode, default effort, prices per model; "Extended thinking is
+//   the manual budget_tokens mode on earlier models")
+// - Effort: https://platform.claude.com/docs/en/build-with-claude/effort
+//   (levels and defaults per model; manual budgets "deprecated on Claude
+//   Opus 4.6 and Claude Sonnet 4.6 and not accepted on later models")
+// - Claude Opus 5.5 migration guide:
+//   https://platform.claude.com/docs/en/models/opus-5-5/migration-guide
+//   (adaptive thinking, thinking on every request, max_tokens as a hard limit
+//   on the whole reply, 64k recommendation at xhigh/max, sampling rejected)
+// - Sonnet 5.5 / Haiku 5.5 model pages (sampling-parameter rejection: a
+//   non-default temperature/top_p/top_k returns HTTP 400)
+// - Refusals and fallback:
+//   https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback
+
+/**
+ * @typedef {object} AnthropicModelCapability
+ * @property {RegExp} pattern Model-id pattern (an optional `-YYYYMMDD`
+ *   snapshot suffix is tolerated on every row).
+ * @property {string} name Human-readable model name, for messages.
+ * @property {boolean} manualBudgetAccepted Whether `thinking: {type:
+ *   "enabled", budget_tokens}` is accepted; false = the model steers thinking
+ *   adaptively via output_config.effort and rejects manual budgets with
+ *   HTTP 400.
+ * @property {Array<'low' | 'medium' | 'high' | 'xhigh' | 'max'> | null} effortLevels
+ *   The documented effort levels; null = effort is not documented for the
+ *   model, so reasoningEffort is refused rather than guessed.
+ * @property {'low' | 'medium' | 'high' | null} defaultEffort The documented
+ *   API default effort; null when effortLevels is null.
+ * @property {boolean} samplingFieldsAllowed False only where the docs state
+ *   that non-default temperature/top_p/top_k return HTTP 400.
+ * @property {string} docs The page(s) the row was verified against.
+ * @property {string} checked ISO date of the last doc check.
+ */
+
+/** @type {Array<AnthropicModelCapability>} */
+export const ANTHROPIC_CAPABILITIES = [
+  {
+    pattern: /^claude-opus-5-5(?:-\d{8})?$/,
+    name: 'Claude Opus 5.5',
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: 'medium',
+    samplingFieldsAllowed: false,
+    docs: 'https://platform.claude.com/docs/en/models/opus-5-5/migration-guide and https://platform.claude.com/docs/en/build-with-claude/effort',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-sonnet-5-5(?:-\d{8})?$/,
+    name: 'Claude Sonnet 5.5',
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: 'high',
+    samplingFieldsAllowed: false,
+    docs: 'https://platform.claude.com/docs/en/models/sonnet-5-5/overview and https://platform.claude.com/docs/en/build-with-claude/effort',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-haiku-5-5(?:-\d{8})?$/,
+    name: 'Claude Haiku 5.5',
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: 'medium',
+    samplingFieldsAllowed: false,
+    docs: 'https://platform.claude.com/docs/en/models/haiku-5-5/overview and https://platform.claude.com/docs/en/build-with-claude/effort',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-fable-5-1(?:-\d{8})?$/,
+    name: 'Claude Fable 5.1',
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: 'high',
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/models/fable-5-1/overview and https://platform.claude.com/docs/en/build-with-claude/effort (sampling: docs silent in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-fable-5(?:-\d{8})?$/,
+    name: 'Claude Fable 5',
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: 'high',
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/models/fable-5/overview and https://platform.claude.com/docs/en/build-with-claude/effort (sampling: docs silent in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-opus-5(?:-\d{8})?$/,
+    name: 'Claude Opus 5',
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: 'high',
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/models/opus-5/overview and https://platform.claude.com/docs/en/build-with-claude/effort (sampling: docs silent in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-opus-4-8(?:-\d{8})?$/,
+    name: 'Claude Opus 4.8',
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: 'high',
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/models/overview (sampling: docs silent in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-opus-4-7(?:-\d{8})?$/,
+    name: 'Claude Opus 4.7',
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: 'high',
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/models/overview (sampling: docs silent in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-sonnet-5(?:-\d{8})?$/,
+    name: 'Claude Sonnet 5',
+    manualBudgetAccepted: false,
+    effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultEffort: 'high',
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/models/overview (sampling: docs silent in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-opus-4-6(?:-\d{8})?$/,
+    name: 'Claude Opus 4.6',
+    manualBudgetAccepted: true,
+    effortLevels: ['low', 'medium', 'high', 'max'],
+    defaultEffort: 'high',
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/build-with-claude/extended-thinking (manual budget deprecated)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-sonnet-4-6(?:-\d{8})?$/,
+    name: 'Claude Sonnet 4.6',
+    manualBudgetAccepted: true,
+    effortLevels: ['low', 'medium', 'high', 'max'],
+    defaultEffort: 'high',
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/build-with-claude/effort and https://platform.claude.com/docs/en/build-with-claude/extended-thinking (manual budget deprecated)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-opus-4-5(?:-\d{8})?$/,
+    name: 'Claude Opus 4.5',
+    manualBudgetAccepted: true,
+    effortLevels: null,
+    defaultEffort: null,
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/build-with-claude/extended-thinking (effort: not documented for this model in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-haiku-4-5(?:-\d{8})?$/,
+    name: 'Claude Haiku 4.5',
+    manualBudgetAccepted: true,
+    effortLevels: null,
+    defaultEffort: null,
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/build-with-claude/extended-thinking (effort: not documented for this model in the pages checked)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-3-7(?:-\d{8})?/,
+    name: 'Claude 3.7 (manual extended thinking)',
+    manualBudgetAccepted: true,
+    effortLevels: null,
+    defaultEffort: null,
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/build-with-claude/extended-thinking (older-behaviour fallback row)',
+    checked: '2026-10-16',
+  },
+  {
+    pattern: /^claude-(?:[0-9]|instant)/,
+    name: 'Claude legacy (pre-thinking model ids)',
+    manualBudgetAccepted: false,
+    effortLevels: null,
+    defaultEffort: null,
+    samplingFieldsAllowed: true,
+    docs: 'https://platform.claude.com/docs/en/build-with-claude/extended-thinking (older-behaviour fallback row: no thinking, no effort)',
+    checked: '2026-10-16',
+  },
+];
+
+export const ANTHROPIC_CAPABILITY_DOC_URL =
+  'https://platform.claude.com/docs/en/models/overview';
+
+/**
+ * Look up the capability row for an Anthropic model id. Returns null for ids
+ * that are not Claude model ids (proxies and stubs keep the permissive
+ * default); throws for `claude-*` ids that match no row, naming the table so
+ * a new model cannot be silently run with settings it may reject.
+ *
+ * @param {string} model
+ * @returns {AnthropicModelCapability | null}
+ */
+export function resolveAnthropicCapability(model) {
+  for (const capability of ANTHROPIC_CAPABILITIES) {
+    if (capability.pattern.test(model)) return capability;
+  }
+  if (/^claude-/i.test(model)) {
+    throw new Error(
+      `createModelAgent: model ${JSON.stringify(model)} is a Claude id that matches no row in the Anthropic capability table (harness/model-agent.js), so it is refused rather than run with settings the model may reject. Add a row with the model-id pattern, accepted thinking modes, effort levels, default effort, and sampling-field rules, citing the doc URL and the date checked — see ${ANTHROPIC_CAPABILITY_DOC_URL}`
+    );
+  }
+  return null;
+}
+
 
 /**
  * An Error carrying the number of retries the caller performed, so a consumer
@@ -408,11 +663,14 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  * @property {number} retryBaseDelayMs
  * @property {(ms: number) => Promise<void>} sleep
  * @property {number} [thinkingBudget] Anthropic extended-thinking budget_tokens;
- *   validated against the provider (anthropic only) and the 1024 minimum, and
- *   with it set the wire max_tokens is maxOutputTokens + thinkingBudget.
+ *   only on models whose capability row accepts manual mode (checked at
+ *   construction); with it set the wire max_tokens is maxOutputTokens +
+ *   thinkingBudget.
  * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
- *   Reasoning effort for every provider (openai reasoning.effort, openai-chat
- *   reasoning_effort, anthropic adaptive-thinking effort).
+ *   Anthropic (output_config.effort) or OpenAI Responses (reasoning.effort)
+ *   reasoning effort — the provider unions coincide at all five levels and
+ *   per-model values are validated at construction. Absent when the run
+ *   leaves the provider default in place.
  * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.
  */
 
@@ -426,6 +684,13 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  * `completion_tokens_details.reasoning_tokens`) when it reports one; it is a
  * subset of the reported output total, which is what cost follows.
  *
+ * Anthropic declines are HTTP 200 with `stop_reason: "refusal"` and a
+ * `stop_details` object; the turn then carries empty text and a `refusal`
+ * metadata object ({category, explanation}) so a caller can tell a declined
+ * request from a malformed one. The reported usage is kept as-is: whether a
+ * pre-output refusal is billed depends on its category, and the runner
+ * already treats empty text as an invalid attempt.
+ *
  * @typedef {object} ProviderTurnResult
  * @property {string} text
  * @property {number | null} inputTokens Reported input tokens, or null when
@@ -436,6 +701,8 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  * @property {string | null} responseId
  * @property {number} [reasoningChars]
  * @property {number} [reasoningTokens]
+ * @property {{category: string | null, explanation: string | null}} [refusal]
+ *   Set when the reply arrived as `stop_reason: "refusal"`.
  */
 
 /**
@@ -459,12 +726,16 @@ async function callAnthropic({
   sleep,
   callTimeoutMs,
 }) {
-  // With a thinking budget the wire max_tokens is the text cap plus the
-  // budget: Anthropic bills thinking tokens as output and counts them toward
-  // max_tokens, so the reply keeps its full text budget on top of the budget
-  // — and quoteWorstCaseUsd quotes exactly this sum as the worst-case output.
-  // budget_tokens < max_tokens then holds by construction (maxOutputTokens is
-  // at least 1).
+  // Thinking rides inside max_tokens on both thinking modes. On a manual
+  // budget (the 4.6 generation and earlier) the wire max_tokens is the text
+  // cap plus the budget: Anthropic bills thinking tokens as output and counts
+  // them toward max_tokens, so the reply keeps its full text budget on top of
+  // the budget — and quoteWorstCaseUsd quotes exactly this sum as the
+  // worst-case output. budget_tokens < max_tokens then holds by construction
+  // (maxOutputTokens is at least 1). On the adaptive-thinking models there is
+  // no separate budget: max_tokens is a hard limit on the whole reply
+  // (thinking plus text), so the wire max_tokens is the cap itself and the
+  // quoted worst case matches the wire limit one for one.
   const body = {
     ...(params ?? {}),
     model,
@@ -472,12 +743,10 @@ async function callAnthropic({
     ...(thinkingBudget !== undefined
       ? { thinking: { type: 'enabled', budget_tokens: thinkingBudget } }
       : {}),
-    ...(reasoningEffort !== undefined
-      ? // Effort-steered thinking, per the model docs (checked 2026-10-16):
-        // Claude 4.6 models and later steer thinking with `effort` instead of
-        // the manual budget mode. Protocol fields win over anything in params.
-        { thinking: { type: 'adaptive' }, effort: reasoningEffort }
-      : {}),
+    // Effort is the only thinking control on the adaptive-thinking models: no
+    // `thinking` field is sent, and the provider default applies when unset.
+    // Required protocol fields win over params.
+    ...(reasoningEffort !== undefined ? { output_config: { effort: reasoningEffort } } : {}),
     system: OFFICIAL_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: userMessage }],
   };
@@ -504,11 +773,20 @@ async function callAnthropic({
   // Only text blocks are the reply. `thinking` and `redacted_thinking` blocks
   // are the model's internal reasoning (redacted_thinking.data is opaque and
   // encrypted) and never enter the text the runner parses or carries forward.
-  const text = blocks
-    .filter((/** @type {any} */ b) => b && b.type === 'text' && typeof b.text === 'string')
-    .map((/** @type {any} */ b) => b.text)
-    .join('\n');
+  // A refusal arrives as stop_reason "refusal" (no text blocks): empty text,
+  // honest usage, and the refusal details recorded as metadata.
+  const isRefusal = json?.stop_reason === 'refusal';
+  const text = isRefusal
+    ? ''
+    : blocks
+        .filter((/** @type {any} */ b) => b && b.type === 'text' && typeof b.text === 'string')
+        .map((/** @type {any} */ b) => b.text)
+        .join('\n');
   const thinkingTokens = tokenCount(json?.usage?.output_tokens_details?.thinking_tokens);
+  const stopDetails =
+    isRefusal && json?.stop_details && typeof json.stop_details === 'object'
+      ? /** @type {{category?: unknown, explanation?: unknown}} */ (json.stop_details)
+      : null;
   return {
     text,
     inputTokens: tokenCount(json?.usage?.input_tokens),
@@ -516,6 +794,15 @@ async function callAnthropic({
     retries,
     responseId: typeof json?.id === 'string' ? json.id : null,
     ...(thinkingTokens !== null ? { reasoningTokens: thinkingTokens } : {}),
+    ...(isRefusal
+      ? {
+          refusal: {
+            category: typeof stopDetails?.category === 'string' ? stopDetails.category : null,
+            explanation:
+              typeof stopDetails?.explanation === 'string' ? stopDetails.explanation : null,
+          },
+        }
+      : {}),
   };
 }
 
@@ -721,7 +1008,15 @@ async function callOpenAIChat({
  * turn, so context stays bounded on long games.
  *
  * @param {ModelAgentOptions} options
- * @returns {Agent}
+ * @returns {import('../core/types.js').Agent & {
+ *   reasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' |
+ *     'provider-default',
+ *   reasoningEffortDefault?: string | null,
+ * }} The core Agent plus the effective-effort identity: reasoningEffort is the
+ *   run's effort, or the literal "provider-default" when an effort-capable
+ *   model runs unset; reasoningEffortDefault is the model row's documented
+ *   default (null when the row documents none). Both stay absent on rows
+ *   without documented effort levels.
  */
 export function createModelAgent({
   provider,
@@ -765,15 +1060,18 @@ export function createModelAgent({
     }
   }
   if (reasoningEffort !== undefined) {
-    if (
-      reasoningEffort !== 'low' &&
-      reasoningEffort !== 'medium' &&
-      reasoningEffort !== 'high' &&
-      reasoningEffort !== 'xhigh' &&
-      reasoningEffort !== 'max'
-    ) {
+    // Per-provider value sets. On anthropic the per-model capability table
+    // (below) enforces the documented levels exactly; non-Claude anthropic ids
+    // (proxies, stubs) get the permissive superset.
+    const allowed =
+      provider === 'openai'
+        ? ['low', 'medium', 'high', 'xhigh']
+        : provider === 'openai-chat'
+          ? ['low', 'medium', 'high']
+          : ['low', 'medium', 'high', 'xhigh', 'max'];
+    if (!allowed.includes(reasoningEffort)) {
       throw new Error(
-        `createModelAgent: reasoningEffort must be "low", "medium", "high", "xhigh" or "max", got ${JSON.stringify(reasoningEffort)}`
+        `createModelAgent: reasoningEffort for provider ${JSON.stringify(provider)} must be one of ${allowed.map((v) => JSON.stringify(v)).join(', ')}, got ${JSON.stringify(reasoningEffort)}`
       );
     }
     if (provider === 'anthropic' && thinkingBudget !== undefined) {
@@ -782,6 +1080,56 @@ export function createModelAgent({
       );
     }
   }
+  // Per-model capability validation for Claude model ids on provider
+  // "anthropic". A `claude-*` id that matches no row is refused inside
+  // resolveAnthropicCapability, naming the table, so a new model cannot be
+  // silently run with settings it may reject.
+  const capability =
+    provider === 'anthropic' ? resolveAnthropicCapability(model) : null;
+  if (capability) {
+    if (thinkingBudget !== undefined && !capability.manualBudgetAccepted) {
+      throw new Error(
+        `createModelAgent: thinkingBudget is not accepted on model ${JSON.stringify(model)} (${capability.name}): the model rejects manual budget_tokens with HTTP 400${capability.effortLevels ? ' — steer thinking with reasoningEffort instead' : ''}. See the Anthropic capability table in harness/model-agent.js and ${capability.docs} (checked ${capability.checked})`
+      );
+    }
+    if (reasoningEffort !== undefined) {
+      if (!capability.effortLevels) {
+        throw new Error(
+          `createModelAgent: the Anthropic capability table documents no effort levels for model ${JSON.stringify(model)} (${capability.name}), so reasoningEffort is refused rather than guessed. See the table in harness/model-agent.js and ${capability.docs} (checked ${capability.checked})`
+        );
+      }
+      if (!capability.effortLevels.includes(reasoningEffort)) {
+        throw new Error(
+          `createModelAgent: reasoning effort ${JSON.stringify(reasoningEffort)} is not documented for model ${JSON.stringify(model)} (${capability.name}); the documented levels are ${capability.effortLevels.map((v) => JSON.stringify(v)).join(', ')}. See the Anthropic capability table in harness/model-agent.js and ${capability.docs} (checked ${capability.checked})`
+        );
+      }
+    }
+    if (!capability.samplingFieldsAllowed && params) {
+      const rejected = ['temperature', 'top_p', 'top_k'].filter((field) =>
+        Object.prototype.hasOwnProperty.call(params, field)
+      );
+      if (rejected.length > 0) {
+        throw new Error(
+          `createModelAgent: params carries sampling field(s) ${rejected.map((v) => JSON.stringify(v)).join(', ')} but model ${JSON.stringify(model)} (${capability.name}) rejects non-default temperature/top_p/top_k with HTTP 400. Remove them from params and steer behavior with reasoningEffort. See ${capability.docs} (checked ${capability.checked})`
+        );
+      }
+    }
+  }
+  // The effective effort is part of the agent's identity: an unset effort on a
+  // model with documented levels is recorded as "provider-default" (and the
+  // documented default is exposed alongside), so runs at different provider
+  // defaults or explicit levels never merge on a leaderboard.
+  const effectiveEffort =
+    reasoningEffort !== undefined
+      ? reasoningEffort
+      : capability && capability.effortLevels
+        ? 'provider-default'
+        : undefined;
+  // The wire effort: undefined leaves the provider default in place.
+  const wireEffort =
+    effectiveEffort !== undefined && effectiveEffort !== 'provider-default'
+      ? effectiveEffort
+      : undefined;
   const base = baseUrl ?? DEFAULT_BASE_URLS[provider];
   if (!base) {
     throw new Error(
@@ -817,20 +1165,32 @@ export function createModelAgent({
   let previousReply = null;
 
   return {
-    id: id ?? `${provider}/${model}`,
+    id:
+      id ??
+      `${provider}/${model}${
+        effectiveEffort !== undefined ? `:reasoning-effort=${effectiveEffort}` : ''
+      }`,
     track: /** @type {'official'} */ ('official'),
     model,
     provider,
     dryRun: false,
+    ...(effectiveEffort !== undefined
+      ? {
+          reasoningEffort: effectiveEffort,
+          reasoningEffortDefault: capability ? capability.defaultEffort : null,
+        }
+      : {}),
     quoteWorstCaseUsd(ctx) {
       // Upper bound on one act() call's USD cost, computable before the call
       // starts: the request text is priced at a conservative token estimate
       // (at most one token per two UTF-8 bytes) and the reply at the
       // output-token limit. With a thinking budget the reply's output bound
-      // is the wire max_tokens — the text cap plus the budget — so the
-      // reservation covers the whole thinking spend. The settled cost always
-      // comes from the provider's reported usage, never from this estimate.
-      // null without a usable price entry, mirroring computeCostUsd.
+      // is the wire max_tokens — the text cap plus the budget; on the
+      // adaptive-thinking models there is no separate budget and the wire
+      // max_tokens is the cap itself (thinking rides inside it) — so the
+      // reservation always covers the whole thinking spend. The settled cost
+      // always comes from the provider's reported usage, never from this
+      // estimate. null without a usable price entry, mirroring computeCostUsd.
       if (!prices) return null;
       const entry = prices[`${provider}/${model}`];
       if (!entry) return null;
@@ -861,7 +1221,7 @@ export function createModelAgent({
               model,
               maxOutputTokens: limit,
               ...(thinkingBudget !== undefined ? { thinkingBudget } : {}),
-              ...(reasoningEffort !== undefined ? { reasoningEffort } : {}),
+              ...(wireEffort !== undefined ? { reasoningEffort: wireEffort } : {}),
               params,
               userMessage,
               fetchImpl: doFetch,
@@ -890,7 +1250,15 @@ export function createModelAgent({
                 apiKey,
                 model,
                 maxOutputTokens: limit,
-                ...(reasoningEffort !== undefined ? { reasoningEffort } : {}),
+                // The construction-time provider validation restricts
+                // openai-chat to low/medium/high, so the narrowed type holds.
+                ...(reasoningEffort !== undefined
+                  ? {
+                      reasoningEffort: /** @type {'low' | 'medium' | 'high'} */ (
+                        reasoningEffort
+                      ),
+                    }
+                  : {}),
                 params,
                 userMessage,
                 fetchImpl: doFetch,
@@ -927,6 +1295,7 @@ export function createModelAgent({
           ...(result.reasoningTokens !== undefined
             ? { reasoningTokens: result.reasoningTokens }
             : {}),
+          ...(result.refusal ? { refusal: result.refusal } : {}),
         },
       };
       return reply;

@@ -90,9 +90,11 @@ test('chess-endgames keeps its explicit entry — tier/seed/seat positional fact
 // validates it against the model. These tests pin the parsed spec, not the
 // wire format.
 
+// claude-opus-4-8: a model whose capability-table row documents all five
+// levels (the table refuses effort on claude-opus-4-5, which documents none).
 test('reasoning-effort widens to xhigh and max as a spec suffix on anthropic', async () => {
   for (const value of ['low', 'medium', 'high', 'xhigh', 'max']) {
-    const text = `model:anthropic/claude-opus-4-5:reasoning-effort=${value}`;
+    const text = `model:anthropic/claude-opus-4-8:reasoning-effort=${value}`;
     const spec = await parseAgentSpec(text);
     assert.equal(spec.track, 'official');
     assert.equal(spec.dryRun, false);

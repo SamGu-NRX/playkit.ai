@@ -27,7 +27,7 @@
  * match the provider: --thinking-budget <tokens> (Anthropic extended
  * thinking) and --reasoning-effort <low|medium|high|xhigh|max> (reasoning
  * effort, sent for every provider: openai and openai-chat put it on the wire
- * today, provider anthropic sends it as adaptive thinking steered by `effort`)
+ * today, provider anthropic sends it as output_config.effort)
  * as flags, or inline as a trailing `:key=value` list
  * on the model part — `model:anthropic/claude-opus-4-5:thinking-budget=10240`,
  * `model:openai/gpt-5.2:reasoning-effort=high`. A trailing segment that does
@@ -442,8 +442,8 @@ export async function parseAgentSpec(text, options = {}) {
     // Settings are provider-specific where the wire form is: thinking-budget
     // is Anthropic's budget_tokens, so a mismatched pairing is a loud error.
     // reasoning-effort pairs with every provider — openai/openai-chat put it
-    // on the wire today and provider anthropic sends it as adaptive thinking
-    // steered by `effort` (harness/model-agent.js) — so there is deliberately
+    // on the wire today and provider anthropic sends it as output_config.effort
+    // (harness/model-agent.js checks the per-model levels) — so there is deliberately
     // no provider refusal for it here.
     if (effectiveThinkingBudget !== undefined && provider !== 'anthropic') {
       throw new Error(

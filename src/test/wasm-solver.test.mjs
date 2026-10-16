@@ -396,6 +396,30 @@ test("real WASM binary solves a position end to end", { skip: !existsSync(new UR
     for (const direction of order) {
       assert.ok(direction >= 0 && direction <= 3, "directions are 0..3");
     }
+
+    // Convention check: the C++ engine indexes moves Right(0), Down(1),
+    // Left(2), Up(3) while the project's Direction enum is Up(0), Right(1),
+    // Down(2), Left(3). A single tile at the bottom-right corner can only
+    // move Up or Left; getMoveOrder leads with the valid moves (the manager
+    // back-fills the rest), so the first two entries must be exactly {0, 3}
+    // in project convention — raw C++ indices would surface as {2, 3}.
+    const cornerBoard = [
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 2],
+    ];
+    const cornerOrder = await manager.getMoveOrder(cornerBoard);
+    assert.deepEqual(
+      [...cornerOrder.slice(0, 2)].sort(),
+      [0, 3],
+      "WASM move order must lead with valid moves in project convention (Up=0, Left=3)",
+    );
+    assert.equal(
+      manager.getStatus().mode,
+      "wasm",
+      "getMoveOrder must run on the WASM engine, not the silent naive fallback",
+    );
   } finally {
     server.close();
     server.closeAllConnections();

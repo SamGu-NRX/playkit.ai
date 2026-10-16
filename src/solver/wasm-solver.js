@@ -13,6 +13,12 @@ const DEFAULT_STRATEGY = {
 
 const ALL_DIRECTIONS = [0, 1, 2, 3];
 
+// The C++ solver's move indices are Right(0), Down(1), Left(2), Up(3) —
+// verified empirically against the real binary with single-tile corner
+// boards (isValidMove validity patterns). The project's Direction enum is
+// Up(0), Right(1), Down(2), Left(3), so map on the way out.
+const WASM_TO_PROJECT_DIRECTION = [1, 2, 3, 0];
+
 function getRuntimeAPI() {
   if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL) {
     return chrome.runtime;
@@ -273,10 +279,14 @@ export class WASMSolverEngine {
       .map((item) => item.direction);
 
     if (!ordered.length) {
-      return BoardEncoder.uniqueDirections([preferred]);
+      return BoardEncoder.uniqueDirections([preferred]).map(
+        (direction) => WASM_TO_PROJECT_DIRECTION[direction],
+      );
     }
 
-    return BoardEncoder.uniqueDirections(ordered);
+    return BoardEncoder.uniqueDirections(ordered).map(
+      (direction) => WASM_TO_PROJECT_DIRECTION[direction],
+    );
   }
 
   async getBoardInfo(board) {

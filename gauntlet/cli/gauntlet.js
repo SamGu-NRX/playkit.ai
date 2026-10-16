@@ -5,6 +5,14 @@
  *
  * Commands:
  *   list                                   List registered games and tiers.
+ *   replay <file> [--step N] [--format text|json] [--max-reply-chars K]
+ *                                          Show a recorded episode turn by turn
+ *                                          in the terminal. Delegates to the
+ *                                          standalone viewer in replay/cli.js
+ *                                          (same arguments, same exit codes:
+ *                                          2 on usage errors, 1 when the
+ *                                          trajectory is refused by replay
+ *                                          verification).
  *   play --game <id> --tier <id> [--seed <s>] [--agent <spec>]
  *        [--split <split>] [--out <file>] [--max-invalid <n>]
  *        [--prices <file>] [--dry-run --script <file>]
@@ -22,6 +30,21 @@
  *        [--reasoning-effort <low|medium|high>] [--prices <file>]
  *        [--dry-run --script <file>]
  *                                          Run the agent over the manifest.
+ *   page --agent <spec> --out <dir> [--base-url <url>] [--api-key-env <var>]
+ *        [--moves <n>] [--seed <s>] [--timeout-ms <ms>]
+ *                                          Attach the agent to the vendored
+ *                                          2048 page through the overlay's
+ *                                          own injection path, one move at a
+ *                                          time under the bridge referee, and
+ *                                          write page/<seed>.json (a
+ *                                          refereed bridge-session log) plus
+ *                                          page/run.json (provenance and
+ *                                          turn accounting) into the bundle;
+ *                                          `verify <dir>` and `bundle verify`
+ *                                          replay it. Exit status is non-zero
+ *                                          when the referee flags a move.
+ *                                          Needs Playwright from the nested
+ *                                          gauntlet/bridge/browser package.
  *   leaderboard --suite <file> [--out <dir>] [--scoring-profile <name>]
  *        [--json] <dirs...>
  *                                          Score run directories, render JSON
@@ -41,6 +64,13 @@
  *   random                          The bundled seeded random agent (baseline).
  *   baseline:<game>:<greedy|engine> A game packet's bundled baseline; a suite
  *                                   run with this spec covers that game only.
+ *   skill:<p>:<expert-spec>         The skill dial (agents/skill-dial.js): the
+ *                                   expert degraded toward random play by a
+ *                                   per-turn probability p in [0, 1];
+ *                                   <expert-spec> is "random" or any baseline
+ *                                   spec, e.g. skill:0.25:baseline:sokoban:
+ *                                   engine. The trajectory records the dial's
+ *                                   own id, dial-<expert id>-p<p*100>.
  *   model:<provider>/<model>        An official-track model agent (provider
  *                                   anthropic, openai or openai-chat).
  *                                   openai-chat speaks any OpenAI-compatible
@@ -77,6 +107,8 @@
  */
 
 import { writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { getGame, listGames } from '../games/index.js';
 import { runEpisode, findTier } from '../core/runner.js';
 import { publicSeed } from '../core/seeds.js';
@@ -89,6 +121,7 @@ import { rateRunDirs } from './rate.js';
 import { resolveProfile } from '../scoring/profiles.js';
 import { buildEstimate } from './estimate.js';
 import { printBundleVerify } from './bundle.js';
+import { runPageSubcommand } from './page.js';
 import { parseAgentSpec } from './agents.js';
 
 /**
@@ -104,6 +137,8 @@ function usage() {
       '                      [--split <split>] [--out <file>] [--max-invalid <n>]',
       '                      [--prices <file>] [--dry-run --script <file>]',
       '       gauntlet verify <trajectory.json-or-dir>',
+      '       gauntlet replay <trajectory.json> [--step N] [--format text|json]',
+      '                      [--max-reply-chars K]',
       '       gauntlet suite build --split public|eval [--salt-file <file>]',
       '                      [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]',
       '       gauntlet run --suite <file> --agent <spec> --out <dir> [--limit <n>]',
@@ -113,11 +148,16 @@ function usage() {
       '                      [--prices <file>] [--dry-run --script <file>]',
       '       gauntlet estimate --suite <file> --agent <spec> [--prices <file>] [--out <dir>]',
       '                         [--no-probes] [--against <runDir>] [--json]',
+      '       gauntlet page --agent <spec> --out <dir> [--base-url <url>] [--api-key-env <var>]',
+      '                      [--moves <n>] [--seed <s>] [--timeout-ms <ms>]',
       '       gauntlet leaderboard --suite <file> [--out <dir>] [--scoring-profile rhae-v1] [--json] <dirs...>',
       '       gauntlet rate <dirs...> [--ladder <file>] [--json]',
       '       gauntlet serve',
       '',
-      'agent specs: random | baseline:<game>:<greedy|engine> | model:<provider>/<model>',
+      'agent specs: random | baseline:<game>:<greedy|engine> | skill:<p>:<expert-spec>',
+      '             | model:<provider>/<model>',
+      '',
+      '  skill:<p>:<expert-spec> — the skill dial over "random" or a baseline spec',
     ].join('\n') + '\n'
   );
   process.exit(2);
@@ -308,6 +348,38 @@ async function main(argv) {
     if (positionals.length !== 1) usage();
     const report = await verifyPath(positionals[0]);
     if (report.failures.length > 0) process.exitCode = 1;
+    return;
+  }
+
+  if (command === 'page') {
+    const agentSpecText = flags.get('agent');
+    const outDir = flags.get('out');
+    if (!agentSpecText || !outDir) usage();
+    const result = await runPageSubcommand({
+      agentSpecText: /** @type {string} */ (agentSpecText),
+      outDir: /** @type {string} */ (outDir),
+      ...(flags.has('moves') ? { maxMoves: numberFlag(flags, 'moves') } : {}),
+      ...(flags.has('seed') ? { seed: numberFlag(flags, 'seed') } : {}),
+      ...(flags.has('timeout-ms') ? { timeoutMs: numberFlag(flags, 'timeout-ms') } : {}),
+      ...(flags.has('url-path') ? { urlPath: /** @type {string} */ (flags.get('url-path')) } : {}),
+      ...modelFlags(flags),
+    });
+    // A referee-flagged move fails the command: the bundle is written for the
+    // audit, but the exit status says the session did not verify.
+    if (!result.verified.ok) process.exitCode = 1;
+    return;
+  }
+
+  if (command === 'replay') {
+    // Delegate to the standalone viewer (replay/cli.js): one implementation,
+    // the same argument grammar, and the same exit codes (2 usage, 1 refused
+    // by replay verification). The raw arguments pass through untouched.
+    const viewer = fileURLToPath(new URL('../replay/cli.js', import.meta.url));
+    const result = spawnSync(process.execPath, [viewer, ...rest], {
+      stdio: 'inherit',
+    });
+    if (result.error) throw result.error;
+    process.exitCode = result.status ?? 1;
     return;
   }
 

@@ -1,9 +1,12 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
 import { chromium } from 'playwright';
 
 import {
@@ -405,8 +408,13 @@ test('timeoutMs fires when the model endpoint stalls: the session rejects instea
     );
     const elapsedMs = performance.now() - t0;
     assert.ok(
-      elapsedMs < 20000,
-      `the session must settle promptly on timeout, took ${Math.round(elapsedMs)}ms`,
+      elapsedMs < 7000,
+      `the session must settle near the timeout itself, took ${Math.round(elapsedMs)}ms (timeoutMs was 5000)`,
+    );
+    assert.equal(
+      browser.contexts().length,
+      0,
+      'no browser context may be left open after the timeout — the race must reach the finally cleanup',
     );
   } finally {
     stalled.closeAllConnections();
@@ -443,9 +451,9 @@ test('a model endpoint that always fails: every turn is an error turn, the drive
     assert.equal(report.fallbacks, 3, 'every move without a usable model action is a driver fallback');
     for (const turn of report.modelTurns) {
       assert.match(turn.error, /HTTP 400/);
-      // A provider throw carries no retry metadata, so the count is unknown:
-      // recording 0 here would undercount exactly on failing turns.
-      assert.equal(turn.retries, null);
+      // HTTP 400 is not retryable, so the client answered once and gave up:
+      // the throw carries the retries it performed — 0, not an unknown count.
+      assert.equal(turn.retries, 0);
       assert.equal(turn.responseId, null);
       // A failed turn has no usage: unknown, never 0 — 0 would read as
       // measured.
@@ -462,6 +470,222 @@ test('a model endpoint that always fails: every turn is an error turn, the drive
   } finally {
     failing.closeAllConnections();
     await new Promise((closeOk) => failing.close(closeOk));
+  }
+});
+
+test('a 503-storm endpoint exhausts its retries and the failed turn records the real retry count', { timeout: 120000 }, async () => {
+  // 503 IS retryable: the provider client tries once plus three retries
+  // (default) with exponential backoff, then throws retryError, which carries
+  // the count it performed as `retries`. The turn record must surface that
+  // real count — a null here would waste the metadata exactly on the turns
+  // where retries matter.
+  let requests = 0;
+  const storm = http.createServer((req, res) => {
+    if (String(req.url).includes('/v1/chat/completions')) {
+      requests += 1;
+      res.writeHead(503, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { message: 'stub: unavailable' } }));
+      return;
+    }
+    res.writeHead(404).end();
+  });
+  await new Promise((listenOk) => storm.listen(0, '127.0.0.1', listenOk));
+  try {
+    const report = await runBrowserModelSession({
+      browser,
+      port,
+      baseUrl: `http://127.0.0.1:${storm.address().port}`,
+      model: 'stub-503',
+      maxMoves: 1,
+      timeoutMs: 120000,
+    });
+    assert.equal(requests, 4, 'one initial attempt plus three retries hit the endpoint');
+    assert.equal(report.modelTurns.length, 1);
+    const turn = report.modelTurns[0];
+    assert.match(turn.error, /HTTP 503 after 3 retries/);
+    assert.equal(turn.retries, 3, 'the failed turn records the retries the client actually performed');
+    assert.equal(turn.inputTokens, null, 'a failed turn has no usage: unknown, never 0');
+    assert.equal(turn.outputTokens, null);
+    assert.equal(turn.responseId, null);
+    // The session survives on the fallback path, and the log still verifies.
+    assert.equal(report.moves, 1);
+    assert.equal(report.fallbacks, 1);
+    assert.equal(report.errorTurns, 1);
+    const verified = verifyBridgeLog(report.log);
+    assert.equal(verified.ok, true, verified.ok ? '' : `fallback log failed replay at step ${verified.index}: ${verified.reason}`);
+    const reduced = summarizeModelTurns(report.modelTurns);
+    assert.equal(reduced.errorTurns, 1);
+    assert.equal(reduced.totalPromptTokens, 'unknown');
+    assert.equal(reduced.totalCompletionTokens, 'unknown');
+  } finally {
+    storm.closeAllConnections();
+    await new Promise((closeOk) => storm.close(closeOk));
+  }
+});
+
+// `gauntlet page` end to end: the CLI subprocess resolves the agent spec,
+// builds the bookmarklet bundle, starts its own fixture server and Chromium,
+// plays the page, and writes the bundle — then `gauntlet bundle verify`
+// replays what it wrote. Spawned async (never spawnSync: the child's model
+// client can call back into a parent-hosted stub, and a blocked parent event
+// loop would deadlock the retry loop).
+
+const execFileAsync = promisify(execFile);
+const thisDir = fileURLToPath(new URL('.', import.meta.url));
+const CLI_PATH = resolve(thisDir, '..', '..', 'cli', 'gauntlet.js');
+const REPO_ROOT = resolve(thisDir, '..', '..', '..');
+
+test('gauntlet page: the greedy baseline on the clean page writes a bundle that `gauntlet bundle verify` passes', { timeout: 420000 }, async () => {
+  const outDir = await mkdtemp(join(tmpdir(), 'gauntlet-page-clean-'));
+  try {
+    await execFileAsync(
+      process.execPath,
+      [CLI_PATH, 'page', '--agent', 'baseline:2048:greedy', '--out', outDir, '--seed', '11111', '--moves', '20'],
+      { cwd: REPO_ROOT, timeout: 360000, maxBuffer: 16 * 1024 * 1024 },
+    );
+    const log = JSON.parse(await readFile(join(outDir, 'page', '11111.json'), 'utf8'));
+    assert.equal(log.format, 'playkit-gauntlet-bridge-log/1');
+    assert.ok(log.steps.length >= 20 || log.ended.reason === 'game-over', `unexpected log: ${log.steps.length} steps, ended ${log.ended.reason}`);
+    const runRecord = JSON.parse(await readFile(join(outDir, 'page', 'run.json'), 'utf8'));
+    assert.equal(runRecord.format, 'playkit-gauntlet-page-run/1');
+    assert.equal(runRecord.agent.spec, 'baseline:2048:greedy');
+    assert.equal(runRecord.verify.ok, true);
+    const verify = await execFileAsync(process.execPath, [CLI_PATH, 'bundle', 'verify', outDir], {
+      cwd: REPO_ROOT,
+      timeout: 120000,
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    assert.match(verify.stdout, /page sessions 1\/1 verified/);
+    assert.match(verify.stdout, /verdict  ok/);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('gauntlet page: a referee-flagged fault-page session writes its bundle and fails verification at the offending move', { timeout: 420000 }, async () => {
+  const outDir = await mkdtemp(join(tmpdir(), 'gauntlet-page-fault-'));
+  try {
+    await assert.rejects(
+      execFileAsync(
+        process.execPath,
+        [
+          CLI_PATH,
+          'page',
+          '--agent',
+          'baseline:2048:greedy',
+          '--out',
+          outDir,
+          '--seed',
+          '987654321',
+          '--moves',
+          '200',
+          '--url-path',
+          '/2048-faulty/',
+        ],
+        { cwd: REPO_ROOT, timeout: 360000, maxBuffer: 16 * 1024 * 1024 },
+      ),
+      (err) => {
+        assert.equal(err.code, 1, 'a referee-flagged session must exit non-zero');
+        assert.match(String(err.stdout), /replay   FAILED at step \d+/);
+        return true;
+      },
+    );
+    // The bundle is still written — it exists for the audit, not for success.
+    const log = JSON.parse(await readFile(join(outDir, 'page', '987654321.json'), 'utf8'));
+    assert.equal(log.format, 'playkit-gauntlet-bridge-log/1');
+    const runRecord = JSON.parse(await readFile(join(outDir, 'page', 'run.json'), 'utf8'));
+    assert.equal(runRecord.verify.ok, false);
+    assert.ok(typeof runRecord.verify.step === 'number');
+    const verify = await assert.rejects(
+      execFileAsync(process.execPath, [CLI_PATH, 'bundle', 'verify', outDir], {
+        cwd: REPO_ROOT,
+        timeout: 120000,
+        maxBuffer: 16 * 1024 * 1024,
+      }),
+      (err) => {
+        assert.equal(err.code, 1);
+        assert.match(String(err.stdout), /page sessions 0\/1 verified/);
+        assert.match(String(err.stdout), new RegExp(`FAIL  page/987654321.json — verifyBridgeLog \\(step ${runRecord.verify.step}\\)`));
+        return true;
+      },
+    );
+    void verify;
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('gauntlet page: an openai-chat model spec on 127.0.0.1 drives the session end to end and the bundle accounting sums usage', { timeout: 420000 }, async () => {
+  // A stub OpenAI-compatible endpoint on 127.0.0.1. The child CLI runs async,
+  // so this parent event loop stays free to answer its requests.
+  const stub = http.createServer((req, res) => {
+    if (String(req.url).includes('/v1/chat/completions')) {
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+      req.on('end', () => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            id: 'stub-page-1',
+            choices: [{ message: { role: 'assistant', content: 'up' } }],
+            usage: { prompt_tokens: 12, completion_tokens: 3 },
+          }),
+        );
+      });
+      return;
+    }
+    res.writeHead(404).end();
+  });
+  await new Promise((listenOk) => stub.listen(0, '127.0.0.1', listenOk));
+  const outDir = await mkdtemp(join(tmpdir(), 'gauntlet-page-stub-'));
+  try {
+    await execFileAsync(
+      process.execPath,
+      [
+        CLI_PATH,
+        'page',
+        '--agent',
+        'model:openai-chat/stub-model',
+        '--base-url',
+        `http://127.0.0.1:${stub.address().port}`,
+        '--api-key-env',
+        'GAUNTLET_STUB_KEY',
+        '--out',
+        outDir,
+        '--seed',
+        '11111',
+        '--moves',
+        '3',
+        '--timeout-ms',
+        '300000',
+      ],
+      {
+        cwd: REPO_ROOT,
+        timeout: 360000,
+        maxBuffer: 16 * 1024 * 1024,
+        env: { ...process.env, GAUNTLET_STUB_KEY: 'stub-key' },
+      },
+    );
+    const runRecord = JSON.parse(await readFile(join(outDir, 'page', 'run.json'), 'utf8'));
+    assert.equal(runRecord.verify.ok, true);
+    assert.equal(runRecord.moves, 3);
+    assert.equal(runRecord.turns.length, 3, 'one agent call per move through the Node proxy');
+    assert.equal(runRecord.accounting.errorTurns, 0);
+    assert.equal(runRecord.accounting.totalPromptTokens, 36, '3 turns × 12 prompt tokens');
+    assert.equal(runRecord.accounting.totalCompletionTokens, 9, '3 turns × 3 completion tokens');
+    const verify = await execFileAsync(process.execPath, [CLI_PATH, 'bundle', 'verify', outDir], {
+      cwd: REPO_ROOT,
+      timeout: 120000,
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    assert.match(verify.stdout, /page sessions 1\/1 verified/);
+    assert.match(verify.stdout, /verdict  ok/);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+    stub.closeAllConnections();
+    await new Promise((closeOk) => stub.close(closeOk));
   }
 });
 

@@ -125,15 +125,20 @@ process with its latency and token usage (`modelTurns`, `modelLatencyMs`,
 `totalPromptTokens` / `totalCompletionTokens` on the report). A model call
 that fails after retries is recorded and becomes an empty reply — the driver
 falls back, the step is logged with `chosen: null`, and the session continues.
-The failed turn records `retries: null` ("unknown"): the provider client's
-throw carries no retry metadata, so the report never undercounts by claiming
-zero.
+The failed turn records the real retry count the client performed: the
+provider client attaches `retries` to every throw (`retryError` in
+`harness/model-agent.js`), so an exhausted retry storm records the exhausted
+count and an immediately-failing non-retryable status records 0 — the report
+never undercounts retries exactly on the failing turns where the count
+matters, and `null` is reserved for throws that carry no count at all.
 
 The session timeout (`timeoutMs`, default 600000) is enforced from Node, not
 from the page: the session-driving `page.evaluate` runs detached and is raced
 against the report channel and the timeout, so a model endpoint that stalls
-forever settles the caller at `timeoutMs` (the stub-server test below pins
-this) and cleanup still closes the wedged page.
+forever settles the caller at `timeoutMs` (the stub-server test pins this —
+the caller settles within roughly the timeout itself, not a generous
+ceiling — and asserts no browser context is left open afterwards) and cleanup
+still closes the wedged page.
 
 Accounting on every report: `fallbacks` counts moves the driver played that
 the model did not choose (`chosen === null` steps); `diverged` counts steps
@@ -146,7 +151,61 @@ Tests: an offline fixture test replays a recorded real-model session log
 (`fixtures/model-session-2048.json`) through `verifyBridgeLog`; the pure
 report reductions and the full Playwright path are exercised by the default
 suite against local stub servers (one stalled endpoint pinning the timeout
-contract, one always-failing endpoint pinning error-turn recording); the
-live-model tests are opt-in — skipped with a named reason unless
-`GAUNTLET_LOCAL_CHAT_URL` and `GAUNTLET_LOCAL_CHAT_MODEL` name the model
-server (serve commands in `harness/PROVIDERS.md`).
+contract, one immediately-failing endpoint pinning error-turn recording, one
+503-storm endpoint pinning that a failed turn records the retries the client
+actually performed); the `gauntlet page` CLI path is exercised end to end by
+subprocess tests (see below); the live-model tests are opt-in — skipped with
+a named reason unless `GAUNTLET_LOCAL_CHAT_URL` and `GAUNTLET_LOCAL_CHAT_MODEL`
+name the model server (serve commands in `harness/PROVIDERS.md`).
+
+## `gauntlet page` — the CLI subcommand (`page-session.mjs`, `cli/page.js`)
+
+`gauntlet page` is the CLI front door for everything above: it attaches any
+Gauntlet agent — the same specs `gauntlet run` takes — to the vendored 2048
+page through the overlay's own injection path, one move at a time under the
+bridge referee, and writes the refereed session log into a run bundle.
+
+```sh
+gauntlet page --agent baseline:2048:greedy --out results/page-demo --seed 11111 --moves 200
+gauntlet page --agent model:openai-chat/qwen3-4b --base-url http://127.0.0.1:8000 \
+  --api-key-env OPENAI_API_KEY --out results/page-model
+gauntlet bundle verify results/page-demo
+```
+
+Two agent kinds ride the page:
+
+- **In-page baselines** (`baseline:2048:greedy|engine`): the page imports the
+  baseline from the vendored Gauntlet package itself — the same choreography
+  as `harness.mjs`'s `runBrowserSession`, with no Node round-trip per move.
+- **A Node-side agent** (`random`, `model:<provider>/<model>`, dry-run
+  scripted agents): `page-session.mjs` generalizes `model-session.mjs`'s
+  proxy to any agent object with `act(ctx)` — the turn context crosses
+  `page.exposeFunction` into Node, the reply crosses back, and the page
+  needs no CORS access to anything. Model agents record their usage;
+  `random` and scripted agents record latency with unreported counts, and
+  unknown stays unknown — token totals read `unknown`, never 0.
+
+The CLI writes `page/<seed>.json` (the `playkit-gauntlet-bridge-log/1`
+session log) and `page/run.json` (provenance and the turn accounting) into
+`--out`. The log is a refereed record, so it is auditable, not just a
+story: `gauntlet bundle verify` replays every `page/*.json` through
+`verifyBridgeLog` — standalone or alongside a `gauntlet run` bundle's
+trajectories (reported separately; page sessions are unseeded and never
+score). A referee-flagged move makes `gauntlet page` exit non-zero and the
+bundle fail verification at exactly that move — demonstrated against the
+tampered copy via `--url-path /2048-faulty/`.
+
+`--seed` pins the page's `Math.random` for a reproducible session (the log
+file is named by the seed); without it the page's own randomness plays and
+the log is named by timestamp. `--timeout-ms` (default 600000) bounds the
+whole session — a stalled model endpoint rejects within it instead of
+hanging forever. The browser path lives in this nested package because
+`playwright` resolves only from here; the main package stays dependency-free
+and loads this module dynamically, only for `gauntlet page`.
+
+Tests: subprocess end-to-end cases run the real CLI against the clean page
+(bundle verifies), the tampered copy (exit non-zero, verification fails at
+the offending step), and a stub OpenAI-compatible endpoint on `127.0.0.1`
+(the bundle accounting sums the stub's token usage); offline cases in the
+main package verify standalone page-session bundles and page sessions riding
+a `gauntlet run` bundle from the recorded fixture log.

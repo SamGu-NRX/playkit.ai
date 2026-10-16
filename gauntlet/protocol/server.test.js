@@ -199,7 +199,7 @@ test('list advertises registered games over the wire', async () => {
     assert.ok(game, 'tictactoe must be listed');
     assert.deepEqual(
       game.tiers.map((/** @type {any} */ t) => t.id),
-      ['perfect-opponent']
+      ['random-opponent', 'blunder-opponent', 'perfect-opponent']
     );
     assert.equal(game.tiers[0].maxActions, 20);
   } finally {

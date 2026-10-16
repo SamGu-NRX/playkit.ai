@@ -1,15 +1,16 @@
 /**
- * Tic-Tac-Toe: the Gauntlet smoke game. Two seats, perfect information, a
- * perfect minimax opponent with seeded tie-breaks, and the agent's seat
- * alternating with the seed. benchmark: false — this game exists to exercise
- * the contract end to end, not to rank agents.
+ * Tic-Tac-Toe: the Gauntlet smoke game. Two seats, perfect information, three
+ * opponent tiers on one ladder — a seeded uniform-random opponent, a perfect
+ * minimax that blunders with a seeded 30% chance, and the perfect minimax —
+ * with the agent's seat alternating with the seed. benchmark: false — this
+ * game exists to exercise the contract end to end, not to rank agents.
  *
  * @module
  */
 
 import { GauntletRuleError } from '../../core/errors.js';
 import { fnv1a64 } from '../../core/canonical.js';
-import { nextInt, streamFromSeed } from '../../core/rng.js';
+import { nextFloat, nextInt, streamFromSeed } from '../../core/rng.js';
 
 /** @import { Agent, Game, Observation, ParseResult, TierSpec, TurnContext } from '../../core/types.js' */
 
@@ -37,6 +38,9 @@ const LINES = [
  * Game state: plain JSON, so it survives a round trip unchanged.
  *
  * @typedef {object} TictactoeState
+ * @property {string} tierId The tier whose spec produced this state; drives
+ *   the opponent choice and the observation header. Internal: observe() strips
+ *   it from observation data so recorded observation hashes stay stable.
  * @property {(string | null)[]} board Nine cells, index = row * 3 + column.
  * @property {number} toMove Seat 0 (X) or 1 (O).
  * @property {'playing' | 'won' | 'draw'} status
@@ -91,6 +95,7 @@ function applyMove(state, seat, index) {
     status = 'draw';
   }
   return {
+    tierId: state.tierId,
     board,
     toMove: 1 - seat,
     status,
@@ -156,8 +161,26 @@ export const tictactoe = {
     ].join(' '),
     tiers: /** @type {import('../../core/types.js').TierSpec[]} */ ([
       {
-        id: 'perfect-opponent',
+        id: 'random-opponent',
         rank: 1,
+        scoring: 'outcome',
+        maxActions: 20,
+        // 16 public seeds: the on-ramp verdict needs >= 16 scored episodes.
+        publicSeeds: 16,
+        params: { opponent: 'random', tieBreak: 'seeded' },
+      },
+      {
+        id: 'blunder-opponent',
+        rank: 2,
+        scoring: 'outcome',
+        maxActions: 20,
+        // 16 public seeds: the on-ramp verdict needs >= 16 scored episodes.
+        publicSeeds: 16,
+        params: { opponent: 'minimax-blunder', blunderRate: 0.3, tieBreak: 'seeded' },
+      },
+      {
+        id: 'perfect-opponent',
+        rank: 3,
         scoring: 'outcome',
         maxActions: 20,
         publicSeeds: 8,
@@ -167,12 +190,13 @@ export const tictactoe = {
   },
 
   /**
-   * @param {TierSpec} _tier
-   * @param {string} _seed
+   * @param {TierSpec} tier The tier whose id is stamped into the state.
+   * @param {string} _seed A seeded string; reset ignores it.
    * @returns {TictactoeState}
    */
-  reset(_tier, _seed) {
+  reset(tier, _seed) {
     return {
+      tierId: tier.id,
       board: new Array(9).fill(null),
       toMove: 0,
       status: 'playing',
@@ -224,12 +248,22 @@ export const tictactoe = {
         : 'Legal actions: none (game over).';
     return {
       text: [
-        `Tic-Tac-Toe, tier ${this.spec.tiers[0].id}. You are seat ${seat} (${you}).`,
+        `Tic-Tac-Toe, tier ${state.tierId}. You are seat ${seat} (${you}).`,
         board,
         statusText,
         legalText,
       ].join('\n'),
-      data: { ...state, you: seat },
+      // Explicit field list on purpose: hashObservation covers data, and the
+      // recorded data shape predates the internal tierId field, so tierId is
+      // not spread through and the six keys stay exactly as first shipped.
+      data: {
+        board: state.board,
+        toMove: state.toMove,
+        status: state.status,
+        winner: state.winner,
+        moveCount: state.moveCount,
+        you: seat,
+      },
     };
   },
 
@@ -373,8 +407,14 @@ export const tictactoe = {
   },
 
   /**
-   * The perfect opponent: minimax over the full game tree, with seeded
-   * tie-breaks among equally good moves.
+   * The tier's opponent agent. `random-opponent` seats a seeded
+   * uniform-random player; `blunder-opponent` seats the perfect minimax with
+   * a seeded params.blunderRate chance (0.3) of a uniform-random move instead
+   * of its best move; every other tier seats the perfect minimax with seeded
+   * tie-breaks among equally good moves. All three draw from the same stream
+   * shape, `<tier.id>/<seed>/opponent/<seat>/turn<turn>`, one draw per
+   * decision in a fixed order (blunder coin first, then move pick), so each
+   * tier's play is a pure function of (tier, seed, seat, turn).
    *
    * @param {TierSpec} tier
    * @param {string} seed
@@ -382,17 +422,68 @@ export const tictactoe = {
    * @returns {Agent}
    */
   opponent(tier, seed, seat) {
+    const params = /** @type {{ opponent: string, blunderRate?: number }} */ (tier.params);
+    const seedKey = `${tier.id}/${seed}/opponent/${seat}/turn`;
+
+    /**
+     * Seeded uniform-random legal cell from the observation payload.
+     *
+     * @param {TurnContext} ctx
+     * @param {import('../../core/rng.js').RngStream} stream
+     * @returns {string}
+     */
+    function randomCell(ctx, stream) {
+      const data = /** @type {TictactoeState} */ (ctx.observation.data);
+      const free = CELLS.filter((cell) => data.board[cellIndex(cell)] === null);
+      if (free.length === 0) {
+        throw new GauntletRuleError('random opponent found no legal cell');
+      }
+      return free[stream.nextInt(0, free.length - 1)];
+    }
+
+    if (params.opponent === 'random') {
+      return {
+        id: 'random-opponent',
+        track: 'baseline',
+        async act(/** @type {TurnContext} */ ctx) {
+          const stream = streamFromSeed(`${seedKey}${ctx.turn}`);
+          return { text: randomCell(ctx, stream) };
+        },
+      };
+    }
+
+    if (params.opponent === 'minimax-blunder') {
+      const blunderRate = /** @type {number} */ (params.blunderRate);
+      return {
+        id: 'minimax-blunder',
+        track: 'baseline',
+        async act(/** @type {TurnContext} */ ctx) {
+          const data = /** @type {TictactoeState} */ (ctx.observation.data);
+          const stream = streamFromSeed(`${seedKey}${ctx.turn}`);
+          if (stream.nextFloat() < blunderRate) {
+            return { text: randomCell(ctx, stream) };
+          }
+          const { moves } = negamax(data);
+          if (moves.length === 0) {
+            throw new GauntletRuleError('blunder opponent found no legal move');
+          }
+          const index = moves[stream.nextInt(0, moves.length - 1)];
+          return { text: cellName(index) };
+        },
+      };
+    }
+
     return {
       id: 'minimax-perfect',
       track: 'baseline',
-      async act(ctx) {
-        const data = /** @type {TictactoeState & { you?: number }} */ (ctx.observation.data);
+      async act(/** @type {TurnContext} */ ctx) {
+        const data = /** @type {TictactoeState} */ (ctx.observation.data);
         const { moves } = negamax(data);
         if (moves.length === 0) {
           throw new GauntletRuleError('minimax opponent found no legal move');
         }
-        const stream = streamFromSeed(`${tier.id}/${seed}/opponent/${seat}/turn${ctx.turn}`);
-        const index = moves[nextInt(stream.getState(), 0, moves.length - 1).value];
+        const stream = streamFromSeed(`${seedKey}${ctx.turn}`);
+        const index = moves[stream.nextInt(0, moves.length - 1)];
         return { text: cellName(index) };
       },
     };

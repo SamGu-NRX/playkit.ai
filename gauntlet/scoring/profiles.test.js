@@ -432,9 +432,137 @@ test('leaderboard: a uniform chance-adjusted board ranks without refusal', async
   assert.equal(/** @type {number} */ (board.tracks.community[1].benchmarkScore?.value), 0);
 });
 
+test('leaderboard: entries scored against different baselines refuse to rank together (baseline-mismatch)', async () => {
+  const passTrajectories = await runSuite(
+    TAKE_SUITE,
+    TAKE_GAMES,
+    scriptedBySeed(['pass', 'pass'], 'agent-pass')
+  );
+  const takeTrajectories = await runSuite(
+    TAKE_SUITE,
+    TAKE_GAMES,
+    scriptedBySeed(['take', 'take'], 'agent-take')
+  );
+  // Same profile, same shape of baseline — but different baseline files (here
+  // attested by different SHA-256s). Different r vectors mean different
+  // denominators and clamps per tier, i.e. different scales under the same
+  // profile name.
+  try {
+    await leaderboard(TAKE_SUITE, [
+      {
+        agent: { id: 'agent-take', track: 'community' },
+        trajectories: takeTrajectories,
+        profile: 'chance-adjusted',
+        baseline: /** @type {*} */ (TAKE_BASELINE),
+        baselineSha256: 'a'.repeat(64),
+      },
+      {
+        agent: { id: 'agent-pass', track: 'community' },
+        trajectories: passTrajectories,
+        profile: 'chance-adjusted',
+        baseline: /** @type {*} */ (TAKE_BASELINE),
+        baselineSha256: 'b'.repeat(64),
+      },
+    ], TAKE_GAMES);
+    assert.fail('mixed-baseline boards must refuse to rank');
+  } catch (error) {
+    assert.ok(error instanceof GauntletRefusalError);
+    assert.equal(/** @type {GauntletRefusalError} */ (error).step, 'baseline-mismatch');
+    const message = /** @type {Error} */ (error).message;
+    assert.ok(message.includes('agent-take') || message.includes('agent-pass'),
+      `the refusal must name the offending entries, got: ${message}`);
+    assert.ok(message.includes('a'.repeat(64).slice(0, 8)) && message.includes('b'.repeat(64).slice(0, 8)),
+      `the refusal must name both baselines, got: ${message}`);
+  }
+});
+
+test('leaderboard: entries under the rhae-v1 default may carry different baselines (the profile never reads one)', async () => {
+  const passTrajectories = await runSuite(
+    TAKE_SUITE,
+    TAKE_GAMES,
+    scriptedBySeed(['pass', 'pass'], 'agent-pass')
+  );
+  const takeTrajectories = await runSuite(
+    TAKE_SUITE,
+    TAKE_GAMES,
+    scriptedBySeed(['take', 'take'], 'agent-take')
+  );
+  // Under rhae-v1 the baseline is inert — it is never read — so a differing
+  // baselineSha256 is provenance noise, not a scale difference.
+  const { leaderboard: board } = await leaderboard(TAKE_SUITE, [
+    {
+      agent: { id: 'agent-take', track: 'community' },
+      trajectories: takeTrajectories,
+      baselineSha256: 'a'.repeat(64),
+    },
+    {
+      agent: { id: 'agent-pass', track: 'community' },
+      trajectories: passTrajectories,
+      baselineSha256: 'b'.repeat(64),
+    },
+  ], TAKE_GAMES);
+  assert.equal(board.tracks.community.length, 2);
+});
+
+test('leaderboard: the scoring block names the baseline the entries were actually scored against', async () => {
+  const passTrajectories = await runSuite(
+    TAKE_SUITE,
+    TAKE_GAMES,
+    scriptedBySeed(['pass', 'pass'], 'agent-pass')
+  );
+  const takeTrajectories = await runSuite(
+    TAKE_SUITE,
+    TAKE_GAMES,
+    scriptedBySeed(['take', 'take'], 'agent-take')
+  );
+  // Per-entry baselines, no board-level sha: the provenance block must come
+  // from the entries' consensus, not fall back to nothing or to an unrelated
+  // options value.
+  const { leaderboard: board } = await leaderboard(TAKE_SUITE, [
+    {
+      agent: { id: 'agent-take', track: 'community' },
+      trajectories: takeTrajectories,
+      profile: 'chance-adjusted',
+      baseline: /** @type {*} */ (TAKE_BASELINE),
+      baselineSha256: 'c'.repeat(64),
+    },
+    {
+      agent: { id: 'agent-pass', track: 'community' },
+      trajectories: passTrajectories,
+      profile: 'chance-adjusted',
+      baseline: /** @type {*} */ (TAKE_BASELINE),
+      baselineSha256: 'c'.repeat(64),
+    },
+  ], TAKE_GAMES);
+  assert.equal(board.scoring?.profile, 'chance-adjusted');
+  assert.equal(board.scoring?.baselineSha256, 'c'.repeat(64));
+});
+
 //
 // The committed baseline file.
 //
+
+test('chance-adjusted refuses a baseline that is not a random baseline (chance-baseline-agent)', async () => {
+  const trajectories = await runSuite(TAKE_SUITE, TAKE_GAMES, scriptedBySeed(['take', 'pass']));
+  // A well-formed baseline measured from the greedy agent: validateBaseline
+  // accepts it, but "chance-adjusted" would then rescale against greedy means
+  // while every provenance surface claims random-baseline means.
+  const greedyBaseline = { ...TAKE_BASELINE, agent: 'greedy' };
+  try {
+    await score(TAKE_SUITE, trajectories, TAKE_GAMES, {
+      agent: { id: 'agent-mixed', track: 'community' },
+      profile: 'chance-adjusted',
+      baseline: /** @type {*} */ (greedyBaseline),
+    });
+    assert.fail('a non-random baseline must refuse under chance-adjusted');
+  } catch (error) {
+    assert.ok(error instanceof GauntletRefusalError);
+    assert.equal(/** @type {GauntletRefusalError} */ (error).step, 'chance-baseline-agent');
+    const message = /** @type {Error} */ (error).message;
+    assert.ok(message.includes('greedy') && message.includes('random'),
+      `the refusal must name the baseline kind and what was expected, got: ${message}`);
+  }
+});
 
 test('baselines/random-public.json loads, validates, and hashes to its own bytes', () => {
   const path = join(here, 'baselines', 'random-public.json');

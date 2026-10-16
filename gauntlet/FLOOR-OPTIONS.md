@@ -30,7 +30,7 @@ the machine-readable copy with per-table SHA-256s):
 | Connect Four | ladder-1 | **0.4167** | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
 | Connect Four | ladder-2 | 0.0000 | 0.5000 | 0.9167 | 0.9167 | 0.8403 |
 | Connect Four | ladder-3 | 0.0000 | 0.2917 | 0.8333 | 0.8333 | 0.6944 |
-| Connect Four | ladder-4 | 0.0417 | 0.3750 | 0.8750 | 0.8750 | 0.7656 |
+| Connect Four | ladder-4 | 0.0000 | 0.3750 | 0.8750 | 0.8750 | 0.7656 |
 | Connect Four | forced-win | 0.0417 | 0.4167 | 1.0000 | 1.0000 | 1.0000 |
 | Chess | paper–granite | 0.0000 | 0.0000–0.1000 | n/a¹ | n/a¹ | n/a¹ |
 | Tic-tac-toe (smoke) | perfect-opponent | 0.0625 | 0.4375 | 0.5000 | 0.4667 | 0.2500 |

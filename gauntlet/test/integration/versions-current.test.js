@@ -28,7 +28,7 @@ import { GAMES } from '../../games/index.js';
 const here = dirname(fileURLToPath(import.meta.url));
 const gauntletRoot = dirname(dirname(here));
 
-const tablePath = (id) => join(gauntletRoot, 'calibration', 'tables', `${id}.json`);
+const tablePath = (/** @type {string} */ id) => join(gauntletRoot, 'calibration', 'tables', `${id}.json`);
 const baselinePath = join(gauntletRoot, 'scoring', 'baselines', 'random-public.json');
 
 /**
@@ -64,7 +64,7 @@ test('every benchmark game has a current calibration table and random baseline',
         `${spec.id}: table calibrated on v${table.game?.version} but the installed game is v${spec.version} — regenerate with node calibration/run.js --games=${spec.id}`
       );
     }
-    const specTierIds = (spec.tiers ?? []).map((t) => t.id);
+    const specTierIds = (spec.tiers ?? []).map((/** @type {{ id: string }} */ t) => t.id);
     const gotTierIds = tableTierIds(table);
     const missingTiers = specTierIds.filter((id) => !gotTierIds.includes(id));
     const extraTiers = gotTierIds.filter((id) => !specTierIds.includes(id));

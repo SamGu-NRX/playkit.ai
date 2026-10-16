@@ -2,7 +2,7 @@
 
 - **Branch:** `obv/burst12-playkit-overlay-hud-a11y`
 - **Base:** `alpha` @ `72e5543`
-- **Head:** `1b835ca` (2 commits on top of base)
+- **Head:** `bf19a20` (3 commits on top of base)
 - **Task:** PR #58 "Next packets" 3–5 — the helper panel (HUD) works with a keyboard and a screen reader
 
 ## What changed
@@ -14,6 +14,7 @@ The overlay HUD was mouse-first: controls had no programmatic name, state change
 3. **Engine honesty** (`src/hud/templates.js`, `src/hud/view.js`) — when the active engine cannot honor Strategy/Heuristic, those selects render `disabled` with `aria-describedby="strategy-engine-hint"` pointing at a visible hint ("Strategy and heuristic options need the WASM solver."). Previously they were enabled, changeable, and silently ignored.
 4. **Respects `prefers-reduced-motion`** (`src/hud/templates.js`) — the auto-solving pulse animation and panel expand/collapse transition are disabled under `reduce`, and the pulse class is not applied at all.
 5. **Regression suite** (`src/test/hud-a11y.test.mjs`, new) — 10 jsdom tests: control naming/labelling, live-region announcements, collapse name/`aria-expanded` sync in both directions, engine gating + describedby wiring, reduced-motion CSS, and select `change` → `setSolverConfig` wiring.
+6. **Regenerated the tracked extension content** (`src/extension/content.js`) — it is the delivery vehicle that embeds the HUD template, and it had drifted (the prior HUD commit did not resync it, so the committed bundle predated even the naming work). The regenerated file embeds these fixes; without it the extension would keep shipping the inaccessible HUD.
 
 ## Type of change
 

@@ -17,6 +17,11 @@
  *     points (win = 1, draw = 0.5).
  *
  * Exit code 0 iff every check passes.
+ *
+ * Lifecycle: every Stockfish engine this script touches is an episode
+ * opponent built inside runEpisode, whose finally disposes it before the
+ * episode resolves — so engines are released between episodes here too, and
+ * no explicit teardown is needed at this level.
  */
 
 import { chessStockfish } from './index.js';

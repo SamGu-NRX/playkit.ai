@@ -43,7 +43,6 @@ import {
   PUBLIC_SEEDS,
   getEvalPuzzle,
   getPublicPuzzle,
-  publicMaxPlayerMoves,
 } from './puzzles.js';
 import { QUALITY, TIERS, tierIds } from './selection.js';
 
@@ -181,12 +180,14 @@ function endAfterPly(chessApi, mover) {
 }
 
 /**
- * Build the tier list from the bands and the committed sample: maxActions is
- * the tier's largest player-move count plus 2. The engine params are the
- * SAME at every tier — the tier ladder is the puzzles' human-calibrated
- * rating, not the baseline's strength — and exist so the bundled engine
- * baseline (which reads tier.params) is one fixed-strength agent across the
- * ladder.
+ * Build the tier list from the bands and the quality filters: maxActions is
+ * the filter's longest admissible player-move count plus 2, so ANY puzzle
+ * the filters admit is completable within the budget — eval puzzles obey
+ * only the filter bound, not the public sample's shape. The engine params
+ * are the SAME at every tier — the tier ladder is the puzzles'
+ * human-calibrated rating, not the baseline's strength — and exist so the
+ * bundled engine baseline (which reads tier.params) is one fixed-strength
+ * agent across the ladder.
  *
  * @type {TierSpec[]}
  */
@@ -194,7 +195,7 @@ const tiers = TIERS.map((band) => ({
   id: band.id,
   rank: band.rank,
   scoring: /** @type {'outcome'} */ ('outcome'),
-  maxActions: publicMaxPlayerMoves(band.id) + 2,
+  maxActions: QUALITY.maxPlayerMoves + 2,
   publicSeeds: PUBLIC_SEEDS,
   params: {
     min: band.min,
@@ -214,7 +215,7 @@ const RULES_SCORING = [
   'Every move you play must be exactly the next move of the winning line. A move that is not on the line — even a legal, good-looking one — ends the episode immediately unsolved (score 0).',
   'Exception: delivering checkmate at any point wins immediately, even if the mating move is not the line\'s next move (a mate in one may have more than one mating move).',
   'An unknown, unparseable or illegal move is an invalid attempt: it consumes an action attempt and the position is re-presented. Too many consecutive invalid attempts forfeit the episode.',
-  'The action budget is the longest solution in the tier plus two spare attempts; running out of budget ends the episode unsolved.',
+  `The action budget is ${QUALITY.maxPlayerMoves + 2} actions (the longest admissible line is ${QUALITY.maxPlayerMoves} player moves, plus 2 spare attempts); running out of budget ends the episode unsolved.`,
 ].join(' ');
 
 /** @type {GameSpec} */

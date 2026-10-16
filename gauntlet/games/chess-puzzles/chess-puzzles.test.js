@@ -97,9 +97,10 @@ test('spec shape: six rating tiers, one seat, outcome scoring, shared engine par
   }
 });
 
-test('tier budgets: maxActions is the sample max player moves plus two', () => {
+test('tier budgets: maxActions fits the filter bound and the public sample', () => {
   for (const tier of game.spec.tiers) {
-    assert.equal(tier.maxActions, publicMaxPlayerMoves(tier.id) + 2, `tier ${tier.id}`);
+    assert.equal(tier.maxActions, QUALITY.maxPlayerMoves + 2, `tier ${tier.id} budget`);
+    assert.ok(tier.maxActions >= publicMaxPlayerMoves(tier.id) + 2, `tier ${tier.id} public fit`);
   }
 });
 
@@ -324,6 +325,41 @@ test('eval sample: registration, resolution, and loud errors when absent', async
   assert.throws(() => resolvePuzzle('r0400', 'chess-puzzles/r0400/eval/evalTestPuzzle'), /no eval sample loaded for tier "r0400"/);
   clearEvalPuzzles();
   assert.throws(() => getEvalPuzzle('r1400', 'evalTestPuzzle'), /no eval sample loaded/);
+});
+
+test('eval seeds: the runner budget fits any filter-compliant puzzle in any tier', async (t) => {
+  t.after(() => clearEvalPuzzles());
+  // The quality filters admit QUALITY.maxPlayerMoves-length lines in EVERY
+  // tier, so the budget must fit them everywhere. A budget derived from the
+  // public sample alone (r0400: 5) cannot complete a 6-player-move eval
+  // puzzle in r0400 even with perfect play — the runner ends such episodes
+  // budget-exhausted. Re-rating a longest-line public record into the
+  // smallest tier is exactly that worst case, driven through the real
+  // runner where the budget is enforced.
+  const source = PUZZLES.find((record) => Math.floor(record.Moves.split(' ').length / 2) === QUALITY.maxPlayerMoves);
+  assert.ok(source, 'the public sample should contain a filter-max-length line to reuse');
+  registerEvalPuzzles([
+    /** @type {PuzzleRecord} */ ({ ...source, PuzzleId: 'budgetTestEval', Rating: 400 }),
+  ]);
+  // Moves[0] is the opponent's pre-move that reset() applies, so the agent's
+  // moves sit at odd indices of the dump line.
+  const playerMoves = source.Moves.split(' ').filter((_, index) => index % 2 === 1);
+  let next = 0;
+  const trajectory = await runEpisode({
+    game,
+    tierId: 'r0400',
+    seed: 'chess-puzzles/r0400/eval/budgetTestEval',
+    agent: {
+      id: 'line-follower',
+      track: /** @type {'baseline'} */ ('baseline'),
+      act: async () => ({ text: playerMoves[next++] }),
+    },
+  });
+  assert.deepEqual(
+    trajectory.end.outcome?.normalized,
+    [1],
+    `a perfect line must be completable within the action budget (end reason: ${trajectory.end.reason}, actions: ${trajectory.end.agentActions})`
+  );
 });
 
 test('eval loader: the Node-only loader registers a jsonl file', async (t) => {

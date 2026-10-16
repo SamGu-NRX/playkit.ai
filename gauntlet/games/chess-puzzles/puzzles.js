@@ -72,8 +72,9 @@ export function getPublicPuzzle(tierId, index) {
 }
 
 /**
- * The highest number of player moves in a tier's public sample; the tier's
- * maxActions is this plus 2.
+ * The highest number of player moves in a tier's public sample; the tier
+ * budget (the filter bound plus 2) must be at least this plus 2 for every
+ * public seed to be completable.
  *
  * @param {string} tierId
  * @returns {number}

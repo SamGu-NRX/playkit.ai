@@ -1,0 +1,115 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.0.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/3",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b538ff8d32f9032c",
+      "reply": {
+        "text": "reveal 4 5",
+        "usage": {
+          "inputTokens": 735,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-013tdfCloUyhF1WKKEQcyr13odwr5p8k",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 4 5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 735,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 6600
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b538ff8d32f9032c",
+      "reply": {
+        "text": "reveal 4 3",
+        "usage": {
+          "inputTokens": 757,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-AcuONcO9yRRBiwj36EhWmBWC9THVJ1Ar",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 4 3",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 757,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 6252
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "303d0d06514d9772",
+      "reply": {
+        "text": "reveal 5 5",
+        "usage": {
+          "inputTokens": 736,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-ZdXdqwxob2FRiCpI8gtGIPuClxVgm1d6",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 5 5",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 736,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 6292
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.6197183098591549
+      ],
+      "raw": [
+        44
+      ],
+      "reason": "mine revealed at row 5, column 5 — episode ends with 44 of 71 safe cells revealed"
+    },
+    "agentActions": 3,
+    "invalidActions": 1
+  },
+  "startedAt": "2026-10-15T23:49:07.401Z",
+  "finishedAt": "2026-10-15T23:49:26.546Z"
+}

@@ -16,7 +16,9 @@
  *        [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]
  *                                          Write (or print) a suite manifest.
  *   run --suite <file> --agent <spec> --out <dir> [--limit <n>]
- *        [--max-invalid <n>] [--prices <file>] [--dry-run --script <file>]
+ *        [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]
+ *        [--requests-per-minute <n>] [--max-output-tokens <n>]
+ *        [--call-timeout-ms <ms>] [--prices <file>] [--dry-run --script <file>]
  *                                          Run the agent over the manifest.
  *   leaderboard --suite <file> [--out <dir>] [--scoring-profile <name>]
  *        [--json] <dirs...>
@@ -47,6 +49,11 @@
  *                                   never logged). Live runs need --prices for
  *                                   cost accounting; --dry-run with
  *                                   --script <file> replays replies.
+ *                                   --max-output-tokens <n> caps each reply's
+ *                                   output tokens and --call-timeout-ms <ms>
+ *                                   bounds each attempt (a timed-out attempt
+ *                                   retries like any transport error); both
+ *                                   are recorded in run.json's limits.
  *
  * Node-only: imports `node:*` freely.
  * @module
@@ -83,7 +90,9 @@ function usage() {
       '       gauntlet suite build --split public|eval [--salt-file <file>]',
       '                      [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]',
       '       gauntlet run --suite <file> --agent <spec> --out <dir> [--limit <n>]',
-      '                      [--max-invalid <n>] [--prices <file>] [--dry-run --script <file>]',
+      '                      [--max-invalid <n>] [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]',
+      '                      [--requests-per-minute <n>] [--max-output-tokens <n>]',
+      '                      [--call-timeout-ms <ms>] [--prices <file>] [--dry-run --script <file>]',
       '       gauntlet leaderboard --suite <file> [--out <dir>] [--scoring-profile rhae-v1] [--json] <dirs...>',
       '       gauntlet rate <dirs...> [--ladder <file>] [--json]',
       '       gauntlet serve',
@@ -168,7 +177,7 @@ function finiteNumberFlag(flags, name) {
 
 /**
  * @param {Map<string, string>} flags
- * @returns {{ dryRun: boolean, prices?: string, script?: string, baseUrl?: string, apiKeyEnv?: string }}
+ * @returns {{ dryRun: boolean, prices?: string, script?: string, baseUrl?: string, apiKeyEnv?: string, maxOutputTokens?: number, callTimeoutMs?: number }}
  */
 function modelFlags(flags) {
   return {
@@ -177,6 +186,12 @@ function modelFlags(flags) {
     ...(flags.has('script') ? { script: /** @type {string} */ (flags.get('script')) } : {}),
     ...(flags.has('base-url') ? { baseUrl: /** @type {string} */ (flags.get('base-url')) } : {}),
     ...(flags.has('api-key-env') ? { apiKeyEnv: /** @type {string} */ (flags.get('api-key-env')) } : {}),
+    ...(flags.has('max-output-tokens')
+      ? { maxOutputTokens: numberFlag(flags, 'max-output-tokens') }
+      : {}),
+    ...(flags.has('call-timeout-ms')
+      ? { callTimeoutMs: numberFlag(flags, 'call-timeout-ms') }
+      : {}),
   };
 }
 

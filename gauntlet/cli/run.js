@@ -42,6 +42,10 @@ import { parseAgentSpec } from './agents.js';
  * @property {number} [maxUsd] Hard dollar cap on summed usage.costUsd.
  * @property {number} [maxCalls] Hard cap on agent calls across the run.
  * @property {number} [requestsPerMinute] Shared rate limit on agent calls.
+ * @property {number} [maxOutputTokens] --max-output-tokens: per-reply output
+ *   token cap for live model specs, also recorded in run.json's limits.
+ * @property {number} [callTimeoutMs] --call-timeout-ms: per-attempt timeout
+ *   for live model specs, also recorded in run.json's limits.
  * @property {boolean} [resume] Verify existing trajectory files and skip
  *   them; replay only missing or unverifiable ones.
  * @property {AbortSignal} [signal] Abort signal; a signalled run stops after
@@ -97,6 +101,12 @@ export async function runSuite(options) {
     ...(options.script ? { script: options.script } : {}),
     ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
     ...(options.apiKeyEnv ? { apiKeyEnv: options.apiKeyEnv } : {}),
+    ...(options.maxOutputTokens !== undefined
+      ? { maxOutputTokens: options.maxOutputTokens }
+      : {}),
+    ...(options.callTimeoutMs !== undefined
+      ? { callTimeoutMs: options.callTimeoutMs }
+      : {}),
   };
   const spec = await parseAgentSpec(options.agentSpecText, specOptions);
   const manifest = deriveManifest(suite, spec.gameId, options.limit);
@@ -120,6 +130,12 @@ export async function runSuite(options) {
     ...(options.maxCalls !== undefined ? { maxCalls: options.maxCalls } : {}),
     ...(options.requestsPerMinute !== undefined
       ? { requestsPerMinute: options.requestsPerMinute }
+      : {}),
+    ...(options.maxOutputTokens !== undefined
+      ? { maxOutputTokens: options.maxOutputTokens }
+      : {}),
+    ...(options.callTimeoutMs !== undefined
+      ? { callTimeoutMs: options.callTimeoutMs }
       : {}),
     ...(options.resume ? { resume: true } : {}),
     ...(options.signal ? { signal: options.signal } : {}),

@@ -335,7 +335,7 @@ function gitCommit() {
  *   provenance; the Anthropic extended-thinking budget itself is applied by
  *   the agent layer (thinking.budget_tokens; the wire max_tokens is the reply
  *   cap plus this budget) and the worst-case cost quote includes it.
- * @property {'low' | 'medium' | 'high'} [reasoningEffort] Recorded in
+ * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort] Recorded in
  *   run.json's limits for provenance; the OpenAI reasoning effort itself is
  *   applied by the agent layer (reasoning.effort / reasoning_effort).
  * @property {boolean} [resume] Verify existing trajectory files and skip the
@@ -447,10 +447,12 @@ export async function runSuite({
     reasoningEffort !== undefined &&
     reasoningEffort !== 'low' &&
     reasoningEffort !== 'medium' &&
-    reasoningEffort !== 'high'
+    reasoningEffort !== 'high' &&
+    reasoningEffort !== 'xhigh' &&
+    reasoningEffort !== 'max'
   ) {
     throw new Error(
-      `[gauntlet/runs/run.js] reasoningEffort: must be "low", "medium" or "high", got ${JSON.stringify(reasoningEffort)}`
+      `[gauntlet/runs/run.js] reasoningEffort: must be "low", "medium", "high", "xhigh" or "max", got ${JSON.stringify(reasoningEffort)}`
     );
   }
 

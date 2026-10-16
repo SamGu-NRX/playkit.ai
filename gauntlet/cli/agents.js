@@ -25,10 +25,11 @@
  *
  * Reasoning settings ride with model specs two ways, and are validated to
  * match the provider: --thinking-budget <tokens> (Anthropic extended
- * thinking) and --reasoning-effort <low|medium|high> (OpenAI reasoning,
- * including Gemini through its OpenAI-compatible endpoint) as flags, or
- * inline as a trailing `:key=value` list on the model part —
- * `model:anthropic/claude-opus-4-5:thinking-budget=10240`,
+ * thinking) and --reasoning-effort <low|medium|high|xhigh|max> (reasoning
+ * effort, sent for every provider: openai and openai-chat put it on the wire
+ * today, provider anthropic sends it as adaptive thinking steered by `effort`)
+ * as flags, or inline as a trailing `:key=value` list
+ * on the model part — `model:anthropic/claude-opus-4-5:thinking-budget=10240`,
  * `model:openai/gpt-5.2:reasoning-effort=high`. A trailing segment that does
  * not match the settings grammar stays part of the model id, so Ollama-style
  * tags like `model:openai-chat/qwen2.5:7b` keep working. Settings are part of
@@ -88,12 +89,13 @@ import { pathToFileURL } from 'node:url';
  *   extended-thinking budget in tokens (budget_tokens), provider "anthropic"
  *   only, minimum 1024. Recorded in run.json's limits and in the agent id's
  *   settings suffix.
- * @property {'low' | 'medium' | 'high'} [reasoningEffort] --reasoning-effort:
- *   OpenAI reasoning effort for providers "openai" (reasoning.effort) and
- *   "openai-chat" (the chat-completions reasoning_effort field, which is how
- *   Google's Gemini OpenAI-compatible endpoint takes it); provider
- *   "anthropic" rejects it. Recorded in run.json's limits and in the agent
- *   id's settings suffix.
+ * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
+ *   --reasoning-effort: reasoning effort, accepted for every provider —
+ *   "openai" sends reasoning.effort and "openai-chat" the chat-completions
+ *   reasoning_effort field (which is how Google's Gemini OpenAI-compatible
+ *   endpoint takes it); the "anthropic" pairing is validated per model by the
+ *   harness (harness/model-agent.js), which owns the wire contract. Recorded
+ *   in run.json's limits and in the agent id's settings suffix.
  * @property {number} [callTimeoutMs] --call-timeout-ms: per-attempt timeout
  *   for live model specs; a timed-out attempt is retryable like a network
  *   error. Recorded in run.json's limits.
@@ -127,19 +129,28 @@ async function importScriptFile(path) {
 }
 
 /**
- * Per-game baseline factories: each game packet names its baselines
- * differently, and this is the single place those names map onto the CLI's
- * `greedy` and `engine` kinds. Games whose packet ships exactly one baseline
- * (sliding) resolve both kinds to it.
+ * Per-game baseline factories for packets whose factory signature differs
+ * from the standard shape (and for `sliding`, whose baseline lives outside
+ * `games/<id>/baselines.js`). Everything else resolves through the standard
+ * packet shape — `games/<id>/baselines.js` exporting `createGreedyAgent` and
+ * `createEngineAgent`, each taking `({ episodeSeed })` — via
+ * defaultBaselineFactory below, so a newly registered packet (wordle,
+ * sudoku, go) is baseline-playable with no edit here. Exported for tests.
  *
- * @type {Record<string, (kind: 'greedy' | 'engine', context: AgentSpecContext) => Promise<Agent>>}
+ * @type {Record<string, (kind: 'greedy' | 'engine', context: { tier: TierSpec, seed: string, agentSeat: number }) => Promise<Agent>>}
  */
-const BASELINE_FACTORIES = {
+export const BASELINE_FACTORIES = {
   async chess(kind, { tier, seed, agentSeat }) {
     const { createGreedyBaselineAgent, createEngineBaselineAgent } = await import('../games/chess/baselines.js');
     return kind === 'greedy'
       ? createGreedyBaselineAgent()
       : createEngineBaselineAgent({ tier, seed, seat: agentSeat });
+  },
+  async 'chess-endgames'(kind, { tier, seed, agentSeat }) {
+    const { greedyAgent, engineAgent } = await import('../games/chess-endgames/baselines.js');
+    return kind === 'greedy'
+      ? greedyAgent(tier, seed, agentSeat)
+      : engineAgent(tier, seed, agentSeat);
   },
   async minesweeper(kind, { seed }) {
     const { createDeductionAgent, createProbabilityAgent } = await import('../games/minesweeper/baselines.js');
@@ -165,23 +176,65 @@ const BASELINE_FACTORIES = {
     const { createGreedyAgent, createEngineAgent } = await import('../games/connect4/baselines.js');
     return kind === 'greedy' ? createGreedyAgent() : createEngineAgent();
   },
-  async mastermind(kind, { seed }) {
-    const { createGreedyAgent, createEngineAgent } = await import('../games/mastermind/baselines.js');
-    return kind === 'greedy'
-      ? createGreedyAgent({ episodeSeed: seed })
-      : createEngineAgent({ episodeSeed: seed });
-  },
-  async nonogram(kind, { seed }) {
-    const { createGreedyAgent, createEngineAgent } = await import('../games/nonogram/baselines.js');
-    return kind === 'greedy'
-      ? createGreedyAgent({ episodeSeed: seed })
-      : createEngineAgent({ episodeSeed: seed });
+  async othello(kind) {
+    // The engine baseline takes a node budget, not an options object; the
+    // calibration ceiling (#68) runs the packet's 32,000-node negamax.
+    const { createGreedyAgent, createEngineAgent } = await import('../games/othello/baselines.js');
+    return kind === 'greedy' ? createGreedyAgent() : createEngineAgent(32000);
   },
   async holdem(kind, { seed, agentSeat }) {
     const { makeBaseline } = await import('../games/holdem/baselines.js');
     return makeBaseline(kind, seed, agentSeat);
   },
 };
+
+/**
+ * Load `games/<id>/baselines.js` and return its standard-shape factory for
+ * `kind`, refusing with the reason spelled out when the packet ships no
+ * baselines module or lacks the export. Runs at parse time (so a spec for a
+ * packet that ships none is refused before any run starts) and again at
+ * create time through the module cache.
+ *
+ * @param {string} gameId
+ * @param {'greedy' | 'engine'} kind
+ * @returns {Promise<(options: { episodeSeed: string }) => Agent>}
+ */
+async function standardBaselineCreate(gameId, kind) {
+  const exportName = kind === 'greedy' ? 'createGreedyAgent' : 'createEngineAgent';
+  let mod;
+  try {
+    mod = /** @type {Record<string, unknown>} */ (
+      await import(`../games/${gameId}/baselines.js`)
+    );
+  } catch (err) {
+    if (/** @type {{ code?: string }} */ (err).code === 'ERR_MODULE_NOT_FOUND') {
+      throw new Error(
+        `game "${gameId}" ships no baseline agents; games with baselines: ${Object.keys(BASELINE_FACTORIES).join(', ')} — or games/${gameId}/baselines.js exporting createGreedyAgent/createEngineAgent({ episodeSeed })`
+      );
+    }
+    throw err;
+  }
+  if (typeof mod[exportName] !== 'function') {
+    throw new Error(
+      `game "${gameId}" ships no ${kind} baseline agents: games/${gameId}/baselines.js does not export ${exportName}({ episodeSeed })`
+    );
+  }
+  return /** @type {(options: { episodeSeed: string }) => Agent} */ (mod[exportName]);
+}
+
+/**
+ * The standard-shape fallback: call the packet's
+ * `createGreedyAgent`/`createEngineAgent` with `{ episodeSeed }`.
+ *
+ * @param {string} gameId
+ * @param {'greedy' | 'engine'} kind
+ * @param {{ seed: string }} context
+ * @returns {Promise<Agent>}
+ */
+async function defaultBaselineFactory(gameId, kind, { seed }) {
+  const create = await standardBaselineCreate(gameId, kind);
+  return await create({ episodeSeed: seed });
+}
 
 /**
  * Parse an agent spec into a per-episode factory. Throws on unknown specs,
@@ -222,12 +275,14 @@ export async function parseAgentSpec(text, options = {}) {
       );
     }
     getGame(gameId); // fail fast on an unknown game id
-    const factory = BASELINE_FACTORIES[gameId];
-    if (!factory) {
-      throw new Error(
-        `game "${gameId}" ships no baseline agents; games with baselines: ${Object.keys(BASELINE_FACTORIES).join(', ')}`
-      );
+    // Signature-differing entries first; the standard packet shape covers the
+    // rest. Games with no explicit entry pre-flight their baselines module at
+    // parse time, so a spec for a packet that ships none is refused before any
+    // run starts — with the reason spelled out.
+    if (!BASELINE_FACTORIES[gameId]) {
+      await standardBaselineCreate(gameId, kind);
     }
+    const factory = BASELINE_FACTORIES[gameId] ?? defaultBaselineFactory.bind(null, gameId);
     return {
       text,
       gameId,
@@ -301,12 +356,8 @@ export async function parseAgentSpec(text, options = {}) {
     const expertGameId = expertMatch[1];
     const expertKind = /** @type {'greedy' | 'engine'} */ (expertMatch[2]);
     getGame(expertGameId); // fail fast on an unknown game id
-    const expertFactory = BASELINE_FACTORIES[expertGameId];
-    if (!expertFactory) {
-      throw new Error(
-        `game "${expertGameId}" ships no baseline agents; games with baselines: ${Object.keys(BASELINE_FACTORIES).join(', ')}`
-      );
-    }
+    const expertFactory =
+      BASELINE_FACTORIES[expertGameId] ?? defaultBaselineFactory.bind(null, expertGameId);
     return {
       text,
       gameId: expertGameId,
@@ -341,7 +392,7 @@ export async function parseAgentSpec(text, options = {}) {
     /** @type {Record<string, string>} */
     const suffixSettings = {};
     for (;;) {
-      const m = /(,|:)(thinking-budget=(\d+)|reasoning-effort=(low|medium|high))$/.exec(model);
+      const m = /(,|:)(thinking-budget=(\d+)|reasoning-effort=(low|medium|high|xhigh|max))$/.exec(model);
       if (!m) break;
       const key = m[3] !== undefined ? 'thinking-budget' : 'reasoning-effort';
       const value = m[3] !== undefined ? m[3] : m[4];
@@ -383,21 +434,20 @@ export async function parseAgentSpec(text, options = {}) {
     }
     let effectiveReasoningEffort = options.reasoningEffort;
     if (suffixSettings['reasoning-effort'] !== undefined) {
-      effectiveReasoningEffort = /** @type {'low' | 'medium' | 'high'} */ (
+      effectiveReasoningEffort = /** @type {'low' | 'medium' | 'high' | 'xhigh' | 'max'} */ (
         suffixSettings['reasoning-effort']
       );
     }
 
-    // Settings are provider-specific; a mismatched pairing is a loud error,
-    // not a silent no-op.
+    // Settings are provider-specific where the wire form is: thinking-budget
+    // is Anthropic's budget_tokens, so a mismatched pairing is a loud error.
+    // reasoning-effort pairs with every provider — openai/openai-chat put it
+    // on the wire today and provider anthropic sends it as adaptive thinking
+    // steered by `effort` (harness/model-agent.js) — so there is deliberately
+    // no provider refusal for it here.
     if (effectiveThinkingBudget !== undefined && provider !== 'anthropic') {
       throw new Error(
-        `agent spec "${text}": thinking-budget only applies to provider "anthropic" (Anthropic extended thinking), got provider "${provider}"${provider === 'openai' || provider === 'openai-chat' ? ' — use reasoning-effort for OpenAI reasoning' : ''}`
-      );
-    }
-    if (effectiveReasoningEffort !== undefined && provider === 'anthropic') {
-      throw new Error(
-        `agent spec "${text}": reasoning-effort does not apply to provider "anthropic" — use thinking-budget for Anthropic extended thinking`
+        `agent spec "${text}": thinking-budget only applies to provider "anthropic" (Anthropic extended thinking), got provider "${provider}"${provider === 'openai' || provider === 'openai-chat' ? ' — use reasoning-effort for reasoning models' : ''}`
       );
     }
     if (options.dryRun && effectiveThinkingBudget !== undefined) {
@@ -408,6 +458,15 @@ export async function parseAgentSpec(text, options = {}) {
     if (options.dryRun && effectiveReasoningEffort !== undefined) {
       throw new Error(
         `agent spec "${text}": reasoning-effort is a model-agent setting and cannot be combined with --dry-run`
+      );
+    }
+    if (
+      provider === 'anthropic' &&
+      effectiveThinkingBudget !== undefined &&
+      effectiveReasoningEffort !== undefined
+    ) {
+      throw new Error(
+        `agent spec "${text}": thinking-budget and reasoning-effort both steer Anthropic thinking; set one or the other (manual budget mode for pre-4.6 models, adaptive thinking with effort for 4.6 and later)`
       );
     }
 
@@ -424,7 +483,10 @@ export async function parseAgentSpec(text, options = {}) {
         : '');
     const agentId = `model:${provider}/${model}${settingsSuffix}`;
 
-    if (provider === 'openai-chat' && !options.baseUrl) {
+    // A live openai-chat agent has nowhere to call without a base URL; a
+    // --dry-run rehearsal replays scripted replies and never dials a server,
+    // so it is exempt.
+    if (provider === 'openai-chat' && !options.baseUrl && !options.dryRun) {
       throw new Error(
         `agent spec "${text}": the openai-chat provider talks to any OpenAI-compatible chat-completions server, so it requires --base-url <url> (the request goes to <base-url>/v1/chat/completions, or the base URL as-is when it already ends in /chat/completions — e.g. Google's Gemini endpoint https://generativelanguage.googleapis.com/v1beta/openai/chat/completions)`
       );
@@ -493,7 +555,13 @@ export async function parseAgentSpec(text, options = {}) {
               ? { thinkingBudget: effectiveThinkingBudget }
               : {}),
             ...(effectiveReasoningEffort !== undefined
-              ? { reasoningEffort: effectiveReasoningEffort }
+              ? {
+                  // The CLI accepts the wider value set and the anthropic
+                  // pairing; the harness validates per model. Its typedef
+                  // narrows until the frontier-effort packet widens it,
+                  // hence the cast — the value flows through untouched.
+                  reasoningEffort: /** @type {'low' | 'medium' | 'high'} */ (effectiveReasoningEffort),
+                }
               : {}),
             ...(options.callTimeoutMs !== undefined
               ? { callTimeoutMs: options.callTimeoutMs }

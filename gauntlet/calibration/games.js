@@ -80,6 +80,9 @@ import { makeBaseline as holdemBaseline } from '../games/holdem/baselines.js';
 import cube from '../games/cube/index.js';
 import { createEngineAgent as cubeEngine, createGreedyAgent as cubeGreedy } from '../games/cube/baselines.js';
 
+import go from '../games/go/index.js';
+import { createGreedyAgent as goGreedy, createEngineAgent as goEngine } from '../games/go/baselines.js';
+
 import chessEndgames from '../games/chess-endgames/index.js';
 import { engineAgent as chessEndgamesEngine, greedyAgent as chessEndgamesGreedy } from '../games/chess-endgames/baselines.js';
 
@@ -114,7 +117,8 @@ export function agentSeatFor(game, tier, seed) {
  * @returns {Agent}
  */
 function wrap(kind, inner) {
-  return {
+  /** @type {Agent} */
+  const wrapped = {
     id: kind,
     track: /** @type {'baseline'} */ ('baseline'),
     /** @param {TurnContext} ctx */
@@ -122,6 +126,14 @@ function wrap(kind, inner) {
       return inner.act(ctx);
     },
   };
+  // Engine agents that hold external processes (GNU Go, Stockfish) expose a
+  // dispose(); the runner disposes every actor that offers one, so the wrap
+  // must forward it or every calibration episode leaks an engine process.
+  const dispose = /** @type {*} */ (inner).dispose;
+  if (typeof dispose === 'function') {
+    /** @type {*} */ (wrapped).dispose = () => dispose.call(inner);
+  }
+  return wrapped;
 }
 
 /**
@@ -365,6 +377,15 @@ export const CALIBRATION_GAMES = [
     game: sokoban,
     makeAgent(kind) {
       return kind === 'greedy' ? wrap(kind, sokobanGreedy()) : wrap(kind, sokobanEngine());
+    },
+  },
+  {
+    id: 'go',
+    game: go,
+    makeAgent(kind, { episodeSeed }) {
+      return kind === 'greedy'
+        ? wrap(kind, goGreedy({ episodeSeed }))
+        : wrap(kind, goEngine({ episodeSeed }));
     },
   },
   {

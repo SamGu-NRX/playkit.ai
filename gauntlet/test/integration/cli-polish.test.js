@@ -25,6 +25,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listGames } from '../../games/index.js';
+import { findGtpBinary } from '../../engines/gtp/client.js';
 import { startStubServer, sendJson } from '../../harness/stub-server.js';
 
 const gauntletRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -73,6 +74,12 @@ test('baseline sweep: every registered game plays both baselines or the CLI name
     const tier = game.spec.tiers[0];
     for (const kind of /** @type {const} */ (['greedy', 'engine'])) {
       const spec = `baseline:${game.spec.id}:${kind}`;
+      // Go's engine baseline is GNU Go itself; without a binary it is
+      // skipped out loud, the same gate games/go/game.test.js uses.
+      if (spec === 'baseline:go:engine' && !findGtpBinary()) {
+        console.error(`[skip] ${spec}: no GNU Go binary found (set GAUNTLET_GNUGO or install gnugo)`);
+        continue;
+      }
       const out = join(root, `${game.spec.id}-${kind}.json`);
       const result = await gauntlet(
         'play',

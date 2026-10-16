@@ -61,6 +61,20 @@ function scriptedRandomAgent(label) {
 }
 
 /**
+ * A copy of a reply with wall-clock meta removed: the search itself is a
+ * deterministic function of (binary, position, options, budget), but its
+ * speed — nps — is not, so it never belongs in a same-seed comparison.
+ *
+ * @param {*} reply
+ */
+function deterministicReply(reply) {
+  if (!reply || typeof reply !== 'object' || !reply.meta) return reply;
+  const meta = { ...reply.meta };
+  delete meta.nps;
+  return { ...reply, meta };
+}
+
+/**
  * Strip wall-clock fields so two trajectories of the same seed compare
  * canonical-equal.
  *
@@ -77,7 +91,7 @@ function replayComparable(trajectory) {
       seat: step.seat,
       by: step.by,
       observationHash: step.observationHash,
-      reply: step.reply,
+      reply: deterministicReply(step.reply),
       action: step.action,
       invalid: step.invalid,
     })),
@@ -253,22 +267,19 @@ test('wiring: a missing engine surfaces a clear, path-naming error', async () =>
   );
 });
 
-test('wiring: no engine anywhere surfaces an install hint', async () => {
+test('wiring: a GAUNTLET_STOCKFISH pointing nowhere surfaces a precise error', async () => {
   const opponent = createStockfishOpponentAgent({
     tier: /** @type {TierSpec} */ (chessStockfish.spec.tiers[0]),
     enginePath: undefined,
   });
   const previous = process.env[STOCKFISH_ENV_VAR];
-  delete process.env[STOCKFISH_ENV_VAR];
+  process.env[STOCKFISH_ENV_VAR] = '/nonexistent/stockfish-nope';
   try {
-    // findEngineBinary with no env var falls back to PATH; force a PATH that
-    // cannot contain stockfish so the "nothing found" branch runs.
-    const originalPath = process.env.PATH;
-    process.env.PATH = '/nonexistent-empty-path';
+    // Discovery must refuse the override itself — name it and its value —
+    // without falling through to PATH or spawning anything.
     await assert.rejects(opponent.act(/** @type {never} */ ({
       observation: { data: { startFen: 'x', moves: [], fen: 'x' } },
-    })), /no Stockfish binary found/);
-    process.env.PATH = originalPath;
+    })), /GAUNTLET_STOCKFISH is set to "\/nonexistent\/stockfish-nope" but that file does not exist/);
   } finally {
     if (previous === undefined) delete process.env[STOCKFISH_ENV_VAR];
     else process.env[STOCKFISH_ENV_VAR] = previous;
@@ -346,15 +357,27 @@ test('real engine: the opponent records the engine id and search stats', { skip:
   assert.equal(typeof meta.depth, 'number');
   assert.equal(typeof meta.searchedNodes, 'number');
   assert.equal(typeof meta.nps, 'number');
-  // From the startpos at 1k nodes the engine reports a centipawn score; keep
-  // the assertion shape-honest rather than pinning the value.
-  assert.ok(meta.score === null || typeof meta.score.cp === 'number');
-  assert.deepEqual(meta.options, {
-    Threads: 1,
-    Hash: 16,
-    MultiPV: 1,
-    Contempt: 0,
-  });
+  // From the startpos at 1k nodes the engine reports a centipawn or mate
+  // score; keep the assertion shape-honest rather than pinning the value.
+  assert.ok(
+    meta.score === null ||
+    typeof meta.score.cp === 'number' ||
+    typeof meta.score.mate === 'number'
+  );
+  // The opponent sends exactly the pinned set intersected with what this
+  // engine advertises — apt Stockfish 17.1 dropped Contempt — and never the
+  // strength options. Threads and Hash are advertised by every supported
+  // binary, so they are always present.
+  const pinned = { Threads: 1, Hash: 16, MultiPV: 1, Contempt: 0 };
+  for (const [name, value] of Object.entries(meta.options)) {
+    assert.ok(name in pinned, `unexpected option ${name} in ${JSON.stringify(meta.options)}`);
+    assert.equal(value, pinned[name], `${name} must keep its pinned value`);
+  }
+  assert.ok(
+    'Threads' in meta.options && 'Hash' in meta.options,
+    `Threads and Hash must be pinned, got ${JSON.stringify(meta.options)}`
+  );
+  assert.ok(!('UCI_LimitStrength' in meta.options) && !('UCI_Elo' in meta.options));
   assert.match(reply.text, /^[a-h][1-8][a-h][1-8][qrbn]?$/);
   await /** @type {any} */ (opponent).dispose();
 });

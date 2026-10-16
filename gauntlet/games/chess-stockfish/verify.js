@@ -80,12 +80,26 @@ function comparable(trajectory) {
       seat: step.seat,
       by: step.by,
       observationHash: step.observationHash,
-      reply: step.reply,
+      reply: deterministicReply(step.reply),
       action: step.action,
       invalid: step.invalid,
     })),
     end: trajectory.end,
   };
+}
+
+/**
+ * A copy of a reply with wall-clock meta removed: the search itself is a
+ * deterministic function of (binary, position, options, budget), but its
+ * speed — nps — is not, so it never belongs in a same-seed comparison.
+ *
+ * @param {*} reply
+ */
+function deterministicReply(reply) {
+  if (!reply || typeof reply !== 'object' || !reply.meta) return reply;
+  const meta = { ...reply.meta };
+  delete meta.nps;
+  return { ...reply, meta };
 }
 
 /** @type {boolean[]} */

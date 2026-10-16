@@ -149,14 +149,21 @@ test('findEngineBinary keeps GAUNTLET_STOCKFISH scoped to the stockfish name', (
 test('findEngineBinary probes the extra game directories after PATH', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'gauntlet-engine-'));
   const previousPath = process.env.PATH;
+  const previousEngine = process.env[STOCKFISH_ENV_VAR];
   process.env.PATH = '';
+  delete process.env[STOCKFISH_ENV_VAR];
   try {
     const link = path.join(dir, 'stockfish');
     await symlink(FIXTURE, link);
     assert.equal(findEngineBinary('stockfish', { searchDirs: [dir] }), link);
     assert.equal(findEngineBinary('other-name-here', { searchDirs: [dir] }), null);
+    // An empty search universe finds nothing, hermetically, even on a
+    // machine whose extra game directories hold a real stockfish.
+    assert.equal(findEngineBinary('stockfish', { searchDirs: [] }), null);
   } finally {
     process.env.PATH = previousPath;
+    if (previousEngine === undefined) delete process.env[STOCKFISH_ENV_VAR];
+    else process.env[STOCKFISH_ENV_VAR] = previousEngine;
     await rm(dir, { recursive: true, force: true });
   }
 });

@@ -801,6 +801,21 @@ export async function writeEstimate(outDir, estimate) {
 export const COMPARE_FORMAT = 'playkit-gauntlet-estimate-compare/1';
 
 /**
+ * Whether an actual/expected calls ratio lands within 2x — the acceptance
+ * question the packet asks of every game. Null where there is no expected
+ * figure (a missing basis is neither a hit nor a miss).
+ *
+ * @param {number | null} callsLowRatio actual ÷ expected-calls, or null
+ * @returns {'within-2x' | 'over-2x' | 'under-2x' | null}
+ */
+function callsVerdict(callsLowRatio) {
+  if (callsLowRatio === null) return null;
+  if (callsLowRatio > 2) return 'over-2x';
+  if (callsLowRatio < 0.5) return 'under-2x';
+  return 'within-2x';
+}
+
+/**
  * @typedef {object} ComparisonFigures
  * @property {{ calls: number, tokensIn: number, tokensOut: number, spendUsd: number }} actual
  *   Summed from the run bundle's trajectories (the whole bundle, so a
@@ -822,6 +837,10 @@ export const COMPARE_FORMAT = 'playkit-gauntlet-estimate-compare/1';
  * @property {number} unknownCostSteps Steps with usage but no finite cost —
  *   the actual spend is understated by them.
  * @property {ComparisonFigures} figures
+ * @property {'within-2x' | 'over-2x' | 'under-2x' | null} callsVerdict
+ *   Whether the actual calls landed within 2x of the expected (low) figure:
+ *   the acceptance question a bare ratio does not answer. Null where the game
+ *   has no low basis — a missing basis is neither a hit nor a miss.
  */
 
 /**
@@ -833,7 +852,7 @@ export const COMPARE_FORMAT = 'playkit-gauntlet-estimate-compare/1';
  * @property {number} unplayedEpisodes Episodes still unplayed in the bundle:
  *   the actuals are partial-run figures.
  * @property {ComparisonRow[]} games
- * @property {{ episodes: number, unknownCostSteps: number, unplayedEpisodes: number, figures: ComparisonFigures }} totals
+ * @property {{ episodes: number, unknownCostSteps: number, unplayedEpisodes: number, figures: ComparisonFigures, callsVerdict: 'within-2x' | 'over-2x' | 'under-2x' | null }} totals
  */
 
 /**
@@ -971,11 +990,13 @@ export async function compareRunAgainstEstimate(estimate, runDir) {
     const act =
       actual.get(game.gameId) ??
       { episodes: 0, calls: 0, tokensIn: 0, tokensOut: 0, spendUsd: 0, unknownCostSteps: 0 };
+    const figures = withRatios(act, estimateRows(jobsByGame.get(game.gameId) ?? []));
     return {
       gameId: game.gameId,
       episodes: act.episodes,
       unknownCostSteps: act.unknownCostSteps,
-      figures: withRatios(act, estimateRows(jobsByGame.get(game.gameId) ?? [])),
+      figures,
+      callsVerdict: callsVerdict(figures.ratio.callsLow),
     };
   });
 
@@ -999,6 +1020,8 @@ export async function compareRunAgainstEstimate(estimate, runDir) {
     usdHigh: rows.reduce((a, r) => a + (r.figures.estimated.usdHigh ?? 0), 0),
   };
 
+  const totalFigures = withRatios(totalAct, totalEstimated);
+
   return {
     format: COMPARE_FORMAT,
     kind: 'estimate-vs-actual',
@@ -1010,7 +1033,8 @@ export async function compareRunAgainstEstimate(estimate, runDir) {
       episodes,
       unknownCostSteps: rows.reduce((a, r) => a + r.unknownCostSteps, 0),
       unplayedEpisodes,
-      figures: withRatios(totalAct, totalEstimated),
+      figures: totalFigures,
+      callsVerdict: callsVerdict(totalFigures.ratio.callsLow),
     },
   };
 }
@@ -1025,6 +1049,8 @@ export function comparisonToMarkdown(comparison) {
   /** @param {number | null | undefined} v */
   const ratio = (v) =>
     v === null || v === undefined ? '—' : `${(Math.round(v * 100) / 100).toFixed(2)}×`;
+  /** @param {'within-2x' | 'over-2x' | 'under-2x' | null | undefined} v */
+  const verdict = (v) => (v === null || v === undefined ? '—' : v.replace('-2x', ' 2×'));
   /** @param {number | null | undefined} v */
   const calls = (v) => (v === null || v === undefined ? '—' : String(Math.ceil(v)));
   /** @param {number} a @param {number | null} low @param {number | null} high */
@@ -1037,7 +1063,8 @@ export function comparisonToMarkdown(comparison) {
     '**Actual, not an estimate.** ' +
       `${comparison.episodes} trajectory/ies summed per step from the run bundle (the whole bundle, so a ` +
       'resumed run compares against its full actuals). Ratio = actual ÷ estimated; low = expected, ' +
-      'high = worst case.'
+      'high = worst case. Calls vs expected answers the packet acceptance question: did the actual ' +
+      'call count land within 2x of the expected figure?'
   );
   if (comparison.totals.unknownCostSteps > 0) {
     lines.push(
@@ -1050,26 +1077,43 @@ export function comparisonToMarkdown(comparison) {
     );
   }
   lines.push('');
-  lines.push('| Game | Calls | Tokens in | Tokens out | USD |');
-  lines.push('|---|---|---|---|---|');
+  lines.push('| Game | Calls | Calls vs expected | Tokens in | Tokens out | USD |');
+  lines.push('|---|---|---|---|---|---|');
   for (const row of comparison.games) {
     const f = row.figures;
     lines.push(
-      `| ${row.gameId} | ${cell(f.actual.calls, f.ratio.callsLow, f.ratio.callsHigh)} | ${cell(
-        f.actual.tokensIn,
-        f.ratio.tokensInLow,
-        f.ratio.tokensInHigh
-      )} | ${cell(f.actual.tokensOut, f.ratio.tokensOutLow, f.ratio.tokensOutHigh)} | ${f.actual.spendUsd.toFixed(4)} (${ratio(f.ratio.usdLow)} low, ${ratio(f.ratio.usdHigh)} high) |`
+      `| ${row.gameId} | ${cell(f.actual.calls, f.ratio.callsLow, f.ratio.callsHigh)} | ${verdict(
+        row.callsVerdict
+      )} | ${cell(f.actual.tokensIn, f.ratio.tokensInLow, f.ratio.tokensInHigh)} | ${cell(
+        f.actual.tokensOut,
+        f.ratio.tokensOutLow,
+        f.ratio.tokensOutHigh
+      )} | ${f.actual.spendUsd.toFixed(4)} (${ratio(f.ratio.usdLow)} low, ${ratio(f.ratio.usdHigh)} high) |`
     );
   }
   const t = comparison.totals.figures;
   lines.push(
-    `| **Total** | ${cell(t.actual.calls, t.ratio.callsLow, t.ratio.callsHigh)} | ${cell(
-      t.actual.tokensIn,
-      t.ratio.tokensInLow,
-      t.ratio.tokensInHigh
-    )} | ${cell(t.actual.tokensOut, t.ratio.tokensOutLow, t.ratio.tokensOutHigh)} | ${t.actual.spendUsd.toFixed(4)} (${ratio(t.ratio.usdLow)} low, ${ratio(t.ratio.usdHigh)} high) |`
+    `| **Total** | ${cell(t.actual.calls, t.ratio.callsLow, t.ratio.callsHigh)} | ${verdict(
+      comparison.totals.callsVerdict
+    )} | ${cell(t.actual.tokensIn, t.ratio.tokensInLow, t.ratio.tokensInHigh)} | ${cell(
+      t.actual.tokensOut,
+      t.ratio.tokensOutLow,
+      t.ratio.tokensOutHigh
+    )} | ${t.actual.spendUsd.toFixed(4)} (${ratio(t.ratio.usdLow)} low, ${ratio(t.ratio.usdHigh)} high) |`
   );
+  const off = comparison.games.filter(
+    (r) => r.callsVerdict === 'over-2x' || r.callsVerdict === 'under-2x'
+  );
+  if (off.length > 0) {
+    lines.push('');
+    lines.push(
+      `Calls beyond 2× of expected: ${off
+        .map((r) => `${r.gameId} (${r.callsVerdict === 'over-2x' ? 'over' : 'under'})`)
+        .join(', ')}. Where a model's play bifurcates between forfeiting early and running out ` +
+        'the budget, no scalar fitted from other models\' runs lands within 2× of both — see ' +
+        'runs/estimate-fit/fit-report.md ("Within-2x verdict", "What the fit cannot do").'
+    );
+  }
   lines.push('');
   return lines.join('\n');
 }

@@ -9,17 +9,17 @@ import { solve } from './solver.js';
 
 const game = getGame('sokoban');
 
-test('the registered game exposes three ranked benchmark tiers', () => {
+test('the registered game exposes four ranked benchmark tiers', () => {
   assert.equal(game.spec.id, 'sokoban');
   assert.equal(game.spec.seats, 1);
   assert.equal(game.spec.benchmark, true);
   assert.deepEqual(
     game.spec.tiers.map((t) => t.id),
-    ['two-box', 'three-box', 'four-box']
+    ['one-box', 'two-box', 'three-box', 'four-box']
   );
   assert.deepEqual(
     game.spec.tiers.map((t) => t.rank),
-    [1, 2, 3]
+    [1, 2, 3, 4]
   );
   for (const tier of game.spec.tiers) {
     assert.equal(tier.scoring, 'efficiency');
@@ -30,17 +30,17 @@ test('the registered game exposes three ranked benchmark tiers', () => {
 
 test('reset is deterministic in (tier, seed) and JSON-safe', () => {
   const tier = game.spec.tiers[0];
-  const a = game.reset(tier, 'sokoban/two-box/public/0');
-  const b = game.reset(tier, 'sokoban/two-box/public/0');
+  const a = game.reset(tier, 'sokoban/one-box/public/0');
+  const b = game.reset(tier, 'sokoban/one-box/public/0');
   assert.deepEqual(JSON.parse(JSON.stringify(a)), a, 'the state is plain JSON');
   assert.deepEqual(a, b);
-  const other = game.reset(tier, 'sokoban/two-box/public/1');
+  const other = game.reset(tier, 'sokoban/one-box/public/1');
   assert.notDeepEqual(a.boxes, other.boxes);
 });
 
 test('the state does not leak par-irrelevant internals and carries the proven par', () => {
   const tier = game.spec.tiers[0];
-  const state = game.reset(tier, 'sokoban/two-box/public/0');
+  const state = game.reset(tier, 'sokoban/one-box/public/0');
   const proven = solve(
     { width: state.width, height: state.height, walls: state.walls, goals: state.goals },
     { player: state.player, boxes: state.boxes }
@@ -50,9 +50,26 @@ test('the state does not leak par-irrelevant internals and carries the proven pa
   assert.deepEqual(state.history, []);
 });
 
+test('one-box pars are pinned on the first public seeds', () => {
+  // Golden pins for the on-ramp tier: one box in a 5x5 room, par 4-15,
+  // budget 75, 16 public seeds.
+  const tier = game.spec.tiers.find((t) => t.id === 'one-box');
+  assert.ok(tier, 'one-box tier exists');
+  const expected = [5, 6, 4];
+  for (let i = 0; i < expected.length; i++) {
+    const state = game.reset(tier, 'sokoban/one-box/public/' + i);
+    assert.equal(state.par, expected[i], `one-box seed ${i}`);
+    const proven = solve(
+      { width: state.width, height: state.height, walls: state.walls, goals: state.goals },
+      { player: state.player, boxes: state.boxes }
+    );
+    assert.equal(proven.par, expected[i], `one-box seed ${i} is solver-proven`);
+  }
+});
+
 test('observe renders the board and lists legal actions; data carries the state', () => {
   const tier = game.spec.tiers[0];
-  const state = game.reset(tier, 'sokoban/two-box/public/0');
+  const state = game.reset(tier, 'sokoban/one-box/public/0');
   const observation = game.observe(state, 0);
   assert.match(observation.text, /You are seat 0/);
   assert.match(observation.text, /Legal actions/);
@@ -66,7 +83,7 @@ test('observe renders the board and lists legal actions; data carries the state'
 
 test('walks push boxes; undo reverts and counts as an action', () => {
   const tier = game.spec.tiers[0];
-  const state = game.reset(tier, 'sokoban/two-box/public/0');
+  const state = game.reset(tier, 'sokoban/one-box/public/0');
   // Find a legal push by scanning: apply each legal action and check box movement.
   const legal = game.legalActions(state, 0);
   const push = legal.find((a) => {
@@ -87,14 +104,14 @@ test('walks push boxes; undo reverts and counts as an action', () => {
 
 test('pushes into walls and boxes are illegal; undo is illegal on move zero', () => {
   const tier = game.spec.tiers[0];
-  const state = game.reset(tier, 'sokoban/two-box/public/0');
+  const state = game.reset(tier, 'sokoban/one-box/public/0');
   assert.equal(game.parseAction(state, 0, 'undo').ok, false, 'nothing to undo yet');
   assert.throws(() => game.step(state, 0, 'undo'), GauntletRuleError);
 });
 
 test('parseAction accepts documented alternates and rejects garbage', () => {
   const tier = game.spec.tiers[0];
-  const state = game.reset(tier, 'sokoban/two-box/public/0');
+  const state = game.reset(tier, 'sokoban/one-box/public/0');
   for (const [text, expected] of [
     ['up', 'up'],
     ['  DOWN  ', 'down'],
@@ -121,7 +138,7 @@ test('parseAction accepts documented alternates and rejects garbage', () => {
 
 test('step throws GauntletRuleError for anything outside legalActions, and is pure', () => {
   const tier = game.spec.tiers[0];
-  const state = game.reset(tier, 'sokoban/two-box/public/0');
+  const state = game.reset(tier, 'sokoban/one-box/public/0');
   const before = JSON.parse(JSON.stringify(state));
   const legal = new Set(game.legalActions(state, 0));
   for (const action of ['up', 'down', 'left', 'right', 'undo']) {
@@ -137,7 +154,7 @@ test('step throws GauntletRuleError for anything outside legalActions, and is pu
 
 test('outcome is null mid-game, and a solved episode scores efficiency 1 at par', () => {
   const tier = game.spec.tiers[0];
-  const state = game.reset(tier, 'sokoban/two-box/public/0');
+  const state = game.reset(tier, 'sokoban/one-box/public/0');
   assert.equal(game.outcome(state), null);
   // Play the engine plan from the start: the episode must end at exactly par.
   const plan = solve(
@@ -160,7 +177,7 @@ test('outcome is null mid-game, and a solved episode scores efficiency 1 at par'
 
 test('toAct is null exactly when outcome is non-null (solved or deadlocked)', () => {
   const tier = game.spec.tiers[0];
-  const state = game.reset(tier, 'sokoban/two-box/public/0');
+  const state = game.reset(tier, 'sokoban/one-box/public/0');
   assert.equal(game.toAct(state), 0);
   assert.equal(game.outcome(state), null);
   // After solving, both agree the game is over.
@@ -212,7 +229,7 @@ test('the engine baseline plays to par on every tier seed', async () => {
 
 test('the greedy baseline is legal, deterministic, and far from optimal on average', async () => {
   const tier = game.spec.tiers[0];
-  const seed = 'sokoban/two-box/public/0';
+  const seed = 'sokoban/one-box/public/0';
   const play = async () => {
     const greedy = greedyAgent();
     let state = game.reset(tier, seed);

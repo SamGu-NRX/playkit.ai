@@ -82,8 +82,8 @@ test('the registered sliding game is a single-seat benchmark', () => {
 
 test('reset is deterministic and carries par plus the tier budget', () => {
   const tier = game.spec.tiers[0];
-  const a = game.reset(tier, publicSeed('sliding', 'p8', 0));
-  const b = game.reset(tier, publicSeed('sliding', 'p8', 0));
+  const a = game.reset(tier, publicSeed('sliding', 'p8-short', 0));
+  const b = game.reset(tier, publicSeed('sliding', 'p8-short', 0));
   assert.deepEqual(a, b);
   assert.equal(a.size, 3);
   assert.equal(a.maxActions, tier.maxActions);
@@ -96,6 +96,18 @@ test('p8 par equals an independent BFS reference on the public seeds', () => {
   for (let i = 0; i < tier.publicSeeds; i++) {
     const state = game.reset(tier, publicSeed('sliding', 'p8', i));
     assert.equal(state.par, bfsOptimalLength(state.board), `seed ${i}`);
+  }
+});
+
+test('p8-short pars are pinned on the first public seeds', () => {
+  // Golden pins for the on-ramp tier: the banded generator plus the proven
+  // solver must reproduce these exact pars (all inside the 4-8 band).
+  const tier = tierOf('p8-short');
+  const expected = [8, 4, 8];
+  for (let i = 0; i < expected.length; i++) {
+    const state = game.reset(tier, publicSeed('sliding', 'p8-short', i));
+    assert.equal(state.par, expected[i], `p8-short seed ${i}`);
+    assert.equal(state.maxActions, 40);
   }
 });
 

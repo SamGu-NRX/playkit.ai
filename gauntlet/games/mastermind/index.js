@@ -213,6 +213,14 @@ export const mastermind = {
       });
     }
     lines.push(`Guesses remaining: ${remaining}.`);
+    // The conformance kit requires the observation to list every legal action
+    // when there are at most 64. Mini (3 pegs x 4 colors) has exactly 64
+    // codes; the larger tiers have 1296 or more and keep the prose format.
+    const codes = allCodes(state.pegs, state.colors);
+    if (codes.length <= 64) {
+      lines.push('Every code below is a legal guess:');
+      for (const code of codes) lines.push(`guess ${code}`);
+    }
     if (state.status === 'won') {
       lines.push('Game over: the secret is solved.');
     } else if (state.status === 'lost') {

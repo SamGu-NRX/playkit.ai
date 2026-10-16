@@ -1,0 +1,116 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/5",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "cd051e83348ac381",
+      "reply": {
+        "text": "reveal 3 4",
+        "usage": {
+          "inputTokens": 710,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-PXpJof1dSLxOWRqBcTdPFl0dHiVgvWKf",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 3 4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 710,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1002
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "cd051e83348ac381",
+      "reply": {
+        "text": "reveal 3 4",
+        "usage": {
+          "inputTokens": 735,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-XVavzD0cgpYco5gARmV8mVoadqDNHvdb",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 3 4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 735,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1229
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "cd051e83348ac381",
+      "reply": {
+        "text": "reveal 3 4",
+        "usage": {
+          "inputTokens": 735,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-at86udJzIJW9bh6o3P0tgvfDRjd6nMf2",
+          "reasoningChars": 0
+        }
+      },
+      "action": "reveal 3 4",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 735,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 177
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:28:17.811Z",
+  "finishedAt": "2026-10-16T11:28:20.221Z"
+}

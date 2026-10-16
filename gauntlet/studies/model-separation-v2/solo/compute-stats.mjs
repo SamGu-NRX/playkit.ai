@@ -39,8 +39,9 @@ import { GAMES } from '../../../games/index.js';
 import { score } from '../../../scoring/score.js';
 import { streamFromSeed } from '../../../core/rng.js';
 
+const COLLECTED = {};
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const GAUNTLET = path.resolve(HERE, '../..');
+const GAUNTLET = path.resolve(HERE, '../../..');
 
 const flag = (name) => {
   const i = process.argv.indexOf(`--${name}`);
@@ -251,7 +252,7 @@ for (const { game, tier } of TIERS) {
   const episodesByModel = {};
   for (const model of MODELS) {
     const runDir = path.join(RUNS, model.stem, slug);
-    if (!existsSync(runDir)) {
+    if (!existsSync(runDir) || trajectoryFiles(runDir).length === 0) {
       perModel[model.short] = { episodes: 0, note: 'not played (see REPORT.md)' };
       continue;
     }
@@ -278,6 +279,7 @@ for (const { game, tier } of TIERS) {
     }
     const episodes = await episodeScores(suite, trajectories);
     episodesByModel[model.short] = episodes;
+    COLLECTED[model.short] = (COLLECTED[model.short] ?? []).concat(episodes);
     perModel[model.short] = {
       agent: trajectories[0]?.agent?.id ?? null,
       episodes: trajectories.length,
@@ -360,6 +362,18 @@ for (const { game, tier } of TIERS) {
       spearmanRhoPooledEpisodes: rhoPooled,
       pooledEpisodes: pooled.length,
     },
+  };
+}
+
+// Pooled rhae-v1 episode scores per model (all tiers), with bootstrap CIs.
+stats.pooled = {};
+for (const model of MODELS) {
+  const eps = COLLECTED[model.short] ?? [];
+  const vals = eps.map((e) => e.e);
+  stats.pooled[model.short] = {
+    episodes: vals.length,
+    meanRhaeV1: vals.length ? round6(vals.reduce((a, v) => a + v, 0) / vals.length) : null,
+    ci95: vals.length ? bootstrapCi(vals, `msep-v2-pool-${model.short}`) : null,
   };
 }
 

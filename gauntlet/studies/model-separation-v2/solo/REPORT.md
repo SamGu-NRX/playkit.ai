@@ -10,15 +10,38 @@ Branch: `obv/burst12-playkit-separation-v2-solo` (from `alpha` @ `72e5543`). Bas
 - Agent: `model:openai-chat/<stem>` on the official track through `cli/gauntlet.js`; every bundle `bundle verify`d (manifest hash + all episodes replayed).
 - Random floor: calibration tables from `scoring/generate-baseline.js` (rhae-v1 chance-adjusted profile); `nonogram/tiny` has no calibration table on `alpha`, so a study-local random run (`agents/random.js`, 16 seeds, bundle-verified) measured its floor; that entry carries `studyLocal: true` in `baseline-random.json`.
 - Scoring: `scoring/score.js` (profile `rhae-v1`): per-tier score vs random, invalid-reply rates, paired-by-seed model differences, Spearman correlations between models. Aggregation in `compute-stats.mjs` (deterministic; no model files needed to re-run — see `reproduce.sh`).
-- 7B wall-clock: measurement-driven. One measured episode per tier sets the seed budget; tiers that do not fit the deadline get 4 seeds or are dropped, and the choice is recorded here. (CPU-only inference; the 110-call nonogram tier dominates.)
+- 7B wall-clock: intended to be measurement-driven — a one-episode measurement pass per tier sets the seed budget, tiers that do not fit the deadline get 4 seeds or are dropped, and the choice is recorded here. The measurement pass itself failed (its `bash -c` subshell lost the script globals, so every measured episode errored instantly and wrote a bogus 0 s timing); adaptation fell back to observed pace: 0.5B and 1.5B ran the full 8 seeds on all six tiers; 7B ran 4 seeds on cube/cube-2, minesweeper/beginner, mastermind/mini, sliding/p8-short, and sokoban/one-box; nonogram/tiny was dropped at the deadline gate (recorded as `not played` in stats.json).
 
 ## Results
 
-<!-- RESULTS_TABLE -->
+| Tier | Random mean (source) | qwen2.5-0.5b rhae-v1 (chance-adj) [n] | qwen2.5-1.5b rhae-v1 (chance-adj) [n] | qwen2.5-7b rhae-v1 (chance-adj) [n] |
+|---|---|---|---|---|
+| sliding/p8-short | 0 (calibration, n=16) | 0 (0) [8] | 0 (0) [8] | 0 (0) [4] |
+| sokoban/one-box | 0 (calibration, n=16) | 0 (0) [8] | 0 (0) [8] | 0 (0) [4] |
+| mastermind/mini | 0.02985 (calibration, n=25) | 0 (0) [8] | 0 (0) [8] | 0.5 (0.5) [4] |
+| cube/cube-2 | 0 (calibration, n=16) | 0 (0) [8] | 0 (0) [8] | 0 (0) [4] |
+| nonogram/tiny | 0 (study-local, n=16) | 0 (0) [8] | 0 (0) [8] | not played (see REPORT.md) |
+| minesweeper/beginner | 0.6625 (calibration, n=25) | 0.1162 (0.09892) [8] | 0.1919 (0.08848) [8] | 0.3803 (0.177) [4] |
+
+Pooled rhae-v1 episode means (all tiers):
+- qwen2.5-0.5b: 0.01937 (95% CI [0, 0.0581], n=48)
+- qwen2.5-1.5b: 0.03198 (95% CI [0, 0.08275], n=48)
+- qwen2.5-7b: 0.1761 (95% CI [0.03099, 0.3451], n=20)
+- mastermind/mini: Spearman(size, mean) = 0.866, monotone-increasing = False
+- minesweeper/beginner: Spearman(size, mean) = 1, monotone-increasing = True
 
 ## Verdict
 
-<!-- VERDICT -->
+## Verdict
+
+**Above random: no.** On the four zero-floor tiers (sliding, sokoban, cube, nonogram) every model scores exactly 0 — a tie with random, not above it. On mastermind the 0.5B and 1.5B score 0 with invalid-reply rates of 1.00 and 0.45 and are separated *below* random (0.0298); the 7B mean (0.5) sits above the random mean but its 95% CI [0, 1] does not exclude it. On minesweeper the calibrated random agent (0.6625) beats all three models — 0.5B and 1.5B are separated below it, the 7B mean is below but not separated. Repeats the burst8 finding on the new on-ramp tiers: calibrated random is a hard floor for small local models, and minesweeper is the only score tier that discriminates at all.
+
+**Size order: directional, not separated.** Pooled raw episode means are monotone in size — 0.5B 0.0194 (CI [0, 0.058], n=48) < 1.5B 0.0320 (CI [0, 0.083], n=48) < 7B 0.176 (CI [0.031, 0.345], n=20) — and minesweeper alone is perfectly size-ordered (Spearman rho = 1; 0.116 < 0.192 < 0.380, monotone = true). But no pairwise difference separates: the paired-by-seed minesweeper diff 1.5B−0.5B is 0.0757 with 95% CI [−0.269, 0.417] (8 seeds), and every zero-score tier contributes only ties. The answer to the study question is therefore: *models land AT the random floor (not above), and the point ordering is monotone in size but statistically unseparated at these seed counts.*
+
+**What does discriminate today:** process metrics, not scores. Median sec/call scales roughly 12x from 0.5B (0.3–1.0 s) to 7B (6.1–6.6 s) across tiers, and invalid-reply rates separate models on mastermind (0.5B: 1.00; 7B: 0.019) and sokoban (0.5B: 0.571 vs 1.5B: 0.230). If score separation on the on-ramp is the goal, the tiers need either far more seeds on minesweeper-style partial-credit tiers, or scoring that credits partial progress on the zero-floor tiers.
+
+*All numbers above are from stats.json (deterministic, reproduce.sh); seed counts per cell are in the table.*
+
 
 ## Deviations and caveats
 

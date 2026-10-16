@@ -1,0 +1,688 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "mini",
+  "seed": "mastermind/mini/public/1",
+  "split": "public",
+  "agent": {
+    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+    "track": "official",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "guess AAA",
+        "usage": {
+          "inputTokens": 714,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-sJJVw7D6Staedd5J6CINKScndibdS4hg",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess AAA",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 714,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 5420
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "808569eaab96eb21",
+      "reply": {
+        "text": "guess AAB",
+        "usage": {
+          "inputTokens": 728,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-WmKUUsQOxv23e5RicUq3XWKrRrFAjId8",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 728,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5673
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "89e15b94d9be6df1",
+      "reply": {
+        "text": "guess AAC",
+        "usage": {
+          "inputTokens": 743,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-8aq53T0bUoAZWZGE4S7eVg1QJu0dF3f1",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess AAC",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 743,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 5695
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d6287b3f58a47998",
+      "reply": {
+        "text": "guess AAD",
+        "usage": {
+          "inputTokens": 755,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-CjPzR6Jull9SU3un0gJpLEMEFsltsJ2s",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess AAD",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 755,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 6343
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c17eb966702054e2",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 770,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-1w38XiwZcDbkAduBXRX2DJOJWyv0lZRW",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 770,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 7008
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5a5dcbc4314859c1",
+      "reply": {
+        "text": "guess ABBB",
+        "usage": {
+          "inputTokens": 784,
+          "outputTokens": 5,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-swTaRiF1d22fH7Cwkmlx63Uk27O3b0fj",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABBB",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 784,
+        "outputTokens": 5,
+        "costUsd": null
+      },
+      "ms": 7216
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5a5dcbc4314859c1",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 827,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-vUKb4qWlyoFqIcjXebvMYx3cfsJIKfmp",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 827,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 7653
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "1b33f649e08fdfab",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 798,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-mDiQnfQkzDgQl4DQWn8TxGFoCojoUo2l",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 798,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 4835
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e93ff85a290958ca",
+      "reply": {
+        "text": "guess ABC",
+        "usage": {
+          "inputTokens": 812,
+          "outputTokens": 3,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-ynFAf95fRyeuBxAy0h3ZY4qzmm3uDfqx",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABC",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 812,
+        "outputTokens": 3,
+        "costUsd": null
+      },
+      "ms": 4660
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "fce1c571bc190380",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 824,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-l5KWay8fWybKEP4tqXKve0LP06K3dRY6",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 824,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 7783
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e93e7c4e0c005632",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 840,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-SvJGHQsXcfiELvrQBgBa2DWWcaxYuYts",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 840,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5708
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9089b574bb360d67",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 855,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-IajOo2aN3fhi4c1H9LFqCpfvqFyBJF1J",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 855,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5886
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d163c05108a1a28f",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 870,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-o6v6KaTscd0KXZAmqUImwoLAdxHVu25x",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 870,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5292
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "0e8172d61856b90e",
+      "reply": {
+        "text": "guess ACD",
+        "usage": {
+          "inputTokens": 885,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-BQv1jZTl6xFQ1Pyu4XCQG8pIINTPzClh",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ACD",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 885,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5603
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bb612e2aeddb8b7e",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 900,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-tIO92fzHLt6wKBAjNc3yvY5cZjBhag1w",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 900,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 10222
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e9678bee9f87c957",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 915,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-bHOwzOQxzjmjpSa7dlJg7DsLOzR3Ea7w",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 915,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 6441
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "8f838c80fa371867",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 930,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-YylrX5J6wsSRaoPEVXKbsj3xh0U6tqcD",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 930,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5995
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f662c1086bcc2096",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 944,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-GTf9oxUvdToEVtzGsWL5VLTDAU4N0OR6",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 944,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5108
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ecc53f87a309d34a",
+      "reply": {
+        "text": "guess AAD",
+        "usage": {
+          "inputTokens": 959,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-5yOKxA9KHY51eBtBqw2CzK2HqLzVGQc0",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess AAD",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 959,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5529
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a05de10ba9187e59",
+      "reply": {
+        "text": "guess ABA",
+        "usage": {
+          "inputTokens": 974,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-tyf610jpQmFo2Tz9rh15Ooldtinwc7tl",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABA",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 974,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 8776
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2cd6dd74f181ff48",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 989,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-SD2DOA2ECiyaZhOy2HcA2zTgqelMTWQR",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 989,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 10653
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4655762014f8fc0e",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 1004,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-aM0FNRI21M2wkO1J75dZ4ZH1O8cPSglR",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1004,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5883
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "1348e5793fd3085d",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 1019,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-5zvx4e9AJ1YBRaFTf2XZ8ZUtLCh4eoJR",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1019,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 4755
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3f98a227b4e103df",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 1034,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-ivvh6ajF717jifcUaKI3Lspa4al8vNpn",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1034,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 5076
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "84baaacc2e7c2920",
+      "reply": {
+        "text": "guess ABB",
+        "usage": {
+          "inputTokens": 1049,
+          "outputTokens": 4,
+          "costUsd": null
+        },
+        "meta": {
+          "retries": 0,
+          "responseId": "chatcmpl-DwZcd1fBf2vOrvVJ38z4SCCdchVwc9AV",
+          "reasoningChars": 0
+        }
+      },
+      "action": "guess ABB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1049,
+        "outputTokens": 4,
+        "costUsd": null
+      },
+      "ms": 4963
+    }
+  ],
+  "end": {
+    "reason": "budget-exhausted",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "budget-exhausted",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 25,
+    "invalidActions": 1,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T11:41:26.165Z",
+  "finishedAt": "2026-10-16T11:44:04.357Z"
+}

@@ -11,7 +11,7 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GDIR="$(cd "$HERE/../.." && pwd)"
+GDIR="$(cd "$HERE/../../.." && pwd)"
 cd "$GDIR"
 
 echo "== bundle verify =="

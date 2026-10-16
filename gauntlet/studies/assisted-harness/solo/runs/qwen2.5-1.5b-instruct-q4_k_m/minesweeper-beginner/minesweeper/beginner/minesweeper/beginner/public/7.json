@@ -1,0 +1,137 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/7",
+  "split": "public",
+  "agent": {
+    "id": "community-assisted:openai-chat/qwen2.5-1.5b-instruct-q4_k_m:retries=2",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "26e0b12836d6469c",
+      "reply": {
+        "text": "ACTION: reveal: 3 6",
+        "usage": {
+          "inputTokens": 3636,
+          "outputTokens": 25,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-YAKPRICd3O8bg76acbUElJVtWRrb0K3O",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal: 3 6",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3636,
+        "outputTokens": 25,
+        "costUsd": null
+      },
+      "ms": 33956
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "26e0b12836d6469c",
+      "reply": {
+        "text": "ACTION: reveal: 3 7\nACTION: reveal: 4 7\nACTION: reveal: 5 7\nACTION: reveal: 6 7\nACTION: reveal: 7 7\nACTION: reveal: 8 7\nACTION: reveal: 0 7\nACTION: reveal: 1 7\nACTION: reveal: 2 7\nACTION: reveal: 3 7\nACTION: reveal: 4 7\nACTION: reveal: 5 7\nACTION: reveal: 6 7\nACTION: reveal: 7 7\nACTION: reveal: 8 7\nACTION: reveal: 0 7\nACTION: reveal: 1 7\nACTION: reveal: 2 7\nACTION: reveal: 3 7\nACTION: reveal: 4 7\nACTION: reveal: 5 7\nACTION: reveal: 6 7\nACTION: reveal: 7 7\nACTION: reveal: 8 7\nACTION: reveal: 0 7\nACTION: reveal: 1 7\nACTION: reveal: 2 7\nACTION: reveal: 3 7\nACTION: reveal:",
+        "usage": {
+          "inputTokens": 3705,
+          "outputTokens": 274,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-7O7xEf57nqAYkCSK7djOaORmb85X6JW1",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal:",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3705,
+        "outputTokens": 274,
+        "costUsd": null
+      },
+      "ms": 60403
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "26e0b12836d6469c",
+      "reply": {
+        "text": "ACTION: reveal: 2 2\nACTION: reveal: 2 3\nACTION: reveal: 2 4\nACTION: reveal: 2 5\nACTION: reveal: 2 6\nACTION: reveal: 2 7\nACTION: reveal: 2 8\nACTION: reveal: 3 4\nACTION: reveal: 3 5\nACTION: reveal: 3 6\nACTION: reveal: 3 7\nACTION: reveal: 3 8\nACTION: reveal: 4 4\nACTION: reveal: 4 5\nACTION: reveal: 4 6\nACTION: reveal: 4 7\nACTION: reveal: 4 8\nACTION: reveal: 5 4\nACTION: reveal: 5 5\nACTION: reveal: 5 6\nACTION: reveal: 5 7\nACTION: reveal: 5 8\nACTION: reveal: 6 6\nACTION: reveal: 6 7\nACTION: reveal: 6 8\nACTION: reveal: 7 6\nACTION: reveal: 7 7\nACTION: reveal: 7 8\nACTION: reveal:",
+        "usage": {
+          "inputTokens": 3957,
+          "outputTokens": 283,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-VR6POXSKpkrxCy3AUpfdfAWOqPlvOzKZ",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal:",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3957,
+        "outputTokens": 283,
+        "costUsd": null
+      },
+      "ms": 65251
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T19:14:52.228Z",
+  "finishedAt": "2026-10-16T19:17:31.841Z"
+}

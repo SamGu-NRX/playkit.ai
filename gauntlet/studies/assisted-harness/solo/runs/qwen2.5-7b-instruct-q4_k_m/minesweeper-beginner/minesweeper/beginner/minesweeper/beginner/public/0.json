@@ -1,0 +1,70 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/0",
+  "split": "public",
+  "agent": {
+    "id": "community-assisted:openai-chat/qwen2.5-7b-instruct-q4_k_m:retries=2",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9200f002dd187689",
+      "reply": {
+        "text": "ACTION: reveal 4 0",
+        "usage": {
+          "inputTokens": 1170,
+          "outputTokens": 8,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 1,
+            "responseId": "chatcmpl-qsif7E4mhHrZTgdPC1TlYltJH2CeWdRs",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 4 0",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1170,
+        "outputTokens": 8,
+        "costUsd": null
+      },
+      "ms": 81782
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.5774647887323944
+      ],
+      "raw": [
+        41
+      ],
+      "reason": "mine revealed at row 4, column 0 — episode ends with 41 of 71 safe cells revealed"
+    },
+    "agentActions": 1,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T19:55:27.786Z",
+  "finishedAt": "2026-10-16T19:56:49.570Z"
+}

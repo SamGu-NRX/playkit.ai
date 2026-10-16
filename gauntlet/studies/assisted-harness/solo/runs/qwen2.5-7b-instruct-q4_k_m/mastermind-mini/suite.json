@@ -1,0 +1,27 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "gauntlet-public-assisted-v1-qwen2.5-7b-instruct-q4_k_m-mastermind-mini-4",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "mastermind",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "mini",
+          "rank": 1,
+          "scoring": "efficiency",
+          "parKind": "reference",
+          "seeds": [
+            "mastermind/mini/public/0",
+            "mastermind/mini/public/1",
+            "mastermind/mini/public/2",
+            "mastermind/mini/public/3"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/3",
+  "split": "public",
+  "agent": {
+    "id": "community-assisted:openai-chat/qwen2.5-1.5b-instruct-q4_k_m:retries=2",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b538ff8d32f9032c",
+      "reply": {
+        "text": "ACTION: flag 5 5",
+        "usage": {
+          "inputTokens": 3659,
+          "outputTokens": 31,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-dDla9YgYVITTFuPvNuhQMR7gd7Y9VAj1",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "flag 5 5",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 3659,
+        "outputTokens": 31,
+        "costUsd": null
+      },
+      "ms": 35597
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73f7d0cb8e467854",
+      "reply": {
+        "text": "ACTION: flag 5 5\nACTION: reveal 5 5\nACTION: chord 5 5",
+        "usage": {
+          "inputTokens": 3653,
+          "outputTokens": 48,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-HRdtYFzsNc3k9gSD4lqCxVixziQZeCmU",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "chord 5 5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3653,
+        "outputTokens": 48,
+        "costUsd": null
+      },
+      "ms": 37800
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73f7d0cb8e467854",
+      "reply": {
+        "text": "ACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\n",
+        "usage": {
+          "inputTokens": 3700,
+          "outputTokens": 280,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-S54QF2Co9aLkcUAciRuPrT0XJUwDvZT3",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 5 5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3700,
+        "outputTokens": 280,
+        "costUsd": null
+      },
+      "ms": 36108
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73f7d0cb8e467854",
+      "reply": {
+        "text": "ACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\nACTION: flag 5 5\nACTION: reveal 5 5\n",
+        "usage": {
+          "inputTokens": 4412,
+          "outputTokens": 768,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-Cida0RURbFctZanpQQjt5ZPmCnybh1AT",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "reveal 5 5",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 4412,
+        "outputTokens": 768,
+        "costUsd": null
+      },
+      "ms": 96905
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 4,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T19:09:01.685Z",
+  "finishedAt": "2026-10-16T19:12:28.095Z"
+}

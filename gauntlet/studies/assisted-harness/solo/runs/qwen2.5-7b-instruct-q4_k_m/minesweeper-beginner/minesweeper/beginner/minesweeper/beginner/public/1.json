@@ -1,0 +1,134 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "minesweeper",
+    "version": "1.1.0"
+  },
+  "tier": "beginner",
+  "seed": "minesweeper/beginner/public/1",
+  "split": "public",
+  "agent": {
+    "id": "community-assisted:openai-chat/qwen2.5-7b-instruct-q4_k_m:retries=2",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a3b064fb2ff671b3",
+      "reply": {
+        "text": "ACTION: flag 3 0",
+        "usage": {
+          "inputTokens": 1144,
+          "outputTokens": 8,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-JrXip3efPnhmPDcs6emoaDMMBdr4Igsk",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "flag 3 0",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1144,
+        "outputTokens": 8,
+        "costUsd": null
+      },
+      "ms": 56080
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "42ee45d3dc936fbd",
+      "reply": {
+        "text": "ACTION: flag 3 4",
+        "usage": {
+          "inputTokens": 1149,
+          "outputTokens": 8,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-hF0VYgxykMoiTbXoSLNf1IskDFKtChK7",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "flag 3 4",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1149,
+        "outputTokens": 8,
+        "costUsd": null
+      },
+      "ms": 49033
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6038d95ce1c78ff7",
+      "reply": {
+        "text": "ACTION: chord 2 0",
+        "usage": {
+          "inputTokens": 1149,
+          "outputTokens": 8,
+          "costUsd": null
+        },
+        "meta": {
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-qiJFsd60Z0GePZ7n1LExChWpxeRr3Xdw",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "chord 2 0",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1149,
+        "outputTokens": 8,
+        "costUsd": null
+      },
+      "ms": 49945
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.16901408450704225
+      ],
+      "raw": [
+        12
+      ],
+      "reason": "mine revealed at row 3, column 1 — episode ends with 12 of 71 safe cells revealed"
+    },
+    "agentActions": 3,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-16T19:56:49.574Z",
+  "finishedAt": "2026-10-16T19:59:24.632Z"
+}

@@ -12,6 +12,15 @@
  *                                     engine`. The agent id recorded in
  *                                     trajectories is the dial's own,
  *                                     `dial-<expert id>-p<p*100>`.
+ *   community-assisted:<provider>/<model>[:retries=N]
+ *                                   — the community-track assisted harness
+ *                                     (community/assisted-agent.js): the
+ *                                     official-track model agent wrapped so it
+ *                                     sees the legal actions every turn and may
+ *                                     retry an invalid reply up to N times
+ *                                     (default 2) within the same turn. Track
+ *                                     "community": the leaderboard keeps these
+ *                                     results out of the official table.
  *   model:<provider>/<model>        — an official-track model agent through
  *                                     harness/model-agent.js (provider
  *                                     anthropic, openai or openai-chat;
@@ -47,6 +56,7 @@ import { createRandomAgent } from '../agents/random.js';
 import { skillDial } from '../agents/skill-dial.js';
 import { createScriptedAgent } from '../harness/dry-run.js';
 import { createModelAgent } from '../harness/model-agent.js';
+import { createAssistedAgent } from '../community/assisted-agent.js';
 import { getGame } from '../games/index.js';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -65,7 +75,7 @@ import { pathToFileURL } from 'node:url';
  * @typedef {object} AgentSpec
  * @property {string} text The spec as written.
  * @property {string | null} gameId For `baseline:` specs, the game they scope to.
- * @property {'baseline' | 'official'} track
+ * @property {'baseline' | 'official' | 'community'} track
  * @property {boolean} dryRun True when the spec runs offline by construction.
  * @property {(context: AgentSpecContext) => Agent | Promise<Agent>} createForEpisode
  *   Build the agent for one episode; seeded agents are per-episode by design.
@@ -375,6 +385,124 @@ export async function parseAgentSpec(text, options = {}) {
     };
   }
 
+  const communityMatch = /^community-assisted:([a-z0-9-]+)\/(.+)$/.exec(text);
+  if (communityMatch) {
+    const provider = communityMatch[1];
+    let model = communityMatch[2];
+    if (provider !== 'anthropic' && provider !== 'openai' && provider !== 'openai-chat') {
+      throw new Error(
+        `agent spec "${text}": provider must be "anthropic", "openai" or "openai-chat", got "${provider}"`
+      );
+    }
+
+    // A trailing `:retries=N` peels off the same way the model spec's settings
+    // suffix does; any other colon stays part of the model id (Ollama tags).
+    let retries = 2;
+    const retriesMatch = /:retries=(\d+)$/.exec(model);
+    if (retriesMatch) {
+      retries = Number(retriesMatch[1]);
+      model = model.slice(0, model.length - retriesMatch[0].length);
+    }
+
+    // The flags configure the inner official-track model agent, so the
+    // dry-run/script/base-url rules are the model spec's rules. Thinking
+    // settings are refused, not forwarded: the assisted harness's retry loop
+    // already changes what the inner agent sees per turn, and this packet's
+    // study runs temperature-0 local models with neither setting.
+    if (
+      options.thinkingBudget !== undefined ||
+      options.reasoningEffort !== undefined
+    ) {
+      throw new Error(
+        `agent spec "${text}": thinking-budget and reasoning-effort do not apply to the assisted harness; use them on a plain model: spec`
+      );
+    }
+    if (options.dryRun && !options.script) {
+      throw new Error(
+        `--dry-run for "${text}" requires --script <file> with the replies to replay`
+      );
+    }
+    if (options.script && !options.dryRun) {
+      throw new Error(
+        `--script <file> only applies with --dry-run; a live "${text}" run calls the provider`
+      );
+    }
+    if (options.dryRun && options.maxOutputTokens !== undefined) {
+      throw new Error(
+        `--max-output-tokens bounds live provider calls and does not apply to a --dry-run "${text}" rehearsal`
+      );
+    }
+    if (options.dryRun && options.callTimeoutMs !== undefined) {
+      throw new Error(
+        `--call-timeout-ms bounds live provider calls and does not apply to a --dry-run "${text}" rehearsal`
+      );
+    }
+
+    // A live openai-chat agent has nowhere to call without a base URL; a
+    // --dry-run rehearsal replays scripted replies and never dials a server.
+    if (provider === 'openai-chat' && !options.baseUrl && !options.dryRun) {
+      throw new Error(
+        `agent spec "${text}": the openai-chat provider talks to any OpenAI-compatible chat-completions server, so it requires --base-url <url> (the request goes to <base-url>/v1/chat/completions, or the base URL as-is when it already ends in /chat/completions — e.g. Google's Gemini endpoint https://generativelanguage.googleapis.com/v1beta/openai/chat/completions)`
+      );
+    }
+
+    const agentId = `community-assisted:${provider}/${model}:retries=${retries}`;
+
+    if (options.dryRun) {
+      const script = await importScriptFile(/** @type {string} */ (options.script));
+      return {
+        text,
+        gameId: null,
+        track: 'community',
+        dryRun: true,
+        createForEpisode() {
+          return createAssistedAgent({
+            inner: createScriptedAgent(script, { id: `model:${provider}/${model}` }),
+            retries,
+            id: agentId,
+          });
+        },
+      };
+    }
+
+    /** @type {Record<string, *> | undefined} */
+    const priceFile = options.prices
+      ? JSON.parse(readFileSync(options.prices, 'utf8'))
+      : undefined;
+
+    return {
+      text,
+      gameId: null,
+      track: 'community',
+      dryRun: false,
+      createForEpisode() {
+        // One FRESH wrapper (and inner model agent) per episode: the inner
+        // agent carries its previous reply across calls, so sharing would
+        // leak one episode's conversation into the next, as with model specs.
+        return createAssistedAgent({
+          inner: /** @type {Agent} */ (
+            createModelAgent({
+              provider: /** @type {'anthropic' | 'openai' | 'openai-chat'} */ (provider),
+              model,
+              ...(priceFile ? { prices: priceFile } : {}),
+              ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
+              ...(options.apiKeyEnv ? { apiKeyEnv: options.apiKeyEnv } : {}),
+              ...(options.maxOutputTokens !== undefined
+                ? { maxOutputTokens: options.maxOutputTokens }
+                : {}),
+              ...(options.callTimeoutMs !== undefined
+                ? { callTimeoutMs: options.callTimeoutMs }
+                : {}),
+              id: `model:${provider}/${model}`,
+            })
+          ),
+          retries,
+          id: agentId,
+        });
+      },
+    };
+  }
+
   const modelMatch = /^model:([a-z0-9-]+)\/(.+)$/.exec(text);
   if (modelMatch) {
     const provider = modelMatch[1];
@@ -574,6 +702,6 @@ export async function parseAgentSpec(text, options = {}) {
   }
 
   throw new Error(
-    `unknown agent spec "${text}"; expected "random", "baseline:<game>:<greedy|engine>", "skill:<p>:<expert-spec>" or "model:<provider>/<model>"`
+    `unknown agent spec "${text}"; expected "random", "baseline:<game>:<greedy|engine>", "skill:<p>:<expert-spec>", "community-assisted:<provider>/<model>[:retries=N]" or "model:<provider>/<model>"`
   );
 }

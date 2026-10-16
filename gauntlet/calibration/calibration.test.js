@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -198,4 +198,36 @@ test('checks flag an engine solving below 95% on an efficiency tier', () => {
   assert.equal(violations.length, 1);
   assert.equal(violations[0].check, 'c-solved');
   assert.match(violations[0].detail, /solves 0\.8 .* floor is 0\.95/);
+});
+
+test('the tracked REPORT.md matches the committed tables', () => {
+  // Pins the tracked report to the committed tables so the two cannot drift
+  // apart silently: every table's versioned section header must be present,
+  // and the checks section must list exactly the violations recomputed from
+  // the committed tables by runChecks() — no stale ones, none missing.
+  const tablesDir = join(here, 'tables');
+  const tables = readdirSync(tablesDir)
+    .filter((f) => f.endsWith('.json') && !f.endsWith('.meta.json'))
+    .sort()
+    .map((f) => JSON.parse(readFileSync(join(tablesDir, f), 'utf8')));
+  assert.ok(tables.length > 0, 'committed calibration tables exist');
+
+  const report = readFileSync(join(here, 'REPORT.md'), 'utf8');
+
+  for (const table of tables) {
+    assert.ok(
+      report.includes(`### ${table.game.id} (v${table.game.version}`),
+      `REPORT.md has a section for ${table.game.id} (v${table.game.version})`,
+    );
+  }
+
+  const violations = runChecks(tables);
+  const expected = violations
+    .map((v) => `- **${v.game} — ${v.check}** (${v.tier ?? 'cross-tier'}): ${v.detail}`)
+    .sort();
+  const reported = report
+    .split('\n')
+    .filter((line) => /^- \*\*[^*]+ — (a-order|b-monotonic|c-solved)\*\*/.test(line))
+    .sort();
+  assert.deepEqual(reported, expected);
 });

@@ -1,0 +1,285 @@
+{
+  "target": "iPhone15:portrait",
+  "label": "after",
+  "steps": {
+    "injection": {
+      "injected": true,
+      "detectAuto": {
+        "mode": "auto",
+        "gameStatus": "Play2048Adapter"
+      }
+    },
+    "detectTap": {
+      "preStatus": "Play2048Adapter",
+      "postStatus": "Play2048Adapter"
+    },
+    "geometry": {
+      "viewport": {
+        "w": 393,
+        "h": 659
+      },
+      "panel": {
+        "x": 73,
+        "y": 14,
+        "w": 302,
+        "h": 637
+      },
+      "board": {
+        "x": 57,
+        "y": 152,
+        "w": 280,
+        "h": 280
+      },
+      "panelCoversBoardPct": 94,
+      "panelWithinViewport": true
+    },
+    "autoSolve": {
+      "movedFive": true,
+      "startedByTap": true,
+      "stoppedByTap": true,
+      "facts": {
+        "hasRuntime": true,
+        "isRunning": true,
+        "moveCount": 5,
+        "solverStatus": {
+          "mode": "wasm",
+          "status": "ready",
+          "lastError": null,
+          "strategy": {
+            "type": "expectimax-depth",
+            "heuristic": "corner",
+            "depth": 4,
+            "probability": 0.0025
+          },
+          "wasm": {
+            "type": "wasm",
+            "status": "ready",
+            "ready": true,
+            "lastError": null,
+            "strategy": {
+              "type": "expectimax-depth",
+              "heuristic": "corner",
+              "depth": 4,
+              "probability": 0.0025
+            }
+          },
+          "naive": {
+            "type": "naive",
+            "ready": true,
+            "strategy": {
+              "bias": 2
+            }
+          }
+        }
+      }
+    },
+    "tabSwitch": {
+      "method": "in-page visibilityState stub + real visibilitychange (Playwright pins pages visible)",
+      "before": {
+        "hasRuntime": true,
+        "isRunning": true,
+        "moveCount": 6,
+        "solverStatus": {
+          "mode": "wasm",
+          "status": "ready",
+          "lastError": null,
+          "strategy": {
+            "type": "expectimax-depth",
+            "heuristic": "corner",
+            "depth": 4,
+            "probability": 0.0025
+          },
+          "wasm": {
+            "type": "wasm",
+            "status": "ready",
+            "ready": true,
+            "lastError": null,
+            "strategy": {
+              "type": "expectimax-depth",
+              "heuristic": "corner",
+              "depth": 4,
+              "probability": 0.0025
+            }
+          },
+          "naive": {
+            "type": "naive",
+            "ready": true,
+            "strategy": {
+              "bias": 2
+            }
+          }
+        }
+      },
+      "paused": {
+        "hasRuntime": true,
+        "isRunning": true,
+        "moveCount": 6,
+        "solverStatus": {
+          "mode": "wasm",
+          "status": "ready",
+          "lastError": null,
+          "strategy": {
+            "type": "expectimax-depth",
+            "heuristic": "corner",
+            "depth": 4,
+            "probability": 0.0025
+          },
+          "wasm": {
+            "type": "wasm",
+            "status": "ready",
+            "ready": true,
+            "lastError": null,
+            "strategy": {
+              "type": "expectimax-depth",
+              "heuristic": "corner",
+              "depth": 4,
+              "probability": 0.0025
+            }
+          },
+          "naive": {
+            "type": "naive",
+            "ready": true,
+            "strategy": {
+              "bias": 2
+            }
+          }
+        }
+      },
+      "stableAfterPause": {
+        "hasRuntime": true,
+        "isRunning": true,
+        "moveCount": 6,
+        "solverStatus": {
+          "mode": "wasm",
+          "status": "ready",
+          "lastError": null,
+          "strategy": {
+            "type": "expectimax-depth",
+            "heuristic": "corner",
+            "depth": 4,
+            "probability": 0.0025
+          },
+          "wasm": {
+            "type": "wasm",
+            "status": "ready",
+            "ready": true,
+            "lastError": null,
+            "strategy": {
+              "type": "expectimax-depth",
+              "heuristic": "corner",
+              "depth": 4,
+              "probability": 0.0025
+            }
+          },
+          "naive": {
+            "type": "naive",
+            "ready": true,
+            "strategy": {
+              "bias": 2
+            }
+          }
+        }
+      },
+      "resumed": {
+        "hasRuntime": true,
+        "isRunning": true,
+        "moveCount": 10,
+        "solverStatus": {
+          "mode": "wasm",
+          "status": "ready",
+          "lastError": null,
+          "strategy": {
+            "type": "expectimax-depth",
+            "heuristic": "corner",
+            "depth": 4,
+            "probability": 0.0025
+          },
+          "wasm": {
+            "type": "wasm",
+            "status": "ready",
+            "ready": true,
+            "lastError": null,
+            "strategy": {
+              "type": "expectimax-depth",
+              "heuristic": "corner",
+              "depth": 4,
+              "probability": 0.0025
+            }
+          },
+          "naive": {
+            "type": "naive",
+            "ready": true,
+            "strategy": {
+              "bias": 2
+            }
+          }
+        }
+      },
+      "driverWasRunningWhenHidden": true,
+      "moveCountFrozenWhilePaused": true,
+      "resumedAndMoving": true
+    },
+    "gameOver": {
+      "injected": true,
+      "detected": "Play2048Adapter",
+      "bannerAtLoad": true,
+      "adapterReportsGameOver": true,
+      "boardUntouched": true,
+      "driverStillRunningAfterGameOver": false,
+      "moveCountAfter5s": 0,
+      "facts": {
+        "hasRuntime": true,
+        "isRunning": false,
+        "moveCount": 0,
+        "solverStatus": {
+          "mode": "wasm",
+          "status": "ready",
+          "lastError": null,
+          "strategy": {
+            "type": "expectimax-depth",
+            "heuristic": "corner",
+            "depth": 4,
+            "probability": 0.0025
+          },
+          "wasm": {
+            "type": "wasm",
+            "status": "ready",
+            "ready": true,
+            "lastError": null,
+            "strategy": {
+              "type": "expectimax-depth",
+              "heuristic": "corner",
+              "depth": 4,
+              "probability": 0.0025
+            }
+          },
+          "naive": {
+            "type": "naive",
+            "ready": true,
+            "strategy": {
+              "bias": 2
+            }
+          }
+        }
+      }
+    },
+    "reducedMotion": {
+      "injected": true,
+      "detected": {
+        "mode": "auto",
+        "gameStatus": "Play2048Adapter"
+      },
+      "facts": null,
+      "panelTransitionDuration": "0s",
+      "reducedMotionApplied": true
+    },
+    "deliveryProbe": {
+      "tilesBefore": 2,
+      "tilesAfter": 3,
+      "gameStateSaves": 1,
+      "deliveredOnce": true,
+      "deliveredTwice": false
+    }
+  },
+  "pass": true
+}

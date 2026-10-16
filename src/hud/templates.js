@@ -246,6 +246,52 @@ export function getHUDCSS() {
         transition: none;
         cursor: grabbing;
       }
+
+      /* Phone-sized screens and coarse (touch) pointers: fix only what breaks
+       * on a phone — the desktop layout above is untouched. The fixed 300 px
+       * panel covered most of a 390 px-wide board and its settings ran past
+       * the bottom of a landscape phone with no way to reach them. */
+      @media (max-width: 480px), (pointer: coarse) {
+        .hud-panel {
+          width: min(300px, calc(100vw - 16px));
+          max-height: calc(100vh - 16px);
+          display: flex;
+          flex-direction: column;
+        }
+
+        .hud-content {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .hud-panel[data-collapsed="true"] {
+          height: 60px;
+        }
+
+        .hud-btn {
+          min-height: 44px;
+          min-width: 44px;
+        }
+
+        .hud-btn-collapse {
+          width: 44px;
+          height: 44px;
+        }
+
+        /* iOS Safari zooms the page when a form control smaller than 16px
+         * receives focus. */
+        .setting-select,
+        .setting-input {
+          font-size: 16px;
+        }
+
+        .hud-header {
+          /* Finger-dragging the header must not scroll the page instead. */
+          touch-action: none;
+        }
+      }
     `;
 }
 

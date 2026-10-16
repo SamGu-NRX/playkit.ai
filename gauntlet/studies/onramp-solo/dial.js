@@ -51,7 +51,10 @@ export function dialId(expertId, p) {
  * engine baseline replans from the observation it is handed.
  *
  * @param {{ expert: Agent, p: number, episodeSeed: string }} options
- * @returns {Agent}
+ * @returns {Agent & {
+ *   fallbackCount: number,
+ *   randomReply: (ctx: import('../../core/types.js').TurnContext) => import('../../core/types.js').AgentReply,
+ * }}
  */
 export function skillDial({ expert, p, episodeSeed }) {
   if (!(p >= 0 && p <= 1)) {

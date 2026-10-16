@@ -26,12 +26,15 @@ import { dialId, skillDial, DIAL_P_VALUES } from './dial.js';
  * @returns {import('../../core/types.js').TurnContext}
  */
 function ctx(turn, legal = ['left', 'right', 'up', 'down']) {
-  return {
+  return /** @type {import('../../core/types.js').TurnContext} */ ({
+    spec: /** @type {any} */ (null),
+    tier: /** @type {any} */ (null),
+    seat: 0,
     turn,
     legalActions: legal,
     observation: { text: '', data: null },
     feedback: null,
-  };
+  });
 }
 
 test('the dial id follows the pinned format and the p ladder is the pinned six values', () => {
@@ -42,7 +45,7 @@ test('the dial id follows the pinned format and the p ladder is the pinned six v
 });
 
 test('skillDial rejects out-of-range p and a missing episode seed', () => {
-  const expert = { id: 'expert', track: 'baseline', act: async () => ({ text: 'left' }) };
+  const expert = { id: 'expert', track: /** @type {const} */ ('baseline'), act: async () => ({ text: 'left' }) };
   assert.throws(() => skillDial({ expert, p: -0.1, episodeSeed: 's' }), /p must be in \[0, 1\]/);
   assert.throws(() => skillDial({ expert, p: 1.1, episodeSeed: 's' }), /p must be in \[0, 1\]/);
   assert.throws(() => skillDial({ expert, p: 0.5, episodeSeed: '' }), /episodeSeed is required/);
@@ -53,7 +56,7 @@ test('skillDial rejects out-of-range p and a missing episode seed', () => {
 test('dial-p1 replays createRandomAgent move for move', async () => {
   const never = {
     id: 'expert',
-    track: 'baseline',
+    track: /** @type {const} */ ('baseline'),
     act: async () => {
       throw new Error('the expert must never be asked at p=1');
     },
@@ -74,8 +77,8 @@ test('dial-p0 is the expert, asked every turn', async () => {
   const asked = [];
   const expert = {
     id: 'expert',
-    track: 'baseline',
-    async act(c) {
+    track: /** @type {const} */ ('baseline'),
+    async act(/** @type {import('../../core/types.js').TurnContext} */ c) {
       asked.push(`t${c.turn}`);
       return { text: 'expert-move' };
     },
@@ -95,6 +98,7 @@ test('branch decisions are deterministic in (episodeSeed, p, turn)', async () =>
   // free to differ (assert they are not all identical over many seeds).
   /**
    * Records whether the expert was asked, per turn.
+   * @param {string} seed
    * @returns {{ agent: Agent, asked: boolean[] }}
    */
   function makeProbe(seed) {
@@ -105,8 +109,8 @@ test('branch decisions are deterministic in (episodeSeed, p, turn)', async () =>
       agent: skillDial({
         expert: {
           id: 'expert',
-          track: 'baseline',
-          async act(c) {
+          track: /** @type {const} */ ('baseline'),
+          async act(/** @type {import('../../core/types.js').TurnContext} */ c) {
             asked[c.turn] = true;
             return { text: 'left' };
           },
@@ -138,7 +142,7 @@ test('branch decisions are deterministic in (episodeSeed, p, turn)', async () =>
 test('an expert throw falls back to the random branch and is counted', async () => {
   const failing = {
     id: 'expert',
-    track: 'baseline',
+    track: /** @type {const} */ ('baseline'),
     async act() {
       throw new Error('beyond the proven range');
     },

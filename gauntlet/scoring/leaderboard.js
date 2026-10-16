@@ -12,10 +12,19 @@
  * Entries that cannot be scored honestly are refused by `score` and the
  * refusal propagates from here.
  *
+ * When the caller supplies a fitted rating ladder (`ratingLadder`), every
+ * entry also carries a display-only chess rating — `rateAgent` over the
+ * entry's trajectories on ladder-known rungs. It renders as a Markdown
+ * column and a per-entry `rating` field and is never read by the ranking
+ * math; entries with no ladder-known trajectories have no rating.
+ *
  * @module
  */
 
-import { score } from './score.js';
+import { score, GauntletRefusalError } from './score.js';
+
+import { DEFAULT_PROFILE } from './profiles.js';
+import { rateAgent, selectLadderKnown } from '../rating/elo.js';
 
 /** @import { Game } from '../core/types.js' */
 /** @import { SuiteManifest } from './suite.js' */
@@ -41,6 +50,12 @@ const TRACKS = ['official', 'community', 'baseline'];
  * @property {number} invalidActionRate
  * @property {number} meanAgentActions
  * @property {Record<string, import('./score.js').GameScore>} games
+ * @property {import('../rating/elo.js').AgentRating} [rating] Display-only
+ *   chess rating, present only when the caller supplied a rating ladder and
+ *   the entry has trajectories on ladder-known rungs. Never affects rank.
+ * @property {{ profile: string, baselineSha256?: string }} [scoring] Present
+ *   only when the entry was scored under a non-default or explicitly
+ *   selected scoring profile.
  */
 
 /**
@@ -61,6 +76,8 @@ const TRACKS = ['official', 'community', 'baseline'];
  * @property {'playkit-gauntlet-leaderboard/1'} format
  * @property {string} generatedAt
  * @property {{ id: string, split: string, saltCommitment: string | null }} suite
+ * @property {{ profile: string, baselineSha256?: string }} [scoring] Present
+ *   only when a scoring profile was explicitly selected or is non-default.
  * @property {Record<string, LeaderboardEntry[]>} tracks One array per track.
  * @property {Record<string, ScoreVsCostPoint[]>} scoreVsCost One series per
  *   track, like the ARC Prize leaderboard's score-vs-cost plot data.
@@ -89,12 +106,48 @@ function fmtScoreCI(scored) {
 }
 
 /**
+ * Escape text for a Markdown table cell: backslash first, then the divider
+ * and emphasis characters, and hard newlines become `<br>` (a table row
+ * cannot span lines). An agent id, model or provider is data, not Markdown —
+ * an id containing `|` shifts every following column, and `*` or `_` flip
+ * emphasis on.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function escapeMarkdownCell(text) {
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/([|*`_])/g, '\\$1')
+    .replace(/\r\n|\r|\n/g, '<br>');
+}
+
+/**
  * @param {{ id: string, track: string, model?: string, provider?: string }} agent
  * @returns {string}
  */
 function agentLabel(agent) {
   const detail = [agent.model, agent.provider].filter(Boolean).join(' @ ');
-  return detail ? `${agent.id} (${detail})` : agent.id;
+  const id = escapeMarkdownCell(agent.id);
+  return detail ? `${id} (${escapeMarkdownCell(detail)})` : id;
+}
+
+/**
+ * The display-only chess rating cell: `rating [low, high]`, the divergence
+ * direction for an agent with no finite rating, `—` when the entry was not
+ * rated (no ladder supplied, or no ladder-known trajectories).
+ *
+ * @param {import('../rating/elo.js').AgentRating | undefined} rating
+ * @returns {string}
+ */
+function fmtRatingCell(rating) {
+  if (!rating) return '—';
+  if (rating.rating === null) {
+    return rating.direction === null ? '—' : `— (${rating.direction})`;
+  }
+  const low = rating.low === null ? 'unbounded' : fmt(rating.low, 1);
+  const high = rating.high === null ? 'unbounded' : fmt(rating.high, 1);
+  return `${fmt(rating.rating, 1)} [${low}, ${high}]`;
 }
 
 /**
@@ -102,9 +155,11 @@ function agentLabel(agent) {
  *
  * @param {string} track
  * @param {LeaderboardEntry[]} entries
+ * @param {boolean} withRatings Render the chess rating column — present only
+ *   when the builder was given a rating ladder.
  * @returns {string}
  */
-function trackMarkdown(track, entries) {
+function trackMarkdown(track, entries, withRatings) {
   const lines = [`## ${track[0].toUpperCase()}${track.slice(1)} track`, ''];
   if (entries.length === 0) {
     lines.push('_No entries._', '');
@@ -112,13 +167,26 @@ function trackMarkdown(track, entries) {
   }
 
   lines.push(
-    '| Rank | Agent | Benchmark score (95% CI) | Cost (USD) | Cost/episode (USD) | Invalid actions | Mean agent actions |',
-    '|---:|---|---:|---:|---:|---:|---:|'
+    withRatings
+      ? '| Rank | Agent | Benchmark score (95% CI) | Cost (USD) | Cost/episode (USD) | Invalid actions | Mean agent actions | Chess rating (95% CI) |'
+      : '| Rank | Agent | Benchmark score (95% CI) | Cost (USD) | Cost/episode (USD) | Invalid actions | Mean agent actions |',
+    withRatings
+      ? '|---:|---|---:|---:|---:|---:|---:|---:|'
+      : '|---:|---|---:|---:|---:|---:|---:|'
   );
   for (const entry of entries) {
-    lines.push(
-      `| ${entry.rank ?? '—'} | ${agentLabel(entry.agent)} | ${fmtScoreCI(entry.benchmarkScore)} | ${fmt(entry.costUsd)} | ${fmt(entry.costPerEpisodeUsd)} | ${(entry.invalidActionRate * 100).toFixed(1)}% | ${fmt(entry.meanAgentActions, 1)} |`
-    );
+    /** @type {string[]} */
+    const cells = [
+      `${entry.rank ?? '—'}`,
+      agentLabel(entry.agent),
+      fmtScoreCI(entry.benchmarkScore),
+      fmt(entry.costUsd),
+      fmt(entry.costPerEpisodeUsd),
+      `${(entry.invalidActionRate * 100).toFixed(1)}%`,
+      fmt(entry.meanAgentActions, 1),
+    ];
+    if (withRatings) cells.push(fmtRatingCell(entry.rating));
+    lines.push(`| ${cells.join(' | ')} |`);
   }
   lines.push('');
 
@@ -150,15 +218,32 @@ function trackMarkdown(track, entries) {
 }
 
 /**
+ * @typedef {object} LeaderboardOptions
+ * @property {string} [profile] Default scoring profile for entries that do
+ *   not name one. Defaults to `rhae-v1`. When the effective profile is
+ *   non-default (or explicitly selected), the leaderboard JSON carries a
+ *   `scoring` block with the profile id and, when used, the baseline file's
+ *   SHA-256.
+ * @property {import('./profiles.js').ScoringBaseline} [baseline] Default
+ *   parsed scoring baseline for entries that do not carry one (required by
+ *   `chance-adjusted`).
+ * @property {string} [baselineSha256] SHA-256 hex of the baseline file.
+ * @property {import('../rating/elo.js').RatingLadder} [ratingLadder] Fitted
+ *   chess ladder for the display-only rating column. When absent the column
+ *   is omitted entirely.
+ */
+
+/**
  * Build the leaderboard.
  *
  * @param {SuiteManifest} suite
  * @param {ScoreEntry[]} entries One per submitting agent.
  * @param {Game<*>[] | Map<string, Game<*>> | Record<string, Game<*>>} games
  *   Implementations for every suite game.
+ * @param {LeaderboardOptions} [options]
  * @returns {Promise<{ leaderboard: Leaderboard, markdown: string }>}
  */
-export async function leaderboard(suite, entries, games) {
+export async function leaderboard(suite, entries, games, options = {}) {
   if (!Array.isArray(entries)) {
     throw new Error('[gauntlet/scoring/leaderboard.js] entries: entries must be an array');
   }
@@ -180,8 +265,66 @@ export async function leaderboard(suite, entries, games) {
     const result = await score(suite, entry.trajectories, games, {
       agent: entry.agent,
       saltCommitment: entry.saltCommitment,
+      profile: entry.profile ?? options.profile,
+      baseline: entry.baseline ?? options.baseline,
+      baselineSha256: entry.baselineSha256 ?? options.baselineSha256,
     });
-    scored.push(/** @type {LeaderboardEntry} */ (/** @type {*} */ (result)));
+    /** @type {LeaderboardEntry} */
+    const scoredEntry = /** @type {*} */ (result);
+    // Display-only chess rating: computed from the entry's trajectories on
+    // ladder-known rungs, never read by the ranking math below.
+    if (options.ratingLadder) {
+      const { known } = selectLadderKnown(entry.trajectories, options.ratingLadder);
+      if (known.length > 0) scoredEntry.rating = rateAgent(known, options.ratingLadder);
+    }
+    scored.push(scoredEntry);
+  }
+
+  // One leaderboard, one profile. Entries scored under different profiles
+  // are on different scales (rhae-v1 floors the random baseline at ~0.11,
+  // chance-adjusted pins it at 0), so ranking them together would compare
+  // numbers that do not mean the same thing.
+  const boardProfile = scored.find((e) => e.scoring)?.scoring?.profile ?? DEFAULT_PROFILE;
+  for (const entry of scored) {
+    const entryProfile = entry.scoring?.profile ?? DEFAULT_PROFILE;
+    if (entryProfile !== boardProfile) {
+      throw new GauntletRefusalError(
+        'leaderboard.js',
+        'profile-mismatch',
+        `cannot rank entry "${entry.agent.id}" scored under profile "${entryProfile}" together with entries under profile "${boardProfile}"; profile scores are on different scales — build one leaderboard per profile`
+      );
+    }
+  }
+
+  // One board, one baseline. chance-adjusted scores depend on the baseline
+  // file's random-mean vector (it sets the denominator and clamp per tier),
+  // so two entries scored against different baseline files are on different
+  // scales even under the same profile name — exactly what the profile check
+  // above exists to prevent. Only entries whose result names a baseline
+  // participate: chance-adjusted always carries a scoring block, while the
+  // baseline-reading-free profiles (rhae-v1, squared-outcome) never read one,
+  // so a differing sha there is provenance noise, not a scale difference.
+  if (boardProfile === 'chance-adjusted') {
+    /** @type {string | undefined} */
+    let boardBaselineSha256;
+    /** @type {string | undefined} */
+    let boardBaselineEntryId;
+    for (const entry of scored) {
+      const sha = entry.scoring?.baselineSha256;
+      if (sha === undefined) continue;
+      if (boardBaselineSha256 === undefined) {
+        boardBaselineSha256 = sha;
+        boardBaselineEntryId = entry.agent.id;
+        continue;
+      }
+      if (boardBaselineSha256 !== sha) {
+        throw new GauntletRefusalError(
+          'leaderboard.js',
+          'baseline-mismatch',
+          `cannot rank entry "${entry.agent.id}" scored against baseline ${sha.slice(0, 12)} together with entry "${boardBaselineEntryId}" scored against baseline ${boardBaselineSha256.slice(0, 12)}; chance-adjusted scores depend on the baseline's random-mean vector — build one leaderboard per baseline file`
+        );
+      }
+    }
   }
 
   /** @type {Record<string, LeaderboardEntry[]>} */
@@ -226,6 +369,18 @@ export async function leaderboard(suite, entries, games) {
     tracks,
     scoreVsCost,
   };
+  // The profile block appears only when a profile was explicitly selected or
+  // is non-default, so the default leaderboard JSON stays byte-identical.
+  if (options.profile !== undefined || boardProfile !== DEFAULT_PROFILE) {
+    /** @type {{ profile: string, baselineSha256?: string }} */
+    const scoring = { profile: boardProfile };
+    // Provenance names the baseline the entries were actually scored against:
+    // the entries' consensus when they carry their own baselines, falling
+    // back to the board-level option.
+    const sha = scored.find((e) => e.scoring?.baselineSha256)?.scoring?.baselineSha256 ?? options.baselineSha256;
+    if (typeof sha === 'string') scoring.baselineSha256 = sha;
+    board.scoring = scoring;
+  }
 
   const markdownLines = [
     '# PlayKit Gauntlet leaderboard',
@@ -234,8 +389,9 @@ export async function leaderboard(suite, entries, games) {
     `- Generated: ${board.generatedAt}`,
     '',
   ];
+  const withRatings = options.ratingLadder !== undefined;
   for (const track of TRACKS) {
-    markdownLines.push(trackMarkdown(track, tracks[track]));
+    markdownLines.push(trackMarkdown(track, tracks[track], withRatings));
   }
 
   return { leaderboard: board, markdown: markdownLines.join('\n') };

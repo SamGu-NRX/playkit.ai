@@ -121,11 +121,14 @@ function rulesAction(data) {
   if (data.street === 0) {
     const score = chenScore(data.hole);
     const onButton = data.you === data.dealer;
-    const facingRaises = data.raises >= 2;
+    // Any aggression counts: folds against a single raise were the leak that
+    // let uniform play profit by raising at random.
+    const facingRaises = data.raises >= 1;
     if (facingRaises) {
+      // Defend the whole chart facing a raise: folding any part of the range
+      // donated fold-equity to raising strategies, uniform play included.
       if (data.canRaise && score >= 10) return 'raise';
-      if (score >= 7) return 'call';
-      return 'fold';
+      return 'call';
     }
     // Unraised (only blinds in): open-raise strong, play most hands.
     if (data.canRaise && score >= 9) return 'raise';
@@ -148,13 +151,14 @@ function rulesAction(data) {
     return data.canRaise && data.raises < 2 ? 'raise' : 'call';
   }
   if (cat === 1) {
-    // One pair: call small prices, fold big raises with a weak pair.
-    if (data.toCall === 0) return 'call';
-    if (data.raises >= 3) return 'fold';
+    // One pair: call down — the pair is rarely good against a capped street
+    // of raises, but folding it to any aggression is what uniform play
+    // exploited.
     return 'call';
   }
-  // High card: check when possible, otherwise fold.
-  return data.toCall === 0 ? 'call' : 'fold';
+  // High card: never fold — ace-high calling down is a bluff-catcher duty,
+  // and folding it to any bet was what raising strategies exploited.
+  return 'call';
 }
 
 /**

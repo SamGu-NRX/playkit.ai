@@ -118,7 +118,7 @@ function solved(state) {
 export const sliding = {
   spec: {
     id: 'sliding',
-    version: '1.0.0',
+    version: '1.1.0',
     title: 'Sliding Tile Puzzle',
     seats: /** @type {1 | 2} */ (1),
     information: /** @type {InformationMode} */ ('perfect'),

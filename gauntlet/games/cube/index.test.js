@@ -6,6 +6,7 @@ import { CANONICAL_MOVES, SOLVED } from './cube.js';
 import { buildDistanceTable, solveOptimal } from './solver.js';
 import { runConformance } from '../../core/conformance.js';
 import { runEpisode } from '../../core/runner.js';
+import { getGame, listGames } from '../index.js';
 
 /** Warm the solver once so per-seed reset timing excludes the table build. */
 buildDistanceTable();
@@ -86,7 +87,9 @@ test('the observation shows the net, notation, budget, and the full legal list',
   // the net renders nine lines
   assert.equal(obs.text.split('\n').length, 9 + 6);
   assert.equal(obs.data.facelets, state.facelets);
-  assert.equal(obs.data.par, state.par);
+  // the proven-optimal par is scoring metadata: it must not reach the agent
+  // through the observation (the outcome reports it after the episode ends)
+  assert.ok(!('par' in obs.data), 'the observation must not leak the proven-optimal par');
   assert.equal(obs.data.you, 0);
 });
 
@@ -225,4 +228,53 @@ test('the greedy baseline stays legal and deterministic; report per-tier scores'
     );
   }
   console.log(`greedy baseline per tier:\n${report.join('\n')}`);
+});
+
+test('the game is registered in the games registry so getGame("cube") resolves', () => {
+  const registered = getGame('cube');
+  assert.equal(registered.spec.id, 'cube');
+  assert.ok(listGames().includes(registered));
+});
+
+test('rulesText states the real scoring semantics for invalid replies', () => {
+  // the score is computed over valid turns only; invalid replies burn budget
+  assert.ok(
+    cube.spec.rulesText.includes('do not count as turns when scoring'),
+    'rulesText must say invalid replies do not count as turns when scoring'
+  );
+  assert.ok(
+    !cube.spec.rulesText.includes('Invalid replies consume turns.'),
+    'the bare consume-turns phrasing misdescribes the score and must go'
+  );
+});
+
+test('invalid attempts burn budget but leave the efficiency score untouched', async () => {
+  const tier = cube.spec.tiers[0];
+  const seed = '0';
+  const solution = solveOptimal(cube.reset(tier, seed).facelets).solution;
+  // interleave the invalid replies with optimal turns: the runner forfeits at
+  // 3 consecutive invalid attempts (maxConsecutiveInvalid, default 3), and a
+  // valid turn resets that counter, so junk before each of the first three
+  // optimal moves is safe while 3 in a row is not
+  const replies = /** @type {string[]} */ ([]);
+  for (let k = 0; k < solution.length; k += 1) {
+    if (k < 3) replies.push('this is not a legal turn');
+    replies.push(solution[k]);
+  }
+  let next = 0;
+  /** @type {import('../../core/types.js').Agent} */
+  const invalidThenOptimal = {
+    id: 'invalid-then-optimal',
+    track: 'baseline',
+    async act() {
+      return { text: replies[next++] ?? '' };
+    },
+  };
+  const trajectory = await runEpisode({ game: cube, tierId: tier.id, seed, agent: invalidThenOptimal });
+  assert.equal(trajectory.end.reason, 'terminal');
+  const outcome = /** @type {NonNullable<typeof trajectory.end.outcome>} */ (trajectory.end.outcome);
+  assert.equal(outcome.solved, true);
+  assert.equal(trajectory.end.agentActions, 3 + solution.length, 'invalid attempts count toward the action budget');
+  assert.equal(trajectory.end.invalidActions, 3);
+  assert.equal(outcome.normalized[0], 1, 'the score is computed over valid turns only');
 });

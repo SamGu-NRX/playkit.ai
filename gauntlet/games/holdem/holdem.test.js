@@ -14,7 +14,8 @@ import { cardName, parseCard } from './cards.js';
 import { evaluate, categorize, CATEGORY_DIVISOR } from './evaluator.js';
 import { applyAction, canRaise, newMatch, normalizedFromChips, seatToAct, toCall, TOTAL_HANDS } from './engine.js';
 import { holdem, GAME_ID } from './index.js';
-import { makeBaseline } from './baselines.js';
+import { makeBaseline, parseHandsCompleted } from './baselines.js';
+import { chenScore } from './strength.js';
 import { runConformance } from '../../core/conformance.js';
 import { runEpisode } from '../../core/runner.js';
 import { verifyTrajectory } from '../../core/trajectory.js';
@@ -88,6 +89,58 @@ test('evaluator split-pot cases produce equal values', () => {
   const p1 = evaluate([...cards(['Ah', 'As']), ...board]);
   assert.equal(p0.value, p1.value);
   assert.equal(p0.name, p1.name);
+});
+
+test('evaluator: high-card hands compare all five kickers', () => {
+  // Board Ac Kd Qh 4s 2c: 9-8 in the hole plays A K Q 9 8, 7-6 plays
+  // A K Q 7 6 — only the fourth and fifth kickers differ.
+  const board = cards(['Ac', 'Kd', 'Qh', '4s', '2c']);
+  const ninetyEight = evaluate([...cards(['9d', '8c']), ...board]);
+  const seventySix = evaluate([...cards(['7d', '6c']), ...board]);
+  assert.ok(ninetyEight.value > seventySix.value, 'A K Q 9 8 beats A K Q 7 6');
+  assert.equal(ninetyEight.category, 0);
+  assert.equal(seventySix.category, 0);
+
+  // Board Ac Kd Qh Js 4c: four shared kickers, the fifth decides.
+  const broadwayBoard = cards(['Ac', 'Kd', 'Qh', 'Js', '4c']);
+  const aceHigh98 = evaluate([...cards(['9d', '8c']), ...broadwayBoard]);
+  const aceHigh87 = evaluate([...cards(['8d', '7c']), ...broadwayBoard]);
+  assert.ok(aceHigh98.value > aceHigh87.value, 'A K Q J 9 beats A K Q J 8');
+
+  // Equal ranks still split regardless of suits (no flush available).
+  const suitsA = evaluate([...cards(['9d', '8c']), ...board]);
+  const suitsB = evaluate([...cards(['9h', '8s']), ...board]);
+  assert.equal(suitsA.value, suitsB.value, 'equal ranks split regardless of suits');
+});
+
+test('chenScore matches the documented Chen mapping', () => {
+  // Broadway high cards and the pair minimum were already correct.
+  assert.equal(chenScore(cards(['As', 'Ad'])), 20);
+  assert.equal(chenScore(cards(['Th', 'Tc'])), 10);
+  assert.equal(chenScore(cards(['Ah', 'Kd'])), 10);
+  assert.equal(chenScore(cards(['Ah', 'Kh'])), 12);
+  assert.equal(chenScore(cards(['2d', '2c'])), 5);
+  // Sub-broadway high cards score face value / 2 (nine 4.5, deuce 1).
+  assert.equal(chenScore(cards(['9d', '9c'])), 9);
+  assert.equal(chenScore(cards(['9d', '8c'])), 5);
+  assert.equal(chenScore(cards(['6d', '5c'])), 3);
+  assert.equal(chenScore(cards(['7d', '2c'])), -2);
+  assert.equal(chenScore(cards(['3d', '2c'])), 2);
+});
+
+test('parseHandsCompleted reads the hands count out of outcome reasons', () => {
+  assert.equal(
+    parseHandsCompleted(
+      'budget exhausted mid-match: 17 of 40 hands completed, seat 0 at -2 chips; completed hands scored, the hand in progress discarded'
+    ),
+    17,
+    'a truncated outcome counts the hands actually completed'
+  );
+  assert.equal(
+    parseHandsCompleted('duplicate match complete: 20 deals, 40 hands, seat 0 finished +12 chips (+12 for seat 1)'),
+    40
+  );
+  assert.equal(parseHandsCompleted(''), 40, 'unparseable reasons fall back to the full match');
 });
 
 test('evaluator category counts over all 2,598,960 five-card hands match Wikipedia', () => {

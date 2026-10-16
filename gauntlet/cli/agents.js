@@ -59,6 +59,12 @@ import { pathToFileURL } from 'node:url';
  * @property {string} [apiKeyEnv] --api-key-env: the environment variable that
  *   holds the provider API key. The key itself is read from the environment
  *   at call time and never appears in the spec, the trajectory, or logs.
+ * @property {number} [maxOutputTokens] --max-output-tokens: per-reply output
+ *   token cap for live model specs, sent as the provider's max_tokens /
+ *   max_output_tokens and recorded in run.json's limits.
+ * @property {number} [callTimeoutMs] --call-timeout-ms: per-attempt timeout
+ *   for live model specs; a timed-out attempt is retryable like a network
+ *   error. Recorded in run.json's limits.
  */
 
 /**
@@ -164,9 +170,15 @@ export async function parseAgentSpec(text, options = {}) {
   if (baselineMatch) {
     const gameId = baselineMatch[1];
     const kind = /** @type {'greedy' | 'engine'} */ (baselineMatch[2]);
-    if (options.dryRun || options.script || options.prices) {
+    if (
+      options.dryRun ||
+      options.script ||
+      options.prices ||
+      options.maxOutputTokens !== undefined ||
+      options.callTimeoutMs !== undefined
+    ) {
       throw new Error(
-        `agent spec "${text}" takes no --dry-run, --script or --prices flags`
+        `agent spec "${text}" takes no --dry-run, --script, --prices, --max-output-tokens or --call-timeout-ms flags`
       );
     }
     getGame(gameId); // fail fast on an unknown game id
@@ -236,30 +248,42 @@ export async function parseAgentSpec(text, options = {}) {
     const priceFile = options.prices
       ? JSON.parse(readFileSync(options.prices, 'utf8'))
       : undefined;
-    let built = false;
-    let shared = /** @type {Agent | null} */ (null);
+    if (
+      options.dryRun &&
+      (options.maxOutputTokens !== undefined || options.callTimeoutMs !== undefined)
+    ) {
+      throw new Error(
+        `--max-output-tokens and --call-timeout-ms bound live provider calls and do not apply to a --dry-run "${text}" rehearsal`
+      );
+    }
+
     return {
       text,
       gameId: null,
       track: 'official',
       dryRun: false,
       createForEpisode() {
-        // The model client is stateless across episodes; build it once so a
-        // suite run reuses one client and one price-file parse.
-        if (!built) {
-          built = true;
-          shared = /** @type {Agent} */ (
-            createModelAgent({
-              provider: /** @type {'anthropic' | 'openai' | 'openai-chat'} */ (provider),
-              model,
-              ...(priceFile ? { prices: priceFile } : {}),
-              ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
-              ...(options.apiKeyEnv ? { apiKeyEnv: options.apiKeyEnv } : {}),
-              id: text,
-            })
-          );
-        }
-        return /** @type {Agent} */ (shared);
+        // One FRESH model agent per episode. A model agent carries its
+        // previous reply into the next request, so a shared instance would
+        // leak one episode's conversation into the next episode's prompts —
+        // and race under --concurrency. The price-file parse above stays
+        // shared; only the per-episode state is rebuilt.
+        return /** @type {Agent} */ (
+          createModelAgent({
+            provider: /** @type {'anthropic' | 'openai' | 'openai-chat'} */ (provider),
+            model,
+            ...(priceFile ? { prices: priceFile } : {}),
+            ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
+            ...(options.apiKeyEnv ? { apiKeyEnv: options.apiKeyEnv } : {}),
+            ...(options.maxOutputTokens !== undefined
+              ? { maxOutputTokens: options.maxOutputTokens }
+              : {}),
+            ...(options.callTimeoutMs !== undefined
+              ? { callTimeoutMs: options.callTimeoutMs }
+              : {}),
+            id: text,
+          })
+        );
       },
     };
   }

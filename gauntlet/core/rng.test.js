@@ -99,3 +99,21 @@ test('streams save and restore their position', () => {
   stepState = nextUint32(stepState).state;
   assert.equal(nextUint32(stepState).value !== first, true);
 });
+
+test('cyrb128 and sfc32 match the canonical known-answer vectors', () => {
+  // Pinned against the canonical cyrb128 (StackOverflow a/19303725) and the
+  // reference sfc32: changing either algorithm fails these, not just streams.
+  assert.deepEqual(cyrb128('hello'), [1690739734, 1078026890, 1569261940, 551242337]);
+  assert.deepEqual(cyrb128('a'), [1589175524, 148824423, 2405369273, 1476957317]);
+  assert.deepEqual(cyrb128(''), [41608494, 3485963809, 1435736333, 1262568316]);
+  const [a, b, c, d] = cyrb128('hello');
+  const rand = sfc32(a, b, c, d);
+  assert.equal(rand(), 0.7729998235590756);
+  assert.equal(rand(), 0.6681805667467415);
+  assert.equal(rand(), 0.010621748166158795);
+  assert.equal(rand(), 0.14245743886567652);
+  const pinned = 'playkit-gauntlet/rng-vector/1';
+  assert.equal(nextUint32(rngFromSeed(pinned)).value, 3805567066);
+  assert.equal(nextFloat(rngFromSeed(pinned)).value, 0.8860526294447482);
+  assert.equal(nextInt(rngFromSeed(pinned), 0, 8).value, 1);
+});

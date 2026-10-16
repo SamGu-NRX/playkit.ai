@@ -18,8 +18,11 @@ import chess, {
   TRUNCATION_WIN_CP,
 } from './index.js';
 import { OPENINGS } from './openings.js';
-import { bestMove, evaluateWhite, legalUcis, quiescenceWhite, replayUci, START_FEN } from './engine.js';
+import { bestMove, evaluateWhite, internals, legalUcis, MATE, quiescenceWhite, replayUci, START_FEN } from './engine.js';
 import { createGreedyBaselineAgent } from './baselines.js';
+
+/** Deep perft and the full four-tier conformance run only under GAUNTLET_SLOW=1. */
+const SLOW = process.env.GAUNTLET_SLOW === '1';
 
 /** @import { TierSpec } from '../../core/types.js' */
 
@@ -34,7 +37,7 @@ test('registration: chess is registered and resolves from the registry', () => {
 });
 
 test('spec shape: four engine tiers, 150-action budgets, perft FENs', () => {
-  assert.equal(game.spec.version, '1.0.0');
+  assert.equal(game.spec.version, '1.1.0');
   assert.equal(game.spec.seats, 2);
   assert.equal(game.spec.information, 'perfect');
   assert.equal(game.spec.stochastic, false);
@@ -135,6 +138,26 @@ test('perft through the public contract: position 3, 14/191/2812', () => {
   assert.equal(perft(state, 1), 14);
   assert.equal(perft(state, 2), 191);
   assert.equal(perft(state, 3), 2812);
+});
+
+test('quiescence detects checkmate behind pseudo-legal captures', () => {
+  // Regression: the in-check mate probe used to run only when the side in
+  // check had NO pseudo-legal captures, so a mated side whose captures are
+  // all illegal (here: contact check by a defended queen, so every rook and
+  // pawn capture leaves the king in check) fell through to stand-pat. The
+  // root already handled bare mates exactly; this exercises the inner
+  // quiescence reached from a capture: Qxe7 delivers a position where black
+  // is checkmated (0 legal moves) yet still has 3 pseudo-legal captures.
+  const before = stateFromFen('4k3/3pn3/3BPQ2/3Ppr2/8/8/8/K7 w - - 0 1');
+  const after = stateToChess(before);
+  after.move({ from: 'f6', to: 'e7' });
+  assert.equal(after.isCheckmate(), true, 'the fixture must be mate after Qxe7');
+  assert.equal(after.moves().length, 0);
+  assert.ok(internals(after)._moves({ legal: false }).filter((/** @type {any} */ m) => m.captured || m.promotion).length > 0);
+  const score = quiescenceWhite(stateToChess(before), { nodeBudget: 20000 });
+  assert.ok(score > MATE - 100, `mate found through a capture must score near MATE, got ${score}`);
+  // The bare mated position itself scores exactly MATE at the root.
+  assert.equal(quiescenceWhite(after, { nodeBudget: 20000 }), MATE);
 });
 
 test('env steps agree with public chess.js moves over a middlegame line', () => {
@@ -369,6 +392,21 @@ test('engine: deterministic, legal, and finds the unique mate in one', () => {
   assert.deepEqual(after.termination, { type: 'checkmate', winner: 'w' });
 });
 
+test('step() does not mutate its input state and caches agree with replays', () => {
+  // The per-state caches must behave exactly like fresh replays: a state
+  // stepped twice gives identical children, and the parent state still
+  // replays to its own position after its child was built.
+  let state = game.reset(PAPER, 'cache-consistency-seed');
+  const before = JSON.stringify(state);
+  const seat = /** @type {number} */ (game.toAct(state));
+  const childA = game.step(state, seat, game.legalActions(state, seat)[0]);
+  const childB = game.step(state, seat, game.legalActions(state, seat)[0]);
+  assert.deepEqual(childA, childB, 'stepping the same state twice must give identical children');
+  assert.equal(JSON.stringify(state), before, 'step must not mutate the parent state');
+  const replayed = replayUci(state.startFen, state.moves).fen();
+  assert.equal(replayed, state.fen, 'parent position must still match a fresh replay');
+});
+
 test('baselines complete episodes with zero invalid actions', async () => {
   const seed = 'baseline-e2e-seed';
   const seatAgent = game.agentSeat(PAPER, seed);
@@ -400,8 +438,12 @@ test('baselines complete episodes with zero invalid actions', async () => {
   assert.ok(agentActions >= 2, `episode ended after only ${agentActions} agent actions`);
 });
 
-test('conformance kit passes across all four tiers', async () => {
-  const report = await runConformance(game, { seedsPerTier: 3 });
+test('conformance kit passes across the tiers', async () => {
+  // The kit replays history per ply, so the full four-tier run is expensive:
+  // by default only the paper tier runs (1 seed); GAUNTLET_SLOW=1 runs all
+  // four tiers with the full seed budget.
+  const target = SLOW ? game : { ...game, spec: { ...game.spec, tiers: [PAPER] } };
+  const report = await runConformance(target, { seedsPerTier: SLOW ? 3 : 1 });
   assert.equal(report.ok, true);
   assert.equal(report.game, 'chess');
   assert.ok(report.checks > 0);
@@ -476,3 +518,4 @@ test('opening book: every named line is legal from the start position', () => {
     }
   }
 });
+

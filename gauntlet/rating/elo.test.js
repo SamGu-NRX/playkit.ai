@@ -19,6 +19,7 @@ import {
   bootstrapRatings,
   rateAgent,
   rungForTrajectory,
+  selectLadderKnown,
 } from './elo.js';
 import { nextFloat, rngFromSeed } from '../core/rng.js';
 import { chess } from '../games/chess/index.js';
@@ -295,4 +296,30 @@ test('rateAgent on the built-in greedy baseline against the paper rung', async (
     assert.ok(low !== null && low <= value, 'lower bound below the point estimate');
     assert.ok(high !== null && value <= high, 'upper bound above the point estimate');
   }
+});
+
+test('selectLadderKnown partitions trajectories by ladder-known rungs', () => {
+  const ladder = {
+    ratings: { 'chess-paper': 1000, 'chess-stockfish-sf-10k': 2800 },
+    anchorRung: 'chess-paper',
+  };
+  const paper = {
+    game: { id: 'chess' }, tier: 'paper', agent: { seat: 0 }, end: { outcome: { normalized: [1, 0] } },
+  };
+  const sf10k = {
+    game: { id: 'chess' }, tier: 'stockfish-sf-10k', agent: { seat: 0 }, end: { outcome: { normalized: [0, 1] } },
+  };
+  const connect4 = {
+    game: { id: 'connect4' }, tier: 'ladder-1', agent: { seat: 0 }, end: { outcome: { normalized: [1, 0] } },
+  };
+  const minesweeper = {
+    game: { id: 'minesweeper' }, tier: 'beginner', agent: { seat: 0 }, end: { outcome: null },
+  };
+  const { known, skippedRungs } = selectLadderKnown(
+    [paper, connect4, sf10k, { ...connect4 }, minesweeper],
+    ladder
+  );
+  assert.deepEqual(known, [paper, sf10k]);
+  // Unique unknown rungs in first-seen order — the CLI reports them per agent.
+  assert.deepEqual(skippedRungs, ['connect4-ladder-1', 'minesweeper-beginner']);
 });

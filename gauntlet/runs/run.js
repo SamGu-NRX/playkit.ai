@@ -717,12 +717,13 @@ export async function runSuite({
 
   //
   // The bundle's spend ledger. Every invocation appends one `invocation`
-  // line; a run with `maxUsdTotal` appends a `cap` line when the value is new
-  // (on a fresh bundle, or when resuming with a raised or rewritten cap); a
-  // resumed run without `maxUsdTotal` carries the recorded cap. Call lines
-  // buffer per episode and flush in the worker's finally block, so a graceful
-  // stop records every paid call — including the spend of episodes a stop
-  // threw away.
+  // line; a run with `maxUsdTotal` appends a `cap` line recording the
+  // supplied value — including a resume that re-passes the same cap, so the
+  // ledger proves the flag was supplied for that invocation; a resumed run
+  // without `maxUsdTotal` carries the recorded cap. Call lines buffer per
+  // episode and flush in the worker's finally block, so a graceful stop
+  // records every paid call — including the spend of episodes a stop threw
+  // away.
   //
   const ledgerPath = path.join(outDir, SPEND_LEDGER_FILENAME);
   const ledgerAtStart = await readSpendLedger(outDir);
@@ -792,7 +793,7 @@ export async function runSuite({
   await appendSpendLines([
     { kind: 'invocation', invocation: invocationIndex, startedAt: new Date(startedAtMs).toISOString(), resumed: resume },
   ]);
-  if (maxUsdTotal !== undefined && (ledgerAtStart.summary.cap === null || ledgerAtStart.summary.cap !== maxUsdTotal)) {
+  if (maxUsdTotal !== undefined) {
     await appendSpendLines([{ kind: 'cap', invocation: invocationIndex, maxUsdTotal }]);
   }
   // Spend already on the books from earlier invocations. The per-invocation

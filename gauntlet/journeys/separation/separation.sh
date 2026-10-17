@@ -209,25 +209,44 @@ trap - EXIT
 #
 # Stage E — the separation pilot's preregistered instrument checks.
 #
-step "E: separation-pilot instrument checks (dial stand-ins through the real path)"
-# The committed instrument suite pins wordle 1.1.0; #108 shipped wordle 1.2.0,
-# so plan.js refuses the stale pin — a real cross-packet break this journey
-# caught (the instrument was last green before #108 landed). make-suite.mjs is
-# the study's own deterministic cutter; at a base where wordle was still 1.1.0
-# it regenerates the committed file byte-identically. Re-cutting here keeps the
-# instrument honest at head; re-pinning the committed file is the study owner's
-# follow-up (see README 'Known follow-ups').
 step "E0: re-cut suite.smallest-8.json at current game versions (make-suite.mjs)"
-(cd "$SRC/studies/separation-pilot" && node make-suite.mjs --option smallest \
-   --out outputs/suites/suite.smallest-8.json) >"$LOG/make-suite.log" 2>&1 \
-  || die "E0: make-suite failed (see $LOG/make-suite.log)"
-( cd "$SRC/studies/separation-pilot" && timeout "$INSTRUMENT_SECS" ./instrument.sh \
-  >"$LOG/instrument.log" 2>&1 ) || die "E: instrument.sh failed (see $LOG/instrument.log)"
-grep -q "INSTRUMENT-CHECKS: PASS" "$LOG/instrument.log" \
-  || die "E: instrument.sh did not print INSTRUMENT-CHECKS: PASS (see $LOG/instrument.log)"
-grep "PASS I1\|PASS I2\|PASS label swap" "$LOG/instrument.log" || true
-echo "E: PASS — two dial stand-ins separate, two identical ones do not, label swap is exact"
+# Journey E depends on a version chain: tier audit (studies/tier-audit/
+# tiers.json, PR #107) -> committed suite -> instrument arms. #108 shipped
+# wordle 1.2.0 after #109's instrument ran, so the chain is stale at this
+# head: make-suite.mjs's own guard refuses until the audit is re-run
+# ('update the audit first'), and plan.js refuses the committed 1.1.0 pin.
+# That repair is the study owner's (outside this journey's paths), so when
+# the re-cut refuses this script reports PARTIAL instead of pretending green,
+# and still runs the instrument so the arms whose pins still match play green
+# on the record.
+E_BLOCKED=""
+if ! (cd "$SRC/studies/separation-pilot" && node make-suite.mjs --option smallest \
+   --out outputs/suites/suite.smallest-8.json) >"$LOG/make-suite.log" 2>&1; then
+  E_BLOCKED="the tier audit (studies/tier-audit/tiers.json, PR #107) recorded wordle 1.1.0 but the registry is at 1.2.0 after #108; make-suite.mjs refuses (update the audit first) and plan.js refuses the committed 1.1.0 pin"
+  echo "E: BLOCKED — $E_BLOCKED"
+  echo "E: running the instrument anyway; arms whose pins still match will play, the wordle arm will refuse (evidence for the PR)"
+fi
+
+step "E: separation-pilot instrument checks (dial stand-ins through the real path)"
+if ( cd "$SRC/studies/separation-pilot" && timeout "$INSTRUMENT_SECS" ./instrument.sh \
+     >"$LOG/instrument.log" 2>&1 ) && grep -q "INSTRUMENT-CHECKS: PASS" "$LOG/instrument.log"; then
+  grep "PASS I1\|PASS I2\|PASS label swap" "$LOG/instrument.log" || true
+  echo "E: PASS — two dial stand-ins separate, two identical ones do not, label swap is exact"
+else
+  if [ -n "$E_BLOCKED" ]; then
+    echo "E: instrument stopped on the stale pin as expected; arms that played are green in $LOG/instrument.log"
+  else
+    die "E: instrument.sh failed or did not print INSTRUMENT-CHECKS: PASS (see $LOG/instrument.log)"
+  fi
+fi
 
 echo
+if [ -n "$E_BLOCKED" ]; then
+  echo "SEPARATION-JOURNEY: PARTIAL — B, C, D green; E blocked at $REF"
+  echo "  blocked because: $E_BLOCKED"
+  echo "  repair (study owner): re-run the tier audit at wordle 1.2.0, re-cut the suite, re-commit, re-run"
+  echo "work dir kept at: $WORK"
+  exit 1
+fi
 echo "SEPARATION-JOURNEY: PASS — B, C, D, E all green on $REF"
 echo "work dir kept at: $WORK"

@@ -102,10 +102,23 @@ echo "B: PASS — estimate exited on its own in ${b_elapsed}s; no gnugo/stockfis
 # binding the moment stub pricing or the suite shifts — a $2 default sat above
 # the 76-episode stub total ($1.63), so attempt 1 completed and the budget
 # path was never exercised. Estimates cannot price stub behavior (their token
-# heuristic ran ~4x the stub's actual usage), so the basis is measured: a
-# throwaway uncapped run settles the suite's real stub-priced total, and the
-# capped flow runs at half of it — strictly under what completing costs, so
-# attempt 1 must stop on the budget with episodes still unplayed.
+# heuristic ran ~4x the stub's actual usage), so the basis is measured: with
+# the stub up, a throwaway uncapped run settles the suite's real stub-priced
+# total, and the capped flow runs at half of it — strictly under what
+# completing costs, so attempt 1 must stop on the budget with episodes still
+# unplayed.
+step "C: capped run against the pilot stub"
+node "$SRC/journeys/pilot/stubs/anthropic.mjs" --port 8091 \
+  --rate-limit-every 5 --overload-every 13 --refuse-every 11 --truncate-every 7 \
+  >"$LOG/stub-c.log" 2>&1 &
+STUB_PID=$!
+trap 'kill "$STUB_PID" 2>/dev/null || true' EXIT
+for _ in $(seq 1 50); do
+  node -e "fetch('http://127.0.0.1:8091/v1/ping',{method:'POST',body:'{}'}).then(()=>process.exit(0)).catch(()=>process.exit(1))" 2>/dev/null && break
+  sleep 0.2
+done
+kill -0 "$STUB_PID" 2>/dev/null || die "C: stub failed to start (see $LOG/stub-c.log)"
+
 RUN_ARGS=(run --suite "$WORK/suite-public.json" --agent "model:$MODEL"
      --base-url http://127.0.0.1:8091 --prices "$PRICES")
 if [ -z "$CAP" ]; then
@@ -122,17 +135,6 @@ if [ -z "$CAP" ]; then
   ' "$WORK/cap-basis-run")" || die "C: the cap-basis run did not complete the suite (see $LOG/cap-basis-run.log)"
   echo "C: cap derived from the suite's actual stub-priced total: \$$CAP (override: SEPARATION_MAX_USD_TOTAL)"
 fi
-step "C: capped run (--max-usd-total $CAP) against the pilot stub"
-node "$SRC/journeys/pilot/stubs/anthropic.mjs" --port 8091 \
-  --rate-limit-every 5 --overload-every 13 --refuse-every 11 --truncate-every 7 \
-  >"$LOG/stub-c.log" 2>&1 &
-STUB_PID=$!
-trap 'kill "$STUB_PID" 2>/dev/null || true' EXIT
-for _ in $(seq 1 50); do
-  node -e "fetch('http://127.0.0.1:8091/v1/ping',{method:'POST',body:'{}'}).then(()=>process.exit(0)).catch(()=>process.exit(1))" 2>/dev/null && break
-  sleep 0.2
-done
-kill -0 "$STUB_PID" 2>/dev/null || die "C: stub failed to start (see $LOG/stub-c.log)"
 
 ledger() {
   node -e '

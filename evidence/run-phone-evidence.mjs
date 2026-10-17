@@ -41,37 +41,91 @@ const outRoot = join(repoRoot, "evidence", "phone");
 
 // --- CLI ---------------------------------------------------------------------
 
-const args = process.argv.slice(2);
-function argValue(name, fallback) {
-  const at = args.indexOf(`--${name}`);
-  return at !== -1 && args[at + 1] ? args[at + 1] : fallback;
+/**
+ * Parse the driver flags. Both spellings work: `--name value` and the
+ * documented `--name=value` (the usage header always showed the = form, but
+ * the old parser only read the space form, so `--label=before --out=...`
+ * silently fell back to the defaults and wrote into the wrong directory
+ * under the wrong label).
+ *
+ * @param {string[]} argv
+ * @param {string} defaultOut
+ * @returns {{ label: string, outDir: string, only: string[] }}
+ */
+export function parseCliArgs(argv, defaultOut) {
+  function argValue(name, fallback) {
+    const eq = argv.find((a) => a.startsWith(`--${name}=`));
+    if (eq !== undefined) return eq.slice(`--${name}=`.length) || fallback;
+    const at = argv.indexOf(`--${name}`);
+    return at !== -1 && argv[at + 1] ? argv[at + 1] : fallback;
+  }
+  return {
+    label: argValue("label", "after"),
+    outDir: argValue("out", defaultOut),
+    only: argv.filter((a) => a.startsWith("--only=")).map((a) => a.slice("--only=".length)),
+  };
 }
-const label = argValue("label", "after");
-const outDir = argValue("out", outRoot);
-const only = args.filter((a) => a.startsWith("--only=")).map((a) => a.slice("--only=".length));
 
-// --- dependencies ------------------------------------------------------------
+// Bindings assigned in main() — declared here so the journey helpers below
+// can close over them; assigning (not redeclaring) keeps the file importable
+// without Playwright (tests import parseCliArgs).
+let chromium, devices, startFixtureServer, bookmarkletCode, outDir, label, only, PROFILES;
+// The screenshot prefix of the target currently running. Shots used to carry
+// only --label, so a full run (two targets) overwrote every per-step PNG:
+// iPhone15 wrote 01-page.png and Pixel8 overwrote it.
+let shotTag = null;
 
-// playwright resolves from the bridge package (it owns the browser install).
-const bridgeRequire = createRequire(join(repoRoot, "gauntlet/bridge/browser/package.json"));
-const { chromium, devices } = bridgeRequire("playwright");
-const { startFixtureServer } = await import(
-  pathToFileURL(join(repoRoot, "gauntlet", "bridge", "browser", "server.mjs")).href
-);
+/**
+ * Run the driver. Everything side-effectful (Playwright, the fixture server,
+ * the bookmarklet file, the output directory) lives here so importing the
+ * module for parseCliArgs stays side-effect-free.
+ */
+async function main() {
+  ({ label, outDir, only } = parseCliArgs(process.argv.slice(2), outRoot));
 
-// --- inputs ------------------------------------------------------------------
+  // playwright resolves from the bridge package (it owns the browser install).
+  const bridgeRequire = createRequire(join(repoRoot, "gauntlet/bridge/browser/package.json"));
+  ({ chromium, devices } = bridgeRequire("playwright"));
+  ({ startFixtureServer } = await import(
+    pathToFileURL(join(repoRoot, "gauntlet", "bridge", "browser", "server.mjs")).href
+  ));
 
-const bookmarkletFile = join(repoRoot, "dist", "2048-hud-bookmarklet.txt");
-const bookmarkletCode = readFileSync(bookmarkletFile, "utf8").trim().slice("javascript:".length);
+  const bookmarkletFile = join(repoRoot, "dist", "2048-hud-bookmarklet.txt");
+  bookmarkletCode = readFileSync(bookmarkletFile, "utf8").trim().slice("javascript:".length);
 
-mkdirSync(outDir, { recursive: true });
+  mkdirSync(outDir, { recursive: true });
 
-// --- device/orientation targets ---------------------------------------------
+  PROFILES = {
+    iPhone15: devices["iPhone 15"],
+    Pixel8: devices["Pixel 7"],
+  };
 
-const PROFILES = {
-  iPhone15: devices["iPhone 15"],
-  Pixel8: devices["Pixel 7"],
-};
+  const server = await startFixtureServer();
+  globalThis.__phoneServe = server;
+  globalThis.__phoneUrl = `http://127.0.0.1:${server.port}`;
+
+  const browser = await chromium.launch({ headless: true });
+  const summary = [];
+  try {
+    for (const target of targets()) {
+      const r = await runTarget(browser, target);
+      summary.push({ target: r.target, pass: r.pass, steps: Object.fromEntries(
+        Object.entries(r.steps).map(([k, v]) => [k, v && typeof v === "object" ? (v.pass ?? (v.deliveredOnce ?? (v.movedFive ?? (v.injected ?? true)))) : Boolean(v)])
+      ) });
+      console.log(`[phone-evidence] ${r.target}: pass=${r.pass}`);
+    }
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+  writeFileSync(join(outDir, `phone-summary-${label}.json`), JSON.stringify(summary, null, 2));
+  console.log(`[phone-evidence] summary written: ${join(outDir, `phone-summary-${label}.json`)}`);
+  process.exit(summary.every((s) => s.pass) ? 0 : 1);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}
 
 function targets() {
   const list = [];
@@ -87,7 +141,7 @@ function targets() {
 // --- helpers -----------------------------------------------------------------
 
 function shot(page, file) {
-  return page.screenshot({ path: join(outDir, `${label}-${file}.png`) });
+  return page.screenshot({ path: join(outDir, `${shotTag ?? label}-${file}.png`) });
 }
 
 async function shadowText(page, selector) {
@@ -357,6 +411,7 @@ async function reducedMotionJourney(browser, target, consoleLines) {
 
 async function runTarget(browser, target) {
   const tag = `${label}-${target.name.toLowerCase()}-${target.orientation}`;
+  shotTag = tag; // every screenshot in this target names the target
   const consoleLines = [];
   const results = { target: `${target.name}:${target.orientation}`, label, steps: {} };
   const videoDir = join(outDir, "_videos");
@@ -525,25 +580,4 @@ const serveUrl = `http://127.0.0.1:${globalThis.__phoneServe.port}`;
 }
 
 // --- main ---------------------------------------------------------------------
-
-const server = await startFixtureServer();
-globalThis.__phoneServe = server;
-globalThis.__phoneUrl = `http://127.0.0.1:${server.port}`;
-
-const browser = await chromium.launch({ headless: true });
-const summary = [];
-try {
-  for (const target of targets()) {
-    const r = await runTarget(browser, target);
-    summary.push({ target: r.target, pass: r.pass, steps: Object.fromEntries(
-      Object.entries(r.steps).map(([k, v]) => [k, v && typeof v === "object" ? (v.pass ?? (v.deliveredOnce ?? (v.movedFive ?? (v.injected ?? true)))) : Boolean(v)])
-    ) });
-    console.log(`[phone-evidence] ${r.target}: pass=${r.pass}`);
-  }
-} finally {
-  await browser.close();
-  await server.close();
-}
-writeFileSync(join(outDir, `phone-summary-${label}.json`), JSON.stringify(summary, null, 2));
-console.log(`[phone-evidence] summary written: ${join(outDir, `phone-summary-${label}.json`)}`);
-process.exit(summary.every((s) => s.pass) ? 0 : 1);
+// (moved into async main() above, guarded so the module stays importable)

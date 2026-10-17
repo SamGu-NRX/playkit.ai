@@ -11,7 +11,7 @@
 # run.json + suite.json next to the bundles.
 set -euo pipefail
 
-GDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+GDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"   # the gauntlet package
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LLAMA=${LLAMA:-/home/user/work/llamacpp/llama-b11662/llama-server}
 MODELS=${MODELS:-/home/user/work/gauntlet-models}
@@ -37,7 +37,7 @@ while read -r ARM TIER N; do
   echo "=== run $M $ARM $TIER seeds=$N -> $OUT"
   T0=$(date +%s)
   node "$HERE/run-arm.mjs" --arm "$ARM" --game "${TIER%%/*}" --tier "${TIER##*/}" \
-    --seeds "$N" --model "$M" --out "$OUT"
+    --seeds "$N" --model "$M" --out "$OUT" --resume
   T1=$(date +%s)
   echo "=== done $M $ARM $TIER in $((T1 - T0))s"
   node cli/gauntlet.js bundle verify "$OUT"

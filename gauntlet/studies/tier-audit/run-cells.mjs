@@ -23,11 +23,12 @@
  * @module
  */
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { GAMES } from '../../games/index.js';
+import { manifestSha256 } from '../../runs/plan.js';
 import { runSuite } from '../../runs/run.js';
 import { seedsForTier, tierSuite, loadSoloReuse, soloVersionAtStudyHead, soloReuseCurrent, cellBundleVerdict as cellComplete, auditDir, repoRoot, CELL_KINDS } from './audit-lib.mjs';
 import { extractExampleToken, createCopyExampleAgent, createFirstLegalAgent } from './no-skill.mjs';
@@ -116,6 +117,7 @@ for (const gameId of Object.keys(GAMES)) {
         const suitePath = join(root, 'suites', `${gameId}--${tier.id}.json`);
         await mkdir(join(root, 'suites'), { recursive: true });
         await writeFile(suitePath, JSON.stringify(suite, null, 2) + '\n');
+        await clearStaleBundle(bundle, suite, `${gameId}/${tier.id} ${cell}`);
         const spec = `skill:${p}:baseline:${gameId}:engine`;
         log(`run  ${gameId}/${tier.id} ${cell} agent=${spec} timeout=${timeoutSec}s`);
         const { spawnSync } = await import('node:child_process');
@@ -153,6 +155,7 @@ for (const gameId of Object.keys(GAMES)) {
         }
         log(`re-run ${gameId}/${tier.id} ${cell}: ${noSkillVerdict.reason}`);
         const { suite } = tierSuite(gameId, tier.id);
+        await clearStaleBundle(bundle, suite, `${gameId}/${tier.id} ${cell}`);
         const example = extractExampleToken(game.spec.rulesText);
         const exampleInfo =
           cell === 'copy-example'
@@ -174,3 +177,27 @@ for (const gameId of Object.keys(GAMES)) {
 }
 
 log('cells complete for the selection');
+
+/**
+ * A cell whose game version changed carries a bundle built from an older
+ * suite manifest; resuming into it either refuses (run.js refuses to mix
+ * manifests in one bundle) or would strand the stale trajectories inside a
+ * bundle claiming the new manifest. Clear the stale bundle when its recorded
+ * manifest differs from the incoming one; a fresh or partial bundle of the
+ * CURRENT suite is kept and filled by --resume.
+ *
+ * @param {string} bundle
+ * @param {*} suite
+ * @param {string} label
+ */
+async function clearStaleBundle(bundle, suite, label) {
+  try {
+    const recorded = JSON.parse(await readFile(join(bundle, 'suite.json'), 'utf8'));
+    if (manifestSha256(recorded) !== manifestSha256(suite)) {
+      log(`clear ${label}: bundle suite manifest differs from the current suite; removing the stale bundle`);
+      await rm(bundle, { recursive: true, force: true });
+    }
+  } catch {
+    /* no readable suite.json: nothing committed to compare — resume fills gaps */
+  }
+}

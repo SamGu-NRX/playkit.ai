@@ -1,0 +1,72 @@
+{
+  "format": "playkit-gauntlet-run/1",
+  "suite": {
+    "id": "separation-pilot-smallest-8-instrument-sliding",
+    "split": "public",
+    "manifestSha256": "45d7322b95492077a19680eee27e3a41af99374eaeec8aa4c54122b59d7edf75"
+  },
+  "git": {
+    "commit": "5e040283cb1932395ca1c8de72cca2545d371417"
+  },
+  "node": "v20.20.2",
+  "agent": {
+    "id": "dial-sliding-solver-p25",
+    "track": "baseline"
+  },
+  "prices": {
+    "sha256": null
+  },
+  "startedAt": "2026-10-17T18:12:07.933Z",
+  "finishedAt": "2026-10-17T18:12:16.555Z",
+  "concurrency": 1,
+  "limits": {
+    "maxUsd": null,
+    "maxUsdTotal": null,
+    "maxCalls": null,
+    "requestsPerMinute": null,
+    "maxOutputTokens": null,
+    "callTimeoutMs": null,
+    "thinkingBudget": null,
+    "reasoningEffort": null,
+    "episodeTimeLimitMs": null
+  },
+  "spendUsd": 0,
+  "unknownCostSteps": 0,
+  "calls": 1615,
+  "total": {
+    "episodes": 40,
+    "calls": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0
+    },
+    "spendUsd": 0,
+    "unknownCostSteps": 0
+  },
+  "counts": {
+    "jobs": 40,
+    "played": 40,
+    "skipped": 0,
+    "replayed": 0,
+    "unplayed": 0,
+    "failed": 0
+  },
+  "skipped": [],
+  "replayed": [],
+  "unplayed": [],
+  "failed": [],
+  "stopped": null,
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 1,
+    "calls": 1615,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 1615,
+    "problems": []
+  }
+}

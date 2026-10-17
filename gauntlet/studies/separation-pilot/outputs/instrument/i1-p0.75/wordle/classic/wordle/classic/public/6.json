@@ -1,0 +1,107 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "wordle",
+    "version": "1.2.0"
+  },
+  "tier": "classic",
+  "seed": "wordle/classic/public/6",
+  "split": "public",
+  "agent": {
+    "id": "dial-engine-p75",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b6506fe3c4287c99",
+      "reply": {
+        "text": "guess RAISE"
+      },
+      "action": "guess RAISE",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6be211516b9cfbb0",
+      "reply": {
+        "text": "guess SLAYS"
+      },
+      "action": "guess SLAYS",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "eea70af2318ff574",
+      "reply": {
+        "text": "guess HOMED"
+      },
+      "action": "guess HOMED",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a40b7ccec6782759",
+      "reply": {
+        "text": "guess BONZE"
+      },
+      "action": "guess BONZE",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3bac42bf8e2c9a2d",
+      "reply": {
+        "text": "guess MAMIE"
+      },
+      "action": "guess MAMIE",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "17485014e1d5ee88",
+      "reply": {
+        "text": "guess LIKER"
+      },
+      "action": "guess LIKER",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "unsolved: the 6-guess budget ran out without finding the answer, reference par 3",
+      "solved": false,
+      "par": 3
+    },
+    "agentActions": 6,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T18:14:22.613Z",
+  "finishedAt": "2026-10-17T18:14:22.673Z"
+}

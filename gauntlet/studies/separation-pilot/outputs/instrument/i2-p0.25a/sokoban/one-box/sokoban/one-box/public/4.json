@@ -1,0 +1,146 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "sokoban",
+    "version": "1.0.0"
+  },
+  "tier": "one-box",
+  "seed": "sokoban/one-box/public/4",
+  "split": "public",
+  "agent": {
+    "id": "dial-sokoban-engine-p25",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "76a20ef43cd8527b",
+      "reply": {
+        "text": "right"
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f4015179e8ed55c3",
+      "reply": {
+        "text": "up"
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d821521c5ffdb46a",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2e0487c3bd614157",
+      "reply": {
+        "text": "up"
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "fd361b622cb1da52",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4a601d0ea23ac853",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "9927de14f16276ac",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "0768d76a3ed6796c",
+      "reply": {
+        "text": "up"
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "47f6133ba4dad28a",
+      "reply": {
+        "text": "up"
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.308641975308642
+      ],
+      "raw": [
+        9,
+        5
+      ],
+      "reason": "solved in 9 actions against par 5",
+      "solved": true,
+      "par": 5
+    },
+    "agentActions": 9,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T18:12:16.726Z",
+  "finishedAt": "2026-10-17T18:12:16.728Z"
+}

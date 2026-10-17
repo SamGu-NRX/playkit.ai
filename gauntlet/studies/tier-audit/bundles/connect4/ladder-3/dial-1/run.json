@@ -6,7 +6,7 @@
     "manifestSha256": "a5187414e9f1cd323e4d6d3f68bc9c65a00effec8bc70ff9edbf5f277e32911a"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "cd2f7bc0e760e4d9c3a5d149db1f00decfc37d6b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:38:00.542Z",
-  "finishedAt": "2026-10-17T00:38:01.021Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T15:36:43.991Z",
+  "finishedAt": "2026-10-17T15:36:44.418Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -55,5 +56,17 @@
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 1,
+    "calls": 80,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 80,
+    "problems": []
+  }
 }

@@ -6,7 +6,7 @@
     "manifestSha256": "441c519cb04222637efa705ae6c5a949ededc7afcc089a33c83cf5378b37d17b"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "5e040283cb1932395ca1c8de72cca2545d371417"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:38:37.967Z",
-  "finishedAt": "2026-10-17T00:38:44.490Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T17:46:08.380Z",
+  "finishedAt": "2026-10-17T17:46:13.447Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -31,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 68,
+  "calls": 27,
   "total": {
     "episodes": 12,
     "calls": 0,
@@ -44,16 +45,42 @@
   },
   "counts": {
     "jobs": 12,
-    "played": 12,
-    "skipped": 0,
+    "played": 3,
+    "skipped": 9,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [],
+  "skipped": [
+    "connect4/forced-win/connect4/forced-win/public/0",
+    "connect4/forced-win/connect4/forced-win/public/1",
+    "connect4/forced-win/connect4/forced-win/public/2",
+    "connect4/forced-win/connect4/forced-win/public/3",
+    "connect4/forced-win/connect4/forced-win/public/4",
+    "connect4/forced-win/connect4/forced-win/public/5",
+    "connect4/forced-win/connect4/forced-win/public/6",
+    "connect4/forced-win/connect4/forced-win/public/7",
+    "connect4/forced-win/connect4/forced-win/public/8"
+  ],
   "replayed": [],
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 4,
+    "calls": 68,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 68,
+    "problems": [
+      "line 45: prev hash mismatch (expected 13e24b3ca726…, got 5820cf8a097b…)",
+      "line 55: prev hash mismatch (expected 983880fb0911…, got 13e24b3ca726…)",
+      "line 62: prev hash mismatch (expected 5820cf8a097b…, got 983880fb0911…)"
+    ]
+  }
 }

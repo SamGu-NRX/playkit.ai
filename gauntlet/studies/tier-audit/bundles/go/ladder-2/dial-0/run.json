@@ -6,7 +6,7 @@
     "manifestSha256": "c774cadbc5a6dc8ed45934bd5a9617a56da6eaf2df7fe00d76402d89638f2707"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "5e040283cb1932395ca1c8de72cca2545d371417"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T01:18:12.543Z",
-  "finishedAt": "2026-10-17T01:18:29.796Z",
-  "concurrency": 4,
+  "startedAt": "2026-10-17T17:41:25.564Z",
+  "finishedAt": "2026-10-17T17:41:36.063Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -31,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 243,
+  "calls": 227,
   "total": {
     "episodes": 12,
     "calls": 0,
@@ -44,16 +45,30 @@
   },
   "counts": {
     "jobs": 12,
-    "played": 12,
-    "skipped": 0,
+    "played": 11,
+    "skipped": 1,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [],
+  "skipped": [
+    "go/ladder-2/go/ladder-2/public/6"
+  ],
   "replayed": [],
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 4,
+    "calls": 379,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 379,
+    "problems": []
+  }
 }

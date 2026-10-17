@@ -1,0 +1,85 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "wordle",
+    "version": "1.2.0"
+  },
+  "tier": "classic",
+  "seed": "wordle/classic/public/2",
+  "split": "public",
+  "agent": {
+    "id": "dial-engine-p25",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b6506fe3c4287c99",
+      "reply": {
+        "text": "guess RAISE"
+      },
+      "action": "guess RAISE",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "757230e1bcc03310",
+      "reply": {
+        "text": "guess COMBO"
+      },
+      "action": "guess COMBO",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "8a9fb31815659aae",
+      "reply": {
+        "text": "guess NAMED"
+      },
+      "action": "guess NAMED",
+      "invalid": false,
+      "usage": null,
+      "ms": 4
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "fba13f252aadc6af",
+      "reply": {
+        "text": "guess TAMED"
+      },
+      "action": "guess TAMED",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.5625
+      ],
+      "raw": [
+        4
+      ],
+      "reason": "solved: the answer was found in 4 guess(es), reference par 3",
+      "solved": true,
+      "par": 3
+    },
+    "agentActions": 4,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T18:12:18.824Z",
+  "finishedAt": "2026-10-17T18:12:18.855Z"
+}

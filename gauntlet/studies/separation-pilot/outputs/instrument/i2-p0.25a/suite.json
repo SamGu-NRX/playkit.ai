@@ -1,0 +1,141 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "separation-pilot-smallest-8",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "sliding",
+      "version": "1.1.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "p8-short",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p8-short/public/0",
+            "sliding/p8-short/public/1",
+            "sliding/p8-short/public/2",
+            "sliding/p8-short/public/3",
+            "sliding/p8-short/public/4",
+            "sliding/p8-short/public/5",
+            "sliding/p8-short/public/6",
+            "sliding/p8-short/public/7"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p8",
+          "rank": 2,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p8/public/0",
+            "sliding/p8/public/1",
+            "sliding/p8/public/2",
+            "sliding/p8/public/3",
+            "sliding/p8/public/4",
+            "sliding/p8/public/5",
+            "sliding/p8/public/6",
+            "sliding/p8/public/7"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p15-short",
+          "rank": 3,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p15-short/public/0",
+            "sliding/p15-short/public/1",
+            "sliding/p15-short/public/2",
+            "sliding/p15-short/public/3",
+            "sliding/p15-short/public/4",
+            "sliding/p15-short/public/5",
+            "sliding/p15-short/public/6",
+            "sliding/p15-short/public/7"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p15-mid",
+          "rank": 4,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p15-mid/public/0",
+            "sliding/p15-mid/public/1",
+            "sliding/p15-mid/public/2",
+            "sliding/p15-mid/public/3",
+            "sliding/p15-mid/public/4",
+            "sliding/p15-mid/public/5",
+            "sliding/p15-mid/public/6",
+            "sliding/p15-mid/public/7"
+          ],
+          "parKind": "optimal"
+        },
+        {
+          "id": "p15-long",
+          "rank": 5,
+          "scoring": "efficiency",
+          "seeds": [
+            "sliding/p15-long/public/0",
+            "sliding/p15-long/public/1",
+            "sliding/p15-long/public/2",
+            "sliding/p15-long/public/3",
+            "sliding/p15-long/public/4",
+            "sliding/p15-long/public/5",
+            "sliding/p15-long/public/6",
+            "sliding/p15-long/public/7"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    },
+    {
+      "id": "sokoban",
+      "version": "1.0.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "one-box",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "sokoban/one-box/public/0",
+            "sokoban/one-box/public/1",
+            "sokoban/one-box/public/2",
+            "sokoban/one-box/public/3",
+            "sokoban/one-box/public/4",
+            "sokoban/one-box/public/5",
+            "sokoban/one-box/public/6",
+            "sokoban/one-box/public/7"
+          ],
+          "parKind": "optimal"
+        }
+      ]
+    },
+    {
+      "id": "wordle",
+      "version": "1.2.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "classic",
+          "rank": 1,
+          "scoring": "efficiency",
+          "seeds": [
+            "wordle/classic/public/0",
+            "wordle/classic/public/1",
+            "wordle/classic/public/2",
+            "wordle/classic/public/3",
+            "wordle/classic/public/4",
+            "wordle/classic/public/5",
+            "wordle/classic/public/6",
+            "wordle/classic/public/7"
+          ],
+          "parKind": "reference"
+        }
+      ]
+    }
+  ]
+}

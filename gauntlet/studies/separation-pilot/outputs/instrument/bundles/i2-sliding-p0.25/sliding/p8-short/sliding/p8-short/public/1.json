@@ -1,0 +1,136 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "sliding",
+    "version": "1.1.0"
+  },
+  "tier": "p8-short",
+  "seed": "sliding/p8-short/public/1",
+  "split": "public",
+  "agent": {
+    "id": "dial-sliding-solver-p25",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "01cb5cf4e94d1459",
+      "reply": {
+        "text": "up"
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "511892b42787f69a",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b94c6744db33c1e5",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "0e143b5c029cf67a",
+      "reply": {
+        "text": "up"
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "541d62463166822d",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "148d841731d1d703",
+      "reply": {
+        "text": "right"
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c14ab7141cedd1e5",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "36b9829ff683e533",
+      "reply": {
+        "text": "up"
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.25
+      ],
+      "raw": [
+        {
+          "moves": 8,
+          "par": 4
+        }
+      ],
+      "reason": "solved in 8 moves (optimal par 4)",
+      "solved": true,
+      "par": 4
+    },
+    "agentActions": 8,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T18:14:23.415Z",
+  "finishedAt": "2026-10-17T18:14:23.417Z"
+}

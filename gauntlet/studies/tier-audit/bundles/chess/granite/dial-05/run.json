@@ -6,7 +6,7 @@
     "manifestSha256": "98b495ec657f93053fdc62a600fd3b7e6752b58a4260900bddb8a29871cd6902"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "cd2f7bc0e760e4d9c3a5d149db1f00decfc37d6b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:52:56.169Z",
-  "finishedAt": "2026-10-17T00:53:42.283Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T15:23:35.062Z",
+  "finishedAt": "2026-10-17T15:24:21.044Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -55,5 +56,21 @@
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 1,
+    "calls": 107,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 107,
+    "problems": [
+      "line 17: prev hash mismatch (expected ce5d0dafdc72…, got 5a5e3b22aeda…)",
+      "line 38: prev hash mismatch (expected 38295aeefd5e…, got ce5d0dafdc72…)",
+      "line 61: prev hash mismatch (expected 5a5e3b22aeda…, got 38295aeefd5e…)"
+    ]
+  }
 }

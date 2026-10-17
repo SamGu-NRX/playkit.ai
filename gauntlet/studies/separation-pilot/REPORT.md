@@ -39,10 +39,10 @@ production scorer before printing any verdict).
 
 | Check | Expected | Result |
 |---|---|---|
-| **I1** — `skill:0.25` vs `skill:0.75` on the smallest resolving suite (72 episodes/arm) | SEPARATED on `rhae-v1`, D > 0 | **PASS** — D = 0.477429, ci95 = [0.422105, 0.535387], sign agreement 9/9 tiers, **SEPARATED** |
-| I1 on `squared-outcome` / `chance-adjusted` | note | **SEPARATED** — D = 0.477429 on both (efficiency-only suite ⇒ profiles coincide; CI wiggle is resampling seed only) |
+| **I1** — `skill:0.25` vs `skill:0.75` on the smallest resolving suite (56 episodes/arm) | SEPARATED on `rhae-v1`, D > 0 | **PASS** — D = 0.465824, ci95 = [0.401477, 0.529615], sign agreement 7/7 tiers, **SEPARATED** |
+| I1 on `squared-outcome` / `chance-adjusted` | note | **SEPARATED** — D = 0.465824 on both (efficiency-only suite ⇒ profiles coincide; CI wiggle is resampling seed only) |
 | **I2** — `skill:0.25` vs itself (two independent runs) | NOT SEPARATED, D = 0 exactly | **PASS** — D = 0, ci95 = [0, 0], **NOT_SEPARATED** |
-| **Label-swap symmetry** — `analyze(B, A)` | negates D and the interval bounds **exactly** | **PASS** — D = −0.477429, ci95 = [−0.535387, −0.422105] |
+| **Label-swap symmetry** — `analyze(B, A)` | negates D and the interval bounds **exactly** | **PASS** — D = −0.465824, ci95 = [−0.529615, −0.401477] |
 | Determinism | byte-identical output for identical bundles | **PASS** — two full runs `cmp`-identical |
 
 Committed evidence: `outputs/instrument/{I1,I2,I1-swapped}.json`; re-run with
@@ -58,38 +58,46 @@ duplicate trajectory keys, and keys the comparison and bootstrap stream by the
 
 ## Costed pilot suite options
 
+**Re-cut at the re-audited tier tables (this branch).** The tier audit was
+re-derived with every cell verified at the registry's current game versions
+(mastermind 1.1.0, wordle 1.2.0; see the tier-audit report on this branch).
+Four rows lost `resolves-at-12-or-fewer` (`chess-endgames/kqk`,
+`chess-endgames/kbbk`, `sokoban/three-box`, `othello/ladder-3`), which drops
+`sokoban/three-box` and `sokoban/four-box` from Options A and B — 9→7 and
+14→12 tiers respectively. `PREREGISTRATION.md` is unchanged; the suite options
+are still presented, not picked — budget and cap remain open decisions (#36).
+
 `gauntlet estimate --no-probes --prices reports/release/prices.frontier.json`,
 one estimate per option per model. Calls/tokens are model-independent (fitted
 from committed small-model runs); USD is where models diverge. Committed:
 `outputs/estimates/*.json`.
 
-| Option | Suite | Jobs | Calls (low–high) | Opus 5.5 | GPT-6 Astra | Gemini 4 Argon | **3-model total** |
+| Option | Suite | Jobs | Calls (low–high, per arm) | Opus 5.5 | GPT-6 Astra | Gemini 4 Argon | **3-model total** |
 |---|---|---|---|---|---|---|---|
-| **A — smallest resolving** | 3 games, 9 tiers, 8 seeds | 72 | 4,620–10,432 | $8.96–$23.94 | $22.40–$59.84 | $4.48–$11.97 | **$35.84–$95.74** |
-| **B — larger** | 5 games, 14 tiers, 12 seeds (connect4/forced-win sub-target, disclosed) | 152 | 7,436–16,108 | $14.16–$32.21 | $35.39–$80.54 | $7.08–$16.11 | **$56.63–$128.86** |
+| **A — smallest resolving** | 3 games, 7 tiers, 8 seeds | 56 | 1,220–7,032 | $2.67–$17.37 | $6.67–$43.42 | $1.33–$8.68 | **$10.68–$69.47** |
+| **B — larger** | 5 games, 12 tiers, 12 seeds (connect4/forced-win sub-target, disclosed) | 128 | 2,336–11,008 | $4.72–$22.36 | $11.80–$55.90 | $2.36–$11.18 | **$18.89–$89.45** |
 | **C — current 1-seed pilot** | 18 games, 76 tiers, 1 seed | 76 | 2,265–13,884 | $6.78–$43.13 | $16.96–$107.81 | $3.39–$21.56 | **$27.13–$172.50** |
 
 Reading the table:
 
 - **Option C cannot separate anything, at any budget.** One seed per tier makes
   every interval equal its point estimate (PR #101); its high side ($172.50 for
-  three models) exceeds Option A's ($95.74) because its eight unfitted games
-  run to their maxActions ceilings. It is the status quo, priced here for
-  contrast — not a candidate.
+  three models) exceeds Option A's ($69.47). It is the status quo, priced here
+  for contrast — not a candidate.
 - **Option A is the only option whose every tier separates skill in both dial
   directions at ≥80% power within available public seeds**, and it is the
   cheapest at the ceiling.
-- **Option B buys two more games and four more tiers**, carries one win/lose
+- **Option B buys two more games and five more tiers**, carries one win/lose
   tier (`connect4/forced-win`, 12 of a projected-16 seeds — disclosed
-  sub-target), at ~1.35× A's ceiling.
+  sub-target), at ~1.29× A's ceiling.
 - **Low sides are floors, not promises.** Games with no fitted call basis are
-  excluded from the low side (A: wordle; B: mastermind + wordle; C: 8 games) —
+  excluded from the low side (A: wordle; B: mastermind + wordle; C: 7 games) —
   true lows are higher. Estimates are also reasoning-effort-agnostic (the
   `estimate` command takes no effort flag) while PR #102 runs at high effort —
   real spend can exceed the high side if models think longer than the fitted
   token means.
-- Suite manifests: `suite.smallest-8.json` sha256 `7e12cdb3…`,
-  `suite.larger-12.json` `9bfc320c…`, `suite.pilot-1seed.json` `d5509eb9…`.
+- Suite manifests: `suite.smallest-8.json` sha256 `e792aeaf…`,
+  `suite.larger-12.json` `21ecef7a…`, `suite.pilot-1seed.json` `9ba862af…`.
 
 ## Running the pilot (once the option is picked)
 
@@ -115,8 +123,12 @@ unexpected outcome means.
 
 ## Environment certification
 
-- Pristine alpha base (`8084062`): 1,050 tests — 1,048 pass / 0 fail / 2 skip, exit 0.
-- Full suite at the study head (`2eb0116`): 1,050 tests — 1,048 pass / 0 fail / 2 skip, **exit 0**; `npm run typecheck` **exit 0**.
+- Pristine alpha base (`b39f75e`, fresh worktree): 1,051 tests — 1,040 pass / 9 fail / 2 skip, exit 1. The 9 failures are the documented example-confound cases (`patch-example-agent.test.js` 6, `w11-cli.test.js` 3) fixed on the separate green-suite branch.
+- Full suite at this branch's head: 1,060 tests — 1,049 pass / the same 9 documented failures / 2 skip; the +9 delta is this packet's own tests (6 `cellBundleVerdict` + 3 `pins-current`), all passing. `npm run typecheck` **exit 0**.
+- `pins-current.test.js` fails on the stale committed artifacts at alpha and passes at head against the re-derived tables, re-cut suites, regenerated instrument suites, and refreshed estimates.
+- `verify-cells.mjs`: all bundles replay-verified, no strays, no gaps, exit 0.
+- Instrument checks: `INSTRUMENT-CHECKS: PASS` exit 0 across two independent runs; analysis outputs (`I1.json`, `I2.json`, `I1-swapped.json`) byte-identical between runs.
+- Zero paid model calls in this packet: all episodes are scripted dial/random players; estimates run `--no-probes`; no provider keys present.
 
 ## Out of scope (per preregistration)
 

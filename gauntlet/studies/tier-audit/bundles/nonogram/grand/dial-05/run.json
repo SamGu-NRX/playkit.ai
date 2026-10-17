@@ -6,7 +6,7 @@
     "manifestSha256": "2d0691a8cc070cc47cb9aedea4e5b4fc7137a21ebb118834417e9d850d460434"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "5e040283cb1932395ca1c8de72cca2545d371417"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:40:49.353Z",
-  "finishedAt": "2026-10-17T00:40:55.327Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T17:46:17.856Z",
+  "finishedAt": "2026-10-17T17:46:22.038Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -31,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 20250,
+  "calls": 4050,
   "total": {
     "episodes": 25,
     "calls": 0,
@@ -44,16 +45,49 @@
   },
   "counts": {
     "jobs": 25,
-    "played": 25,
-    "skipped": 0,
+    "played": 5,
+    "skipped": 20,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [],
+  "skipped": [
+    "nonogram/grand/nonogram/grand/public/0",
+    "nonogram/grand/nonogram/grand/public/1",
+    "nonogram/grand/nonogram/grand/public/2",
+    "nonogram/grand/nonogram/grand/public/3",
+    "nonogram/grand/nonogram/grand/public/4",
+    "nonogram/grand/nonogram/grand/public/5",
+    "nonogram/grand/nonogram/grand/public/6",
+    "nonogram/grand/nonogram/grand/public/7",
+    "nonogram/grand/nonogram/grand/public/8",
+    "nonogram/grand/nonogram/grand/public/9",
+    "nonogram/grand/nonogram/grand/public/10",
+    "nonogram/grand/nonogram/grand/public/11",
+    "nonogram/grand/nonogram/grand/public/12",
+    "nonogram/grand/nonogram/grand/public/13",
+    "nonogram/grand/nonogram/grand/public/14",
+    "nonogram/grand/nonogram/grand/public/15",
+    "nonogram/grand/nonogram/grand/public/16",
+    "nonogram/grand/nonogram/grand/public/17",
+    "nonogram/grand/nonogram/grand/public/18",
+    "nonogram/grand/nonogram/grand/public/19"
+  ],
   "replayed": [],
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 4,
+    "calls": 20250,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 20250,
+    "problems": []
+  }
 }

@@ -5,7 +5,7 @@
   "suite": {
     "id": "separation-pilot-smallest-8",
     "split": "public",
-    "manifestSha256": "c8f743d35f3d31150af72c53827ab484ce9698ebb1b0c9104a8c012a27335307"
+    "manifestSha256": "e792aeaf8ed9d06dfed1a5f35916639dd96d592a9bf449da33b77b0142229022"
   },
   "pricing": {
     "key": "anthropic/claude-opus-5-5",
@@ -26,7 +26,7 @@
       "model-separation-7b-part2"
     ]
   },
-  "generatedAt": "2026-10-17T06:30:11.576Z",
+  "generatedAt": "2026-10-17T18:11:10.091Z",
   "games": [
     {
       "gameId": "sliding",
@@ -38,11 +38,11 @@
     },
     {
       "gameId": "sokoban",
-      "jobs": 24,
-      "callsLow": 3446,
-      "callsHigh": 4000,
-      "usdLow": 6.37334,
-      "usdHigh": 7.6548000000000025
+      "jobs": 8,
+      "callsLow": 46,
+      "callsHigh": 600,
+      "usdLow": 0.08325999999999999,
+      "usdHigh": 1.086
     },
     {
       "gameId": "wordle",
@@ -1111,358 +1111,6 @@
       "note": "low = the episode par (5); probe episodes skipped (--no-probes)"
     },
     {
-      "key": "sokoban/three-box/sokoban/three-box/public/0",
-      "gameId": "sokoban",
-      "tierId": "three-box",
-      "seed": "sokoban/three-box/public/0",
-      "basis": "model-fit",
-      "callsLow": 200,
-      "callsHigh": 200,
-      "usdLow": 0.36991999999999997,
-      "usdHigh": 0.3864,
-      "tokens": {
-        "input": {
-          "mean": 452.4,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/three-box/sokoban/three-box/public/1",
-      "gameId": "sokoban",
-      "tierId": "three-box",
-      "seed": "sokoban/three-box/public/1",
-      "basis": "model-fit",
-      "callsLow": 200,
-      "callsHigh": 200,
-      "usdLow": 0.36991999999999997,
-      "usdHigh": 0.3864,
-      "tokens": {
-        "input": {
-          "mean": 452.4,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/three-box/sokoban/three-box/public/2",
-      "gameId": "sokoban",
-      "tierId": "three-box",
-      "seed": "sokoban/three-box/public/2",
-      "basis": "model-fit",
-      "callsLow": 200,
-      "callsHigh": 200,
-      "usdLow": 0.36991999999999997,
-      "usdHigh": 0.3864,
-      "tokens": {
-        "input": {
-          "mean": 452.4,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/three-box/sokoban/three-box/public/3",
-      "gameId": "sokoban",
-      "tierId": "three-box",
-      "seed": "sokoban/three-box/public/3",
-      "basis": "model-fit",
-      "callsLow": 200,
-      "callsHigh": 200,
-      "usdLow": 0.36991999999999997,
-      "usdHigh": 0.3864,
-      "tokens": {
-        "input": {
-          "mean": 452.4,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/three-box/sokoban/three-box/public/4",
-      "gameId": "sokoban",
-      "tierId": "three-box",
-      "seed": "sokoban/three-box/public/4",
-      "basis": "model-fit",
-      "callsLow": 200,
-      "callsHigh": 200,
-      "usdLow": 0.36991999999999997,
-      "usdHigh": 0.3864,
-      "tokens": {
-        "input": {
-          "mean": 452.4,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/three-box/sokoban/three-box/public/5",
-      "gameId": "sokoban",
-      "tierId": "three-box",
-      "seed": "sokoban/three-box/public/5",
-      "basis": "model-fit",
-      "callsLow": 200,
-      "callsHigh": 200,
-      "usdLow": 0.36991999999999997,
-      "usdHigh": 0.3864,
-      "tokens": {
-        "input": {
-          "mean": 452.4,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/three-box/sokoban/three-box/public/6",
-      "gameId": "sokoban",
-      "tierId": "three-box",
-      "seed": "sokoban/three-box/public/6",
-      "basis": "model-fit",
-      "callsLow": 200,
-      "callsHigh": 200,
-      "usdLow": 0.36991999999999997,
-      "usdHigh": 0.3864,
-      "tokens": {
-        "input": {
-          "mean": 452.4,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/three-box/sokoban/three-box/public/7",
-      "gameId": "sokoban",
-      "tierId": "three-box",
-      "seed": "sokoban/three-box/public/7",
-      "basis": "model-fit",
-      "callsLow": 200,
-      "callsHigh": 200,
-      "usdLow": 0.36991999999999997,
-      "usdHigh": 0.3864,
-      "tokens": {
-        "input": {
-          "mean": 452.4,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/four-box/sokoban/four-box/public/0",
-      "gameId": "sokoban",
-      "tierId": "four-box",
-      "seed": "sokoban/four-box/public/0",
-      "basis": "model-fit",
-      "callsLow": 225,
-      "callsHigh": 225,
-      "usdLow": 0.41634,
-      "usdHigh": 0.43470000000000003,
-      "tokens": {
-        "input": {
-          "mean": 452.6,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/four-box/sokoban/four-box/public/1",
-      "gameId": "sokoban",
-      "tierId": "four-box",
-      "seed": "sokoban/four-box/public/1",
-      "basis": "model-fit",
-      "callsLow": 225,
-      "callsHigh": 225,
-      "usdLow": 0.41634,
-      "usdHigh": 0.43470000000000003,
-      "tokens": {
-        "input": {
-          "mean": 452.6,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/four-box/sokoban/four-box/public/2",
-      "gameId": "sokoban",
-      "tierId": "four-box",
-      "seed": "sokoban/four-box/public/2",
-      "basis": "model-fit",
-      "callsLow": 225,
-      "callsHigh": 225,
-      "usdLow": 0.41634,
-      "usdHigh": 0.43470000000000003,
-      "tokens": {
-        "input": {
-          "mean": 452.6,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/four-box/sokoban/four-box/public/3",
-      "gameId": "sokoban",
-      "tierId": "four-box",
-      "seed": "sokoban/four-box/public/3",
-      "basis": "model-fit",
-      "callsLow": 225,
-      "callsHigh": 225,
-      "usdLow": 0.41634,
-      "usdHigh": 0.43470000000000003,
-      "tokens": {
-        "input": {
-          "mean": 452.6,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/four-box/sokoban/four-box/public/4",
-      "gameId": "sokoban",
-      "tierId": "four-box",
-      "seed": "sokoban/four-box/public/4",
-      "basis": "model-fit",
-      "callsLow": 225,
-      "callsHigh": 225,
-      "usdLow": 0.41634,
-      "usdHigh": 0.43470000000000003,
-      "tokens": {
-        "input": {
-          "mean": 452.6,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/four-box/sokoban/four-box/public/5",
-      "gameId": "sokoban",
-      "tierId": "four-box",
-      "seed": "sokoban/four-box/public/5",
-      "basis": "model-fit",
-      "callsLow": 225,
-      "callsHigh": 225,
-      "usdLow": 0.41634,
-      "usdHigh": 0.43470000000000003,
-      "tokens": {
-        "input": {
-          "mean": 452.6,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/four-box/sokoban/four-box/public/6",
-      "gameId": "sokoban",
-      "tierId": "four-box",
-      "seed": "sokoban/four-box/public/6",
-      "basis": "model-fit",
-      "callsLow": 225,
-      "callsHigh": 225,
-      "usdLow": 0.41634,
-      "usdHigh": 0.43470000000000003,
-      "tokens": {
-        "input": {
-          "mean": 452.6,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
-      "key": "sokoban/four-box/sokoban/four-box/public/7",
-      "gameId": "sokoban",
-      "tierId": "four-box",
-      "seed": "sokoban/four-box/public/7",
-      "basis": "model-fit",
-      "callsLow": 225,
-      "callsHigh": 225,
-      "usdLow": 0.41634,
-      "usdHigh": 0.43470000000000003,
-      "tokens": {
-        "input": {
-          "mean": 452.6,
-          "max": 473
-        },
-        "output": {
-          "mean": 2,
-          "max": 2
-        }
-      },
-      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
-    },
-    {
       "key": "wordle/classic/wordle/classic/public/0",
       "gameId": "wordle",
       "tierId": "classic",
@@ -1599,27 +1247,17 @@
       "basis": "par"
     },
     {
-      "gameId": "sokoban",
-      "tierId": "three-box",
-      "basis": "model-fit"
-    },
-    {
-      "gameId": "sokoban",
-      "tierId": "four-box",
-      "basis": "model-fit"
-    },
-    {
       "gameId": "wordle",
       "tierId": "classic",
       "basis": "none"
     }
   ],
   "totals": {
-    "jobs": 72,
-    "callsLow": 4620,
-    "callsHigh": 10432,
-    "usdLow": 8.959941200000001,
-    "usdHigh": 23.935599999999997,
+    "jobs": 56,
+    "callsLow": 1220,
+    "callsHigh": 7032,
+    "usdLow": 2.669861200000001,
+    "usdHigh": 17.366799999999994,
     "noLowBasis": [
       "wordle"
     ],

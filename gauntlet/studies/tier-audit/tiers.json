@@ -12,7 +12,7 @@
     "usable": 72,
     "flagged": 12
   },
-  "mirrorChecks": 614,
+  "mirrorChecks": 592,
   "rows": [
     {
       "game": "2048",
@@ -570,39 +570,13 @@
       "exampleSource": "none",
       "chanceBaselineMean": null,
       "cellSources": {
-        "dial-0": "tier-audit",
+        "dial-0": "missing",
         "dial-05": "tier-audit",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
       "cells": {
-        "dial-0": {
-          "rhae-v1": {
-            "n": 20,
-            "mean": 0.774383,
-            "sd": 0.316676,
-            "ci95": [
-              0.639506,
-              0.90463
-            ]
-          },
-          "squared-outcome": {
-            "n": 20,
-            "mean": 0.694938,
-            "sd": 0.426971,
-            "ci95": [
-              0.516465,
-              0.870182
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
         "dial-05": {
           "rhae-v1": {
             "n": 20,
@@ -725,11 +699,6 @@
         }
       },
       "power": {
-        "p0vs05": {
-          "diffMean": 0.597222,
-          "seedsNeeded": 5,
-          "powerAt12": 1
-        },
         "p05vs1": {
           "diffMean": 0.05216,
           "seedsNeeded": 10,
@@ -2065,7 +2034,7 @@
       "chanceBaselineMean": null,
       "cellSources": {
         "dial-0": "tier-audit",
-        "dial-05": "tier-audit",
+        "dial-05": "missing",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
@@ -2088,32 +2057,6 @@
             "ci95": [
               1,
               1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "dial-05": {
-          "rhae-v1": {
-            "n": 10,
-            "mean": 0.13868,
-            "sd": 0.312108,
-            "ci95": [
-              0.010651,
-              0.346142
-            ]
-          },
-          "squared-outcome": {
-            "n": 10,
-            "mean": 0.106902,
-            "sd": 0.314403,
-            "ci95": [
-              0.00055,
-              0.307067
             ]
           },
           "chance-adjusted": {
@@ -2218,22 +2161,10 @@
           "mean": 0.019344
         }
       },
-      "power": {
-        "p0vs05": {
-          "diffMean": 0.86132,
-          "seedsNeeded": 5,
-          "powerAt12": 1
-        },
-        "p05vs1": {
-          "diffMean": 0.13868,
-          "seedsNeeded": 27,
-          "powerAt12": 0.2105
-        }
-      },
+      "power": {},
       "flags": [
         "exploitable-by-copy-example",
-        "exploitable-by-first-legal",
-        "resolves-at-12-or-fewer"
+        "exploitable-by-first-legal"
       ]
     },
     {
@@ -2427,7 +2358,7 @@
       "chanceBaselineMean": null,
       "cellSources": {
         "dial-0": "tier-audit",
-        "dial-05": "tier-audit",
+        "dial-05": "missing",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
@@ -2450,32 +2381,6 @@
             "ci95": [
               1,
               1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "dial-05": {
-          "rhae-v1": {
-            "n": 10,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 10,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
             ]
           },
           "chance-adjusted": {
@@ -2580,21 +2485,8 @@
           "mean": 0.008687
         }
       },
-      "power": {
-        "p0vs05": {
-          "diffMean": 1,
-          "seedsNeeded": 2,
-          "powerAt12": 1
-        },
-        "p05vs1": {
-          "diffMean": 0,
-          "seedsNeeded": null,
-          "powerAt12": 0
-        }
-      },
-      "flags": [
-        "resolves-at-12-or-fewer"
-      ]
+      "power": {},
+      "flags": []
     },
     {
       "game": "chess-endgames",
@@ -7815,42 +7707,13 @@
       "exampleSource": "none",
       "chanceBaselineMean": null,
       "cellSources": {
-        "dial-0": "tier-audit",
+        "dial-0": "missing",
         "dial-05": "tier-audit",
-        "dial-1": "tier-audit",
+        "dial-1": "missing",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
       "cells": {
-        "dial-0": {
-          "rhae-v1": {
-            "n": 25,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          },
-          "squared-outcome": {
-            "n": 25,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 25,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          }
-        },
         "dial-05": {
           "rhae-v1": {
             "n": 25,
@@ -7877,35 +7740,6 @@
             "ci95": [
               0.149695,
               0.263321
-            ]
-          }
-        },
-        "dial-1": {
-          "rhae-v1": {
-            "n": 25,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 25,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 25,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
             ]
           }
         },
@@ -7969,36 +7803,11 @@
         }
       },
       "exploitableBy": {
-        "copy-example": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        },
-        "first-legal": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        }
+        "copy-example": null,
+        "first-legal": null
       },
-      "power": {
-        "p0vs05": {
-          "diffMean": 0.798665,
-          "seedsNeeded": 3,
-          "powerAt12": 1
-        },
-        "p05vs1": {
-          "diffMean": 0.201335,
-          "seedsNeeded": 6,
-          "powerAt12": 1
-        }
-      },
-      "flags": [
-        "resolves-at-12-or-fewer"
-      ]
+      "power": {},
+      "flags": []
     },
     {
       "game": "sokoban",
@@ -8010,42 +7819,13 @@
       "exampleSource": "none",
       "chanceBaselineMean": null,
       "cellSources": {
-        "dial-0": "tier-audit",
+        "dial-0": "missing",
         "dial-05": "tier-audit",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
       "cells": {
-        "dial-0": {
-          "rhae-v1": {
-            "n": 25,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          },
-          "squared-outcome": {
-            "n": 25,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 25,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          }
-        },
         "dial-05": {
           "rhae-v1": {
             "n": 25,
@@ -8180,11 +7960,6 @@
         }
       },
       "power": {
-        "p0vs05": {
-          "diffMean": 0.842652,
-          "seedsNeeded": 3,
-          "powerAt12": 1
-        },
         "p05vs1": {
           "diffMean": 0.157348,
           "seedsNeeded": 7,
@@ -8929,7 +8704,7 @@
       "cellSources": {
         "dial-0": "tier-audit",
         "dial-05": "tier-audit",
-        "dial-1": "tier-audit",
+        "dial-1": "missing",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
@@ -8986,32 +8761,6 @@
             "ci95": null
           }
         },
-        "dial-1": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
         "copy-example": {
           "rhae-v1": {
             "n": 12,
@@ -9066,31 +8815,14 @@
         }
       },
       "exploitableBy": {
-        "copy-example": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        },
-        "first-legal": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        }
+        "copy-example": null,
+        "first-legal": null
       },
       "power": {
         "p0vs05": {
           "diffMean": 0.625,
           "seedsNeeded": 7,
           "powerAt12": 0.9945
-        },
-        "p05vs1": {
-          "diffMean": 0.25,
-          "seedsNeeded": 21,
-          "powerAt12": 0.3455
         }
       },
       "flags": [
@@ -9109,7 +8841,7 @@
       "cellSources": {
         "dial-0": "tier-audit",
         "dial-05": "tier-audit",
-        "dial-1": "tier-audit",
+        "dial-1": "missing",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
@@ -9166,32 +8898,6 @@
             "ci95": null
           }
         },
-        "dial-1": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0.041667,
-            "sd": 0.144338,
-            "ci95": [
-              0,
-              0.125
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0.020833,
-            "sd": 0.072169,
-            "ci95": [
-              0,
-              0.0625
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
         "copy-example": {
           "rhae-v1": {
             "n": 12,
@@ -9246,31 +8952,14 @@
         }
       },
       "exploitableBy": {
-        "copy-example": {
-          "ci95": [
-            -0.125,
-            0
-          ],
-          "mean": -0.041667
-        },
-        "first-legal": {
-          "ci95": [
-            -0.125,
-            0
-          ],
-          "mean": -0.041667
-        }
+        "copy-example": null,
+        "first-legal": null
       },
       "power": {
         "p0vs05": {
           "diffMean": 0.625,
           "seedsNeeded": 7,
           "powerAt12": 0.994
-        },
-        "p05vs1": {
-          "diffMean": 0.333333,
-          "seedsNeeded": 16,
-          "powerAt12": 0.5885
         }
       },
       "flags": [
@@ -9280,7 +8969,7 @@
     {
       "game": "mastermind",
       "tier": "mini",
-      "gameVersion": "1.0.0",
+      "gameVersion": "1.1.0",
       "scoring": "efficiency",
       "seedsPlanned": 25,
       "exampleToken": "guess ABCB",
@@ -9475,7 +9164,7 @@
     {
       "game": "mastermind",
       "tier": "classic",
-      "gameVersion": "1.0.0",
+      "gameVersion": "1.1.0",
       "scoring": "efficiency",
       "seedsPlanned": 25,
       "exampleToken": "guess ABCB",
@@ -9670,7 +9359,7 @@
     {
       "game": "mastermind",
       "tier": "wide",
-      "gameVersion": "1.0.0",
+      "gameVersion": "1.1.0",
       "scoring": "efficiency",
       "seedsPlanned": 25,
       "exampleToken": "guess ABCB",
@@ -9865,7 +9554,7 @@
     {
       "game": "mastermind",
       "tier": "deep",
-      "gameVersion": "1.0.0",
+      "gameVersion": "1.1.0",
       "scoring": "efficiency",
       "seedsPlanned": 25,
       "exampleToken": "guess ABCB",
@@ -11198,7 +10887,7 @@
       "cellSources": {
         "dial-0": "tier-audit",
         "dial-05": "tier-audit",
-        "dial-1": "tier-audit",
+        "dial-1": "missing",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
@@ -11233,35 +10922,6 @@
           }
         },
         "dial-05": {
-          "rhae-v1": {
-            "n": 25,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 25,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 25,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          }
-        },
-        "dial-1": {
           "rhae-v1": {
             "n": 25,
             "mean": 0,
@@ -11350,31 +11010,14 @@
         }
       },
       "exploitableBy": {
-        "copy-example": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        },
-        "first-legal": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        }
+        "copy-example": null,
+        "first-legal": null
       },
       "power": {
         "p0vs05": {
           "diffMean": 1.15,
           "seedsNeeded": 2,
           "powerAt12": 1
-        },
-        "p05vs1": {
-          "diffMean": 0,
-          "seedsNeeded": null,
-          "powerAt12": 0
         }
       },
       "flags": [
@@ -12443,39 +12086,13 @@
       "exampleSource": "rules",
       "chanceBaselineMean": null,
       "cellSources": {
-        "dial-0": "tier-audit",
+        "dial-0": "missing",
         "dial-05": "tier-audit",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
       "cells": {
-        "dial-0": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0.916667,
-            "sd": 0.288675,
-            "ci95": [
-              0.75,
-              1
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0.916667,
-            "sd": 0.288675,
-            "ci95": [
-              0.75,
-              1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
         "dial-05": {
           "rhae-v1": {
             "n": 12,
@@ -12598,20 +12215,13 @@
         }
       },
       "power": {
-        "p0vs05": {
-          "diffMean": 0.875,
-          "seedsNeeded": 5,
-          "powerAt12": 1
-        },
         "p05vs1": {
           "diffMean": 0.041667,
           "seedsNeeded": null,
           "powerAt12": 0.018
         }
       },
-      "flags": [
-        "resolves-at-12-or-fewer"
-      ]
+      "flags": []
     },
     {
       "game": "othello",
@@ -12625,7 +12235,7 @@
       "cellSources": {
         "dial-0": "tier-audit",
         "dial-05": "tier-audit",
-        "dial-1": "tier-audit",
+        "dial-1": "missing",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
@@ -12657,32 +12267,6 @@
           }
         },
         "dial-05": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "dial-1": {
           "rhae-v1": {
             "n": 12,
             "mean": 0,
@@ -12762,31 +12346,14 @@
         }
       },
       "exploitableBy": {
-        "copy-example": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        },
-        "first-legal": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        }
+        "copy-example": null,
+        "first-legal": null
       },
       "power": {
         "p0vs05": {
           "diffMean": 0.541667,
           "seedsNeeded": 7,
           "powerAt12": 0.99
-        },
-        "p05vs1": {
-          "diffMean": 0,
-          "seedsNeeded": null,
-          "powerAt12": 0
         }
       },
       "flags": [
@@ -12796,7 +12363,7 @@
     {
       "game": "wordle",
       "tier": "four-letter-10",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "efficiency",
       "seedsPlanned": 25,
       "exampleToken": "guess CRANE",
@@ -12991,7 +12558,7 @@
     {
       "game": "wordle",
       "tier": "classic",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "efficiency",
       "seedsPlanned": 25,
       "exampleToken": "guess CRANE",
@@ -13186,7 +12753,7 @@
     {
       "game": "wordle",
       "tier": "hard-mode",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "efficiency",
       "seedsPlanned": 25,
       "exampleToken": "guess CRANE",

@@ -1,0 +1,73 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "wordle",
+    "version": "1.2.0"
+  },
+  "tier": "classic",
+  "seed": "wordle/classic/public/4",
+  "split": "public",
+  "agent": {
+    "id": "dial-engine-p25",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b6506fe3c4287c99",
+      "reply": {
+        "text": "guess VARNA"
+      },
+      "action": "guess VARNA",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ab42cb344abdda8c",
+      "reply": {
+        "text": "guess CENTS"
+      },
+      "action": "guess CENTS",
+      "invalid": false,
+      "usage": null,
+      "ms": 30
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c3aa6a3109977672",
+      "reply": {
+        "text": "guess CANOE"
+      },
+      "action": "guess CANOE",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1
+      ],
+      "raw": [
+        3
+      ],
+      "reason": "solved: the answer was found in 3 guess(es), reference par 3",
+      "solved": true,
+      "par": 3
+    },
+    "agentActions": 3,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T18:12:18.883Z",
+  "finishedAt": "2026-10-17T18:12:18.936Z"
+}

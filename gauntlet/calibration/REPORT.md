@@ -8,14 +8,14 @@ Baseline calibration over the gauntlet's public seeds: every game is played by a
 
 | | |
 |---|---|
-| Run at | 2026-10-16T21:50:16.487Z |
+| Run at | 2026-10-17T05:57:38.121Z |
 | Node | v20.20.2 |
 | Machine | linux 6.1.158+ x64, Intel(R) Xeon(R) Processor @ 2.60GHz, 8 cores, 7.8 GiB |
 | Worker parallelism | 7 |
 | Seeds per tier | all public seeds |
 | Per-game wall cap | 1200s |
-| Total wall time | 5523.7s |
-| HEAD | 595ffff989ae |
+| Total wall time | 5525.2s |
+| HEAD | a4cd8e3fc72c |
 | Base | unknown |
 
 Reproduce from `gauntlet/` with `node calibration/run.js` (flags: `--games=`, `--seeds=`, `--per-game-cap=`, `--out=`, `--report=`). One worker process per game; deterministic end to end — same seeds and code produce byte-identical tables.
@@ -202,7 +202,7 @@ _Run:_ 108 episodes, 26.8s.
 
   _Why not a violation:_ the 95% intervals do not separate (they overlap, or a side has no interval), so the misordering is not demonstrated at the measured precision; re-measure at more seeds before changing tier parameters.
 
-### mastermind (v1.0.0)
+### mastermind (v1.1.0)
 
 | tier (rank) | scoring | random | greedy | engine | engine solved |
 |---|---|---|---|---|---|
@@ -211,7 +211,7 @@ _Run:_ 108 episodes, 26.8s.
 | wide (3) | efficiency | 0 [0, 0] | 0.817 [0.73, 0.909] | 1 [1, 1] | 100% |
 | deep (4) | efficiency | 0 [0, 0] | 0.883 [0.791, 0.968] | 1 [1, 1] | 100% |
 
-_Run:_ 300 episodes, 25.2s.
+_Run:_ 300 episodes, 25.8s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 
@@ -320,7 +320,7 @@ _Run:_ 120 episodes, 6.6s.
 
 _Baselines:_ No packet baselines ship for tictactoe (a smoke game): `greedy` here is a win/block/center heuristic with seeded tie-breaks, `engine` is perfect minimax over the game's own `step` and `outcome`.
 
-### wordle (v1.1.0)
+### wordle (v1.2.0)
 
 | tier (rank) | scoring | random | greedy | engine | engine solved |
 |---|---|---|---|---|---|
@@ -328,7 +328,7 @@ _Baselines:_ No packet baselines ship for tictactoe (a smoke game): `greedy` her
 | classic (2) | efficiency | 0 [0, 0] | 0.689 [0.568, 0.814] | 1 [1, 1] | 100% |
 | hard-mode (3) | efficiency | 0 [0, 0] | 0.818 [0.69, 0.94] | 1 [1, 1] | 100% |
 
-_Run:_ 225 episodes, 6.5s.
+_Run:_ 225 episodes, 7.4s.
 
 ✅ ordering checks pass (random ≤ greedy ≤ engine per tier; no rank rise for random/greedy; engine solves ≥95% where required).
 

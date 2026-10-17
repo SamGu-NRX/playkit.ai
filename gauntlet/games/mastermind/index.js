@@ -92,6 +92,20 @@ function secretFor(pegs, colors, seed) {
 }
 
 /**
+ * The tier-shaped worked example the observation and the parse feedback
+ * quote: A and B alternating to the tier's peg count (mini "ABA", classic
+ * "ABAB", wide "ABABA", deep "ABABAB"). Fixed from the peg count, not from
+ * the seed, so the example never depends on the secret; both letters are in
+ * every tier's alphabet, so the quoted action is always legal in shape.
+ *
+ * @param {number} pegs
+ * @returns {string}
+ */
+function exampleCode(pegs) {
+  return Array.from({ length: pegs }, (_, i) => (i % 2 === 0 ? 'A' : 'B')).join('');
+}
+
+/**
  * Canonical action for a code.
  *
  * @param {string} code
@@ -126,7 +140,7 @@ function canonicalActionsFor(pegs, colors) {
 export const mastermind = {
   spec: {
     id: 'mastermind',
-    version: '1.0.0',
+    version: '1.1.0',
     title: 'Mastermind',
     seats: /** @type {1 | 2} */ (1),
     information: /** @type {InformationMode} */ ('hidden'),
@@ -202,7 +216,7 @@ export const mastermind = {
     const lines = [
       `Mastermind. Guess the secret code: ${state.pegs} pegs, each one of the colors ${alphabet} (colors may repeat).`,
       'Feedback per guess: black = right color in the right place, white = right color in the wrong place.',
-      'Action format: "guess" followed by the code letters, e.g. "guess ABAB".',
+      `Action format: "guess" followed by ${state.pegs} code letters, e.g. "guess ${exampleCode(state.pegs)}".`,
     ];
     if (state.guesses.length === 0) {
       lines.push('No guesses yet.');
@@ -288,12 +302,15 @@ export const mastermind = {
     s = s.replace(/^(guess|try|play|code)\s+/i, '');
     s = s.replace(/\s+/g, '').toUpperCase();
     if (s.length === 0) {
-      return { ok: false, error: 'empty action; use "guess" followed by the code letters, e.g. "guess ABAB"' };
+      return {
+        ok: false,
+        error: `empty action; use "guess" followed by the code letters, e.g. "guess ${exampleCode(state.pegs)}"`,
+      };
     }
     if (!isCode(s, state.pegs, state.colors)) {
       return {
         ok: false,
-        error: `cannot parse ${JSON.stringify(String(text))} as a ${state.pegs}-peg code over ${alphabetFor(state.colors)}; use "guess" followed by the code letters, e.g. "guess ${'ABCD'.slice(0, state.pegs)}"`,
+        error: `cannot parse ${JSON.stringify(String(text))} as a ${state.pegs}-peg code over ${alphabetFor(state.colors)}; use "guess" followed by the code letters, e.g. "guess ${exampleCode(state.pegs)}"`,
       };
     }
     return { ok: true, action: canonicalAction(s) };

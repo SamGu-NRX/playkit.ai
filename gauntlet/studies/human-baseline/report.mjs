@@ -172,7 +172,20 @@ for (const file of files) {
     failures.push({ file, reason: `unknown game "${trajectory.game?.id}"` });
     continue;
   }
-  const verdict = await verifyTrajectory(game, trajectory);
+  // A verifier verdict is a failure row; a verifier EXCEPTION must be one
+  // too, not a crashed report — malformed steps/end shapes can throw inside
+  // verifyTrajectory on data the format pre-checks above cannot see.
+  /** @type {Awaited<ReturnType<typeof verifyTrajectory>> | null} */
+  let verdict = null;
+  try {
+    verdict = await verifyTrajectory(game, trajectory);
+  } catch (err) {
+    failures.push({
+      file,
+      reason: `verifier threw: ${err instanceof Error ? err.message : String(err)}`,
+    });
+    continue;
+  }
   if (!verdict.ok) {
     failures.push({
       file,

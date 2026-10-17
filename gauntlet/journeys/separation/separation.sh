@@ -123,8 +123,9 @@ c_out="$LOG/run-attempt-1.log"
 timeout 900 "${RUN[@]}" >"$c_out" 2>&1 || true
 grep -q "stopped=budget" "$c_out" || die "C: attempt 1 did not stop on the budget cap (see $c_out)"
 echo "C: attempt 1 bound the cap: $(grep -o 'stopped=budget.*' "$c_out" | head -1)"
-
-prev_total=0; verdict=""; attempt=1
+prev_total="$(node -e 'const s=JSON.parse(process.argv[1]); console.log(s.totalUsd ?? 0)' "$(ledger)")"
+echo "C: ledger after attempt 1: total $prev_total"
+verdict=""; attempt=1
 while [ "$attempt" -lt 6 ]; do
   attempt=$((attempt + 1))
   c_out="$LOG/run-attempt-$attempt.log"
@@ -137,7 +138,7 @@ while [ "$attempt" -lt 6 ]; do
       verdict="refused on attempt $attempt (stopped=budget, 0 episodes played — the cap is exhausted with work remaining)"
       break
     fi
-    echo "C: attempt $((attempt - 1)) resume made progress: total $prev_total -> $total"
+    echo "C: attempt $attempt resume made progress: total $prev_total -> $total"
     prev_total="$total"
   else
     die "C: attempt $attempt ended neither done nor budget (see $c_out)"

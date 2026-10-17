@@ -29,8 +29,9 @@
 #   WORKDIR   default: a fresh temporary directory (kept on failure)
 #
 # Environment:
-#   SEPARATION_MAX_USD_TOTAL   stage C's bundle cap (default: derived from the
-#                              suite's stub-priced estimate so the cap must bind)
+#   SEPARATION_MAX_USD_TOTAL   stage C's bundle cap (default: derived from a
+#                              throwaway uncapped run's settled total, so the
+#                              cap must bind)
 #   SEPARATION_ESTIMATE_SECS   stage B's bound on the estimate (default 900)
 #   SEPARATION_INSTRUMENT_SECS stage E's bound on instrument.sh (default 2400)
 
@@ -100,21 +101,26 @@ echo "B: PASS — estimate exited on its own in ${b_elapsed}s; no gnugo/stockfis
 # The cap must BIND, or stage C exercises nothing: a fixed dollar cap stops
 # binding the moment stub pricing or the suite shifts — a $2 default sat above
 # the 76-episode stub total ($1.63), so attempt 1 completed and the budget
-# path was never exercised. Derive the cap from the suite's own stub-priced
-# estimate: half the low side is strictly under what completing the suite
-# costs, so attempt 1 must stop on the budget with episodes still unplayed.
+# path was never exercised. Estimates cannot price stub behavior (their token
+# heuristic ran ~4x the stub's actual usage), so the basis is measured: a
+# throwaway uncapped run settles the suite's real stub-priced total, and the
+# capped flow runs at half of it — strictly under what completing costs, so
+# attempt 1 must stop on the budget with episodes still unplayed.
+RUN_ARGS=(run --suite "$WORK/suite-public.json" --agent "model:$MODEL"
+     --base-url http://127.0.0.1:8091 --prices "$PRICES")
 if [ -z "$CAP" ]; then
-  node "$SRC/cli/gauntlet.js" estimate --suite "$WORK/suite-public.json" \
-    --agent "model:$MODEL" --prices "$PRICES" --no-probes \
-    --out "$WORK/estimate-cap" >"$LOG/estimate-cap.log" 2>&1 \
-    || die "C: cap-basis estimate failed (see $LOG/estimate-cap.log)"
+  rm -rf "$WORK/cap-basis-run"
+  timeout 900 env ANTHROPIC_API_KEY=dummy-rehearsal-key \
+    node "$SRC/cli/gauntlet.js" "${RUN_ARGS[@]}" --out "$WORK/cap-basis-run" \
+    >"$LOG/cap-basis-run.log" 2>&1 || true
   CAP="$(node -e '
-    const e = JSON.parse(require("node:fs").readFileSync(process.argv[1] + "/estimate.json", "utf8"));
-    const basis = Number(e.totals?.usdLow ?? e.totals?.usdHigh);
-    if (!Number.isFinite(basis) || basis <= 0) process.exit(1);
-    console.log((Math.floor(basis * 50) / 100).toFixed(2));
-  ' "$WORK/estimate-cap")" || die "C: no usable estimate basis for the cap"
-  echo "C: cap derived from the suite stub-priced estimate: \$$CAP (override: SEPARATION_MAX_USD_TOTAL)"
+    const r = JSON.parse(require("node:fs").readFileSync(process.argv[1] + "/run.json", "utf8"));
+    const t = Number(r.ledger?.totalUsd ?? r.total?.spendUsd);
+    const done = (r.stopped ?? null) === null && r.counts.unplayed === 0 && r.counts.failed === 0;
+    if (!done || !Number.isFinite(t) || t <= 0) process.exit(1);
+    console.log((Math.floor(t * 50) / 100).toFixed(2));
+  ' "$WORK/cap-basis-run")" || die "C: the cap-basis run did not complete the suite (see $LOG/cap-basis-run.log)"
+  echo "C: cap derived from the suite's actual stub-priced total: \$$CAP (override: SEPARATION_MAX_USD_TOTAL)"
 fi
 step "C: capped run (--max-usd-total $CAP) against the pilot stub"
 node "$SRC/journeys/pilot/stubs/anthropic.mjs" --port 8091 \
@@ -136,9 +142,8 @@ ledger() {
     })' "$SRC/runs/run.js" "$WORK/bundle-cap"
 }
 
-RUN=(node "$SRC/cli/gauntlet.js" run --suite "$WORK/suite-public.json"
-     --agent "model:$MODEL" --out "$WORK/bundle-cap" --max-usd-total "$CAP"
-     --base-url http://127.0.0.1:8091 --prices "$PRICES")
+RUN=(node "$SRC/cli/gauntlet.js" "${RUN_ARGS[@]}" --out "$WORK/bundle-cap"
+     --max-usd-total "$CAP")
 
 # Completion is read from run.json, not grepped from the console: cli/run.js
 # prints "stopped <reason>" only when there IS a stop reason, while a

@@ -932,6 +932,14 @@ export async function runSuite({
     return {
       ...base,
       async act(/** @type {TurnContext} */ ctx) {
+        // The rate limiter is waited on BEFORE any check: everything from
+        // here through the reservation below is synchronous, so admission and
+        // reservation are atomic under concurrency. A worker queued on the
+        // limiter re-checks every stop rule once it holds a slot — checks
+        // made before the wait went stale while it queued — and no
+        // interleaving can admit two calls that both believe the same spend
+        // headroom is available.
+        if (limiter) await limiter.acquire();
         if (stopped.reason) {
           throw new RunAbortedError(stopped.reason, `run stopped (${stopped.reason}): ${stopped.detail ?? ''}`);
         }
@@ -948,8 +956,12 @@ export async function runSuite({
         // Worst-case admission for the dollar caps: a quote-carrying agent
         // reserves its next call's upper-bound cost, so concurrent in-flight
         // calls cannot jointly push spend past a cap. A quote-less agent keeps
-        // the settled-only check (its quote is null).
-        const quote = typeof base.quoteWorstCaseUsd === 'function' ? base.quoteWorstCaseUsd(ctx) : null;
+        // the settled-only check (its quote is null). The hook is consulted
+        // only when a dollar cap needs admission checking — with no cap set
+        // there is nothing to protect, and a call that later rejects stays
+        // recorded at unknown cost.
+        const quote =
+          spendCapped && typeof base.quoteWorstCaseUsd === 'function' ? base.quoteWorstCaseUsd(ctx) : null;
         if (maxUsd !== undefined) {
           const projected = spendUsd + reservedUsd + (quote ?? 0);
           const overBudget = projected > maxUsd || spendUsd >= maxUsd;
@@ -994,7 +1006,6 @@ export async function runSuite({
             );
           }
         }
-        if (limiter) await limiter.acquire();
         calls += 1;
         const callIndex = episodeCall;
         episodeCall += 1;
@@ -1161,7 +1172,6 @@ export async function runSuite({
   //
   // Provenance.
   //
-  /** @type {RunAgentRecord | null} */
   const skippedSet = new Set(skipped);
   const unplayed = jobs.filter((j) => !skippedSet.has(j.key) && !written.has(j.key)).map((j) => j.key);
 

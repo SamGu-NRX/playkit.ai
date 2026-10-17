@@ -83,6 +83,10 @@ if [[ ! -f "$SUITE" ]]; then
   echo "pilot: SUITE must be a suite manifest file (an option file from studies/separation-pilot/outputs/suites/), got \"$SUITE\"" >&2
   exit 2
 fi
+# Absolutize before the script changes directory: every CLI call below runs
+# from GAUNTLET_ROOT, so a caller-relative SUITE would otherwise resolve
+# under gauntlet/ and not where the caller checked it.
+SUITE="$(cd "$(dirname "$SUITE")" && pwd)/$(basename "$SUITE")"
 case "$MODEL" in
   anthropic/*|openai/*|openai-chat/*) ;;
   *) echo "pilot: MODEL must be provider/model with provider anthropic, openai or openai-chat, got \"$MODEL\"" >&2; exit 2 ;;
@@ -148,6 +152,10 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 SLUG="$(echo "$MODEL" | tr '/' '-')"
 OUT="${PILOT_OUT:-$SCRIPT_DIR/runs/$SLUG-$STAMP}"
 mkdir -p "$OUT"
+# Same contract as SUITE: the caller gave the path relative to the caller's
+# directory — pin it absolute before cd, so every CLI call writes where the
+# line above just reported.
+OUT="$(cd "$OUT" && pwd)"
 echo "pilot: outputs in $OUT"
 
 cd "$GAUNTLET_ROOT"
@@ -175,14 +183,20 @@ GAMES_COUNT="$(node -e '
   const s = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
   console.log(s.games.length);
 ' "$SUITE")"
-read -r EST_HIGH PER_EP DISCARDED <<<"$(node -e '
+read -r EST_HIGH PER_EP_HIGH DISCARDED <<<"$(node -e '
   const e = JSON.parse(require("node:fs").readFileSync(process.argv[2] + "/estimate/estimate.json", "utf8"));
-  const high = e.totals.usdHigh, jobs = e.totals.jobs;
-  const perEp = high / jobs;
-  const discarded = Math.min(process.argv[1] * perEp, process.argv[3]);
-  console.log(high.toFixed(2), perEp.toFixed(4), discarded.toFixed(2));
+  // The priciest job high side, not the suite average: at a cap stop the
+  // in-flight workers may ALL be running expensive jobs, so the discarded
+  // bound must use the largest per-episode estimate-high (average understates
+  // it — committed pilot-1seed OpenAI: average $1.42/job, priciest $14.06).
+  // These are estimates from measured runs, not enforced limits.
+  const highs = (e.jobs ?? []).map((j) => j.usdHigh).filter((x) => typeof x === "number" && Number.isFinite(x));
+  const perEpHigh = highs.length ? Math.max(...highs) : null;
+  const discarded = perEpHigh === null ? null : Math.min(process.argv[1] * perEpHigh, process.argv[3]);
+  const fmt = (x) => (x === null ? "unknown" : x.toFixed(2));
+  console.log((e.totals.usdHigh ?? 0).toFixed(2), perEpHigh === null ? "unknown" : perEpHigh.toFixed(4), fmt(discarded));
 ' "$CONCURRENCY" "$OUT" "$CAP_USD")"
-echo "pilot: PRE-FLIGHT — suite: $GAMES_COUNT games, $JOBS jobs | estimate high: \$$EST_HIGH per arm | cap: \$$CAP_USD bundle-wide (--max-usd-total; resumes cannot multiply spend) | concurrency: $CONCURRENCY | worst case paid-but-discarded at a cap stop: <= \$$DISCARDED (min(concurrency x per-episode-high, cap); see PILOT.md)"
+echo "pilot: PRE-FLIGHT — suite: $GAMES_COUNT games, $JOBS jobs | estimate high: \$$EST_HIGH per arm | cap: \$$CAP_USD bundle-wide (--max-usd-total; resumes cannot multiply spend) | concurrency: $CONCURRENCY | worst case paid-but-discarded at a cap stop: <= \$$DISCARDED (estimate basis: min(concurrency x the priciest job's estimate-high, cap); estimates from measured runs, not enforced limits; see PILOT.md)"
 
 # 2. Run, resuming until the bundle completes. The cap is BUNDLE-WIDE
 # (--max-usd-total): the bundle's spend.jsonl ledger records every paid call
@@ -221,7 +235,12 @@ while :; do
     echo "pilot: run stopped with an error — see run.json stopReason" >&2
     exit 1
   fi
-  if [[ "$STOPPED" == "done" || "$UNPLAYED" == "0" ]]; then
+  # Complete only when nothing is unplayed AND nothing failed. The runner
+  # leaves `stopped` unset for an ordinary episode error and says to re-run
+  # with --resume to retry it — so failed episodes loop here (bounded by
+  # MAX_RESUMES) instead of reaching verify/leaderboards as an incomplete
+  # bundle that quietly looks done.
+  if [[ "$UNPLAYED" == "0" && "$FAILED" == "0" ]]; then
     break
   fi
   if [[ "$STOPPED" == "budget" && "$ATTEMPT_CALLS" == "0" ]]; then
@@ -230,7 +249,7 @@ while :; do
   fi
   attempt=$((attempt + 1))
   if [[ "$attempt" -gt "$MAX_RESUMES" ]]; then
-    echo "pilot: giving up after $MAX_RESUMES invocations with $UNPLAYED episodes unplayed (raise PILOT_MAX_RESUMES or the cap)" >&2
+    echo "pilot: giving up after $MAX_RESUMES invocations with $UNPLAYED unplayed and $FAILED failed episodes (raise PILOT_MAX_RESUMES or the cap)" >&2
     exit 1
   fi
   echo "pilot: cap bound — resuming ($((MAX_RESUMES - attempt + 1)) invocations left; the ledger total cannot pass \$$LEDGER_CAP)"
@@ -263,5 +282,22 @@ done
 echo "== [5/5] estimate --against =="
 node "$CLI" estimate --suite "$SUITE" --agent "model:$MODEL" --prices "$PRICES" \
   --no-probes --against "$OUT/run" 2>&1 | tee "$OUT/estimate-against.console.txt"
+
+# The --against table sums usage from trajectories only. A bundle-wide cap
+# stop unwinds in-flight episodes: their PAID calls live in the ledger
+# (ledger.unwoundUsd) but in no trajectory, so the table above can
+# under-count actual spend whenever a cap stop discarded work. Reconcile
+# loudly here; teaching estimate --against the ledger itself belongs to
+# gauntlet/runs/ (outside this packet's paths).
+node -e '
+  const r = JSON.parse(require("node:fs").readFileSync(process.argv[1] + "/run/run.json", "utf8"));
+  const l = r.ledger ?? {};
+  const num = (x) => (Number.isFinite(Number(x)) ? Number(x) : 0);
+  const unwound = num(l.unwoundUsd);
+  console.log(`pilot: ledger reconciliation — trajectory usage is what estimate --against compares; the bundle ledger records \$${num(l.totalUsd).toFixed(6)} total (kept \$${num(l.keptUsd).toFixed(6)}, unwound \$${unwound.toFixed(6)} across ${l.unwoundCalls ?? 0} in-flight call(s))`);
+  if (unwound > 0) {
+    console.log(`pilot: WARNING — \$${unwound.toFixed(6)} of paid work was unwound at a cap stop and appears in NO trajectory, so the estimate-vs-actual table under-counts actual spend by that amount; cost the run against the ledger total \$${num(l.totalUsd).toFixed(6)}, not the table.`);
+  }
+' "$OUT"
 
 echo "pilot: COMPLETE — model=$MODEL effort=$EFFORT cap=\$$CAP_USD bundle-wide ledgerTotalUsd=$LEDGER_TOTAL bundleSpendUsd=$BUNDLE_SPEND outputs in $OUT${LEADERBOARD_FAILED:+ (leaderboard failures:$LEADERBOARD_FAILED)}"

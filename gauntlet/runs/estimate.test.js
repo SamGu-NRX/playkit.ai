@@ -511,3 +511,35 @@ test('compareRunAgainstEstimate refuses a bundle whose suite manifest differs', 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('compareRunAgainstEstimate: a partial-run bundle carries no verdicts', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'gauntlet-estimate-partial-'));
+  try {
+    const suite = buildSuite([takeOrPass, countdown], { split: 'public' });
+    const games = [takeOrPass, countdown];
+    const outDir = path.join(dir, 'run');
+    // A tight dollar cap stops the run partway: episodes stay unplayed, the
+    // actuals are partial-run figures.
+    await runSuite({ suite, games, agentFactory: fakePricedFactory(), outDir, maxUsd: 0.005 });
+
+    const estimate = await estimateSuite({ suite, games });
+    const comparison = await compareRunAgainstEstimate(estimate, outDir);
+
+    assert.ok(comparison.unplayedEpisodes > 0, 'the cap stopped the run partway');
+    const planned = suite.games.reduce((a, g) => a + g.tiers.reduce((b, t) => b + t.seeds.length, 0), 0);
+    assert.ok(comparison.unplayedEpisodes < planned, 'some episodes did play');
+    // Every game short of its planned episodes carries no verdict — a cap-stop
+    // must not read as "under-2x" — and neither does the total.
+    for (const row of comparison.games) {
+      assert.ok(Number.isInteger(row.expectedEpisodes) && row.expectedEpisodes > 0);
+      if (row.episodes < row.expectedEpisodes) {
+        assert.equal(row.callsVerdict, null, `${row.gameId} issued a verdict on a partial run`);
+      }
+    }
+    assert.equal(comparison.totals.callsVerdict, null);
+    const md = comparisonToMarkdown(comparison);
+    assert.match(md, /no within-2x verdict/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

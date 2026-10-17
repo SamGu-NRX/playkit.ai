@@ -496,10 +496,13 @@ export function resolveAnthropicCapability(model) {
 // with the pages and the date the row was checked — the documented effort
 // levels and API default, whether sampling fields are rejected, and a
 // documented output cap. A `gpt-*` model id that matches no row is refused at
-// construction with a message naming this table, so a new model cannot be
-// silently run with settings it may reject. Ids that are not GPT model ids on
-// provider "openai" (proxies, stubs) are not tabled and keep the permissive
-// default. Where the docs are silent the row records the permissive value
+// construction only when the request carries settings this table exists to
+// validate (reasoningEffort or a sampling field), naming the table so a new
+// model cannot be silently run with settings it may reject; a plain request
+// runs permissive (the documented openai/gpt-4o path). Ids that are not GPT
+// model ids on provider "openai" (proxies, stubs) are not tabled and keep
+// the permissive default. Where the docs are silent the row records the
+// permissive value
 // (sampling allowed, default effort unknown) rather than a guess.
 //
 // Checked 2026-10-16 against:
@@ -704,10 +707,12 @@ export function resolveGeminiCapability(model) {
 
 /**
  * Look up the capability row for a GPT model id on provider "openai".
- * Returns null for ids that are not GPT model ids (proxies and stubs keep
- * the permissive default); throws for `gpt-*` ids that match no row, naming
- * the table so a new model cannot be silently run with settings it may
- * reject.
+ * Returns null for ids that match no row, `gpt-*` ids included (proxies and
+ * stubs keep the permissive default). The settings-dependent refusal for
+ * untabled `gpt-*` ids lives in createModelAgent: only a request that
+ * carries capability-table settings (reasoningEffort or a sampling field) is
+ * refused there, naming the table; a plain request is wire-valid on every
+ * Responses-API model and runs with the permissive default.
  *
  * @param {string} model
  * @returns {FrontierModelCapability | null}
@@ -715,11 +720,6 @@ export function resolveGeminiCapability(model) {
 export function resolveOpenAICapability(model) {
   for (const capability of OPENAI_CAPABILITIES) {
     if (capability.pattern.test(model)) return capability;
-  }
-  if (/^gpt-/i.test(model)) {
-    throw new Error(
-      `createModelAgent: model ${JSON.stringify(model)} is a GPT id that matches no row in the OpenAI capability table (harness/model-agent.js), so it is refused rather than run with settings the model may reject. Add a row with the model-id pattern, the documented effort levels and default, the sampling-field rule, and a documented output cap, citing the doc URL and the date checked — see ${OPENAI_CAPABILITY_DOC_URL}`
-    );
   }
   return null;
 }
@@ -1720,11 +1720,14 @@ export function createModelAgent({
     }
   }
   // Per-model capability validation. A `claude-*` id that matches no row is
-  // refused inside resolveAnthropicCapability; a `gpt-*` id on provider
-  // "openai" and a `gemini-*` id on provider "openai-chat" that match no row
-  // are refused inside resolveOpenAICapability / resolveGeminiCapability —
-  // each names its table, so a new model cannot be silently run with
-  // settings it may reject. The per-row checks below enforce the documented
+  // refused inside resolveAnthropicCapability; a `gemini-*` id on provider
+  // "openai-chat" that matches no row is refused inside
+  // resolveGeminiCapability — each names its table, so a new model cannot be
+  // silently run with settings it may reject. An untabled `gpt-*` id on
+  // provider "openai" is refused below instead, and only when the request
+  // carries settings the OpenAI capability table exists to validate (a plain
+  // request is wire-valid and runs permissive). The per-row checks below
+  // enforce the documented
   // effort levels, the sampling-field rules, and (via rowDefaultCap) the
   // documented default output cap.
   const capability =
@@ -1733,6 +1736,27 @@ export function createModelAgent({
       : provider === 'openai'
         ? resolveOpenAICapability(model)
         : resolveGeminiCapability(model);
+  // An untabled `gpt-*` id (f05) is refused only when the request carries
+  // settings the OpenAI capability table exists to validate — reasoningEffort
+  // or a sampling field (temperature/top_p/top_k, the same three fields the
+  // tabled rows govern). A request without them is wire-valid on every
+  // Responses-API model, so it runs with the permissive default: no wire
+  // effort, the legacy output cap unless maxOutputTokens is explicit. That is
+  // the documented openai/gpt-4o path (clients/python/README.md).
+  if (
+    provider === 'openai' &&
+    capability === null &&
+    /^gpt-/i.test(model) &&
+    (reasoningEffort !== undefined ||
+      (params !== undefined &&
+        ['temperature', 'top_p', 'top_k'].some((field) =>
+          Object.prototype.hasOwnProperty.call(params, field)
+        )))
+  ) {
+    throw new Error(
+      `createModelAgent: model ${JSON.stringify(model)} is a GPT id that matches no row in the OpenAI capability table (harness/model-agent.js), so it is refused rather than run with settings it may reject. Add a row with the model-id pattern, the documented effort levels and default, the sampling-field rule, and a documented output cap, citing the doc URL and the date checked — see ${OPENAI_CAPABILITY_DOC_URL}. A request without reasoningEffort or sampling fields is wire-valid on every Responses-API model and is allowed — that is the documented openai/gpt-4o path (clients/python/README.md).`
+    );
+  }
   // The refusal messages name the table for the row's provider.
   const tableLabel =
     provider === 'anthropic'

@@ -170,6 +170,73 @@ test('openai agent sends instructions + input and a bearer auth header', async (
   }
 });
 
+test('an untabled gpt-* id with default settings constructs and posts (the documented openai/gpt-4o path)', async () => {
+  const stub = await openaiStub([OPENAI_OK]);
+  try {
+    const agent = createModelAgent({
+      provider: 'openai',
+      model: 'gpt-4o',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+    });
+    const reply = await agent.act(CTX);
+    assert.equal(stub.requests.length, 1);
+    const req = stub.requests[0];
+    assert.equal(req.url, '/v1/responses');
+    assert.equal(req.body.model, 'gpt-4o');
+    assert.ok(!('reasoning' in req.body), 'a plain request carries no reasoning field');
+    assert.equal(reply.text, 'I take a corner.\naction: a1');
+  } finally {
+    await stub.close();
+  }
+});
+
+test('an untabled gpt-* id carrying reasoningEffort is refused, naming the OpenAI capability table', async () => {
+  const stub = await openaiStub([OPENAI_OK]);
+  try {
+    assert.throws(
+      () =>
+        createModelAgent({
+          provider: 'openai',
+          model: 'gpt-9-nova',
+          baseUrl: stub.url,
+          apiKeyEnv: 'GAUNTLET_TEST_KEY',
+          reasoningEffort: /** @type {'low' | 'medium' | 'high' | 'xhigh' | 'max'} */ ('high'),
+        }),
+      (/** @type {Error} */ err) => {
+        assert.match(err.message, /matches no row in the OpenAI capability table/);
+        return true;
+      }
+    );
+    assert.equal(stub.requests.length, 0, 'refused at construction: the stub saw zero requests');
+  } finally {
+    await stub.close();
+  }
+});
+
+test('an untabled gpt-* id carrying a sampling param is refused', async () => {
+  const stub = await openaiStub([OPENAI_OK]);
+  try {
+    assert.throws(
+      () =>
+        createModelAgent({
+          provider: 'openai',
+          model: 'gpt-9-nova',
+          baseUrl: stub.url,
+          apiKeyEnv: 'GAUNTLET_TEST_KEY',
+          params: { temperature: 0.5 },
+        }),
+      (/** @type {Error} */ err) => {
+        assert.match(err.message, /matches no row in the OpenAI capability table/);
+        return true;
+      }
+    );
+    assert.equal(stub.requests.length, 0, 'refused at construction: the stub saw zero requests');
+  } finally {
+    await stub.close();
+  }
+});
+
 test('the previous reply and invalid feedback are carried into the next message', async () => {
   const stub = await anthropicStub([
     ANTHROPIC_OK,

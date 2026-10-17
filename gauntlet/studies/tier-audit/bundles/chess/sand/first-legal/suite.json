@@ -1,0 +1,27 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "playkit-gauntlet-tier-audit-chess-sand",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "chess",
+      "version": "1.2.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "sand",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/sand/public/0",
+            "chess/sand/public/1",
+            "chess/sand/public/2",
+            "chess/sand/public/3",
+            "chess/sand/public/4"
+          ]
+        }
+      ]
+    }
+  ]
+}

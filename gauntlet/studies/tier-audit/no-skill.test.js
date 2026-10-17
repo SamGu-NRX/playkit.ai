@@ -65,9 +65,9 @@ test('both agents declare the baseline track', () => {
   assert.equal(createCopyExampleAgent({ token: null, source: 'none' }).track, 'baseline');
 });
 
-test('seedsForTier caps chess-puzzles and otherwise uses the full public list', () => {
+test('seedsForTier uses the full public list for every game', () => {
   const chessPuzzles = /** @type {*} */ (GAMES['chess-puzzles']).spec.tiers[0];
-  assert.equal(seedsForTier('chess-puzzles', chessPuzzles).length, 12);
+  assert.equal(seedsForTier('chess-puzzles', chessPuzzles).length, 60);
   const tic = /** @type {*} */ (GAMES['tictactoe']).spec.tiers.find((/** @type {{ id: string }} */ t) => t.id === 'random-opponent');
   assert.equal(seedsForTier('tictactoe', tic).length, 16);
   const seeds = seedsForTier('tictactoe', tic);

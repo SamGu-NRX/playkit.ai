@@ -1,0 +1,29 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "playkit-gauntlet-tier-audit-chess-stockfish-sf-10k",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "chess-stockfish",
+      "version": "1.1.0",
+      "requires": [
+        "stockfish"
+      ],
+      "tiers": [
+        {
+          "id": "sf-10k",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-stockfish/sf-10k/public/0",
+            "chess-stockfish/sf-10k/public/1",
+            "chess-stockfish/sf-10k/public/2",
+            "chess-stockfish/sf-10k/public/3",
+            "chess-stockfish/sf-10k/public/4"
+          ]
+        }
+      ]
+    }
+  ]
+}

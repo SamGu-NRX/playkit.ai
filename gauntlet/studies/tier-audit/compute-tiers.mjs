@@ -27,8 +27,9 @@ import {
   seedsForTier,
   tierSuite,
   CELL_KINDS,
+  NA_CELLS,
 } from './audit-lib.mjs';
-import { bootstrapCi95, mean, round6, sampleSd, seedsNeeded } from './lib.mjs';
+import { bootstrapCi95, bootstrapEfficiencyCi95, mean, round6, sampleSd, seedsNeeded } from './lib.mjs';
 import { extractExampleToken } from './no-skill.mjs';
 
 const root = auditDir();
@@ -68,6 +69,8 @@ for (const [gameId, gameRaw] of Object.entries(GAMES)) {
      * @type {Map<string, { raw: number, profiles: Record<string, number | null> }>}
      */
     const cellScores = new Map();
+    /** @type {Map<string, boolean>} */
+    const cellSolved = new Map();
     /** @type {Record<string, string | null>} */
     const sources = {};
 
@@ -79,17 +82,20 @@ for (const [gameId, gameRaw] of Object.entries(GAMES)) {
         if (reused) {
           sources[cell] = 'skill-dial-solo';
           for (const seed of seeds) {
+            const row = solo.get(`${gameId}|${tier.id}|${p}|${seed}`);
             cellScores.set(`${cell}|${seed}`, {
-              raw: solo.get(`${gameId}|${tier.id}|${p}|${seed}`).raw,
+              raw: row.raw,
               profiles: {},
             });
+            cellSolved.set(`${cell}|${seed}`, row.solved);
           }
           continue;
         }
       }
       const bundle = join(root, 'bundles', gameId, tier.id, cell);
+      const na = NA_CELLS.get(`${gameId}/${tier.id}|${cell}`) ?? NA_CELLS.get(`${gameId}|${cell}`);
       if (!existsSync(join(bundle, 'run.json'))) {
-        sources[cell] = 'missing';
+        sources[cell] = na ? `not-applicable: ${na}` : 'missing';
         continue;
       }
       sources[cell] = 'tier-audit';
@@ -102,10 +108,14 @@ for (const [gameId, gameRaw] of Object.entries(GAMES)) {
         trajectories.push(trajectory);
         const raw = rawEpisodeScore(game, tier, trajectory);
         cellScores.set(`${cell}|${seed}`, { raw: raw.e, profiles: {} });
+        cellSolved.set(`${cell}|${seed}`, raw.solved);
       }
       // Mirror gate: the scoring layer itself, per profile, must agree with
-      // the audit's per-episode mirror to 6 decimals for this group.
+      // the audit's per-episode mirror to 6 decimals for this group. score()
+      // refuses suites with no benchmark games, so the gate only applies to
+      // benchmark games; non-benchmark mirrors are pinned by the study tests.
       for (const profile of PROFILES) {
+        if (!game.spec.benchmark) break;
         if (profile === 'chance-adjusted' && r === null) continue;
         let published;
         try {
@@ -122,9 +132,18 @@ for (const [gameId, gameRaw] of Object.entries(GAMES)) {
           const raw = rawEpisodeScore(game, tier, t);
           return /** @type {number} */ (profileScores(raw.e, tier, r)[profile]);
         });
-        if (round6(published) !== round6(mean(mirrorScores))) {
+        // Official tier statistic: efficiency tiers cap the mean by the
+        // solved fraction (scoring/score.js); outcome tiers are the plain mean.
+        const mirrorPoint =
+          tier.scoring === 'efficiency'
+            ? Math.min(
+                trajectories.filter((t) => rawEpisodeScore(game, tier, t).solved).length / trajectories.length,
+                mean(mirrorScores)
+              )
+            : mean(mirrorScores);
+        if (round6(published) !== round6(mirrorPoint)) {
           throw new Error(
-            `mirror gate ${gameId}/${tier.id}/${cell}/${profile}: score() ${published} != mirror ${mean(mirrorScores)}`
+            `mirror gate ${gameId}/${tier.id}/${cell}/${profile}: score() ${published} != mirror ${mirrorPoint}`
           );
         }
         mirrorChecks += 1;
@@ -144,6 +163,37 @@ for (const [gameId, gameRaw] of Object.entries(GAMES)) {
     for (const cell of CELL_KINDS) {
       if (sources[cell] === 'missing') continue;
       cells[cell] = {};
+      const pairs = seeds
+        .map((s) => {
+          const sc = cellScores.get(`${cell}|${s}`);
+          return sc === undefined ? null : { e: sc.raw, solved: cellSolved.get(`${cell}|${s}`) === true };
+        })
+        .filter((x) => x !== null);
+      if (tier.scoring === 'efficiency') {
+        // Official efficiency tier statistic: min(solvedFraction, mean e),
+        // unchanged under every profile (random scores exactly 0 there).
+        const stats =
+          pairs.length === 0
+            ? null
+            : (() => {
+                const solvedFraction = pairs.filter((p) => p.solved).length / pairs.length;
+                return { solvedFraction, meanE: mean(pairs.map((p) => p.e)) };
+              })();
+        for (const profile of PROFILES) {
+          if (!stats) {
+            cells[cell][profile] = { n: 0, mean: null, sd: null, ci95: null };
+            continue;
+          }
+          const [lo, hi] = bootstrapEfficiencyCi95(pairs, `tier-audit/${gameId}/${tier.id}/${cell}/${profile}`);
+          cells[cell][profile] = {
+            n: pairs.length,
+            mean: round6(Math.min(stats.solvedFraction, stats.meanE)),
+            sd: round6(sampleSd(pairs.map((p) => p.e))),
+            ci95: [round6(lo), round6(hi)],
+          };
+        }
+        continue;
+      }
       for (const profile of PROFILES) {
         const values = seeds
           .map((s) => cellScores.get(`${cell}|${s}`)?.profiles[profile])

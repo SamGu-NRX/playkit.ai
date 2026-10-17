@@ -22,6 +22,26 @@ import { CELL_KINDS } from './audit-lib.mjs';
 
 const root = auditDir();
 
+/**
+ * Every .json file under `dir`, as slash-separated paths relative to it.
+ *
+ * @param {string} dir
+ * @returns {Promise<string[]>}
+ */
+async function walk(dir) {
+  /** @type {string[]} */
+  const out = [];
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      for (const rel of await walk(join(dir, entry.name))) out.push(`${entry.name}/${rel}`);
+    } else if (entry.name.endsWith('.json') && entry.name !== 'run.json' && entry.name !== 'suite.json') {
+      out.push(entry.name);
+    }
+  }
+  return out;
+}
+
+
 let bundles = 0;
 let trajectories = 0;
 /** @type {string[]} */
@@ -42,16 +62,17 @@ for (const [gameId, game] of Object.entries(GAMES)) {
       const expected = new Set(seeds);
       const seen = new Set();
       const dir = join(bundle, gameId, tier.id);
+      /** Trajectories nest under the full seed path (game/tier/public/N.json
+       * relative to the cell's game/tier directory). Walk recursively. */
       /** @type {string[]} */
-      let files = [];
+      let rels = [];
       try {
-        files = await readdir(dir);
-      } catch {
-        failures.push(`${gameId}/${tier.id}/${cell}: no trajectory directory`);
+        rels = await walk(dir);
+      } catch (err) {
+        failures.push(`${gameId}/${tier.id}/${cell}: no trajectory directory (${err.message})`);
       }
-      for (const f of files) {
-        if (!f.endsWith('.json') || f === 'run.json') continue;
-        const seed = f.slice(0, -'.json'.length);
+      for (const rel of rels) {
+        const seed = rel.slice(0, -'.json'.length);
         if (!expected.has(seed)) {
           failures.push(`${gameId}/${tier.id}/${cell}: stray trajectory ${seed}`);
           continue;
@@ -59,14 +80,14 @@ for (const [gameId, game] of Object.entries(GAMES)) {
         seen.add(seed);
         let trajectory;
         try {
-          trajectory = JSON.parse(await readFile(join(dir, f), 'utf8'));
+          trajectory = JSON.parse(await readFile(join(dir, rel), 'utf8'));
         } catch (err) {
           failures.push(`${gameId}/${tier.id}/${cell}/${seed}: unreadable (${err.message})`);
           continue;
         }
-        const verdict = await verifyTrajectory(game, trajectory);
-        if (verdict !== true) {
-          failures.push(`${gameId}/${tier.id}/${cell}/${seed}: replay verify failed`);
+        const verdict = /** @type {*} */ (await verifyTrajectory(game, trajectory));
+        if (!(verdict === true || verdict?.ok === true)) {
+          failures.push(`${gameId}/${tier.id}/${cell}/${seed}: replay verify failed (${JSON.stringify(verdict).slice(0, 200)})`);
           continue;
         }
         trajectories += 1;

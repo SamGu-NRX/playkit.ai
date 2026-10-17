@@ -1,0 +1,27 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "playkit-gauntlet-tier-audit-chess-steel",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "chess",
+      "version": "1.2.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "steel",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/steel/public/0",
+            "chess/steel/public/1",
+            "chess/steel/public/2",
+            "chess/steel/public/3",
+            "chess/steel/public/4"
+          ]
+        }
+      ]
+    }
+  ]
+}

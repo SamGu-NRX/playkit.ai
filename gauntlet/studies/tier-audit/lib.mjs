@@ -129,6 +129,39 @@ export function bootstrapCi95(values, seed, draws = 10_000) {
 }
 
 /**
+ * Percentile 95% bootstrap CI for an efficiency-tier value: each resample
+ * draws episodes jointly (score + solved flag) and computes the official
+ * tier statistic `min(solvedFraction, mean(e))` (scoring/score.js).
+ *
+ * @param {{ e: number, solved: boolean }[]} pairs Episode scores with their solved flags.
+ * @param {string} seed Deterministic bootstrap seed.
+ * @param {number} [draws]
+ * @returns {[number, number]} The 2.5th and 97.5th percentile of the statistic.
+ */
+export function bootstrapEfficiencyCi95(pairs, seed, draws = 10_000) {
+  if (pairs.length === 0) throw new Error('bootstrap of empty array');
+  if (pairs.length === 1) {
+    const v = Math.min(pairs[0].solved ? 1 : 0, pairs[0].e);
+    return [v, v];
+  }
+  const stream = seededStream(seed);
+  const stats = new Array(draws);
+  const n = pairs.length;
+  for (let d = 0; d < draws; d++) {
+    let sum = 0;
+    let solved = 0;
+    for (let i = 0; i < n; i++) {
+      const p = pairs[stream.int(0, n - 1)];
+      sum += p.e;
+      if (p.solved) solved++;
+    }
+    stats[d] = Math.min(solved / n, sum / n);
+  }
+  stats.sort((a, b) => a - b);
+  return [stats[Math.floor(0.025 * (draws - 1))], stats[Math.floor(0.975 * (draws - 1))]];
+}
+
+/**
  * Bootstrap power: the probability that n seeds drawn (with replacement)
  * from the empirical paired-difference distribution support the difference
  * at two-sided alpha = 0.05.

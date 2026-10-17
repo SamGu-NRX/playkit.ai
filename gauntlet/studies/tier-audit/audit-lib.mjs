@@ -30,7 +30,32 @@ export const CELL_KINDS = /** @type {const} */ ([
  *
  * @type {Record<string, number>}
  */
-export const SEED_CAPS = { 'chess-puzzles': 12 };
+export const SEED_CAPS = {};
+
+/**
+ * Cells that cannot exist for structural reasons, keyed `<game>[/<tier>]|<cell>`
+ * (a bare game key covers every tier of that game), with the reason. The
+ * runner skips them (logging `na`), and compute-tiers records them as
+ * `not-applicable: <reason>` in cellSources instead of a bare `missing`.
+ *
+ * @type {Map<string, string>}
+ */
+export const NA_CELLS = new Map([
+  ['tictactoe|dial-0', 'no engine baseline to dial: tictactoe ships no baseline agents'],
+  ['tictactoe|dial-05', 'no engine baseline to dial: tictactoe ships no baseline agents'],
+  ['tictactoe|dial-1', 'no engine baseline to dial: tictactoe ships no baseline agents'],
+  ['chess-puzzles|dial-0', 'no engine baseline to dial: chess-puzzles ships no baseline agents'],
+  ['chess-puzzles|dial-05', 'no engine baseline to dial: chess-puzzles ships no baseline agents'],
+  ['chess-puzzles|dial-1', 'no engine baseline to dial: chess-puzzles ships no baseline agents'],
+  ['chess-stockfish|dial-0', 'no engine baseline to dial: chess-stockfish ships no baseline agents'],
+  ['chess-stockfish|dial-05', 'no engine baseline to dial: chess-stockfish ships no baseline agents'],
+  ['chess-stockfish|dial-1', 'no engine baseline to dial: chess-stockfish ships no baseline agents'],
+  ['cube/cube-5|dial-05', 'expert optimal solver refuses scrambles beyond its proven 10-turn range'],
+  ['cube/cube-7|dial-05', 'expert optimal solver refuses scrambles beyond its proven 10-turn range'],
+  ['cube/cube-9|dial-05', 'expert optimal solver refuses scrambles beyond its proven 10-turn range'],
+  ['sudoku|dial-05', 'expert solver hits contradictions on half-mixed states'],
+]);
+
 
 /**
  * Public seeds the audit runs for one tier (the tier's full public list,
@@ -59,9 +84,15 @@ export function tierSuite(gameId, tierId) {
   if (!game) throw new Error(`unknown game ${gameId}`);
   const tier = game.spec.tiers.find((/** @type {{ id: string }} */ t) => t.id === tierId);
   if (!tier) throw new Error(`unknown tier ${gameId}/${tierId}`);
+
   // A one-tier VIEW of the game: spec is copied, not mutated, and the tier
-  // list is replaced — the registry object itself is never touched.
-  const oneTierView = { ...game, spec: { ...game.spec, tiers: [tier] }, tiers: [tier] };
+  // list is replaced with a rank-1 renumbering — buildSuite demands ranks
+  // consecutive from 1, and the registry object itself is never touched.
+  const oneTierView = {
+    ...game,
+    spec: { ...game.spec, tiers: [{ ...tier, rank: 1 }] },
+    tiers: [tier],
+  };
   const suite = buildSuite([oneTierView], {
     split: 'public',
     id: `playkit-gauntlet-tier-audit-${gameId}-${tierId}`,
@@ -138,6 +169,7 @@ export async function loadSoloReuse() {
     if (![0, 0.5, 1].includes(row.p)) continue;
     map.set(`${row.game}|${row.tier}|${row.p}|${row.seed}`, {
       raw: row.profilesExact['rhae-v1'],
+      solved: row.solved === true,
       profiles: {
         'rhae-v1': row.profilesExact['rhae-v1'],
         'squared-outcome': row.profilesExact['squared-outcome'],

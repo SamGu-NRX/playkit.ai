@@ -495,6 +495,35 @@ test('re-costing a kept call and re-chaining fails the bundle on cost mismatch',
     await rm(outDir, { recursive: true, force: true });
   }
 });
+test('a kept usage line the runner discarded (episode time limit) still verifies', async () => {
+  // When an episode time limit ends an episode mid-call, the runner discards
+  // the late reply but the provider billed the call: the kept episode's ledger
+  // carries one more kept usage line than the trajectory has usage steps.
+  const multi = makeMultiCallGame('bundle-multi-overflow', 4, 1);
+  const suite = buildSuite([multi], { split: 'public' });
+  const outDir = await tempDir('ledger-overflow');
+  try {
+    await runSuite({ suite, games: [multi], agentFactory: takeAtFiveCentsFactory({ text: 'go' }), outDir, maxUsdTotal: 0.5 });
+    // Append the discarded call as an extra trailing kept usage line.
+    await rewriteLedgerReChained(outDir, (lines) => [
+      ...lines,
+      { kind: 'call', invocation: 0, job: lines.find((l) => l.kind === 'call')?.job ?? '', call: 4, costUsd: 0.03, inputTokens: 10, outputTokens: 1, usage: true, kept: true, chargedAtReservation: false },
+    ]);
+
+    const bundle = await verifyBundle(outDir, [multi]);
+    assert.equal(bundle.ok, true, 'a discarded late reply is recorded spend, not a verification problem');
+    assert.ok(bundle.ledger);
+    assert.deepEqual(bundle.ledger.problems, []);
+    assert.ok(
+      bundle.ledger.totalUsd + 1e-9 >= bundle.ledger.trajectoryUsd + 0.03 - 1e-9,
+      'the recorded total covers the trajectories plus the discarded call'
+    );
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+
 
 test('an unparseable ledger line fails the bundle', async () => {
   const outDir = await tempDir('ledger-garbage');

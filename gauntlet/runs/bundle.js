@@ -192,9 +192,14 @@ async function verifyBundleSpendLedger(outDir, jobs) {
     const keptUsageLines = ledger.lines
       .map((l) => l.value)
       .filter((v) => v && v.kind === 'call' && v.kept === true && v.job === job.key && v.usage === true);
-    if (keptUsageLines.length !== usageSteps.length) {
+    // A kept episode may carry MORE kept usage lines than its trajectory has
+    // usage steps: when an episode time limit ends the episode mid-call, the
+    // runner discards the late reply, but the provider still billed the call
+    // and the ledger records that spend on the kept episode. The reverse — a
+    // trajectory step with no kept ledger line — is always a problem.
+    if (usageSteps.length > keptUsageLines.length) {
       problems.push(
-        `${job.key}: ${usageSteps.length} trajectory usage step(s) are not covered by a kept ledger line (the kept ledger lines account for ${keptUsageLines.length})`
+        `${job.key}: ${usageSteps.length - keptUsageLines.length} trajectory usage step(s) are not covered by a kept ledger line (the kept ledger lines account for ${keptUsageLines.length})`
       );
       continue;
     }

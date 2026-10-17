@@ -29,7 +29,7 @@ import { join, resolve } from 'node:path';
 
 import { GAMES } from '../../games/index.js';
 import { runSuite } from '../../runs/run.js';
-import { seedsForTier, tierSuite, loadSoloReuse, soloVersionAtStudyHead, auditDir, repoRoot, CELL_KINDS } from './audit-lib.mjs';
+import { seedsForTier, tierSuite, loadSoloReuse, soloVersionAtStudyHead, soloReuseCurrent, cellBundleVerdict as cellComplete, auditDir, repoRoot, CELL_KINDS } from './audit-lib.mjs';
 import { extractExampleToken, createCopyExampleAgent, createFirstLegalAgent } from './no-skill.mjs';
 import { NA_CELLS } from './audit-lib.mjs';
 
@@ -87,7 +87,17 @@ for (const gameId of Object.keys(GAMES)) {
       }
       if (['dial-0', 'dial-05', 'dial-1'].includes(cell)) {
         const p = cell === 'dial-0' ? 0 : cell === 'dial-05' ? 0.5 : 1;
-        if (coveredBySolo) {
+        // Reuse currency: the solo study's dial rows are valid only while the
+        // game version matches the one it measured (#108 bumped mastermind
+        // and wordle; stale solo rows must not stand in for fresh dial cells).
+        const soloCurrent = coveredBySolo && (await soloReuseCurrent(gameId));
+        if (coveredBySolo && !soloCurrent) {
+          log(
+            `reuse STALE ${gameId}/${tier.id} ${cell}: solo study measured game version ${soloVersion ?? 'unknown'}, ` +
+              `registry is at ${game.spec.version}; running the cell`
+          );
+        }
+        if (soloCurrent) {
           const missing = seeds.filter((s) => !reuse.has(`${gameId}|${tier.id}|${p}|${s}`));
           if (missing.length === 0) {
             log(`reuse ${gameId}/${tier.id} ${cell} (${seeds.length} seeds, solo v${soloVersion ?? '?'})`);
@@ -96,10 +106,12 @@ for (const gameId of Object.keys(GAMES)) {
           log(`reuse INCOMPLETE ${gameId}/${tier.id} ${cell}: ${missing.length} missing, running the cell`);
         }
         const bundle = join(root, 'bundles', gameId, tier.id, cell);
-        if (await cellComplete(bundle, gameId, tier.id, seeds)) {
-          log(`done ${gameId}/${tier.id} ${cell}`);
+        const dialVerdict = await cellComplete(bundle, gameId, tier.id, seeds);
+        if (dialVerdict.complete) {
+          log(`done ${gameId}/${tier.id} ${cell} (${dialVerdict.reason})`);
           continue;
         }
+        log(`re-run ${gameId}/${tier.id} ${cell}: ${dialVerdict.reason}`);
         const { suite } = tierSuite(gameId, tier.id);
         const suitePath = join(root, 'suites', `${gameId}--${tier.id}.json`);
         await mkdir(join(root, 'suites'), { recursive: true });
@@ -134,10 +146,12 @@ for (const gameId of Object.keys(GAMES)) {
         }
       } else if (cell === 'copy-example' || cell === 'first-legal') {
         const bundle = join(root, 'bundles', gameId, tier.id, cell);
-        if (await cellComplete(bundle, gameId, tier.id, seeds)) {
-          log(`done ${gameId}/${tier.id} ${cell}`);
+        const noSkillVerdict = await cellComplete(bundle, gameId, tier.id, seeds);
+        if (noSkillVerdict.complete) {
+          log(`done ${gameId}/${tier.id} ${cell} (${noSkillVerdict.reason})`);
           continue;
         }
+        log(`re-run ${gameId}/${tier.id} ${cell}: ${noSkillVerdict.reason}`);
         const { suite } = tierSuite(gameId, tier.id);
         const example = extractExampleToken(game.spec.rulesText);
         const exampleInfo =
@@ -157,24 +171,6 @@ for (const gameId of Object.keys(GAMES)) {
       }
     }
   }
-}
-
-/**
- * True when the bundle has run.json and a trajectory for every seed.
- *
- * @param {string} bundle
- * @param {string[]} seeds
- */
-async function cellComplete(bundle, gameId, tierId, seeds) {
-  if (!existsSync(join(bundle, 'run.json'))) return false;
-  try {
-    const run = JSON.parse(await readFile(join(bundle, 'run.json'), 'utf8'));
-    const count = Number(run?.total?.episodes ?? 0);
-    if (count >= seeds.length) return true;
-  } catch {
-    /* fall through to file listing */
-  }
-  return seeds.every((s) => existsSync(join(bundle, gameId, tierId, `${s}.json`)));
 }
 
 log('cells complete for the selection');

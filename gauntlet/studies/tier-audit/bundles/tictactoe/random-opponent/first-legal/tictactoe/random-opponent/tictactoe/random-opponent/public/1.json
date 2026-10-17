@@ -1,0 +1,150 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "tictactoe",
+    "version": "1.2.0"
+  },
+  "tier": "random-opponent",
+  "seed": "tictactoe/random-opponent/public/1",
+  "split": "public",
+  "agent": {
+    "id": "first-legal",
+    "track": "baseline",
+    "seat": 1
+  },
+  "opponents": [
+    {
+      "seat": 0,
+      "id": "random-opponent"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "6f8dcfa582b8b7fe",
+      "reply": {
+        "text": "c1"
+      },
+      "action": "c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "3d03f304c0521eac",
+      "reply": {
+        "text": "a1"
+      },
+      "action": "a1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "b8a3c116fd0a8610",
+      "reply": {
+        "text": "a2"
+      },
+      "action": "a2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "eb64d56106de4747",
+      "reply": {
+        "text": "a3"
+      },
+      "action": "a3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "ef48fe057391e539",
+      "reply": {
+        "text": "b3"
+      },
+      "action": "b3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "c26d5daf80b443b8",
+      "reply": {
+        "text": "b1"
+      },
+      "action": "b1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "fb19e93db3c60979",
+      "reply": {
+        "text": "b2"
+      },
+      "action": "b2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "a0cff85d3309e99b",
+      "reply": {
+        "text": "c2"
+      },
+      "action": "c2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "c2828260a8e5ef9e",
+      "reply": {
+        "text": "c3"
+      },
+      "action": "c3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.5,
+        0.5
+      ],
+      "raw": [
+        "draw",
+        "draw"
+      ],
+      "reason": "draw: the board filled with no line"
+    },
+    "agentActions": 4,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T00:08:57.572Z",
+  "finishedAt": "2026-10-17T00:08:57.572Z"
+}

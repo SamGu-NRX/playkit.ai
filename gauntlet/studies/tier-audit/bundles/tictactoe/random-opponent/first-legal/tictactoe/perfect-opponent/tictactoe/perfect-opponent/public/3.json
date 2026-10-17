@@ -1,0 +1,102 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "tictactoe",
+    "version": "1.2.0"
+  },
+  "tier": "perfect-opponent",
+  "seed": "tictactoe/perfect-opponent/public/3",
+  "split": "public",
+  "agent": {
+    "id": "first-legal",
+    "track": "baseline",
+    "seat": 1
+  },
+  "opponents": [
+    {
+      "seat": 0,
+      "id": "minimax-perfect"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "64ca9b6aa47312da",
+      "reply": {
+        "text": "a1"
+      },
+      "action": "a1",
+      "invalid": false,
+      "usage": null,
+      "ms": 110
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "caca97a178050dc6",
+      "reply": {
+        "text": "a2"
+      },
+      "action": "a2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "aef35f427e5c50df",
+      "reply": {
+        "text": "b2"
+      },
+      "action": "b2",
+      "invalid": false,
+      "usage": null,
+      "ms": 2
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "7f8ba55878f0a7cf",
+      "reply": {
+        "text": "a3"
+      },
+      "action": "a3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "32476854d9336333",
+      "reply": {
+        "text": "c3"
+      },
+      "action": "c3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1,
+        0
+      ],
+      "raw": [
+        "win",
+        "loss"
+      ],
+      "reason": "seat 0 (X) won with three in a row"
+    },
+    "agentActions": 2,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T00:08:58.514Z",
+  "finishedAt": "2026-10-17T00:08:58.626Z"
+}

@@ -1,0 +1,118 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "tictactoe",
+    "version": "1.2.0"
+  },
+  "tier": "blunder-opponent",
+  "seed": "tictactoe/blunder-opponent/public/5",
+  "split": "public",
+  "agent": {
+    "id": "copy-example",
+    "track": "baseline",
+    "seat": 1
+  },
+  "opponents": [
+    {
+      "seat": 0,
+      "id": "minimax-blunder"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "64eacd535abb3b51",
+      "reply": {
+        "text": "a3"
+      },
+      "action": "a3",
+      "invalid": false,
+      "usage": null,
+      "ms": 107
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "68a5c867e2681d5f",
+      "reply": {
+        "text": "a1",
+        "meta": {
+          "copyExample": {
+            "source": "none",
+            "token": null,
+            "played": false,
+            "fallback": "first-legal"
+          }
+        }
+      },
+      "action": "a1",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "737f381a4a5ffa65",
+      "reply": {
+        "text": "c1"
+      },
+      "action": "c1",
+      "invalid": false,
+      "usage": null,
+      "ms": 2
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "f5af96391187bb25",
+      "reply": {
+        "text": "a2",
+        "meta": {
+          "copyExample": {
+            "source": "none",
+            "token": null,
+            "played": false,
+            "fallback": "first-legal"
+          }
+        }
+      },
+      "action": "a2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "add1c32c2e37c0c4",
+      "reply": {
+        "text": "b2"
+      },
+      "action": "b2",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1,
+        0
+      ],
+      "raw": [
+        "win",
+        "loss"
+      ],
+      "reason": "seat 0 (X) won with three in a row"
+    },
+    "agentActions": 2,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T00:08:56.532Z",
+  "finishedAt": "2026-10-17T00:08:56.641Z"
+}

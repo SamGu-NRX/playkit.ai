@@ -131,7 +131,12 @@ function normalized(s) {
   return s.replace(/\s+/g, '').toUpperCase();
 }
 
-/** @returns {{ game: string, tier: string | null, candidate: string }[]} matches */
+/**
+ * @param {string} gameId
+ * @param {string} tierId
+ * @param {string} candidate
+ * @returns {{ game: string, tier: string | null, candidate: string }[]} matches
+ */
 function allowedMatches(gameId, tierId, candidate) {
   return ALLOWED.filter(
     (entry) => entry.game === gameId && (entry.tier === null || entry.tier === tierId) && entry.candidate === candidate
@@ -141,7 +146,7 @@ function allowedMatches(gameId, tierId, candidate) {
 test('every quoted example action is legal at the initial state of public seed 0', () => {
   /** @type {string[]} */
   const failures = [];
-  /** @type {string[]} */
+  /** @type {{ game: string, tierId: string, candidate: string }[]} */
   const allowedHits = [];
 
   for (const game of Object.values(GAMES)) {
@@ -149,6 +154,7 @@ test('every quoted example action is legal at the initial state of public seed 0
     for (const tier of spec.tiers) {
       const state = game.reset(tier, publicSeed(spec.id, tier.id, 0));
       const seat = game.toAct(state);
+      if (seat === null) throw new Error(`${spec.id}/${tier.id}: the initial state always has a seat to act`);
       const legal = game.legalActions(state, seat);
 
       /** @type {[string, string, string | null][]} */
@@ -168,7 +174,7 @@ test('every quoted example action is legal at the initial state of public seed 0
           const allowed = allowedMatches(spec.id, tier.id, candidate);
           if (allowed.length > 0) {
             for (const entry of allowed) {
-              allowedHits.push(`${spec.id}/${tier.id}: "${entry.candidate}" — ${entry.reason}`);
+              allowedHits.push({ game: spec.id, tierId: tier.id, candidate: entry.candidate });
             }
             continue;
           }
@@ -192,7 +198,12 @@ test('every quoted example action is legal at the initial state of public seed 0
   // the reason it exists.
   const stale = ALLOWED.filter(
     (entry) =>
-      !allowedHits.some((hit) => hit.startsWith(`${entry.game}/${entry.tier === null ? '' : entry.tier}: "${entry.candidate}"`))
+      !allowedHits.some(
+        (hit) =>
+          hit.game === entry.game &&
+          (entry.tier === null || hit.tierId === entry.tier) &&
+          hit.candidate === entry.candidate
+      )
   );
 
   assert.equal(failures.length, 0, `examples quoted to agents must be legal:\n${failures.join('\n')}`);

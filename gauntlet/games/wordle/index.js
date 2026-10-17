@@ -48,6 +48,26 @@ const TIER_DEFS = [
 ];
 
 /**
+ * The fixed worked example the observation and the parse feedback quote, per
+ * word length: CRANE on the 5-letter tiers, PITH on the 4-letter tier. Both
+ * are constants taken from the tier's guess list — never from the seed — so
+ * the example cannot depend on the hidden answer. PITH is in the 4-letter
+ * guess list but not the 4-letter answer list, so the quoted example can
+ * never coincide with a possible answer.
+ *
+ * @type {Record<number, string>}
+ */
+const EXAMPLE_GUESS = { 4: 'PITH', 5: 'CRANE' };
+
+/**
+ * @param {number} wordLength
+ * @returns {string}
+ */
+function exampleGuessFor(wordLength) {
+  return EXAMPLE_GUESS[wordLength] ?? 'CRANE';
+}
+
+/**
  * Canonical action for a guess word.
  *
  * @param {string} word
@@ -98,7 +118,7 @@ function legalActionsFor(state) {
 export const wordle = {
   spec: {
     id: 'wordle',
-    version: '1.1.0',
+    version: '1.2.0',
     title: 'Wordle',
     seats: /** @type {1 | 2} */ (1),
     information: /** @type {InformationMode} */ ('hidden'),
@@ -179,7 +199,7 @@ export const wordle = {
     const lines = [
       `Wordle. Guess the hidden ${state.wordLength}-letter word.`,
       'Feedback per guess, one symbol per letter position: G = right letter right place, Y = right letter wrong place, . = letter absent (or exhausted by an earlier duplicate).',
-      'Action format: "guess" followed by the word in capital letters, e.g. "guess CRANE".',
+      `Action format: "guess" followed by the word in capital letters, e.g. "guess ${exampleGuessFor(state.wordLength)}".`,
     ];
     if (state.hardMode) {
       lines.push(
@@ -271,13 +291,13 @@ export const wordle = {
     if (s.length === 0) {
       return {
         ok: false,
-        error: `empty action; use "guess" followed by a ${state.wordLength}-letter word, e.g. "guess ${'CRANE'.slice(0, state.wordLength)}"`,
+        error: `empty action; use "guess" followed by a ${state.wordLength}-letter word, e.g. "guess ${exampleGuessFor(state.wordLength)}"`,
       };
     }
     if (s.length !== state.wordLength || !isUppercaseWord(s)) {
       return {
         ok: false,
-        error: `cannot parse ${JSON.stringify(String(text))} as a ${state.wordLength}-letter word; use "guess" followed by the word in capital letters, e.g. "guess ${'CRANE'.slice(0, state.wordLength)}"`,
+        error: `cannot parse ${JSON.stringify(String(text))} as a ${state.wordLength}-letter word; use "guess" followed by the word in capital letters, e.g. "guess ${exampleGuessFor(state.wordLength)}"`,
       };
     }
     if (!guessesFor(state.wordLength).includes(s)) {

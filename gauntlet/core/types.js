@@ -205,6 +205,10 @@
  *   times the output price), or null when there is no price entry. The run
  *   engine reserves this quote against a maxUsd cap before admitting the
  *   call, so concurrent in-flight calls cannot jointly overshoot the cap.
+ * @property {() => Promise<void>} [dispose] Shut the agent down: engine-backed
+ *   agents (child-process clients) quit their process here. Every wrapper must
+ *   forward it — the runner disposes the actor it was seated, which is the
+ *   wrapper, not the wrapped agent.
  */
 
 /**

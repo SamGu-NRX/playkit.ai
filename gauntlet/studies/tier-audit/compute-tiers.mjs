@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { GAMES } from '../../games/index.js';
 import { score } from '../../scoring/score.js';
 import { loadBaselineFile } from '../../scoring/baselines.js';
+import { soloReuseCurrent, soloVersionAtStudyHead } from './audit-lib.mjs';
 
 import {
   auditDir,

@@ -118,12 +118,21 @@ for (const gameId of Object.keys(GAMES)) {
         await mkdir(join(root, 'suites'), { recursive: true });
         await writeFile(suitePath, JSON.stringify(suite, null, 2) + '\n');
         await clearStaleBundle(bundle, suite, `${gameId}/${tier.id} ${cell}`);
+        // A prior aborted or timed-out attempt leaves its run.json behind
+        // (the CLI's abort path writes it). The wrapper below kills the CLI
+        // once run.json EXISTS, so a stale record would kill the resumed run
+        // seconds in and the cell could never complete. Remove it: resume
+        // replays only the missing seeds, and this attempt writes its own
+        // record when it finishes.
+        await rm(join(bundle, 'run.json'), { force: true });
         const spec = `skill:${p}:baseline:${gameId}:engine`;
         log(`run  ${gameId}/${tier.id} ${cell} agent=${spec} timeout=${timeoutSec}s`);
         const { spawnSync } = await import('node:child_process');
-        // The CLI writes run.json after the last episode, then may hang on
+        // The CLI writes run.json after its last episode, then may hang on
         // leaked engine GTP connections (alpha's engine-dispose gap). Watch
         // for run.json, then kill — the bundle is already complete on disk.
+        // The stale record from any earlier attempt was removed above, so
+        // the only run.json this poll can see is this attempt's own.
         const outDir = bundle;
         const wrap = [
           'node cli/gauntlet.js run --suite', JSON.stringify(suitePath),

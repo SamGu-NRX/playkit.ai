@@ -1,0 +1,1263 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "mini",
+  "seed": "mastermind/mini/public/5",
+  "split": "public",
+  "agent": {
+    "id": "community-example-patch:mastermind-mini-corrected:community-assisted:model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-0.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "ACTION: guess AAA",
+        "usage": {
+          "inputTokens": 2036,
+          "outputTokens": 16,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 2,
+            "retried": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-spfp9AuQqd353wj1ZqjNSQGGliu16kzw",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAA",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 2036,
+        "outputTokens": 16,
+        "costUsd": null
+      },
+      "ms": 253
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "808569eaab96eb21",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1004,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-nLsdUElE29ZCTYCkBXvO3vmmjsTHsPoP",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1004,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 90
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "89e15b94d9be6df1",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1019,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-BN0LypArHcNFFn0zWXma8j9ivS7jEkUv",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1019,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1182
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3b5c3bd70cb5a52c",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1033,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-CAA4v2Zy8x8f8wMAI7K7xQDQOC36Q4Kl",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1033,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1115
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a1230f7ef981a9fa",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1047,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-JpQaH6r65prclIVGgLhhgNTG4w9fmNQG",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1047,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1075
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e4081db14939ada1",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1061,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-NP5CkZfjLNIm51oPHuEleNnlnhZJYzAN",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1061,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1204
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f6e233b932e1851b",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1075,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-EO7hFcsbsf01QszsOYZTq1CIbYsLtwOU",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1075,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1184
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "fad7d17641bd0b3a",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1089,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-oGjrsWdHtst1X7HOslMA5G8toD4JdlR4",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1089,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1231
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "755ddab85c1dccb8",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1103,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-E9nLKr38Ri9Yd3hg0vGebr8ZqFr9CyVb",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1103,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1218
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f2baeec603542032",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1118,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-FTJBH2h67ehznYxeqcwj8VzByw63gf3T",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1118,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1287
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "6e34696890b03a59",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1133,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-ucM4x2ykCnO0VOqFIrQuTgdFqwbtlTqr",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1133,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1216
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "529a48177ca5a049",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1148,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-8XmumuHcizATQjdm5CuWW8uiCfXnla2f",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1148,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1232
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "58c3a51144f3575a",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1163,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-VC1VzlrU2ep5XCK5hUtTmdGULNJAYAsd",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1163,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1157
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "985c946e850004a6",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1178,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-0fAHBDsDjGfgcr86ihN3gM7iOY3fEis5",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1178,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1135
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "bf54da16f54ce0e5",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1193,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-rJYG9XKwb3437xOrVHbptYBbZjWNnlya",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1193,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1139
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "02de048b7106e80d",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1208,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-5zCUWZBmkJwJl99kvmnKphcKY8YsavRG",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1208,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1184
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "737bce7577d640b0",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1222,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-xUrKIJ4qzkXkLbolrBC2HoFhX60GH0Rn",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1222,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1239
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "faf3d1145deb2e82",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1237,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-9RSiKkRZ1axdqyUt2MXjBrNryc070uHd",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1237,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1191
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a480b3053789f979",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1252,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-wOlsmWwgTHVIypCetn1ixjnn8cxAUJ3m",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1252,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1222
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "dc459ab94ce8fc74",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1267,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-qf6qPcNnOZrjEerAlOquOnA3ZJOlTGIU",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1267,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1189
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "5380e9377c47f066",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1282,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-pJRsHWAmYWvJZGGjfm7jHoN3kRDsG2uB",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1282,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1159
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "908947d012dc1aa3",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1297,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-KWopqIn4pjLm0Nj4DlYg9Yn54RB78CFI",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1297,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1190
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e18fca184bd20c11",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1312,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-HfsjfVshnJ5AXtYO1decD8WcLkPr5m9j",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1312,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1170
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "8c733c777aab62e4",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1327,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-wRJ8Ze0EIVjpMVNmDvKPrsNHB2VuYNDJ",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1327,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1257
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "adfee7471baa59a6",
+      "reply": {
+        "text": "ACTION: guess AAB",
+        "usage": {
+          "inputTokens": 1342,
+          "outputTokens": 6,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 1,
+            "retried": false
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-yntRIVPpMuj30Ni7NnkWf5XMKj6ugOqB",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess AAB",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 1342,
+        "outputTokens": 6,
+        "costUsd": null
+      },
+      "ms": 1188
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "unsolved: the 25-guess budget ran out without finding the secret, reference par 4",
+      "solved": false,
+      "par": 4
+    },
+    "agentActions": 25,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T00:25:04.099Z",
+  "finishedAt": "2026-10-17T00:25:31.818Z"
+}

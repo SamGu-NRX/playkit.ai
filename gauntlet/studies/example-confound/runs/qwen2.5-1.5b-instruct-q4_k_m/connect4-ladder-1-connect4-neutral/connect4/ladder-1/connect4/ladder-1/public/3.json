@@ -1,0 +1,241 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "connect4",
+    "version": "1.1.0"
+  },
+  "tier": "ladder-1",
+  "seed": "connect4/ladder-1/public/3",
+  "split": "public",
+  "agent": {
+    "id": "community-example-patch:connect4-ladder-1-neutral:model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "community",
+    "seat": 1,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [
+    {
+      "seat": 0,
+      "id": "random-opponent"
+    }
+  ],
+  "steps": [
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "c54e3fe4e76c51a8",
+      "reply": {
+        "text": "7",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "connect4-ladder-1-neutral",
+            "applied": [
+              {
+                "field": "rules",
+                "find": "the column number alone, e.g. \"4\" drops into column 4. Documented alternates: \"column 4\", \"col 4\", \"play 4\", \"drop 4\", \"place 4\", \"move 4\", uppercase",
+                "replaceWith": "the column number alone, 1 to 7. Documented alternates: \"column N\", \"col N\", \"play N\", \"drop N\", \"place N\", \"move N\" for a column number N, uppercase",
+                "occurrences": 1
+              }
+            ]
+          },
+          "retries": 0,
+          "responseId": "chatcmpl-fuqVmfsgvBlqX0As3zTrpULIhrxkEr6K",
+          "reasoningChars": 0
+        }
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 681
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "db9f343adc15bf33",
+      "reply": {
+        "text": "3"
+      },
+      "action": "3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "39e64e7e45c9fb14",
+      "reply": {
+        "text": "7",
+        "usage": {
+          "inputTokens": 437,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "connect4-ladder-1-neutral",
+            "applied": [
+              {
+                "field": "rules",
+                "find": "the column number alone, e.g. \"4\" drops into column 4. Documented alternates: \"column 4\", \"col 4\", \"play 4\", \"drop 4\", \"place 4\", \"move 4\", uppercase",
+                "replaceWith": "the column number alone, 1 to 7. Documented alternates: \"column N\", \"col N\", \"play N\", \"drop N\", \"place N\", \"move N\" for a column number N, uppercase",
+                "occurrences": 1
+              }
+            ]
+          },
+          "retries": 0,
+          "responseId": "chatcmpl-47waQma9BKTb1UboPvFI1mIb5LECuB7w",
+          "reasoningChars": 0
+        }
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 437,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 684
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "7a4580dc3b00f9ae",
+      "reply": {
+        "text": "7"
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "ba0b74c413d3176f",
+      "reply": {
+        "text": "7",
+        "usage": {
+          "inputTokens": 439,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "connect4-ladder-1-neutral",
+            "applied": [
+              {
+                "field": "rules",
+                "find": "the column number alone, e.g. \"4\" drops into column 4. Documented alternates: \"column 4\", \"col 4\", \"play 4\", \"drop 4\", \"place 4\", \"move 4\", uppercase",
+                "replaceWith": "the column number alone, 1 to 7. Documented alternates: \"column N\", \"col N\", \"play N\", \"drop N\", \"place N\", \"move N\" for a column number N, uppercase",
+                "occurrences": 1
+              }
+            ]
+          },
+          "retries": 0,
+          "responseId": "chatcmpl-XwKgqoHLQ5J4RV9d83ZbU0P2myAGgOGy",
+          "reasoningChars": 0
+        }
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 439,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 353
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "18d2bd2b3b91d884",
+      "reply": {
+        "text": "3"
+      },
+      "action": "3",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 1,
+      "by": "agent",
+      "observationHash": "b44009d5e91bf207",
+      "reply": {
+        "text": "7",
+        "usage": {
+          "inputTokens": 440,
+          "outputTokens": 2,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "connect4-ladder-1-neutral",
+            "applied": [
+              {
+                "field": "rules",
+                "find": "the column number alone, e.g. \"4\" drops into column 4. Documented alternates: \"column 4\", \"col 4\", \"play 4\", \"drop 4\", \"place 4\", \"move 4\", uppercase",
+                "replaceWith": "the column number alone, 1 to 7. Documented alternates: \"column N\", \"col N\", \"play N\", \"drop N\", \"place N\", \"move N\" for a column number N, uppercase",
+                "occurrences": 1
+              }
+            ]
+          },
+          "retries": 0,
+          "responseId": "chatcmpl-y0kkY3XobjbnGDyyD0hjmKvzfIVuQPW4",
+          "reasoningChars": 0
+        }
+      },
+      "action": "7",
+      "invalid": false,
+      "usage": {
+        "inputTokens": 440,
+        "outputTokens": 2,
+        "costUsd": null
+      },
+      "ms": 367
+    },
+    {
+      "seat": 0,
+      "by": "opponent",
+      "observationHash": "4d16f45632a72c77",
+      "reply": {
+        "text": "5"
+      },
+      "action": "5",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        1,
+        0
+      ],
+      "raw": [
+        "win",
+        "loss"
+      ],
+      "reason": "seat 0 (X) connected four after 11 discs"
+    },
+    "agentActions": 4,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T00:33:59.341Z",
+  "finishedAt": "2026-10-17T00:34:01.427Z"
+}

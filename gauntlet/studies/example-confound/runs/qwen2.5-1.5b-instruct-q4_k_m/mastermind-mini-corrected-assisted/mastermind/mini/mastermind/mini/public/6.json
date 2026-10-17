@@ -1,0 +1,196 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "mastermind",
+    "version": "1.0.0"
+  },
+  "tier": "mini",
+  "seed": "mastermind/mini/public/6",
+  "split": "public",
+  "agent": {
+    "id": "community-example-patch:mastermind-mini-corrected:community-assisted:model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+    "track": "community",
+    "seat": 0,
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "provider": "openai-chat",
+    "dryRun": false
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "guess ABA ACTION: guess ABA",
+        "usage": {
+          "inputTokens": 3090,
+          "outputTokens": 30,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-O9BSI7YeDSysy5qR44rFxQCOpa73Ab22",
+            "reasoningChars": 0
+          }
+        }
+      },
+      "action": "guess ABA ACTION: guess ABA",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3090,
+        "outputTokens": 30,
+        "costUsd": null
+      },
+      "ms": 1072
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "guess ABD, guess ACD, guess ADA, guess ADB, guess ADC, guess ADD, guess BAA, guess BAB, guess BAC, guess BAD, guess BBA, guess BBB, guess BBC, guess BBD, guess BCA, guess BCB, guess BCC, guess BCD, guess BDA, guess BDB, guess BDC, guess BDD, guess CAA, guess CAB, guess CAC, guess CAD, guess CBA, guess CBB, guess CBC, guess CBD, guess CCA, guess CCB, guess CCC, guess CCD, guess CDA, guess CDB, guess CDC, guess CDD, guess DAA, guess DAB, guess DAC, guess DAD, guess DBA, guess DBB, guess DBC, guess DBD, guess DCA, guess DCB, guess DCC, guess DCD, guess DDA, guess DDB, guess DDC, guess DDD, guess ABB, guess BBC, guess BBD, guess BCA, guess BCB, guess BCC, guess BCD, guess BDA, guess BDB, guess BDC, guess BDD, guess CBB, guess BBC, guess BBD, guess",
+        "usage": {
+          "inputTokens": 3636,
+          "outputTokens": 525,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-lVME5dkOPRBLXhxlsBCzWM0nnk1AIekq",
+            "reasoningChars": 0,
+            "truncated": {
+              "stopReason": "length",
+              "outputTokens": 256
+            }
+          }
+        }
+      },
+      "action": "guess ABD, guess ACD, guess ADA, guess ADB, guess ADC, guess ADD, guess BAA, guess BAB, guess BAC, guess BAD, guess BBA, guess BBB, guess BBC, guess BBD, guess BCA, guess BCB, guess BCC, guess BCD, guess BDA, guess BDB, guess BDC, guess BDD, guess CAA, guess CAB, guess CAC, guess CAD, guess CBA, guess CBB, guess CBC, guess CBD, guess CCA, guess CCB, guess CCC, guess CCD, guess CDA, guess CDB, guess CDC, guess CDD, guess DAA, guess DAB, guess DAC, guess DAD, guess DBA, guess DBB, guess DBC, guess DBD, guess DCA, guess DCB, guess DCC, guess DCD, guess DDA, guess DDB, guess DDC, guess DDD, guess ABB, guess BBC, guess BBD, guess BCA, guess BCB, guess BCC, guess BCD, guess BDA, guess BDB, guess BDC, guess BDD, guess CBB, guess BBC, guess BBD, guess",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 3636,
+        "outputTokens": 525,
+        "costUsd": null
+      },
+      "ms": 17313
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "73bcc0e911eb1722",
+      "reply": {
+        "text": "guess ABD, guess ACD, guess ADA, guess ADB, guess ADC, guess ADD, guess BAA, guess BAB, guess BAC, guess BAD, guess BBA, guess BBB, guess BBC, guess BBD, guess BCA, guess BCB, guess BCC, guess BCD, guess BDA, guess BDB, guess BDC, guess BDD, guess CAA, guess CAB, guess CAC, guess CAD, guess CBA, guess CBB, guess CBC, guess CBD, guess CCA, guess CCB, guess CCC, guess CCD, guess CDA, guess CDB, guess CDC, guess CDD, guess DAA, guess DAB, guess DAC, guess DAD, guess DBA, guess DBB, guess DBC, guess DBD, guess DCA, guess DCB, guess DCC, guess DCD, guess DDA, guess DDB, guess DDC, guess DDD, guess ABB, guess BBC, guess BBD, guess BCA, guess BCB, guess BCC, guess BCD, guess BDA, guess BDB, guess BDC, guess BDD, guess CBB, guess BBC, guess BBD, guess",
+        "usage": {
+          "inputTokens": 4624,
+          "outputTokens": 768,
+          "costUsd": null
+        },
+        "meta": {
+          "examplePatch": {
+            "patchSet": "mastermind-mini-corrected",
+            "applied": [
+              {
+                "field": "observation",
+                "find": "Action format: \"guess\" followed by the code letters, e.g. \"guess ABAB\".",
+                "replaceWith": "Action format: \"guess\" followed by 3 code letters, e.g. \"guess ABA\".",
+                "occurrences": 1
+              },
+              {
+                "field": "rules",
+                "find": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABCB\" for a 4-peg tier.",
+                "replaceWith": "Action grammar: \"guess\" followed by the code in color letters, e.g. \"guess ABA\" for a 3-peg tier.",
+                "occurrences": 1
+              }
+            ]
+          },
+          "assisted": {
+            "attempts": 3,
+            "retried": true,
+            "exhausted": true
+          },
+          "inner": {
+            "retries": 0,
+            "responseId": "chatcmpl-d99lRXGwbc8UoaXEgWcDlF3bvZv2cJ0e",
+            "reasoningChars": 0,
+            "truncated": {
+              "stopReason": "length",
+              "outputTokens": 256
+            }
+          }
+        }
+      },
+      "action": "guess ABD, guess ACD, guess ADA, guess ADB, guess ADC, guess ADD, guess BAA, guess BAB, guess BAC, guess BAD, guess BBA, guess BBB, guess BBC, guess BBD, guess BCA, guess BCB, guess BCC, guess BCD, guess BDA, guess BDB, guess BDC, guess BDD, guess CAA, guess CAB, guess CAC, guess CAD, guess CBA, guess CBB, guess CBC, guess CBD, guess CCA, guess CCB, guess CCC, guess CCD, guess CDA, guess CDB, guess CDC, guess CDD, guess DAA, guess DAB, guess DAC, guess DAD, guess DBA, guess DBB, guess DBC, guess DBD, guess DCA, guess DCB, guess DCC, guess DCD, guess DDA, guess DDB, guess DDC, guess DDD, guess ABB, guess BBC, guess BBD, guess BCA, guess BCB, guess BCC, guess BCD, guess BDA, guess BDB, guess BDC, guess BDD, guess CBB, guess BBC, guess BBD, guess",
+      "invalid": true,
+      "usage": {
+        "inputTokens": 4624,
+        "outputTokens": 768,
+        "costUsd": null
+      },
+      "ms": 28766
+    }
+  ],
+  "end": {
+    "reason": "forfeit-invalid",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "forfeit-invalid",
+      "solved": false,
+      "par": null
+    },
+    "agentActions": 3,
+    "invalidActions": 3,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T00:32:15.186Z",
+  "finishedAt": "2026-10-17T00:33:02.338Z"
+}

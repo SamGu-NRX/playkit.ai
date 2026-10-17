@@ -94,7 +94,15 @@ function usageOf(trajectory) {
   const agentSteps = trajectory.steps.filter((s) => s.by === 'agent');
   const usage = agentSteps.map((s) => s.usage).filter(Boolean);
   return {
-    calls: agentSteps.length,
+    // Provider-call count, not turn count: an assisted step can carry up to
+    // three provider attempts (retries included) and its usage/ms already
+    // sum all of them, so secPerCall / tokensPerCall must divide by attempts
+    // to stay comparable with the unassisted arm. Steps without the assisted
+    // meta (a plain unassisted run) are one call each.
+    calls: agentSteps.reduce(
+      (a, s) => a + (s.reply?.meta?.assisted?.attempts ?? 1),
+      0
+    ),
     invalid: agentSteps.filter((s) => s.invalid).length,
     ms: agentSteps.reduce((a, s) => a + (s.ms || 0), 0),
     tokIn: usage.reduce((a, u) => a + (u.promptTokens ?? u.inputTokens ?? 0), 0),

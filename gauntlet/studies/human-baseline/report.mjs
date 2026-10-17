@@ -172,7 +172,22 @@ for (const file of files) {
     failures.push({ file, reason: `unknown game "${trajectory.game?.id}"` });
     continue;
   }
-  const verdict = await verifyTrajectory(game, trajectory);
+  // A parseable, recognized file can still be malformed (a matching
+  // game.version but no agent object, say) — verifyTrajectory throws on
+  // such records. The report's contract is to list every unverified
+  // recording and continue, so an exception is a per-file failure, not an
+  // abort of the whole report.
+  /** @type {Awaited<ReturnType<typeof verifyTrajectory>>} */
+  let verdict;
+  try {
+    verdict = await verifyTrajectory(game, trajectory);
+  } catch (err) {
+    failures.push({
+      file,
+      reason: `verification threw: ${err instanceof Error ? err.message : String(err)}`,
+    });
+    continue;
+  }
   if (!verdict.ok) {
     failures.push({
       file,

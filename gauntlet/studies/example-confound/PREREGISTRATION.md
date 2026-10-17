@@ -60,6 +60,31 @@ connect4 patches are exactly the packet's. All patches change **only example
 text the model reads**; the referee, observation hash and trajectory are
 untouched, and every bundle verifies with `gauntlet bundle verify`.
 
+## Correction before the first model run (2026-10-17)
+
+Committed before any bundle existed — git history is the proof: this correction
+commit precedes every commit containing model runs. While writing the wrapper's
+episode test, which plays a real episode through the wrapper and asserts every
+preregistered replacement applies exactly once, the third mastermind patch
+refused to apply: its target never reached the model.
+
+Cause, from the runner source: `core/runner.js` `extractAction` takes the last
+non-empty line of a reply and returns null when there is none, so an empty reply
+is judged by `judgeReply` as `no action found in reply` — the game's own
+`empty action; use "guess" followed by the code letters, e.g. "guess ABAB"`
+(`games/mastermind/index.js:291`) is never called on that path. The string is
+unreachable through the runner: there is no 4-letter example to retire from the
+feedback surface.
+
+Correction: the mastermind patch set is the observation and rules replacements
+(two patches); the empty-action feedback patch is retired. H1 is unaffected and
+the design is cleaner: after correcting rules and observation, no wrong-length
+example reaches the model on any invalid-reply turn — the empty-reply feedback
+carries no example at all, and the unparseable-guess feedback already carries a
+correct-length one (`guess ABC`, the game echoes `ABCD.slice(0, pegs)`). The
+connect4 patches are unchanged. Everything else in this preregistration is
+unchanged.
+
 ## Hypotheses
 
 - **H1** With a correct-length example, the 0.5B and 1.5B invalid-reply rates
@@ -118,8 +143,11 @@ Patch set `mastermind-mini-corrected` (applies to game `mastermind`, tier
    -> `Action format: "guess" followed by 3 code letters, e.g. "guess ABA".`
 2. rules: `Action grammar: "guess" followed by the code in color letters, e.g. "guess ABCB" for a 4-peg tier.`
    -> `Action grammar: "guess" followed by the code in color letters, e.g. "guess ABA" for a 3-peg tier.`
-3. feedback: `empty action; use "guess" followed by the code letters, e.g. "guess ABAB"`
-   -> `empty action; use "guess" followed by the code letters, e.g. "guess ABA"`
+3. ~~feedback: `empty action; use "guess" followed by the code letters, e.g. "guess ABAB"`
+   -> `empty action; use "guess" followed by the code letters, e.g. "guess ABA"`~~
+   RETIRED pre-run — see "Correction before the first model run (2026-10-17)"
+   below: the target string is unreachable through the runner, so the model can
+   never see it.
 
 Patch set `connect4-ladder-1-neutral` (applies to game `connect4`; the study
 runs tier `ladder-1`):

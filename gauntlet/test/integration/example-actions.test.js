@@ -1,10 +1,11 @@
 /**
  * Example-action conformance: any action a game quotes as an example must be
  * legal in the state that produced the quoted text. A wrong-shaped example
- * teaches agents an illegal action — on mastermind it made small models
- * answer `guess ABCD` on the 3-peg tier until they forfeited (#97), so the
- * example is part of the rules surface and gets the same conformance bar as
- * everything else the runner feeds an agent.
+ * teaches agents an illegal action — the example-confound study (#104) found
+ * mastermind/mini's four-peg example taught the 0.5B an illegal guess format,
+ * and correcting it at prompt time cut the model's invalid-step rate ~10x —
+ * so the example is part of the rules surface and gets the same conformance
+ * bar as everything else the runner feeds an agent.
  *
  * Scope: for every registered game and tier, at the initial state of public
  * seed 0, for the seat to act:

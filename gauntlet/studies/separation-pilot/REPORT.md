@@ -115,8 +115,8 @@ unexpected outcome means.
 
 ## Environment certification
 
-- Pristine alpha base: 1,050 tests — 1,048 pass / 0 fail / 2 skip, exit 0.
-- Full suite + typecheck at the study head: see PR.md gates table.
+- Pristine alpha base (`8084062`): 1,050 tests — 1,048 pass / 0 fail / 2 skip, exit 0.
+- Full suite at the study head (`2eb0116`): 1,050 tests — 1,048 pass / 0 fail / 2 skip, **exit 0**; `npm run typecheck` **exit 0**.
 
 ## Out of scope (per preregistration)
 

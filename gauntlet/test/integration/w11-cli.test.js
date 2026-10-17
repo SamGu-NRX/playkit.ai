@@ -2,7 +2,7 @@
  * Integration: the wave-11 CLI surface, as real CLI subprocesses.
  *
  * 1. `gauntlet replay <trajectory.json>` — the command table's delegate to
- *    replay/cli.js — renders a committed episode in text format, filters by
+ *    replay/cli.js — renders a replay fixture in text format, filters by
  *    `--step`, and emits the `playkit-gauntlet-replay-frames/1` JSON payload.
  * 2. Bad inputs exit 2 with the viewer's usage errors on stderr; a trajectory
  *    that fails replay verification exits 1 naming the problem.
@@ -17,6 +17,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+
+import { GAMES } from '../../games/index.js';
 import { execFile as execFileCallback } from 'node:child_process';
 import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -28,10 +30,18 @@ const execFile = promisify(execFileCallback);
 const gauntletRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CLI = join(gauntletRoot, 'cli', 'gauntlet.js');
 
-// A committed, replay-verifiable episode (mastermind has not moved since the
-// model-separation study recorded it; the study's tictactoe episodes have,
-// so they no longer replay — see the refusal test below).
-const COMMITTED_MASTERMIND = join(
+// The render tests read an episode the repository keeps current: the replay
+// fixtures are recorded by replay/fixtures/generate.mjs at the CURRENT game
+// versions and regenerated deterministically after every version bump. These
+// tests used to borrow a committed study trajectory instead, which went stale
+// twice (tictactoe via reports/first-model-run, then mastermind 1.0.0 via
+// studies/model-separation when #108 bumped the game), each time going red
+// through no fault of any change — so the borrow now lives only in the
+// refusal test below.
+const CURRENT_MASTERMIND = join(gauntletRoot, 'replay', 'fixtures', 'mastermind-mixed.json');
+const CURRENT_MASTERMIND_TRAJECTORY = JSON.parse(readFileSync(CURRENT_MASTERMIND, 'utf8'));
+// Committed at mastermind 1.0.0; the version guard refuses it.
+const STALE_MASTERMIND_1_0_0 = join(
   gauntletRoot,
   'studies/model-separation/runs/qwen2.5-1.5b/mastermind/classic/mastermind/classic/public/0.json'
 );
@@ -64,10 +74,13 @@ async function gauntlet(...args) {
 }
 
 test('gauntlet replay renders a committed episode in text format', async () => {
-  const { code, stdout, stderr } = await gauntlet('replay', COMMITTED_MASTERMIND);
+  const { code, stdout, stderr } = await gauntlet('replay', CURRENT_MASTERMIND);
   assert.equal(code, 0, stderr);
   assert.ok(stdout.includes('PlayKit Gauntlet episode replay'));
-  assert.ok(stdout.includes('mastermind v1.0.0 · tier classic'));
+  assert.ok(
+    stdout.includes(`mastermind v${CURRENT_MASTERMIND_TRAJECTORY.game.version} · tier classic`),
+    'the header names the recorded game version and tier of the fixture'
+  );
   assert.ok(stdout.includes('replay-verified ok'));
   assert.ok(stdout.includes('turn 1 · step 0'));
   assert.ok(stdout.includes('referee: INVALID'), 'the recorded invalid attempts are shown');
@@ -76,12 +89,12 @@ test('gauntlet replay renders a committed episode in text format', async () => {
 });
 
 test('gauntlet replay --step N shows exactly that step, in text and in json', async () => {
-  const text = await gauntlet('replay', COMMITTED_MASTERMIND, '--step', '0');
+  const text = await gauntlet('replay', CURRENT_MASTERMIND, '--step', '0');
   assert.equal(text.code, 0, text.stderr);
   assert.ok(text.stdout.includes('step 0'));
   assert.ok(!text.stdout.includes('step 1'), 'only the requested step is shown');
 
-  const json = await gauntlet('replay', COMMITTED_MASTERMIND, '--step', '0', '--format', 'json');
+  const json = await gauntlet('replay', CURRENT_MASTERMIND, '--step', '0', '--format', 'json');
   assert.equal(json.code, 0, json.stderr);
   const payload = JSON.parse(json.stdout);
   assert.equal(payload.format, 'playkit-gauntlet-replay-frames/1');
@@ -91,14 +104,17 @@ test('gauntlet replay --step N shows exactly that step, in text and in json', as
 });
 
 test('gauntlet replay --format json emits the full frames payload', async () => {
-  const { code, stdout, stderr } = await gauntlet('replay', COMMITTED_MASTERMIND, '--format', 'json');
+  const { code, stdout, stderr } = await gauntlet('replay', CURRENT_MASTERMIND, '--format', 'json');
   assert.equal(code, 0, stderr);
   const payload = JSON.parse(stdout);
   assert.equal(payload.format, 'playkit-gauntlet-replay-frames/1');
-  const trajectory = JSON.parse(readFileSync(COMMITTED_MASTERMIND, 'utf8'));
+  const trajectory = CURRENT_MASTERMIND_TRAJECTORY;
   assert.equal(payload.frames.length, trajectory.steps.length);
   assert.equal(payload.agentSeat, trajectory.agent.seat);
-  assert.ok(payload.game.id === 'mastermind' && payload.game.version === '1.0.0');
+  assert.ok(
+    payload.game.id === 'mastermind' && payload.game.version === trajectory.game.version,
+    'the payload names the fixture\u2019s recorded game and version'
+  );
 });
 
 test('gauntlet replay usage errors exit 2 with the viewer message on stderr', async () => {
@@ -106,11 +122,11 @@ test('gauntlet replay usage errors exit 2 with the viewer message on stderr', as
   assert.equal(noArgs.code, 2);
   assert.ok(noArgs.stderr.includes('usage:'), 'usage text accompanies the error');
 
-  const badFormat = await gauntlet('replay', COMMITTED_MASTERMIND, '--format', 'xml');
+  const badFormat = await gauntlet('replay', CURRENT_MASTERMIND, '--format', 'xml');
   assert.equal(badFormat.code, 2);
   assert.ok(badFormat.stderr.includes('--format must be "text" or "json"'));
 
-  const badStep = await gauntlet('replay', COMMITTED_MASTERMIND, '--step', '-1');
+  const badStep = await gauntlet('replay', CURRENT_MASTERMIND, '--step', '-1');
   assert.equal(badStep.code, 2);
   assert.ok(badStep.stderr.includes('--step must be a non-negative integer'));
 
@@ -120,10 +136,23 @@ test('gauntlet replay usage errors exit 2 with the viewer message on stderr', as
 });
 
 test('gauntlet replay refuses a stale trajectory with exit 1', async () => {
-  const { code, stdout, stderr } = await gauntlet('replay', STALE_TICTACTOE);
-  assert.equal(code, 1, 'refused episodes exit 1');
-  assert.ok(stderr.includes('replay:'), 'the refusal names the problem on stderr');
-  assert.equal(stdout, '');
+  // Both stale cases are committed episodes the version guard correctly
+  // refuses: the tictactoe report predates the game's bump, and the
+  // model-separation mastermind run is recorded at 1.0.0 — the bump #108
+  // shipped is the whole reason the render tests read the fixtures.
+  for (const stale of [STALE_TICTACTOE, STALE_MASTERMIND_1_0_0]) {
+    const { code, stdout, stderr } = await gauntlet('replay', stale);
+    assert.equal(code, 1, 'refused episodes exit 1');
+    assert.ok(stderr.includes('replay:'), 'the refusal names the problem on stderr');
+    assert.equal(stdout, '');
+  }
+  // The mastermind refusal names both versions: what the episode recorded and
+  // what the game ships now.
+  const mm = await gauntlet('replay', STALE_MASTERMIND_1_0_0);
+  assert.ok(mm.stderr.includes('recorded game version 1.0.0'));
+  assert.ok(
+    mm.stderr.includes(`the current game is ${GAMES['mastermind'].spec.version}`)
+  );
 });
 
 test('gauntlet run with a skill spec records the dial id and replay-verifies', { timeout: 5 * 60 * 1000 }, async (t) => {

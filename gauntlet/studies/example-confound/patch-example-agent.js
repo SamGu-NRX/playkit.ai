@@ -114,7 +114,7 @@ export function createExamplePatchAgent(options) {
     const occurrences = countOccurrences(source, patch.find);
     if (occurrences === 0) {
       throw new Error(
-        `example-patch agent "${id}": target string not found in the ${patch.field} text of game "${patchSet.gameId}"` +
+        `example-patch agent "${id}": target string not found in the ${patch.field} text of game "${patchSet.gameId}" (the seated game reports version ${String(ctx.spec?.version)})` +
           (patchSet.tierId ? ` on tier "${patchSet.tierId}"` : '') +
           `: ${JSON.stringify(patch.find)} — refusing to pass the unpatched prompt through`
       );

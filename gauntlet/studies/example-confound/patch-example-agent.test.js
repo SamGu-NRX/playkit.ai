@@ -5,19 +5,37 @@
  * the game and the string, meta records the change, and a full episode played
  * through the wrapper still verifies with the referee and trajectory untouched.
  *
- * The contexts are built from the REAL registered games (spec.rulesText and
- * observe() output), so the tests fail if the game's prompt text drifts from
- * the preregistered patch targets.
+ * The tests are split by what they guard:
+ *
+ * - The PATCH MECHANISM tests run the wrapper on the mastermind/mini
+ *   observation the patch set was preregistered against — reconstructed from
+ *   the live game by reversing the preregistered replacement (strings from
+ *   patches.js, never retyped) and CERTIFIED against the committed 1.0.0
+ *   study trajectory's observation hash (see `mmCtx100`) — or on connect4,
+ *   whose prompt text has not moved and still carries its preregistered
+ *   targets.
+ * - The LIVE-GUARD tests watch the live registered game. #108 (mastermind
+ *   1.1.0) shipped the preregistered corrected example sentence: the live
+ *   observation carries the patch's `replaceWith` byte for byte and the
+ *   1.0.0 `find` target is gone, so the wrapper must refuse the live text
+ *   loudly instead of passing an unpatchable prompt through. The study's
+ *   mastermind arms are history recorded at 1.0.0 (see REPORT.md); a further
+ *   game-text drift re-breaks the certification on purpose, so the guard
+ *   stays loud.
  *
  * @module
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { GAMES } from '../../games/index.js';
-import { runEpisode } from '../../core/runner.js';
+import { runEpisode, judgeReply } from '../../core/runner.js';
 import { verifyTrajectory } from '../../core/trajectory.js';
+import { hashObservation } from '../../core/canonical.js';
 import { buildOfficialTurnMessage } from '../../harness/official.js';
 import { createAssistedAgent } from '../../community/assisted-agent.js';
 import { createExamplePatchAgent } from './patch-example-agent.js';
@@ -28,6 +46,25 @@ import {
 } from './patches.js';
 
 /** @import { Agent, TurnContext } from '../../core/types.js' */
+
+const STUDY_DIR = dirname(fileURLToPath(import.meta.url));
+
+// A committed 1.0.0 run of the study's own corrected mastermind arm. Its
+// step-0 observation hash is the certification for the reconstructed 1.0.0
+// observation text: the trajectory carries the runner's own hash of the
+// observation the wrapper actually patched on that run.
+const COMMITTED_MM_100 = join(
+  STUDY_DIR,
+  'runs',
+  'qwen2.5-0.5b-instruct-q4_k_m',
+  'mastermind-mini-corrected-official',
+  'mastermind',
+  'mini',
+  'mastermind',
+  'mini',
+  'public',
+  '0.json'
+);
 
 /**
  * Count non-overlapping occurrences of `needle` in `haystack`.
@@ -88,22 +125,71 @@ const MM_FEEDBACK =
   'cannot parse "ZZ" as a 3-peg code over ABCD; use "guess" followed by the code letters, e.g. "guess ABC"';
 
 /**
- * A real mastermind/mini turn context.
- * @param {string | null} [feedback]
- * @returns {TurnContext}
+ * The live mastermind/mini observation plus the initial game state and seat.
+ * @returns {{ state: *, seat: number, observation: { text: string, data: * } }}
  */
-function mmCtx(feedback = null) {
+function liveMiniObservation() {
   const state = mastermind.reset(miniTier, 'mastermind/mini/public/0');
   const seat =
     typeof mastermind.agentSeat === 'function'
       ? mastermind.agentSeat(miniTier, 'mastermind/mini/public/0')
       : 0;
+  return { state, seat, observation: mastermind.observe(state, seat) };
+}
+
+/**
+ * A real mastermind/mini turn context whose observation is the 1.0.0 text the
+ * patch set was preregistered against: the live observation with the
+ * preregistered replacement reversed (replaceWith back to find — both strings
+ * come from patches.js, which a byte-for-byte test pins to the
+ * preregistration document), certified against the committed 1.0.0 study
+ * trajectory's step-0 observation hash. When that certification fails, the
+ * game's prompt text has drifted again: the study's mastermind arms are
+ * history at 1.0.0, and the certification must be re-grounded before these
+ * mechanism tests mean anything.
+ *
+ * @param {string | null} [feedback]
+ * @returns {TurnContext}
+ */
+function mmCtx100(feedback = null) {
+  const { state, seat, observation } = liveMiniObservation();
+  const obsPatch = MASTERMIND_MINI_CORRECTED.patches[0];
+  const text100 = observation.text.split(obsPatch.replaceWith).join(obsPatch.find);
+  const committed = JSON.parse(readFileSync(COMMITTED_MM_100, 'utf8'));
+  assert.equal(
+    committed.game.version,
+    '1.0.0',
+    'the certifying trajectory must be a committed 1.0.0 study run'
+  );
+  assert.equal(
+    committed.steps[0].observationHash,
+    hashObservation({ ...observation, text: text100 }),
+    'the reconstructed 1.0.0 mastermind/mini observation no longer hashes to the committed study trajectory\u2019s step-0 observationHash \u2014 the live game\u2019s prompt text has drifted from the preregistered patch targets; the study\u2019s mastermind arms are history at 1.0.0 (see studies/example-confound/REPORT.md) and this certification must be re-grounded'
+  );
   return {
     spec: mastermind.spec,
     tier: miniTier,
     seat,
     turn: 0,
-    observation: mastermind.observe(state, seat),
+    observation: { ...observation, text: text100 },
+    legalActions: null,
+    feedback,
+  };
+}
+
+/**
+ * A real mastermind/mini turn context against the LIVE game text.
+ * @param {string | null} [feedback]
+ * @returns {TurnContext}
+ */
+function mmCtx(feedback = null) {
+  const { state, seat, observation } = liveMiniObservation();
+  return {
+    spec: mastermind.spec,
+    tier: miniTier,
+    seat,
+    turn: 0,
+    observation,
     legalActions: null,
     feedback,
   };
@@ -134,7 +220,7 @@ function c4Ctx(feedback = null) {
 test('every preregistered mastermind replacement is applied exactly once and nothing else changes', async () => {
   const inner = stubInner(['thinking...\nguess ABA']);
   const agent = createExamplePatchAgent({ inner, patchSet: MASTERMIND_MINI_CORRECTED });
-  const ctx = mmCtx(MM_FEEDBACK);
+  const ctx = mmCtx100(MM_FEEDBACK);
   await agent.act(ctx);
   assert.equal(inner.calls.length, 1);
   const derived = inner.calls[0];
@@ -180,13 +266,13 @@ test('every preregistered mastermind replacement is applied exactly once and not
 test('the official prompt built from the derived context carries only corrected examples', async () => {
   const inner = stubInner(['guess ABA']);
   const agent = createExamplePatchAgent({ inner, patchSet: MASTERMIND_MINI_CORRECTED });
-  await agent.act(mmCtx(MM_FEEDBACK));
+  await agent.act(mmCtx100(MM_FEEDBACK));
   const message = buildOfficialTurnMessage(inner.calls[0], '(none)');
   assert.ok(message.includes('e.g. "guess ABA"'));
   assert.ok(!message.includes('guess ABAB'));
   assert.ok(!message.includes('guess ABCB'));
   // And the unpatched official message would have carried the wrong examples.
-  const raw = buildOfficialTurnMessage(mmCtx(MM_FEEDBACK), '(none)');
+  const raw = buildOfficialTurnMessage(mmCtx100(MM_FEEDBACK), '(none)');
   assert.ok(raw.includes('guess ABAB'));
   assert.ok(raw.includes('guess ABCB'));
 });
@@ -194,7 +280,7 @@ test('the official prompt built from the derived context carries only corrected 
 test('meta records every applied change with field, find and replaceWith', async () => {
   const inner = stubInner(['guess ABA']);
   const agent = createExamplePatchAgent({ inner, patchSet: MASTERMIND_MINI_CORRECTED });
-  const reply = await agent.act(mmCtx(MM_FEEDBACK));
+  const reply = await agent.act(mmCtx100(MM_FEEDBACK));
   assert.equal(reply.text, 'guess ABA');
   assert.equal(reply.meta.examplePatch.patchSet, 'mastermind-mini-corrected');
   assert.deepEqual(
@@ -229,18 +315,23 @@ test('a missing target string throws an error naming the game and the string, ne
 });
 
 test('a target occurring twice throws instead of replacing ambiguously', async () => {
-  const inner = stubInner(['guess ABA']);
-  const agent = createExamplePatchAgent({ inner, patchSet: MASTERMIND_MINI_CORRECTED });
-  const ctx = mmCtx();
+  // The duplicate-target guard is game-agnostic wrapper behavior; connect4 is
+  // a live game whose rules text still carries its preregistered target
+  // unchanged, so the guard runs against a game as it ships today. (The
+  // mastermind targets are 1.0.0 history — see REPORT.md.)
+  const inner = stubInner(['4']);
+  const agent = createExamplePatchAgent({ inner, patchSet: CONNECT4_LADDER_1_NEUTRAL });
+  const ctx = c4Ctx();
   ctx.spec = /** @type {*} */ ({
     ...ctx.spec,
-    rulesText: ctx.spec.rulesText + MM_RULES_FIND,
+    rulesText: ctx.spec.rulesText + CONNECT4_LADDER_1_NEUTRAL.patches[0].find,
   });
   await assert.rejects(
     agent.act(ctx),
     (/** @type {Error} */ err) =>
       err.message.includes('exactly once') && err.message.includes('2 times')
   );
+  assert.equal(inner.calls.length, 0, 'the inner agent never sees an ambiguous prompt');
 });
 
 test('connect4: the rules patch applies every turn; the feedback patch applies only when the referee spoke', async () => {
@@ -290,66 +381,137 @@ test('the wrapper refuses to be seated on the wrong game or tier', async () => {
 });
 
 test('an episode played through the wrapper verifies, keeps the referee untouched, and records the patch in step meta', async () => {
-  // The scripted inner answers empty once (drawing the empty-action feedback,
-  // which the wrapper must patch) and then guesses ABA forever.
+  // Run on connect4, whose prompt text is unchanged: the wrapper's mastermind
+  // targets are 1.0.0 history (REPORT.md) and runEpisode feeds the wrapper the
+  // LIVE game's own observations, which no longer carry the preregistered
+  // mastermind targets. The episode-level guarantees — replay verification,
+  // untouched referee hashes, per-step meta provenance — are game-agnostic.
+  // The inner always drops into the first non-full column (read from the
+  // observation data the game itself handed it), so every action is valid and
+  // the feedback patch (whose target only occurs in parse-error feedback,
+  // covered in the unit test above) is never applicable.
   const inner = stubInner([]);
-  inner.act = async (ctx) => {
+  inner.act = async (/** @type {TurnContext} */ ctx) => {
     inner.calls.push(ctx);
-    const text = inner.calls.length === 1 ? '' : 'guess ABA';
-    return { text, usage: { inputTokens: 1, outputTokens: 2, costUsd: null } };
+    const heights = /** @type {*} */ (ctx.observation.data).heights;
+    const col = heights.findIndex((/** @type {number} */ h) => h < 6) + 1;
+    assert.ok(col >= 1, 'connect4 observation offers a non-full column');
+    return { text: String(col), usage: { inputTokens: 1, outputTokens: 2, costUsd: null } };
   };
-  const agent = createExamplePatchAgent({ inner, patchSet: MASTERMIND_MINI_CORRECTED });
+  const agent = createExamplePatchAgent({ inner, patchSet: CONNECT4_LADDER_1_NEUTRAL });
   const trajectory = await runEpisode({
-    game: mastermind,
-    tierId: 'mini',
-    seed: 'mastermind/mini/public/0',
+    game: connect4,
+    tierId: 'ladder-1',
+    seed: 'connect4/ladder-1/public/0',
     split: 'public',
     agent,
   });
-  const verdict = await verifyTrajectory(mastermind, trajectory);
+  const verdict = await verifyTrajectory(connect4, trajectory);
   assert.equal(verdict.ok, true, JSON.stringify(verdict));
-  // The model saw patched text on every turn it was called.
+  // The model saw patched rules text on every turn it was called, and — the
+  // connect4 patch set touching no observation field — the observation text
+  // it read was the referee's own, byte for byte.
   assert.ok(inner.calls.length >= 2);
   for (const call of inner.calls) {
-    assert.ok(!call.observation.text.includes('guess ABAB'));
-    assert.ok(!call.spec.rulesText.includes('guess ABCB'));
+    assert.ok(!call.spec.rulesText.includes('e.g. "4" drops into column 4'));
+    assert.ok(call.spec.rulesText.includes('the column number alone, 1 to 7.'));
   }
-  // The empty first reply drew the runner's own example-free feedback (the
-  // game's empty-action error is unreachable through the runner), passed
-  // through unpatched: this is the pin behind retiring the preregistration's
-  // original third mastermind patch.
-  assert.equal(inner.calls[1].feedback, 'no action found in reply');
-  const withFeedback = inner.calls.filter((c) => typeof c.feedback === 'string');
-  assert.ok(withFeedback.length >= 1);
-  for (const call of withFeedback) {
-    assert.ok(typeof call.feedback === 'string');
-    assert.ok(!call.feedback.includes('guess ABAB'));
-    assert.ok(!call.feedback.includes('guess ABCB'));
-  }
-  // Every step's meta records the patch set. Steps carry the runner's own
-  // observation HASH (never the wrapper's derived text), and verifyTrajectory
-  // re-derived the identical hashes from (game, tier, seed) — so the recorded
-  // trajectory is the referee's, untouched by the patching.
-  const stepsWithMeta = trajectory.steps.filter(
+  // Every AGENT step's meta records the patch set. (Mastermind is solitaire, so
+  // the original pin read every step; ladder-1 interleaves opponent steps,
+  // which never pass through the wrapper — the referee's hashes on those are
+  // covered by verifyTrajectory like every other step.) Steps carry the
+  // runner's own observation HASH (never the wrapper's derived text), and
+  // verifyTrajectory re-derived the identical hashes from (game, tier, seed) —
+  // so the recorded trajectory is the referee's, untouched by the patching.
+  // Valid plays draw no referee feedback, so each agent step applies exactly
+  // the rules patch.
+  const agentSteps = trajectory.steps.filter((s) => s.by === 'agent');
+  assert.equal(agentSteps.length, inner.calls.length, 'every agent turn went through the wrapper');
+  const stepsWithMeta = agentSteps.filter(
     (s) => s.reply && s.reply.meta && s.reply.meta.examplePatch
   );
-  assert.equal(stepsWithMeta.length, trajectory.steps.length);
+  assert.equal(stepsWithMeta.length, agentSteps.length);
   for (const step of stepsWithMeta) {
     assert.ok(step.reply.meta);
-    assert.equal(step.reply.meta.examplePatch.patchSet, 'mastermind-mini-corrected');
+    assert.equal(step.reply.meta.examplePatch.patchSet, 'connect4-ladder-1-neutral');
     assert.deepEqual(
       step.reply.meta.examplePatch.applied.map((/** @type {*} */ a) => a.field),
-      ['observation', 'rules']
+      ['rules']
     );
   }
+});
+
+test('the mastermind patch set carries no feedback patch: the runner\u2019s own empty-reply feedback passes through unpatched', async () => {
+  // The empty-reply feedback is the runner's, not the game's — take it from
+  // judgeReply on the live game so the pin never rests on a retyped string.
+  const { state, seat } = liveMiniObservation();
+  const judged = judgeReply(
+    mastermind,
+    state,
+    seat,
+    mastermind.legalActions(state, seat),
+    '   \n  '
+  );
+  assert.equal(judged.reason, 'no action found in reply');
+  const inner = stubInner(['guess ABA']);
+  const agent = createExamplePatchAgent({ inner, patchSet: MASTERMIND_MINI_CORRECTED });
+  const reply = await agent.act(mmCtx100(judged.reason ?? null));
+  // The feedback reached the model byte for byte: this is the pin behind
+  // retiring the preregistration's original third mastermind patch — the
+  // reachable empty-reply feedback is example-free, so patching it would be
+  // a no-op and a mastermind feedback patch could only misfire.
+  assert.equal(inner.calls[0].feedback, judged.reason);
+  assert.deepEqual(
+    reply.meta.examplePatch.applied.map((/** @type {*} */ a) => a.field),
+    ['observation', 'rules']
+  );
+});
+
+test('the live 1.1.0 game ships the preregistered sentence, and the wrapper refuses the live text loudly', async () => {
+  // The drift guard, watched against the LIVE registered game. #108 fixed the
+  // quoted mastermind examples: the observation now carries the preregistered
+  // replacement byte for byte, the 1.0.0 target is gone, and the rules target
+  // survives — so the wrapper must refuse with an error naming the game, the
+  // tier, the missing string and the seated version, never silently seat an
+  // agent on a prompt it cannot patch.
+  const obsPatch = MASTERMIND_MINI_CORRECTED.patches[0];
+  const rulesPatch = MASTERMIND_MINI_CORRECTED.patches[1];
+  const { observation } = liveMiniObservation();
+  assert.ok(
+    observation.text.includes(obsPatch.replaceWith),
+    '#108 shipped the preregistered corrected sentence: the live observation carries the patch\u2019s replaceWith byte for byte'
+  );
+  assert.equal(
+    countOccurrences(observation.text, obsPatch.find),
+    0,
+    'the 1.0.0 observation target is gone from the live game'
+  );
+  assert.equal(
+    countOccurrences(mastermind.spec.rulesText, rulesPatch.find),
+    1,
+    'the rules target still occurs exactly once in the live rules text'
+  );
+
+  const inner = stubInner(['guess ABA']);
+  const agent = createExamplePatchAgent({ inner, patchSet: MASTERMIND_MINI_CORRECTED });
+  await assert.rejects(
+    agent.act(mmCtx()),
+    (/** @type {Error} */ err) =>
+      err.message.includes('mastermind') &&
+      err.message.includes('mini') &&
+      err.message.includes(JSON.stringify(obsPatch.find)) &&
+      err.message.includes('not found') &&
+      err.message.includes(`version ${String(mastermind.spec.version)}`)
+  );
+  assert.equal(inner.calls.length, 0, 'the inner agent never sees an unpatched prompt');
 });
 
 test('the assisted nesting: patch outside assisted, both metas survive, the model reads patched text', async () => {
   const model = stubInner(['I will guess ABA.\nACTION: guess ABA']);
   const assisted = createAssistedAgent({ inner: model, retries: 2 });
   const agent = createExamplePatchAgent({ inner: assisted, patchSet: MASTERMIND_MINI_CORRECTED });
-  const state = mastermind.reset(miniTier, 'mastermind/mini/public/0');
-  const ctx = mmCtx(null);
+  const { state } = liveMiniObservation();
+  const ctx = mmCtx100(null);
   ctx.legalActions = mastermind.legalActions(state, ctx.seat);
   assert.ok(Array.isArray(ctx.legalActions) && ctx.legalActions.length > 0);
   const reply = await agent.act(ctx);

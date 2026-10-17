@@ -1,0 +1,1454 @@
+{
+  "runsRoot": "runs",
+  "randomFloors": {
+    "mastermindMini": {
+      "mean": 0.029847,
+      "ci95": [
+        0.0004,
+        0.07955
+      ],
+      "episodes": 25,
+      "tableVersion": "1.0.0",
+      "source": "calibration/tables/mastermind.json"
+    },
+    "connect4Ladder1": {
+      "mean": 0.416667,
+      "ci95": [
+        0.166667,
+        0.666667
+      ],
+      "episodes": 12,
+      "tableVersion": "1.1.0",
+      "source": "calibration/tables/connect4.json"
+    }
+  },
+  "runs": {
+    "qwen2.5-0.5b:connect4-neutral-connect4": {
+      "runDir": "runs/qwen2.5-0.5b-instruct-q4_k_m/connect4-ladder-1-connect4-neutral",
+      "arm": "connect4-neutral-connect4",
+      "suiteId": "gauntlet-public-example-confound-connect4-neutral-connect4-ladder-1-12",
+      "agentId": "community-example-patch:connect4-ladder-1-neutral:model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+      "gameVersion": "1.1.0",
+      "n": 12,
+      "meanScore": 0.75,
+      "ci95": [
+        0.5,
+        1
+      ],
+      "invalidStepRate": 0,
+      "anyInvalidEpisodeRate": 0,
+      "endReasons": {
+        "terminal": 12
+      },
+      "secPerCallMean": 0.281819,
+      "tokPerCallMean": 442,
+      "episodes": [
+        {
+          "seed": "connect4/ladder-1/public/0",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.37825,
+          "tokPerCall": 442
+        },
+        {
+          "seed": "connect4/ladder-1/public/1",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.27,
+          "tokPerCall": 443
+        },
+        {
+          "seed": "connect4/ladder-1/public/10",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 9,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.258889,
+          "tokPerCall": 443
+        },
+        {
+          "seed": "connect4/ladder-1/public/11",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.26625,
+          "tokPerCall": 443
+        },
+        {
+          "seed": "connect4/ladder-1/public/2",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.277,
+          "tokPerCall": 443
+        },
+        {
+          "seed": "connect4/ladder-1/public/3",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 3,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.298333,
+          "tokPerCall": 442
+        },
+        {
+          "seed": "connect4/ladder-1/public/4",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 10,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.2788,
+          "tokPerCall": 442
+        },
+        {
+          "seed": "connect4/ladder-1/public/5",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.28625,
+          "tokPerCall": 443
+        },
+        {
+          "seed": "connect4/ladder-1/public/6",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.27,
+          "tokPerCall": 442
+        },
+        {
+          "seed": "connect4/ladder-1/public/7",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.2705,
+          "tokPerCall": 442
+        },
+        {
+          "seed": "connect4/ladder-1/public/8",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 9,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.254889,
+          "tokPerCall": 441
+        },
+        {
+          "seed": "connect4/ladder-1/public/9",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 6,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.272667,
+          "tokPerCall": 440
+        }
+      ]
+    },
+    "qwen2.5-0.5b:corrected-assisted": {
+      "runDir": "runs/qwen2.5-0.5b-instruct-q4_k_m/mastermind-mini-corrected-assisted",
+      "arm": "corrected-assisted",
+      "suiteId": "gauntlet-public-example-confound-corrected-assisted-mastermind-mini-8",
+      "agentId": "community-example-patch:mastermind-mini-corrected:community-assisted:model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+      "gameVersion": "1.0.0",
+      "n": 8,
+      "meanScore": 0.125,
+      "ci95": [
+        0,
+        0.375
+      ],
+      "invalidStepRate": 0.018634,
+      "anyInvalidEpisodeRate": 0.125,
+      "endReasons": {
+        "terminal": 7,
+        "forfeit-invalid": 1
+      },
+      "secPerCallMean": 1.062155,
+      "tokPerCallMean": 1398,
+      "episodes": [
+        {
+          "seed": "mastermind/mini/public/0",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 1.30508,
+          "tokPerCall": 1212
+        },
+        {
+          "seed": "mastermind/mini/public/1",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 1.21176,
+          "tokPerCall": 1212
+        },
+        {
+          "seed": "mastermind/mini/public/2",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 10,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 1.2186,
+          "tokPerCall": 1856
+        },
+        {
+          "seed": "mastermind/mini/public/3",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": true,
+          "normalized": [
+            1
+          ],
+          "steps": 1,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.238,
+          "tokPerCall": 2052
+        },
+        {
+          "seed": "mastermind/mini/public/4",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 1.11096,
+          "tokPerCall": 1212
+        },
+        {
+          "seed": "mastermind/mini/public/5",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 1.10828,
+          "tokPerCall": 1212
+        },
+        {
+          "seed": "mastermind/mini/public/6",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 1.17792,
+          "tokPerCall": 1212
+        },
+        {
+          "seed": "mastermind/mini/public/7",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 1.12664,
+          "tokPerCall": 1212
+        }
+      ]
+    },
+    "qwen2.5-0.5b:corrected-official": {
+      "runDir": "runs/qwen2.5-0.5b-instruct-q4_k_m/mastermind-mini-corrected-official",
+      "arm": "corrected-official",
+      "suiteId": "gauntlet-public-example-confound-corrected-official-mastermind-mini-8",
+      "agentId": "community-example-patch:mastermind-mini-corrected:model:openai-chat/qwen2.5-0.5b-instruct-q4_k_m",
+      "gameVersion": "1.0.0",
+      "n": 8,
+      "meanScore": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "invalidStepRate": 0.098684,
+      "anyInvalidEpisodeRate": 1,
+      "endReasons": {
+        "budget-exhausted": 5,
+        "forfeit-invalid": 3
+      },
+      "secPerCallMean": 1.656914,
+      "tokPerCallMean": 845,
+      "episodes": [
+        {
+          "seed": "mastermind/mini/public/0",
+          "score": 0,
+          "endReason": "budget-exhausted",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 1,
+          "anyInvalid": true,
+          "secPerCall": 9.02216,
+          "tokPerCall": 884
+        },
+        {
+          "seed": "mastermind/mini/public/1",
+          "score": 0,
+          "endReason": "budget-exhausted",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 1,
+          "anyInvalid": true,
+          "secPerCall": 0.62436,
+          "tokPerCall": 884
+        },
+        {
+          "seed": "mastermind/mini/public/2",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 11,
+          "invalid": 4,
+          "anyInvalid": true,
+          "secPerCall": 0.652182,
+          "tokPerCall": 792
+        },
+        {
+          "seed": "mastermind/mini/public/3",
+          "score": 0,
+          "endReason": "budget-exhausted",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 1,
+          "anyInvalid": true,
+          "secPerCall": 0.65476,
+          "tokPerCall": 884
+        },
+        {
+          "seed": "mastermind/mini/public/4",
+          "score": 0,
+          "endReason": "budget-exhausted",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 1,
+          "anyInvalid": true,
+          "secPerCall": 0.60684,
+          "tokPerCall": 884
+        },
+        {
+          "seed": "mastermind/mini/public/5",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 8,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 0.55875,
+          "tokPerCall": 775
+        },
+        {
+          "seed": "mastermind/mini/public/6",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 8,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 0.5375,
+          "tokPerCall": 775
+        },
+        {
+          "seed": "mastermind/mini/public/7",
+          "score": 0,
+          "endReason": "budget-exhausted",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 1,
+          "anyInvalid": true,
+          "secPerCall": 0.59876,
+          "tokPerCall": 884
+        }
+      ],
+      "gapToRandomFloor": {
+        "floorMean": 0.029847,
+        "meanDiff": -0.029847,
+        "ciOverlapsFloor": false,
+        "aboveRandomPointEstimate": false
+      }
+    },
+    "qwen2.5-1.5b:connect4-neutral-connect4": {
+      "runDir": "runs/qwen2.5-1.5b-instruct-q4_k_m/connect4-ladder-1-connect4-neutral",
+      "arm": "connect4-neutral-connect4",
+      "suiteId": "gauntlet-public-example-confound-connect4-neutral-connect4-ladder-1-12",
+      "agentId": "community-example-patch:connect4-ladder-1-neutral:model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+      "gameVersion": "1.1.0",
+      "n": 12,
+      "meanScore": 0.75,
+      "ci95": [
+        0.5,
+        1
+      ],
+      "invalidStepRate": 0,
+      "anyInvalidEpisodeRate": 0,
+      "endReasons": {
+        "terminal": 12
+      },
+      "secPerCallMean": 0.540758,
+      "tokPerCallMean": 440,
+      "episodes": [
+        {
+          "seed": "connect4/ladder-1/public/0",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.745,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/1",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.4915,
+          "tokPerCall": 441
+        },
+        {
+          "seed": "connect4/ladder-1/public/10",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 3,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.561,
+          "tokPerCall": 441
+        },
+        {
+          "seed": "connect4/ladder-1/public/11",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 14,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.538143,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/2",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 10,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.5062,
+          "tokPerCall": 441
+        },
+        {
+          "seed": "connect4/ladder-1/public/3",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.52125,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/4",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 9,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.541667,
+          "tokPerCall": 441
+        },
+        {
+          "seed": "connect4/ladder-1/public/5",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 3,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.551,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/6",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.50125,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/7",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.48775,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/8",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 3,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.552333,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/9",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 0.492,
+          "tokPerCall": 440
+        }
+      ]
+    },
+    "qwen2.5-1.5b:corrected-assisted": {
+      "runDir": "runs/qwen2.5-1.5b-instruct-q4_k_m/mastermind-mini-corrected-assisted",
+      "arm": "corrected-assisted",
+      "suiteId": "gauntlet-public-example-confound-corrected-assisted-mastermind-mini-8",
+      "agentId": "community-example-patch:mastermind-mini-corrected:community-assisted:model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+      "gameVersion": "1.0.0",
+      "n": 8,
+      "meanScore": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "invalidStepRate": 1,
+      "anyInvalidEpisodeRate": 1,
+      "endReasons": {
+        "forfeit-invalid": 8
+      },
+      "secPerCallMean": 15.645958,
+      "tokPerCallMean": 4094,
+      "episodes": [
+        {
+          "seed": "mastermind/mini/public/0",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 3,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 8.95,
+          "tokPerCall": 3183
+        },
+        {
+          "seed": "mastermind/mini/public/1",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 3,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 22.680667,
+          "tokPerCall": 4224
+        },
+        {
+          "seed": "mastermind/mini/public/2",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 3,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 16.348667,
+          "tokPerCall": 4224
+        },
+        {
+          "seed": "mastermind/mini/public/3",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 3,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 15.258333,
+          "tokPerCall": 4224
+        },
+        {
+          "seed": "mastermind/mini/public/4",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 3,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 15.138333,
+          "tokPerCall": 4224
+        },
+        {
+          "seed": "mastermind/mini/public/5",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 3,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 15.527,
+          "tokPerCall": 4224
+        },
+        {
+          "seed": "mastermind/mini/public/6",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 3,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 15.717,
+          "tokPerCall": 4224
+        },
+        {
+          "seed": "mastermind/mini/public/7",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 3,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 15.547667,
+          "tokPerCall": 4224
+        }
+      ]
+    },
+    "qwen2.5-1.5b:corrected-official": {
+      "runDir": "runs/qwen2.5-1.5b-instruct-q4_k_m/mastermind-mini-corrected-official",
+      "arm": "corrected-official",
+      "suiteId": "gauntlet-public-example-confound-corrected-official-mastermind-mini-8",
+      "agentId": "community-example-patch:mastermind-mini-corrected:model:openai-chat/qwen2.5-1.5b-instruct-q4_k_m",
+      "gameVersion": "1.0.0",
+      "n": 8,
+      "meanScore": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "invalidStepRate": 0.75,
+      "anyInvalidEpisodeRate": 1,
+      "endReasons": {
+        "forfeit-invalid": 8
+      },
+      "secPerCallMean": 1.297688,
+      "tokPerCallMean": 752,
+      "episodes": [
+        {
+          "seed": "mastermind/mini/public/0",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 4,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 1.62,
+          "tokPerCall": 752
+        },
+        {
+          "seed": "mastermind/mini/public/1",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 4,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 1.35675,
+          "tokPerCall": 752
+        },
+        {
+          "seed": "mastermind/mini/public/2",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 4,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 1.24675,
+          "tokPerCall": 752
+        },
+        {
+          "seed": "mastermind/mini/public/3",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 4,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 1.233,
+          "tokPerCall": 752
+        },
+        {
+          "seed": "mastermind/mini/public/4",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 4,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 1.26975,
+          "tokPerCall": 752
+        },
+        {
+          "seed": "mastermind/mini/public/5",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 4,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 1.167,
+          "tokPerCall": 752
+        },
+        {
+          "seed": "mastermind/mini/public/6",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 4,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 1.20575,
+          "tokPerCall": 752
+        },
+        {
+          "seed": "mastermind/mini/public/7",
+          "score": 0,
+          "endReason": "forfeit-invalid",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 4,
+          "invalid": 3,
+          "anyInvalid": true,
+          "secPerCall": 1.2825,
+          "tokPerCall": 752
+        }
+      ],
+      "gapToRandomFloor": {
+        "floorMean": 0.029847,
+        "meanDiff": -0.029847,
+        "ciOverlapsFloor": false,
+        "aboveRandomPointEstimate": false
+      }
+    },
+    "qwen2.5-7b:connect4-neutral-connect4": {
+      "runDir": "runs/qwen2.5-7b-instruct-q4_k_m/connect4-ladder-1-connect4-neutral",
+      "arm": "connect4-neutral-connect4",
+      "suiteId": "gauntlet-public-example-confound-connect4-neutral-connect4-ladder-1-12",
+      "agentId": "community-example-patch:connect4-ladder-1-neutral:model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+      "gameVersion": "1.1.0",
+      "n": 12,
+      "meanScore": 0.666667,
+      "ci95": [
+        0.416667,
+        0.916667
+      ],
+      "invalidStepRate": 0,
+      "anyInvalidEpisodeRate": 0,
+      "endReasons": {
+        "terminal": 12
+      },
+      "secPerCallMean": 2.901343,
+      "tokPerCallMean": 440,
+      "episodes": [
+        {
+          "seed": "connect4/ladder-1/public/0",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 3.23325,
+          "tokPerCall": 438
+        },
+        {
+          "seed": "connect4/ladder-1/public/1",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 9,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 3.127,
+          "tokPerCall": 442
+        },
+        {
+          "seed": "connect4/ladder-1/public/10",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 9,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 3.057222,
+          "tokPerCall": 442
+        },
+        {
+          "seed": "connect4/ladder-1/public/11",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 12,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 2.513583,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/2",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 8,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 2.7405,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/3",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 4,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 3.16725,
+          "tokPerCall": 442
+        },
+        {
+          "seed": "connect4/ladder-1/public/4",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 6,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 2.896667,
+          "tokPerCall": 440
+        },
+        {
+          "seed": "connect4/ladder-1/public/5",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 13,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 3.073846,
+          "tokPerCall": 439
+        },
+        {
+          "seed": "connect4/ladder-1/public/6",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 14,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 2.339857,
+          "tokPerCall": 437
+        },
+        {
+          "seed": "connect4/ladder-1/public/7",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0,
+            1
+          ],
+          "steps": 7,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 3.063714,
+          "tokPerCall": 441
+        },
+        {
+          "seed": "connect4/ladder-1/public/8",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 10,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 2.6021,
+          "tokPerCall": 438
+        },
+        {
+          "seed": "connect4/ladder-1/public/9",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            1,
+            0
+          ],
+          "steps": 8,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 3.001125,
+          "tokPerCall": 441
+        }
+      ]
+    },
+    "qwen2.5-7b:corrected-7b": {
+      "runDir": "runs/qwen2.5-7b-instruct-q4_k_m/mastermind-mini-corrected-7b",
+      "arm": "corrected-7b",
+      "suiteId": "gauntlet-public-example-confound-corrected-7b-mastermind-mini-8",
+      "agentId": "community-example-patch:mastermind-mini-corrected:model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+      "gameVersion": "1.0.0",
+      "n": 8,
+      "meanScore": 0.25,
+      "ci95": [
+        0,
+        0.625
+      ],
+      "invalidStepRate": 0,
+      "anyInvalidEpisodeRate": 0,
+      "endReasons": {
+        "terminal": 8
+      },
+      "secPerCallMean": 6.68243,
+      "tokPerCallMean": 850,
+      "episodes": [
+        {
+          "seed": "mastermind/mini/public/0",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": true,
+          "normalized": [
+            1
+          ],
+          "steps": 3,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 8.786,
+          "tokPerCall": 733
+        },
+        {
+          "seed": "mastermind/mini/public/1",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 6.63536,
+          "tokPerCall": 891
+        },
+        {
+          "seed": "mastermind/mini/public/2",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 6.67272,
+          "tokPerCall": 890
+        },
+        {
+          "seed": "mastermind/mini/public/3",
+          "score": 1,
+          "endReason": "terminal",
+          "solved": true,
+          "normalized": [
+            1
+          ],
+          "steps": 1,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 6.148,
+          "tokPerCall": 718
+        },
+        {
+          "seed": "mastermind/mini/public/4",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 6.37776,
+          "tokPerCall": 891
+        },
+        {
+          "seed": "mastermind/mini/public/5",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 5.8032,
+          "tokPerCall": 891
+        },
+        {
+          "seed": "mastermind/mini/public/6",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 6.7116,
+          "tokPerCall": 890
+        },
+        {
+          "seed": "mastermind/mini/public/7",
+          "score": 0,
+          "endReason": "terminal",
+          "solved": false,
+          "normalized": [
+            0
+          ],
+          "steps": 25,
+          "invalid": 0,
+          "anyInvalid": false,
+          "secPerCall": 6.3248,
+          "tokPerCall": 892
+        }
+      ],
+      "gapToRandomFloor": {
+        "floorMean": 0.029847,
+        "meanDiff": 0.220153,
+        "ciOverlapsFloor": true,
+        "aboveRandomPointEstimate": true
+      }
+    }
+  },
+  "paired": {
+    "qwen2.5-0.5b:corrected-assisted-minus-corrected-official": {
+      "name": "qwen2.5-0.5b:corrected-assisted-minus-corrected-official",
+      "n": 8,
+      "meanDiff": 0.125,
+      "ci95": [
+        0,
+        0.375
+      ],
+      "pairs": [
+        {
+          "seed": "mastermind/mini/public/0",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/1",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/2",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/3",
+          "diff": 1
+        },
+        {
+          "seed": "mastermind/mini/public/4",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/5",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/6",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/7",
+          "diff": 0
+        }
+      ]
+    },
+    "qwen2.5-1.5b:corrected-assisted-minus-corrected-official": {
+      "name": "qwen2.5-1.5b:corrected-assisted-minus-corrected-official",
+      "n": 8,
+      "meanDiff": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairs": [
+        {
+          "seed": "mastermind/mini/public/0",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/1",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/2",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/3",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/4",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/5",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/6",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/7",
+          "diff": 0
+        }
+      ]
+    },
+    "1.5b-minus-0.5b:corrected-official": {
+      "name": "1.5b-minus-0.5b:corrected-official",
+      "n": 8,
+      "meanDiff": 0,
+      "ci95": [
+        0,
+        0
+      ],
+      "pairs": [
+        {
+          "seed": "mastermind/mini/public/0",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/1",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/2",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/3",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/4",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/5",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/6",
+          "diff": 0
+        },
+        {
+          "seed": "mastermind/mini/public/7",
+          "diff": 0
+        }
+      ]
+    }
+  }
+}

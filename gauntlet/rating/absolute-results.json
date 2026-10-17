@@ -1,7 +1,7 @@
 {
   "meta": {
     "run": "gauntlet/rating/absolute.js",
-    "ladderResults": "/home/user/work/burst7-playkit-chess-rating/gauntlet/rating/ladder-results.json",
+    "ladderResults": "/home/user/work/burst17-playkit-review-cli/gauntlet/rating/ladder-results.json",
     "ladderMeta": {
       "run": "gauntlet/rating/ladder.js",
       "builtinOnly": false,
@@ -13,7 +13,7 @@
       },
       "chessSpec": {
         "id": "chess",
-        "version": "1.0.0"
+        "version": "1.2.0"
       },
       "chessStockfishSpec": {
         "id": "chess-stockfish",
@@ -23,11 +23,24 @@
         "binaryPath": "/usr/games/stockfish",
         "id": "Stockfish 17.1"
       },
-      "git": {
-        "baseCommit": "0c0287884178a248b342583114f8769cc0f2b53e",
-        "branch": "obv/burst7-playkit-chess-rating"
+      "mergedFrom": {
+        "path": "rating/ladder-results.json",
+        "finishedAt": "2026-10-16T05:19:15.600Z",
+        "chessSpecVersion": "1.1.0",
+        "carriedPairs": [
+          "paper-vs-wood",
+          "wood-vs-sf-250",
+          "sf-250-vs-sf-1k",
+          "sf-1k-vs-sf-10k",
+          "sf-10k-vs-sf-100k",
+          "skip-paper-vs-sf-1k"
+        ]
       },
-      "finishedAt": "2026-10-16T02:34:22.134Z"
+      "git": {
+        "baseCommit": "d016791384c5f9fa18db0ae4aa9193162131a59a",
+        "branch": "obv/burst11-playkit-chess-first-rating"
+      },
+      "finishedAt": "2026-10-16T08:25:47.466Z"
     },
     "gamesPerColour": 8,
     "levels": [
@@ -45,14 +58,22 @@
       "rating": 1000
     },
     "stockfish": {
-      "binaryPath": "/usr/games/stockfish",
-      "id": "Stockfish 17.1"
+      "binaryPath": null,
+      "id": "Stockfish 17.1",
+      "carriedFrom": "rating/absolute-results.json"
+    },
+    "excludedSweptOnly": {
+      "players": [
+        "chess-sand",
+        "sf-elo-1700"
+      ],
+      "games": 72
     },
     "git": {
-      "baseCommit": "3379b35759cadfc76354d73d78cf1c7f57ba63c9",
-      "branch": "obv/burst7-playkit-chess-rating"
+      "baseCommit": "a83ec557d1d28d1e82c0a45adc2921a71ff49ce1",
+      "branch": "obv/burst17-playkit-review-cli"
     },
-    "finishedAt": "2026-10-16T03:16:51.476Z"
+    "finishedAt": "2026-10-17T22:46:34.440Z"
   },
   "levels": {
     "sf-elo-1320-vs-chess-wood": {
@@ -64,116 +85,116 @@
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 50
+          "agentActions": 19
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/1",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 21
+          "agentActions": 46
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/2",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 58
+          "agentActions": 30
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/3",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 32
+          "agentActions": 22
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/4",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 53
+          "agentActions": 34
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/5",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 8
+          "agentActions": 16
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/6",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 26
+          "agentActions": 29
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/7",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 48
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/8",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 24
+          "agentActions": 15
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/9",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 41
+          "agentActions": 38
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/10",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 34
+          "agentActions": 45
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/11",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 27
+          "agentActions": 28
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/12",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 24
+          "agentActions": 32
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/13",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 27
+          "agentActions": 11
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/14",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 35
+          "agentActions": 25
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-wood/15",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 37
+          "agentActions": 35
         }
       ],
       "rawScore": {
-        "score": 2,
+        "score": 1.5,
         "n": 16
       }
     },
@@ -186,112 +207,112 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 25
+          "agentActions": 32
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/1",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 33
+          "agentActions": 40
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/2",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 30
+          "agentActions": 25
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/3",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 30
+          "agentActions": 25
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/4",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 26
+          "agentActions": 35
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/5",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 26
+          "agentActions": 36
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/6",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 18
+          "agentActions": 27
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/7",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 24
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/8",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 19
+          "agentActions": 17
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/9",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 24
+          "agentActions": 23
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/10",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 34
+          "agentActions": 35
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/11",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 15
+          "agentActions": 27
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/12",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 36
+          "agentActions": 21
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/13",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 30
+          "agentActions": 27
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/14",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 36
+          "agentActions": 29
         },
         {
           "seed": "rating/sf-elo-1320-vs-chess-stockfish-sf-1k/15",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 17
+          "agentActions": 35
         }
       ],
       "rawScore": {
@@ -308,56 +329,56 @@
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 21
+          "agentActions": 30
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/1",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 25
+          "agentActions": 18
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/2",
           "seat": 0,
-          "agentScore": 0,
-          "reason": "terminal",
-          "agentActions": 29
+          "agentScore": 0.5,
+          "reason": "budget-exhausted",
+          "agentActions": 150
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/3",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 17
+          "agentActions": 32
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/4",
           "seat": 0,
-          "agentScore": 0.5,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 44
+          "agentActions": 127
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/5",
           "seat": 1,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 16
+          "agentActions": 21
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/6",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 26
+          "agentActions": 20
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/7",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 17
+          "agentActions": 83
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/8",
@@ -369,55 +390,55 @@
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/9",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 47
+          "agentActions": 21
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/10",
           "seat": 1,
-          "agentScore": 1,
-          "reason": "terminal",
-          "agentActions": 50
+          "agentScore": 0.5,
+          "reason": "budget-exhausted",
+          "agentActions": 150
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/11",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 19
+          "agentActions": 58
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/12",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 37
+          "agentActions": 57
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/13",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 21
+          "agentActions": 66
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/14",
           "seat": 1,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 28
+          "agentActions": 35
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-wood/15",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 27
+          "agentActions": 21
         }
       ],
       "rawScore": {
-        "score": 5.5,
+        "score": 3,
         "n": 16
       }
     },
@@ -430,49 +451,49 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 45
+          "agentActions": 42
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/1",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 26
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/2",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 50
+          "agentActions": 26
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/3",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 17
+          "agentActions": 32
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/4",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 13
+          "agentActions": 34
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/5",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 46
+          "agentActions": 33
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/6",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 61
+          "agentActions": 31
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/7",
@@ -486,49 +507,49 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 22
+          "agentActions": 23
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/9",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 32
+          "agentActions": 34
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/10",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 34
+          "agentActions": 6
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/11",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 38
+          "agentActions": 39
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/12",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 24
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/13",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 12
+          "agentActions": 33
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/14",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 33
+          "agentActions": 7
         },
         {
           "seed": "rating/sf-elo-1500-vs-chess-stockfish-sf-1k/15",
@@ -550,118 +571,118 @@
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/0",
           "seat": 0,
-          "agentScore": 0.5,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 37
+          "agentActions": 33
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/1",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 28
+          "agentActions": 76
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/2",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 30
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/3",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 18
+          "agentActions": 31
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/4",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 49
+          "agentActions": 53
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/5",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 22
+          "agentActions": 64
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/6",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 20
+          "agentActions": 89
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/7",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 26
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/8",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 34
+          "agentActions": 103
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/9",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 84
+          "agentActions": 37
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/10",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 40
+          "agentActions": 28
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/11",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 23
+          "agentActions": 49
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/12",
           "seat": 1,
-          "agentScore": 1,
-          "reason": "budget-exhausted",
-          "agentActions": 150
+          "agentScore": 0,
+          "reason": "terminal",
+          "agentActions": 47
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/13",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 34
+          "agentActions": 18
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/14",
           "seat": 1,
-          "agentScore": 0.5,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 138
+          "agentActions": 94
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-wood/15",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 30
+          "agentActions": 145
         }
       ],
       "rawScore": {
-        "score": 7,
+        "score": 1,
         "n": 16
       }
     },
@@ -674,112 +695,112 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 30
+          "agentActions": 17
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/1",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 29
+          "agentActions": 60
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/2",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 46
+          "agentActions": 22
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/3",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 48
+          "agentActions": 37
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/4",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 26
+          "agentActions": 36
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/5",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 68
+          "agentActions": 30
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/6",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 46
+          "agentActions": 25
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/7",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 30
+          "agentActions": 46
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/8",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 20
+          "agentActions": 74
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/9",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 42
+          "agentActions": 50
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/10",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 64
+          "agentActions": 29
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/11",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 29
+          "agentActions": 21
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/12",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 68
+          "agentActions": 38
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/13",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 23
+          "agentActions": 38
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/14",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 48
+          "agentActions": 30
         },
         {
           "seed": "rating/sf-elo-1700-vs-chess-stockfish-sf-1k/15",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 14
+          "agentActions": 40
         }
       ],
       "rawScore": {
@@ -794,44 +815,44 @@
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/0",
           "seat": 0,
-          "agentScore": 0.5,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 135
+          "agentActions": 28
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/1",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 41
+          "agentActions": 23
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/2",
           "seat": 0,
           "agentScore": 0.5,
-          "reason": "terminal",
-          "agentActions": 79
+          "reason": "budget-exhausted",
+          "agentActions": 150
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/3",
           "seat": 1,
-          "agentScore": 0.5,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 129
+          "agentActions": 48
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/4",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 44
+          "agentActions": 39
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/5",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 17
+          "agentActions": 25
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/6",
@@ -843,69 +864,69 @@
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/7",
           "seat": 1,
-          "agentScore": 0.5,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 145
+          "agentActions": 26
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/8",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 23
+          "agentActions": 49
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/9",
           "seat": 1,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 16
+          "agentActions": 54
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/10",
           "seat": 1,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 25
+          "agentActions": 75
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/11",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 37
+          "agentActions": 21
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/12",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 42
+          "agentActions": 50
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/13",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 17
+          "agentActions": 21
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/14",
           "seat": 1,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 55
+          "agentActions": 35
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-wood/15",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 63
+          "agentActions": 59
         }
       ],
       "rawScore": {
-        "score": 8,
+        "score": 6,
         "n": 16
       }
     },
@@ -918,116 +939,116 @@
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 32
+          "agentActions": 67
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/1",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 27
+          "agentActions": 33
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/2",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 39
+          "agentActions": 29
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/3",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 32
+          "agentActions": 27
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/4",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 27
+          "agentActions": 67
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/5",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 37
+          "agentActions": 31
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/6",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 25
+          "agentActions": 38
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/7",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 32
+          "agentActions": 105
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/8",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 22
+          "agentActions": 57
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/9",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 33
+          "agentActions": 43
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/10",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 38
+          "agentActions": 57
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/11",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 33
+          "agentActions": 42
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/12",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 43
+          "agentActions": 27
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/13",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 39
+          "agentActions": 40
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/14",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 24
+          "agentActions": 20
         },
         {
           "seed": "rating/sf-elo-1900-vs-chess-stockfish-sf-1k/15",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 34
+          "agentActions": 66
         }
       ],
       "rawScore": {
-        "score": 0,
+        "score": 0.5,
         "n": 16
       }
     },
@@ -1040,116 +1061,116 @@
           "seat": 1,
           "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 40
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/1",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 14
+          "agentActions": 34
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/2",
           "seat": 1,
-          "agentScore": 0.5,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 129
+          "agentActions": 31
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/3",
           "seat": 0,
-          "agentScore": 0.5,
-          "reason": "budget-exhausted",
-          "agentActions": 150
+          "agentScore": 1,
+          "reason": "terminal",
+          "agentActions": 49
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/4",
           "seat": 1,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 94
+          "agentActions": 133
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/5",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 30
+          "agentActions": 40
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/6",
           "seat": 1,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 30
+          "agentActions": 134
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/7",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 63
+          "agentActions": 81
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/8",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 48
+          "agentActions": 25
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/9",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 45
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/10",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 18
+          "agentActions": 33
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/11",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 75
+          "agentActions": 39
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/12",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 37
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/13",
           "seat": 1,
-          "agentScore": 1,
-          "reason": "budget-exhausted",
-          "agentActions": 150
+          "agentScore": 0.5,
+          "reason": "terminal",
+          "agentActions": 120
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/14",
           "seat": 0,
-          "agentScore": 1,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 58
+          "agentActions": 62
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-wood/15",
           "seat": 1,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 34
+          "agentActions": 129
         }
       ],
       "rawScore": {
-        "score": 8.5,
+        "score": 9.5,
         "n": 16
       }
     },
@@ -1162,116 +1183,116 @@
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 34
+          "agentActions": 39
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/1",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 36
+          "agentActions": 19
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/2",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 56
+          "agentActions": 37
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/3",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 45
+          "agentActions": 67
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/4",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 30
+          "agentActions": 29
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/5",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 13
+          "agentActions": 47
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/6",
           "seat": 0,
-          "agentScore": 0,
+          "agentScore": 0.5,
           "reason": "terminal",
-          "agentActions": 42
+          "agentActions": 128
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/7",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 23
+          "agentActions": 15
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/8",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 33
+          "agentActions": 23
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/9",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 34
+          "agentActions": 35
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/10",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 29
+          "agentActions": 42
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/11",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 33
+          "agentActions": 36
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/12",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 41
+          "agentActions": 37
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/13",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 36
+          "agentActions": 53
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/14",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 27
+          "agentActions": 29
         },
         {
           "seed": "rating/sf-elo-2100-vs-chess-stockfish-sf-1k/15",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 40
+          "agentActions": 51
         }
       ],
       "rawScore": {
-        "score": 0,
+        "score": 0.5,
         "n": 16
       }
     },
@@ -1284,116 +1305,116 @@
           "seat": 1,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 29
+          "agentActions": 63
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/1",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 20
+          "agentActions": 26
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/2",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 117
+          "agentActions": 47
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/3",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 31
+          "agentActions": 74
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/4",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 26
+          "agentActions": 33
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/5",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 23
+          "agentActions": 34
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/6",
           "seat": 1,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 25
+          "agentActions": 28
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/7",
           "seat": 0,
-          "agentScore": 0.5,
-          "reason": "terminal",
-          "agentActions": 123
+          "agentScore": 1,
+          "reason": "budget-exhausted",
+          "agentActions": 150
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/8",
           "seat": 1,
-          "agentScore": 1,
+          "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 37
+          "agentActions": 35
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/9",
           "seat": 0,
           "agentScore": 0.5,
-          "reason": "terminal",
-          "agentActions": 108
+          "reason": "budget-exhausted",
+          "agentActions": 150
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/10",
           "seat": 0,
-          "agentScore": 0.5,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 40
+          "agentActions": 89
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/11",
           "seat": 1,
-          "agentScore": 0,
-          "reason": "terminal",
-          "agentActions": 53
+          "agentScore": 0.5,
+          "reason": "budget-exhausted",
+          "agentActions": 150
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/12",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 25
+          "agentActions": 17
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/13",
           "seat": 1,
-          "agentScore": 0,
+          "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 27
+          "agentActions": 58
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/14",
           "seat": 0,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 72
+          "agentActions": 31
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-wood/15",
           "seat": 1,
           "agentScore": 1,
           "reason": "terminal",
-          "agentActions": 46
+          "agentActions": 60
         }
       ],
       "rawScore": {
-        "score": 11.5,
+        "score": 12,
         "n": 16
       }
     },
@@ -1406,49 +1427,49 @@
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 39
+          "agentActions": 22
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/1",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 35
+          "agentActions": 31
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/2",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 38
+          "agentActions": 58
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/3",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 57
+          "agentActions": 31
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/4",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 36
+          "agentActions": 53
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/5",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 69
+          "agentActions": 22
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/6",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 33
+          "agentActions": 76
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/7",
@@ -1462,56 +1483,56 @@
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 29
+          "agentActions": 25
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/9",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 46
+          "agentActions": 49
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/10",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 59
+          "agentActions": 24
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/11",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 35
+          "agentActions": 61
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/12",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 38
+          "agentActions": 64
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/13",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 40
+          "agentActions": 36
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/14",
           "seat": 1,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 35
+          "agentActions": 25
         },
         {
           "seed": "rating/sf-elo-2300-vs-chess-stockfish-sf-1k/15",
           "seat": 0,
           "agentScore": 0,
           "reason": "terminal",
-          "agentActions": 60
+          "agentActions": 44
         }
       ],
       "rawScore": {
@@ -1522,26 +1543,25 @@
   },
   "fit": {
     "ratings": {
-      "chess-wood": 1383.00455061061,
+      "chess-wood": 1361.1071208439446,
       "chess-paper": 1000,
-      "chess-stockfish-sf-250": 1613.1351259197188,
-      "chess-stockfish-sf-1k": 2268.06350135873,
-      "chess-stockfish-sf-10k": 2904.48934416933,
-      "chess-stockfish-sf-100k": 3415.990784550461,
-      "sf-elo-1320": 1043.5829016522687,
-      "sf-elo-1500": 1268.2385937767729,
-      "sf-elo-1700": 1336.0565308310522,
-      "sf-elo-1900": 1378.8707299884118,
-      "sf-elo-2100": 1400.06653893359,
-      "sf-elo-2300": 1533.8164221253041
+      "chess-stockfish-sf-250": 1599.3844535155715,
+      "chess-stockfish-sf-1k": 2152.122049854313,
+      "chess-stockfish-sf-10k": 2788.5478926649125,
+      "chess-stockfish-sf-100k": 3300.049333046044,
+      "sf-elo-1320": 964.7880828017159,
+      "sf-elo-1500": 1103.6434804013809,
+      "sf-elo-1900": 1290.1627776942805,
+      "sf-elo-2100": 1437.9892628921923,
+      "sf-elo-2300": 1527.9614627796905
     },
-    "iterations": 15,
-    "gradientInfNorm": 4.0767042519540553e-13,
+    "iterations": 14,
+    "gradientInfNorm": 1.8583101030200666e-10,
     "intervals": {
       "chess-wood": {
-        "low": 1252.8750753157042,
-        "high": 1601.5377502792821,
-        "mean": 1395.6439354018257
+        "low": 1264.1111548058616,
+        "high": 1513.5925746286853,
+        "mean": 1369.6577348700037
       },
       "chess-paper": {
         "low": 1000,
@@ -1549,57 +1569,52 @@
         "mean": 1000
       },
       "chess-stockfish-sf-250": {
-        "low": 1451.900327298745,
-        "high": 1883.2100456422083,
-        "mean": 1632.66458119188
+        "low": 1469.2013870649073,
+        "high": 1793.637907598645,
+        "mean": 1615.2129264226505
       },
       "chess-stockfish-sf-1k": {
-        "low": 2073.354057498601,
-        "high": 2585.290420712823,
-        "mean": 2311.795731529766
+        "low": 1993.418827960056,
+        "high": 2457.3000098194616,
+        "mean": 2190.2621286949257
       },
       "chess-stockfish-sf-10k": {
-        "low": 2650.6977778608807,
-        "high": 3279.8933818411524,
-        "mean": 2948.7756415171843
+        "low": 2539.576963195856,
+        "high": 3137.9569272421295,
+        "mean": 2821.9451495437424
       },
       "chess-stockfish-sf-100k": {
-        "low": 3100.3691211350556,
-        "high": 3892.8711535122047,
-        "mean": 3476.731470516434
+        "low": 3006.063153604201,
+        "high": 3738.555263515984,
+        "mean": 3354.2358919243934
       },
       "sf-elo-1320": {
-        "low": -3237.7728914750173,
-        "high": 1324.873543482615,
-        "mean": 496.57954260046614
+        "low": 702.6847647000114,
+        "high": 1212.7741438487408,
+        "mean": 972.9109911573855
       },
       "sf-elo-1500": {
-        "low": 1014.9325348675063,
-        "high": 1527.9639547808974,
-        "mean": 1264.0431791558717
-      },
-      "sf-elo-1700": {
-        "low": 1108.8045416146883,
-        "high": 1605.3112168240011,
-        "mean": 1344.4889422922943
+        "low": 856.832887079389,
+        "high": 1301.6331244227647,
+        "mean": 1100.0701868567373
       },
       "sf-elo-1900": {
-        "low": 1169.6681332836692,
-        "high": 1631.773238979447,
-        "mean": 1388.711840067991
+        "low": 1084.245785728155,
+        "high": 1503.9005533332218,
+        "mean": 1293.6322653937189
       },
       "sf-elo-2100": {
-        "low": 1190.8065628172271,
-        "high": 1680.9578435173203,
-        "mean": 1414.7084896335102
+        "low": 1271.105985283056,
+        "high": 1634.5578643848626,
+        "mean": 1448.8761911328927
       },
       "sf-elo-2300": {
-        "low": 1330.9447006818295,
-        "high": 1819.9715191705623,
-        "mean": 1551.0839980436194
+        "low": 1345.345071763749,
+        "high": 1763.3684442183946,
+        "mean": 1544.7987472510836
       }
     },
-    "replicates": 1999,
-    "divergentReplicates": 1
+    "replicates": 1998,
+    "divergentReplicates": 2
   }
 }

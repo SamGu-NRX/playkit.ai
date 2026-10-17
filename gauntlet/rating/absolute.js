@@ -282,6 +282,35 @@ async function main() {
   );
   const fitGames = [...ladderGames, ...calibrationGames];
 
+  // A rung whose every recorded cross-game is a total sweep (chess-sand lost
+  // 0/40 to the paper rung in the current ladder) has no finite
+  // maximum-likelihood rating: fitRatings refuses the whole fit because of
+  // it. Such games carry no information about any other player either — the
+  // reported sf-elo rungs are unchanged by dropping them — so exclude them
+  // here, loudly, instead of weakening the fit's guard.
+  const hasMixedEvidence = new Set();
+  for (const g of fitGames) {
+    if (g.score !== 0 && g.score !== 1) {
+      hasMixedEvidence.add(g.a);
+      hasMixedEvidence.add(g.b);
+    }
+  }
+  const sweptOnlyPlayers = [
+    ...new Set(fitGames.flatMap((g) => [g.a, g.b])),
+  ].filter((p) => !hasMixedEvidence.has(p));
+  const fitGamesUsed = sweptOnlyPlayers.length
+    ? fitGames.filter(
+        (g) => !sweptOnlyPlayers.includes(g.a) && !sweptOnlyPlayers.includes(g.b)
+      )
+    : fitGames;
+  if (sweptOnlyPlayers.length) {
+    process.stdout.write(
+      `excluding ${fitGames.length - fitGamesUsed.length} games of swept-only players ` +
+        `(${sweptOnlyPlayers.join(', ')}): a player with only total sweeps has no finite ` +
+        `rating, and its games do not affect any other player's fit\n`
+    );
+  }
+
   const meta = {
     run: 'gauntlet/rating/absolute.js',
     ladderResults: ladderPath,
@@ -292,6 +321,7 @@ async function main() {
     bootstrapReplicates: replicates,
     anchor: { rung: ANCHOR_RUNG, rating: ANCHOR_RATING },
     stockfish,
+    excludedSweptOnly: { players: sweptOnlyPlayers, games: fitGames.length - fitGamesUsed.length },
     git: gitProvenance(),
     finishedAt: new Date().toISOString(),
   };
@@ -310,10 +340,10 @@ async function main() {
   }
 
   process.stdout.write(
-    `\nfitting ${fitGames.length} games (${ladderGames.length} ladder + ${calibrationGames.length} calibration) anchored at ${ANCHOR_RUNG}=${ANCHOR_RATING}\n`
+    `\nfitting ${fitGamesUsed.length} games (${fitGamesUsed.length - calibrationGames.length} ladder + ${calibrationGames.length} calibration) anchored at ${ANCHOR_RUNG}=${ANCHOR_RATING}\n`
   );
-  const fit = fitRatings(fitGames, { anchorPlayer: ANCHOR_RUNG, anchorRating: ANCHOR_RATING });
-  const boot = bootstrapRatings(fitGames, {
+  const fit = fitRatings(fitGamesUsed, { anchorPlayer: ANCHOR_RUNG, anchorRating: ANCHOR_RATING });
+  const boot = bootstrapRatings(fitGamesUsed, {
     anchorPlayer: ANCHOR_RUNG,
     anchorRating: ANCHOR_RATING,
     replicates,
@@ -325,6 +355,11 @@ async function main() {
     const rung = `sf-elo-${elo}`;
     const rating = fit.ratings[rung];
     const interval = boot.intervals[rung];
+    if (!Number.isFinite(rating) || !interval) {
+      // A rung excluded as swept-only has no finite rating to report.
+      process.stdout.write(`${String(elo).padStart(7)}   excluded — played a total sweep\n`);
+      continue;
+    }
     process.stdout.write(
       `${String(elo).padStart(7)}   ${rating.toFixed(1).padStart(6)}   ` +
         `[${interval.low.toFixed(1)}, ${interval.high.toFixed(1)}]\n`

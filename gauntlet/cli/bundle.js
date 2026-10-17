@@ -71,6 +71,21 @@ export async function printBundleVerify(options) {
   lines.push(
     `strays   ${report.stray.length === 0 ? 'none' : report.stray.join(', ')}`
   );
+  // The spend ledger: one summary line when it verifies, per-problem lines
+  // when it does not. Absent (present: false) on bundles written before the
+  // ledger existed — those stay quiet so old bundles verify unchanged.
+  if (report.ledger?.present) {
+    if (report.ledger.ok) {
+      lines.push(
+        `ledger   ok — ${report.ledger.calls} call(s) checked, totalUsd ${report.ledger.totalUsd.toFixed(6)}${report.ledger.cap !== null ? ` / cap ${report.ledger.cap}` : ''}${report.ledger.unwoundCalls > 0 ? `, ${report.ledger.unwoundCalls} unwound (${report.ledger.unwoundUsd.toFixed(6)})` : ''}`
+      );
+    } else {
+      lines.push('ledger   FAILED');
+      for (const problem of report.ledger.problems) {
+        lines.push(`  FAIL  ${problem}`);
+      }
+    }
+  }
   if (report.pageOnly) {
     lines.push('score    n/a — page sessions are refereed logs, never scored');
   } else if (report.score) {

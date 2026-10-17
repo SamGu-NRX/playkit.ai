@@ -29,7 +29,7 @@
  *        [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]
  *                                          Write (or print) a suite manifest.
  *   run --suite <file> --agent <spec> --out <dir> [--limit <n>]
- *        [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]
+ *        [--concurrency <n>] [--max-usd <usd>] [--max-usd-total <usd>] [--max-calls <n>]
  *        [--requests-per-minute <n>] [--max-output-tokens <n>]
  *        [--call-timeout-ms <ms>] [--episode-time-limit-ms <ms>]
  *        [--thinking-budget <n>]
@@ -157,7 +157,7 @@ const USAGE_TEXT = [
   '       gauntlet suite build --split public|eval [--salt-file <file>]',
   '                      [--seeds-per-tier <n>] [--games <id,id>] [--out <file>]',
   '       gauntlet run --suite <file> --agent <spec> --out <dir> [--limit <n>]',
-  '                      [--max-invalid <n>] [--concurrency <n>] [--max-usd <usd>] [--max-calls <n>]',
+  '                      [--max-invalid <n>] [--concurrency <n>] [--max-usd <usd>] [--max-usd-total <usd>] [--max-calls <n>]',
   '                      [--requests-per-minute <n>] [--max-output-tokens <n>]',
   '                      [--call-timeout-ms <ms>] [--episode-time-limit-ms <ms>] [--thinking-budget <n>] [--reasoning-effort low|medium|high|xhigh|max]',
   '                      [--prices <file>] [--dry-run --script <file>]',
@@ -243,7 +243,7 @@ const COMMAND_FLAGS = {
       'agent', 'api-key-env', 'base-url', 'call-timeout-ms', 'concurrency',
       'dry-run', 'episode-time-limit-ms', 'limit', 'max-calls', 'max-invalid',
       'max-output-tokens',
-      'max-usd', 'out', 'prices', 'reasoning-effort', 'requests-per-minute',
+      'max-usd', 'max-usd-total', 'out', 'prices', 'reasoning-effort', 'requests-per-minute',
       'resume', 'script', 'suite', 'thinking-budget',
     ],
     booleans: new Set(['dry-run', 'resume']),
@@ -655,6 +655,13 @@ async function main(argv) {
       process.exitCode = 1;
       return;
     }
+    if (flags.has('max-usd-total') && !flags.has('prices')) {
+      console.error(
+        'error: --max-usd-total requires --prices (a bundle-wide spend cap needs the price table to convert calls into dollars); pass --prices <file.json>'
+      );
+      process.exitCode = 1;
+      return;
+    }
     const stop = () => {
       controller.abort();
     };
@@ -669,6 +676,7 @@ async function main(argv) {
         ...(flags.has('limit') ? { limit: numberFlag(flags, 'limit') } : {}),
         ...(flags.has('concurrency') ? { concurrency: numberFlag(flags, 'concurrency') } : {}),
         ...(flags.has('max-usd') ? { maxUsd: finiteNumberFlag(flags, 'max-usd') } : {}),
+        ...(flags.has('max-usd-total') ? { maxUsdTotal: finiteNumberFlag(flags, 'max-usd-total') } : {}),
         ...(flags.has('max-calls') ? { maxCalls: numberFlag(flags, 'max-calls') } : {}),
         ...(flags.has('requests-per-minute')
           ? { requestsPerMinute: finiteNumberFlag(flags, 'requests-per-minute') }

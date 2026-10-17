@@ -11,6 +11,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -25,7 +26,7 @@ import { planJobs } from './plan.js';
 import { trajectoryPath } from './fsutil.js';
 import { verifyBundle } from './bundle.js';
 
-/** @import { Agent } from '../core/types.js' */
+/** @import { Agent, Game } from '../core/types.js' */
 
 const SUITE = buildSuite([takeOrPass], { split: 'public' });
 
@@ -259,6 +260,296 @@ test('a tampered page session fails verification at the offending step', async (
     const verdict = bundle.pageSessions[0];
     assert.equal(verdict.ok, false);
     assert.match(String(verdict.reason), /verifyBridgeLog \(step 0\)/);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+// Spend ledger (`spend.jsonl`) — bundle verify checks the recorded spend
+// against the trajectories: well-formed and chain-intact, and every kept call
+// matches a trajectory step. A one-call priced agent builds the bundles.
+
+/** A deterministic one-call agent that always takes, at $0.05 per call. */
+function takeAtFiveCentsFactory({ text = 'take' } = {}) {
+  return () => /** @type {Agent} */ ({
+    id: 'bundler-priced',
+    track: 'community',
+    async act() {
+      return { text, usage: { inputTokens: 10, outputTokens: 1, costUsd: 0.05 } };
+    },
+  });
+}
+
+/**
+ * A one-seat fixture game where every episode takes exactly `calls` agent
+ * calls (the agent always says 'go').
+ *
+ * @param {string} id
+ * @param {number} calls
+ * @param {number} publicSeeds
+ */
+function makeMultiCallGame(id, calls, publicSeeds) {
+  return /** @type {Game<{ remaining: number }>} */ ({
+    spec: {
+      id,
+      version: '1.0.0',
+      title: id,
+      seats: 1,
+      information: 'perfect',
+      stochastic: false,
+      tags: [],
+      benchmark: true,
+      requires: [],
+      rulesText: 'Say "go" until the counter reaches zero.',
+      tiers: [
+        { id: 'main', rank: 1, scoring: 'outcome', maxActions: 64, publicSeeds, params: {} },
+      ],
+    },
+    reset() {
+      return { remaining: calls };
+    },
+    toAct(state) {
+      return state.remaining <= 0 ? null : 0;
+    },
+    observe(state) {
+      return { text: `remaining ${state.remaining}`, data: { remaining: state.remaining } };
+    },
+    legalActions() {
+      return ['go'];
+    },
+    parseAction(_state, _seat, text) {
+      return text.trim().toLowerCase() === 'go'
+        ? { ok: true, action: 'go' }
+        : { ok: false, error: 'the only action is "go"' };
+    },
+    step(state) {
+      return { remaining: state.remaining - 1 };
+    },
+    outcome() {
+      return { normalized: [1], raw: [0], reason: 'done' };
+    },
+    truncate() {
+      return { normalized: [0], raw: null, reason: 'ran out of budget' };
+    },
+  });
+}
+
+/**
+ * Rewrites the bundle's ledger through `transform` (an array of line objects
+ * in, an array out), re-chaining every prev hash the way a tamperer must.
+ *
+ * @param {string} outDir
+ * @param {(lines: any[]) => any[]} transform
+ */
+async function rewriteLedgerReChained(outDir, transform) {
+  const ledgerFile = path.join(outDir, 'spend.jsonl');
+  const text = await readFile(ledgerFile, 'utf8');
+  const values = text.split('\n').filter((l) => l.trim().length > 0).map((l) => JSON.parse(l));
+  const out = transform(values);
+  /** @type {string | null} */
+  let prev = null;
+  const retext = out.map((value) => {
+    const line = JSON.stringify({ ...value, prev });
+    prev = createHash('sha256').update(line).digest('hex');
+    return line;
+  });
+  await writeFile(ledgerFile, retext.join('\n') + '\n', 'utf8');
+}
+
+test('a capped run verifies as a bundle and the ledger matches the trajectories', async () => {
+  const outDir = await tempDir('ledger-happy');
+  try {
+    // $0.10 is the whole suite (2 episodes x 1 call x $0.05): the cap does
+    // not bind, so every episode is kept and the ledger must match the
+    // trajectories exactly.
+    await runSuite({
+      suite: SUITE,
+      games: [takeOrPass],
+      agentFactory: takeAtFiveCentsFactory(),
+      outDir,
+      maxUsdTotal: 0.2,
+    });
+
+    const bundle = await verifyBundle(outDir, [takeOrPass]);
+    assert.equal(bundle.ok, true);
+    assert.ok(bundle.ledger && bundle.ledger.present, 'the bundle carries a spend ledger');
+    assert.deepEqual(bundle.ledger.problems, []);
+    assert.ok(Math.abs(bundle.ledger.totalUsd - 0.1) < 1e-9);
+    assert.ok(Math.abs(bundle.ledger.trajectoryUsd - 0.1) < 1e-9);
+    assert.equal(bundle.ledger.unwoundUsd, 0);
+    assert.equal(bundle.ledger.invocations, 1);
+    assert.equal(bundle.ledger.cap, 0.2);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a mixed ledger (kept and unwound calls) still verifies', async () => {
+  const multi = makeMultiCallGame('bundle-multi', 4, 2);
+  const suite = buildSuite([multi], { split: 'public' });
+  const outDir = await tempDir('ledger-mixed');
+  try {
+    // $0.25 admits five $0.05 calls. With concurrency pinned to 1, episode 1
+    // finishes kept (4 calls) before episode 2 unwinds after one call — a
+    // serial split, deterministic regardless of machine parallelism.
+    const first = await runSuite({
+      suite,
+      games: [multi],
+      agentFactory: takeAtFiveCentsFactory({ text: 'go' }),
+      outDir,
+      maxUsdTotal: 0.25,
+      concurrency: 1,
+    });
+    assert.equal(first.stopped, 'budget');
+    // The unwound episode re-runs on a raised-cap resume: its fresh calls are
+    // kept and its trajectory verifies, while the discarded attempt's calls
+    // stay in the ledger as unwound spend.
+    const second = await runSuite({
+      suite,
+      games: [multi],
+      agentFactory: takeAtFiveCentsFactory({ text: 'go' }),
+      outDir,
+      maxUsdTotal: 0.5,
+      concurrency: 1,
+      resume: true,
+    });
+    assert.equal(second.stopped, null);
+
+    const bundle = await verifyBundle(outDir, [multi]);
+    assert.equal(bundle.ok, true);
+    assert.ok(bundle.ledger);
+    assert.ok(Math.abs(bundle.ledger.totalUsd - 0.45) < 1e-9, 'eight kept calls plus the unwound one are recorded');
+    assert.ok(Math.abs(bundle.ledger.keptUsd - 0.4) < 1e-9, 'every kept call matches a trajectory step');
+    assert.ok(Math.abs(bundle.ledger.unwoundUsd - 0.05) < 1e-9, 'the unwound call is recorded and excluded');
+    assert.ok(Math.abs(bundle.ledger.trajectoryUsd - 0.4) < 1e-9);
+    assert.ok(bundle.ledger.totalUsd + 1e-9 >= bundle.ledger.trajectoryUsd, 'recorded spend covers the trajectories');
+    assert.deepEqual(bundle.ledger.problems, []);
+    assert.equal(bundle.ledger.cap, 0.5, 'the current cap after the raise');
+    assert.equal(bundle.ledger.invocations, 2);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('dropping a ledger line fails the bundle on the hash chain', async () => {
+  const multi = makeMultiCallGame('bundle-multi-drop', 4, 2);
+  const suite = buildSuite([multi], { split: 'public' });
+  const outDir = await tempDir('ledger-drop');
+  try {
+    await runSuite({ suite, games: [multi], agentFactory: takeAtFiveCentsFactory({ text: 'go' }), outDir, maxUsdTotal: 0.25 });
+    // A naive tamperer drops a line without re-chaining what follows it.
+    const ledgerFile = path.join(outDir, 'spend.jsonl');
+    const lines = (await readFile(ledgerFile, 'utf8')).split('\n').filter((l) => l.trim().length > 0);
+    await writeFile(ledgerFile, lines.filter((l, i) => i !== 1).join('\n') + '\n', 'utf8');
+
+    const bundle = await verifyBundle(outDir, [multi]);
+    assert.equal(bundle.ok, false);
+    assert.ok(bundle.ledger, 'the bundle reports its ledger');
+    assert.ok(
+      bundle.ledger.problems.some((p) => /prev hash mismatch/.test(p)),
+      'the naive tamper is caught by the chain even when a line is dropped'
+    );
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('dropping a kept call and re-chaining fails the bundle on trajectory coverage', async () => {
+  const multi = makeMultiCallGame('bundle-multi-cover', 4, 2);
+  const suite = buildSuite([multi], { split: 'public' });
+  const outDir = await tempDir('ledger-cover');
+  try {
+    await runSuite({ suite, games: [multi], agentFactory: takeAtFiveCentsFactory({ text: 'go' }), outDir, maxUsdTotal: 0.25, concurrency: 1 });
+    // A tamperer who re-chains escapes the hash check — but the kept episode
+    // then has a trajectory step no ledger line accounts for.
+    await rewriteLedgerReChained(outDir, (lines) => lines.filter((l) => !(l.kind === 'call' && l.kept && l.job.includes('public/0') && l.call === 0)));
+
+    const bundle = await verifyBundle(outDir, [multi]);
+    assert.equal(bundle.ok, false);
+    assert.ok(bundle.ledger, 'the bundle reports its ledger');
+    assert.ok(
+      bundle.ledger.problems.some((p) => /not covered by a kept ledger line/.test(p)),
+      'every trajectory usage step must be accounted for by a kept ledger line'
+    );
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('re-costing a kept call and re-chaining fails the bundle on cost mismatch', async () => {
+  const multi = makeMultiCallGame('bundle-multi-cost', 4, 2);
+  const suite = buildSuite([multi], { split: 'public' });
+  const outDir = await tempDir('ledger-cost');
+  try {
+    await runSuite({ suite, games: [multi], agentFactory: takeAtFiveCentsFactory({ text: 'go' }), outDir, maxUsdTotal: 0.25, concurrency: 1 });
+    await rewriteLedgerReChained(outDir, (lines) => lines.map((l) => (l.kind === 'call' && l.kept ? { ...l, costUsd: 0.01 } : l)));
+
+    const bundle = await verifyBundle(outDir, [multi]);
+    assert.equal(bundle.ok, false);
+    assert.ok(bundle.ledger, 'the bundle reports its ledger');
+    assert.ok(
+      bundle.ledger.problems.some((p) => /not covered by a kept ledger line/.test(p)),
+      'a re-costed ledger cannot account for the trajectory spend'
+    );
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+test('a kept usage line the runner discarded (episode time limit) still verifies', async () => {
+  // When an episode time limit ends an episode mid-call, the runner discards
+  // the late reply but the provider billed the call: the kept episode's ledger
+  // carries one more kept usage line than the trajectory has usage steps.
+  const multi = makeMultiCallGame('bundle-multi-overflow', 4, 1);
+  const suite = buildSuite([multi], { split: 'public' });
+  const outDir = await tempDir('ledger-overflow');
+  try {
+    await runSuite({ suite, games: [multi], agentFactory: takeAtFiveCentsFactory({ text: 'go' }), outDir, maxUsdTotal: 0.5 });
+    // Append the discarded call as an extra trailing kept usage line.
+    await rewriteLedgerReChained(outDir, (lines) => [
+      ...lines,
+      { kind: 'call', invocation: 0, job: lines.find((l) => l.kind === 'call')?.job ?? '', call: 4, costUsd: 0.03, inputTokens: 10, outputTokens: 1, usage: true, kept: true, chargedAtReservation: false },
+    ]);
+
+    const bundle = await verifyBundle(outDir, [multi]);
+    assert.equal(bundle.ok, true, 'a discarded late reply is recorded spend, not a verification problem');
+    assert.ok(bundle.ledger);
+    assert.deepEqual(bundle.ledger.problems, []);
+    assert.ok(
+      bundle.ledger.totalUsd + 1e-9 >= bundle.ledger.trajectoryUsd + 0.03 - 1e-9,
+      'the recorded total covers the trajectories plus the discarded call'
+    );
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+
+
+test('an unparseable ledger line fails the bundle', async () => {
+  const outDir = await tempDir('ledger-garbage');
+  try {
+    await runSuite({ suite: SUITE, games: [takeOrPass], agentFactory: takeAtFiveCentsFactory(), outDir, maxUsdTotal: 0.002 });
+    await writeFile(path.join(outDir, 'spend.jsonl'), 'not json\n', { flag: 'a' });
+
+    const bundle = await verifyBundle(outDir, [takeOrPass]);
+    assert.equal(bundle.ok, false);
+    assert.ok(bundle.ledger, 'the bundle reports its ledger');
+    assert.ok(bundle.ledger.problems.some((p) => /not json/i.test(p)));
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a bundle from before the ledger still verifies without one', async () => {
+  const outDir = await tempDir('ledger-absent');
+  try {
+    await runSuite({ suite: SUITE, games: [takeOrPass], agentFactory: takeFactory(), outDir });
+    await rm(path.join(outDir, 'spend.jsonl'));
+
+    const bundle = await verifyBundle(outDir, [takeOrPass]);
+    assert.equal(bundle.ok, true, 'the ledger is additive: old bundles stay verifiable');
+    assert.ok(bundle.ledger);
+    assert.equal(bundle.ledger.present, false);
   } finally {
     await rm(outDir, { recursive: true, force: true });
   }

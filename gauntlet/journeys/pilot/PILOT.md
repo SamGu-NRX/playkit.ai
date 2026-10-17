@@ -113,12 +113,17 @@ meets every reply shape a live run meets; tune per stub with
 `STUB_RATE_LIMIT_EVERY`, `STUB_OVERLOAD_EVERY`, `STUB_REFUSE_EVERY`,
 `STUB_TRUNCATE_EVERY` (`0` disables).
 
-Rehearsal cap arithmetic: the stubs' usage tokens price out far above a real
-frontier call (they replay big token counts), so pass a cap that clears the
-suite's job count generously — for the 76-job `suite.pilot-1seed.json`, $10
-per arm finishes with all six comparisons printed, while a small cap (e.g.
-$2) deliberately exercises the cap-stop/resume path and ends in the loud
-abort. Both are useful; the completing one is the pre-flight green light.
+Rehearsal cap arithmetic: the stubs forfeit every episode after exactly three
+priced calls and price each call from the request's size, so a suite's
+stub-basis total concentrates in the big-observation games — for the 76-job
+`suite.pilot-1seed.json` it is ~$43 per arm (the pre-flight line prints the
+number). Pass a cap that clears the pre-flight estimate-high plus headroom —
+for that suite, $50 per arm finishes with all six comparisons printed — while
+a small cap (e.g. $2) deliberately exercises the cap-stop/resume path and
+ends in the loud abort (observed: 46 episodes played, then ~one call of
+progress per resume until the attempt bound, ledger pinned under the cap
+throughout, 30 episodes unplayed at the abort). Both are useful; the
+completing one is the pre-flight green light.
 
 The random arm and the preregistered analysis run exactly as live in a
 rehearsal — pairing, bootstrap and verdicts included.

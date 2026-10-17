@@ -29,7 +29,8 @@
 #   WORKDIR   default: a fresh temporary directory (kept on failure)
 #
 # Environment:
-#   SEPARATION_MAX_USD_TOTAL   stage C's bundle cap (default 0.5)
+#   SEPARATION_MAX_USD_TOTAL   stage C's bundle cap (default: derived from the
+#                              suite's stub-priced estimate so the cap must bind)
 #   SEPARATION_ESTIMATE_SECS   stage B's bound on the estimate (default 900)
 #   SEPARATION_INSTRUMENT_SECS stage E's bound on instrument.sh (default 2400)
 
@@ -43,7 +44,7 @@ REPO_URL="${1:-${repo_default:-https://github.com/SamGu-NRX/playkit.ai.git}}"
 REF="${2:-$ref_default}"
 WORK="${3:-$(mktemp -d /tmp/separation-journey.XXXXXX)}"
 
-CAP="${SEPARATION_MAX_USD_TOTAL:-2}"
+CAP="${SEPARATION_MAX_USD_TOTAL:-}"
 ESTIMATE_SECS="${SEPARATION_ESTIMATE_SECS:-900}"
 INSTRUMENT_SECS="${SEPARATION_INSTRUMENT_SECS:-2400}"
 MODEL="anthropic/claude-opus-5-5"
@@ -96,6 +97,25 @@ echo "B: PASS — estimate exited on its own in ${b_elapsed}s; no gnugo/stockfis
 #
 # Stage C — a capped bundle run against the pilot's Anthropic stub.
 #
+# The cap must BIND, or stage C exercises nothing: a fixed dollar cap stops
+# binding the moment stub pricing or the suite shifts — a $2 default sat above
+# the 76-episode stub total ($1.63), so attempt 1 completed and the budget
+# path was never exercised. Derive the cap from the suite's own stub-priced
+# estimate: half the low side is strictly under what completing the suite
+# costs, so attempt 1 must stop on the budget with episodes still unplayed.
+if [ -z "$CAP" ]; then
+  node "$SRC/cli/gauntlet.js" estimate --suite "$WORK/suite-public.json" \
+    --agent "model:$MODEL" --prices "$PRICES" --no-probes \
+    --out "$WORK/estimate-cap" >"$LOG/estimate-cap.log" 2>&1 \
+    || die "C: cap-basis estimate failed (see $LOG/estimate-cap.log)"
+  CAP="$(node -e '
+    const e = JSON.parse(require("node:fs").readFileSync(process.argv[1] + "/estimate.json", "utf8"));
+    const basis = Number(e.totals?.usdLow ?? e.totals?.usdHigh);
+    if (!Number.isFinite(basis) || basis <= 0) process.exit(1);
+    console.log((Math.floor(basis * 50) / 100).toFixed(2));
+  ' "$WORK/estimate-cap")" || die "C: no usable estimate basis for the cap"
+  echo "C: cap derived from the suite stub-priced estimate: \$$CAP (override: SEPARATION_MAX_USD_TOTAL)"
+fi
 step "C: capped run (--max-usd-total $CAP) against the pilot stub"
 node "$SRC/journeys/pilot/stubs/anthropic.mjs" --port 8091 \
   --rate-limit-every 5 --overload-every 13 --refuse-every 11 --truncate-every 7 \

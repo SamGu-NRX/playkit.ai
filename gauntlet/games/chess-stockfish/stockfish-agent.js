@@ -89,7 +89,13 @@ export function createStockfishOpponentAgent({
       const instance = new uci.UciEngine({
         binaryPath: resolvedPath,
         engineArgs,
-        idleTimeoutMs,
+        // The episode owns this engine end to end and the runner disposes
+        // every actor in its finally block, so the client's idle reaper has
+        // nothing to reap here — and a model turn or rate-limit wait longer
+        // than the idle window would kill the engine mid-episode and fail the
+        // next Stockfish turn through the still-cached enginePromise. Callers
+        // can still opt in to reaping with an explicit idleTimeoutMs (tests).
+        idleTimeoutMs: idleTimeoutMs ?? 0,
       });
       currentEngine = instance;
       await instance.start();

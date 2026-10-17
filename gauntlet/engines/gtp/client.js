@@ -202,6 +202,14 @@ export class GtpEngine {
   #nextCommandId = 0;
   /** @type {boolean} */
   #engineEchoesIds = false;
+  /**
+   * Set when a command timeout on a non-id-echoing engine forces the engine
+   * out of service (see #invalidateAfterTimeout); the next #send rejects with
+   * this instead of the generic not-running error.
+   *
+   * @type {string | null}
+   */
+  #invalidatedReason = null;
 
   /**
    * @param {GtpEngineOptions} options
@@ -286,6 +294,30 @@ export class GtpEngine {
   }
 
   /**
+   * Retire the engine after a command timed out and its late reply cannot be
+   * told apart from the next reply (engine does not echo command ids). Kills
+   * the child and records why, so the next command fails loudly instead of
+   * consuming a shifted response.
+   *
+   * @param {string} text The command that timed out.
+   * @param {number} timeoutMs Its deadline.
+   * @returns {void}
+   */
+  #invalidateAfterTimeout(text, timeoutMs) {
+    const child = this.#child;
+    this.#child = null;
+    this.#invalidatedReason =
+      `GTP engine "${this.#binaryPath}" was invalidated: command "${text}" timed out after ${timeoutMs}ms and the engine does not echo command ids, so its late reply cannot be told apart from the next reply`;
+    if (child && !child.killed && child.exitCode === null) {
+      try {
+        child.kill('SIGTERM');
+      } catch {
+        // Already gone.
+      }
+    }
+  }
+
+  /**
    * Extract complete response blocks from the buffer and settle the pending
    * command on the first one.
    *
@@ -295,6 +327,11 @@ export class GtpEngine {
     for (;;) {
       const pending = this.#pending;
       if (!pending) return;
+      // Windows-style engines terminate blocks with \r\n\r\n, which never
+      // matches a '\n\n' boundary search. Normalize line endings on the whole
+      // buffer each pass: a chunk that ends mid-\r\n is repaired on the next
+      // pass, when its second half has arrived.
+      this.#buffer = this.#buffer.replace(/\r\n/g, '\n');
       const end = this.#buffer.indexOf('\n\n');
       if (end < 0) return;
       const block = this.#buffer.slice(0, end);
@@ -341,12 +378,24 @@ export class GtpEngine {
       () =>
         new Promise((resolve, reject) => {
           if (!this.#child) {
-            reject(new Error('GTP engine is not running (start() first, or it already quit)'));
+            reject(
+              new Error(
+                this.#invalidatedReason ?? 'GTP engine is not running (start() first, or it already quit)'
+              )
+            );
             return;
           }
           const id = ++this.#nextCommandId;
           const timer = setTimeout(() => {
             this.#pending = null;
+            if (!this.#engineEchoesIds) {
+              // Without id echo there is no way to tell a late reply to this
+              // command apart from the next command's reply: whatever is in
+              // the buffer (or arrives late) would shift onto the wrong
+              // command. Take the engine out of service instead of risking a
+              // silently wrong response.
+              this.#invalidateAfterTimeout(text, timeoutMs);
+            }
             reject(new Error(`GTP command "${text}" timed out after ${timeoutMs}ms on "${this.#binaryPath}"`));
           }, timeoutMs);
           if (typeof timer.unref === 'function') timer.unref();
@@ -428,12 +477,15 @@ export class GtpEngine {
   async quit() {
     const child = this.#child;
     if (!child) return;
-    this.#child = null;
     try {
+      // Send the polite quit while the child reference is still live: nulling
+      // it first would fail every #send at its not-running guard and no quit
+      // command would ever reach the engine.
       await this.command('quit', { timeoutMs: 2000 });
     } catch {
       // Engine may already be gone; the kill below settles it either way.
     }
+    this.#child = null;
     if (!child.killed && child.exitCode === null) {
       try {
         child.kill('SIGTERM');

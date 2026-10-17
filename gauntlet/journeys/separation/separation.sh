@@ -29,7 +29,9 @@
 #   WORKDIR   default: a fresh temporary directory (kept on failure)
 #
 # Environment:
-#   SEPARATION_MAX_USD_TOTAL   stage C's bundle cap (default 0.5)
+#   SEPARATION_MAX_USD_TOTAL   stage C's bundle cap (default: derived from a
+#                              throwaway uncapped run's settled total, so the
+#                              cap must bind)
 #   SEPARATION_ESTIMATE_SECS   stage B's bound on the estimate (default 900)
 #   SEPARATION_INSTRUMENT_SECS stage E's bound on instrument.sh (default 2400)
 
@@ -43,7 +45,7 @@ REPO_URL="${1:-${repo_default:-https://github.com/SamGu-NRX/playkit.ai.git}}"
 REF="${2:-$ref_default}"
 WORK="${3:-$(mktemp -d /tmp/separation-journey.XXXXXX)}"
 
-CAP="${SEPARATION_MAX_USD_TOTAL:-2}"
+CAP="${SEPARATION_MAX_USD_TOTAL:-}"
 ESTIMATE_SECS="${SEPARATION_ESTIMATE_SECS:-900}"
 INSTRUMENT_SECS="${SEPARATION_INSTRUMENT_SECS:-2400}"
 MODEL="anthropic/claude-opus-5-5"
@@ -96,7 +98,16 @@ echo "B: PASS — estimate exited on its own in ${b_elapsed}s; no gnugo/stockfis
 #
 # Stage C — a capped bundle run against the pilot's Anthropic stub.
 #
-step "C: capped run (--max-usd-total $CAP) against the pilot stub"
+# The cap must BIND, or stage C exercises nothing: a fixed dollar cap stops
+# binding the moment stub pricing or the suite shifts — a $2 default sat above
+# the 76-episode stub total ($1.63), so attempt 1 completed and the budget
+# path was never exercised. Estimates cannot price stub behavior (their token
+# heuristic ran ~4x the stub's actual usage), so the basis is measured: with
+# the stub up, a throwaway uncapped run settles the suite's real stub-priced
+# total, and the capped flow runs at half of it — strictly under what
+# completing costs, so attempt 1 must stop on the budget with episodes still
+# unplayed.
+step "C: capped run against the pilot stub"
 node "$SRC/journeys/pilot/stubs/anthropic.mjs" --port 8091 \
   --rate-limit-every 5 --overload-every 13 --refuse-every 11 --truncate-every 7 \
   >"$LOG/stub-c.log" 2>&1 &
@@ -108,6 +119,23 @@ for _ in $(seq 1 50); do
 done
 kill -0 "$STUB_PID" 2>/dev/null || die "C: stub failed to start (see $LOG/stub-c.log)"
 
+RUN_ARGS=(run --suite "$WORK/suite-public.json" --agent "model:$MODEL"
+     --base-url http://127.0.0.1:8091 --prices "$PRICES")
+if [ -z "$CAP" ]; then
+  rm -rf "$WORK/cap-basis-run"
+  timeout 900 env ANTHROPIC_API_KEY=dummy-rehearsal-key \
+    node "$SRC/cli/gauntlet.js" "${RUN_ARGS[@]}" --out "$WORK/cap-basis-run" \
+    >"$LOG/cap-basis-run.log" 2>&1 || true
+  CAP="$(node -e '
+    const r = JSON.parse(require("node:fs").readFileSync(process.argv[1] + "/run.json", "utf8"));
+    const t = Number(r.ledger?.totalUsd ?? r.total?.spendUsd);
+    const done = (r.stopped ?? null) === null && r.counts.unplayed === 0 && r.counts.failed === 0;
+    if (!done || !Number.isFinite(t) || t <= 0) process.exit(1);
+    console.log((Math.floor(t * 50) / 100).toFixed(2));
+  ' "$WORK/cap-basis-run")" || die "C: the cap-basis run did not complete the suite (see $LOG/cap-basis-run.log)"
+  echo "C: cap derived from the suite's actual stub-priced total: \$$CAP (override: SEPARATION_MAX_USD_TOTAL)"
+fi
+
 ledger() {
   node -e '
     import(process.argv[1]).then(async (m) => {
@@ -116,12 +144,28 @@ ledger() {
     })' "$SRC/runs/run.js" "$WORK/bundle-cap"
 }
 
-RUN=(node "$SRC/cli/gauntlet.js" run --suite "$WORK/suite-public.json"
-     --agent "model:$MODEL" --out "$WORK/bundle-cap" --max-usd-total "$CAP"
-     --base-url http://127.0.0.1:8091 --prices "$PRICES")
+RUN=(node "$SRC/cli/gauntlet.js" "${RUN_ARGS[@]}" --out "$WORK/bundle-cap"
+     --max-usd-total "$CAP")
+
+# Completion is read from run.json, not grepped from the console: cli/run.js
+# prints "stopped <reason>" only when there IS a stop reason, while a
+# finished run prints "done     every planned episode has a trajectory" with
+# no stopped prefix — grepping for "stopped done" can never match success.
+verdict_of() {
+  node -e '
+    const r = JSON.parse(require("node:fs").readFileSync(process.argv[1] + "/run.json", "utf8"));
+    const done = (r.stopped ?? null) === null && r.counts.unplayed === 0 && r.counts.failed === 0;
+    console.log(done ? "done" : (r.stopped ?? "failed"));
+  ' "$WORK/bundle-cap"
+}
 
 c_out="$LOG/run-attempt-1.log"
-timeout 900 "${RUN[@]}" >"$c_out" 2>&1 || true
+# The stub accepts any key, but the model agent resolves ANTHROPIC_API_KEY
+# at call time and throws when it is unset (harness/model-agent.js
+# resolveApiKey) — without a key the first act fails before any request and
+# attempt 1 can never stop on the cap. Stage D already does this; keep the
+# journey self-contained (no ambient credentials).
+timeout 900 env ANTHROPIC_API_KEY=dummy-rehearsal-key "${RUN[@]}" >"$c_out" 2>&1 || true
 grep -qE "stopped[ =]+budget" "$c_out" || die "C: attempt 1 did not stop on the budget cap (see $c_out)"
 echo "C: attempt 1 bound the cap: $(grep -oE 'stopped[ =]+budget.*' "$c_out" | head -1)"
 prev_total="$(node -e 'const s=JSON.parse(process.argv[1]); console.log(s.totalUsd ?? 0)' "$(ledger)")"
@@ -130,10 +174,10 @@ verdict=""; attempt=1
 while [ "$attempt" -lt 6 ]; do
   attempt=$((attempt + 1))
   c_out="$LOG/run-attempt-$attempt.log"
-  timeout 900 "${RUN[@]}" --resume >"$c_out" 2>&1 || true
+  timeout 900 env ANTHROPIC_API_KEY=dummy-rehearsal-key "${RUN[@]}" --resume >"$c_out" 2>&1 || true
   summary="$(ledger)"
   total="$(node -e 'const s=JSON.parse(process.argv[1]); console.log(s.totalUsd ?? "null")' "$summary")"
-  if grep -qE "stopped[ =]+done" "$c_out"; then verdict="finished on attempt $attempt (stopped=done)"; break; fi
+  if [ "$(verdict_of)" = "done" ]; then verdict="finished on attempt $attempt (every planned episode has a trajectory)"; break; fi
   if grep -qE "stopped[ =]+budget" "$c_out"; then
     if node -e "process.exit(Math.abs(Number(process.argv[1]) - Number(process.argv[2])) < 1e-9 ? 0 : 1)" "$total" "$prev_total"; then
       verdict="refused on attempt $attempt (stopped=budget, 0 episodes played — the cap is exhausted with work remaining)"
@@ -158,11 +202,13 @@ node -e '
   }
   console.log(`C: PASS — settled total ${s.totalUsd} never passed the cap ${cap} (kept ${s.keptUsd}, unwound ${s.unwoundUsd} across ${s.unwoundCalls} unwound episode call(s), ${s.calls} calls)`);
 ' "$summary" "$CAP" || die "C: cap assertion failed"
-if grep -qE "stopped[ =]+done" "$LOG"/run-attempt-*.log; then
-  node "$SRC/cli/gauntlet.js" verify "$WORK/bundle-cap" >"$LOG/verify-c.log" 2>&1 \
-    || die "C: bundle verify failed after done (see $LOG/verify-c.log)"
-  echo "C: bundle replay-verified after completion"
-fi
+case "$verdict" in
+  finished*)
+    node "$SRC/cli/gauntlet.js" verify "$WORK/bundle-cap" >"$LOG/verify-c.log" 2>&1 \
+      || die "C: bundle verify failed after done (see $LOG/verify-c.log)"
+    echo "C: bundle replay-verified after completion"
+    ;;
+esac
 
 kill "$STUB_PID" 2>/dev/null || true
 wait "$STUB_PID" 2>/dev/null || true
@@ -172,7 +218,7 @@ trap - EXIT
 # Stage D — an episode against a stalled stub reply, under --episode-time-limit-ms.
 #
 step "D: episode time limit against a stalled reply"
-node "$here/stalled-stub.mjs" --port 8092 --log "$LOG/stub-d.log" >"$LOG/stub-d-stdout.log" 2>&1 &
+node "$SRC/journeys/separation/stalled-stub.mjs" --port 8092 --log "$LOG/stub-d.log" >"$LOG/stub-d-stdout.log" 2>&1 &
 STALL_PID=$!
 trap 'kill "$STALL_PID" 2>/dev/null || true' EXIT
 for _ in $(seq 1 50); do

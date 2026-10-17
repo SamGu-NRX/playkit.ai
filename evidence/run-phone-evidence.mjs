@@ -32,6 +32,7 @@
  */
 
 import { createRequire } from "node:module";
+import { parseCliArgs } from "./phone-evidence-args.mjs";
 import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync, readdirSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, resolve, join } from "node:path";
@@ -41,14 +42,7 @@ const outRoot = join(repoRoot, "evidence", "phone");
 
 // --- CLI ---------------------------------------------------------------------
 
-const args = process.argv.slice(2);
-function argValue(name, fallback) {
-  const at = args.indexOf(`--${name}`);
-  return at !== -1 && args[at + 1] ? args[at + 1] : fallback;
-}
-const label = argValue("label", "after");
-const outDir = argValue("out", outRoot);
-const only = args.filter((a) => a.startsWith("--only=")).map((a) => a.slice("--only=".length));
+const { label, outDir, only } = parseCliArgs(process.argv.slice(2), outRoot);
 
 // --- dependencies ------------------------------------------------------------
 
@@ -86,8 +80,13 @@ function targets() {
 
 // --- helpers -----------------------------------------------------------------
 
+// The screenshot prefix of the target currently running. Shots used to carry
+// only --label, so a full run (two targets) overwrote every per-step PNG:
+// iPhone15 wrote 01-page.png and Pixel8 overwrote it.
+let shotTag = null;
+
 function shot(page, file) {
-  return page.screenshot({ path: join(outDir, `${label}-${file}.png`) });
+  return page.screenshot({ path: join(outDir, `${shotTag ?? label}-${file}.png`) });
 }
 
 async function shadowText(page, selector) {
@@ -357,6 +356,7 @@ async function reducedMotionJourney(browser, target, consoleLines) {
 
 async function runTarget(browser, target) {
   const tag = `${label}-${target.name.toLowerCase()}-${target.orientation}`;
+  shotTag = tag; // every screenshot in this target names the target
   const consoleLines = [];
   const results = { target: `${target.name}:${target.orientation}`, label, steps: {} };
   const videoDir = join(outDir, "_videos");

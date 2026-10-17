@@ -61,6 +61,9 @@ if [[ ! -f "$SUITE" ]]; then
   echo "separation-run: SUITE must be a suite manifest file (an option file from studies/separation-pilot/outputs/suites/), got \"$SUITE\"" >&2
   exit 2
 fi
+# Pin the caller path absolute before any child resolves it differently
+# (pilot.sh changes into GAUNTLET_ROOT before running the estimate).
+SUITE="$(cd "$(dirname "$SUITE")" && pwd)/$(basename "$SUITE")"
 if ! [[ "$CAP_PER_ARM" =~ ^[0-9]+([.][0-9]+)?$ ]] || ! awk "BEGIN{exit !($CAP_PER_ARM > 0)}"; then
   echo "separation-run: CAP_PER_ARM must be a positive number, got \"$CAP_PER_ARM\"" >&2
   exit 2
@@ -80,6 +83,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 SUITE_NAME="$(basename "$SUITE" .json)"
 OUT="${SEPARATION_RUN_OUT:-$SCRIPT_DIR/runs/separation-$SUITE_NAME-$STAMP}"
 mkdir -p "$OUT"
+OUT="$(cd "$OUT" && pwd)"
 
 ARMS=(anthropic/claude-opus-5-5 openai/gpt-6-astra openai-chat/gemini-4-argon)
 
@@ -102,7 +106,13 @@ if [[ "$MODE" == "--rehearse" ]]; then
   OL="${STUB_OVERLOAD_EVERY:-13}"
   RF="${STUB_REFUSE_EVERY:-11}"
   TR="${STUB_TRUNCATE_EVERY:-7}"
-  declare -A STUB_PORT=( [anthropic/claude-opus-5-5]=8081 [openai/gpt-6-astra]=8082 [openai-chat/gemini-4-argon]=8083 )
+  # Free ports, not hard-coded ones: a rehearsal that lands on busy ports
+  # fails before its first episode (another rehearsal, a dev server, or any
+  # listener holds 808x). Allocate one free loopback port per stub up front.
+  declare -A STUB_PORT=()
+  for ARM in "${ARMS[@]}"; do
+    STUB_PORT[$ARM]="$(node -e 'const n=require("node:net");const s=n.createServer();s.listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close(() => process.exit(0))})')"
+  done
   for ARM in "${ARMS[@]}"; do
     WIRE="${ARM%%/*}"
     PORT="${STUB_PORT[$ARM]}"
@@ -134,9 +144,34 @@ fi
 # (resume until complete), verify, leaderboards, estimate-vs-actual.
 declare -A ARM_BASE=()
 if [[ "$MODE" == "--rehearse" ]]; then
-  ARM_BASE[anthropic/claude-opus-5-5]="http://127.0.0.1:8081"
-  ARM_BASE[openai/gpt-6-astra]="http://127.0.0.1:8082"
-  ARM_BASE[openai-chat/gemini-4-argon]="http://127.0.0.1:8083"
+  for ARM in "${ARMS[@]}"; do
+    ARM_BASE[$ARM]="http://127.0.0.1:${STUB_PORT[$ARM]}"
+  done
+fi
+
+# Fail before any arm spends: a missing key for a LATER arm would otherwise
+# surface only after the earlier arms have already run and charged their
+# estimates. Each pilot.sh checks only its own key when it is reached.
+if [[ "$MODE" != "--rehearse" ]]; then
+  MISSING=""
+  for ARM in "${ARMS[@]}"; do
+    case "$ARM" in
+      anthropic/*)           KEY_VAR="ANTHROPIC_API_KEY" ;;
+      openai-chat/gemini-*)  KEY_VAR="GEMINI_API_KEY" ;;
+      openai-chat/*)         KEY_VAR="OPENAI_API_KEY" ;;
+      openai/*)              KEY_VAR="OPENAI_API_KEY" ;;
+      *)                     KEY_VAR="" ;;
+    esac
+    if [[ -n "$KEY_VAR" && -z "${!KEY_VAR:-}" ]]; then
+      MISSING+="  $KEY_VAR (for $ARM)"$'\n'
+    fi
+  done
+  if [[ -n "$MISSING" ]]; then
+    echo "separation-run: refusing to start LIVE arms — missing provider keys:" >&2
+    printf '%s' "$MISSING" >&2
+    echo "separation-run: export each arm's own key variable (see the header), or pass --rehearse for loopback stubs." >&2
+    exit 2
+  fi
 fi
 
 for ARM in "${ARMS[@]}"; do
@@ -178,12 +213,16 @@ while :; do
     echo "separation-run: random arm stopped with an error — see run.json stopReason" >&2
     exit 1
   fi
-  if [[ "$STOPPED" == "done" || "$UNPLAYED" == "0" ]]; then
+  # Complete only when nothing is unplayed AND nothing failed (the runner
+  # leaves `stopped` unset for ordinary episode errors and says to re-run
+  # with --resume to retry them) — an incomplete bundle must not reach the
+  # analyzer as if it were done.
+  if [[ "$UNPLAYED" == "0" && "$FAILED" == "0" ]]; then
     break
   fi
   attempt=$((attempt + 1))
   if [[ "$attempt" -gt "$MAX_RESUMES" ]]; then
-    echo "separation-run: random arm giving up after $MAX_RESUMES invocations with $UNPLAYED episodes unplayed" >&2
+    echo "separation-run: random arm giving up after $MAX_RESUMES invocations with $UNPLAYED unplayed and $FAILED failed episodes" >&2
     exit 1
   fi
 done

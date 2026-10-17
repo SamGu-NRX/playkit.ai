@@ -8,7 +8,9 @@
  *   1. `calibration/tables/<id>.json` exists, was calibrated at the installed
  *      game version, and covers exactly the spec's tiers; and
  *   2. `scoring/baselines/random-public.json` has an entry for the game at the
- *      same version and the same tier set.
+ *      same version and the same tier set; and
+ *   3. that baseline was generated from the committed table — its
+ *      `sourceTables` sha256 matches the table's bytes.
  *
  * Failures are collected and reported as one list so the fix is obvious
  * (regenerate the table with `node calibration/run.js --games=<id>`, then the
@@ -19,6 +21,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -46,8 +49,11 @@ test('every benchmark game has a current calibration table and random baseline',
   /** @type {string[]} */
   const stale = [];
 
+  const baseline = JSON.parse(readFileSync(baselinePath, 'utf8'));
   /** @type {Record<string, { version: string, tiers: Record<string, unknown> }>} */
-  const baselineGames = JSON.parse(readFileSync(baselinePath, 'utf8')).games;
+  const baselineGames = baseline.games;
+  /** @type {{ gameId: string, path: string, sha256: string }[]} */
+  const baselineSourceTables = baseline.sourceTables ?? [];
 
   for (const game of Object.values(GAMES)) {
     const spec = game.spec;
@@ -94,6 +100,26 @@ test('every benchmark game has a current calibration table and random baseline',
       stale.push(
         `${spec.id}: random baseline tiers [${baseTierIds.join(', ')}] != spec tiers [${specTierIds.join(', ')}] — regenerate with node scoring/generate-baseline.js`
       );
+    }
+
+    // 3. The baseline must be generated from the committed table. The
+    // baseline records the sha256 of every calibration table it was built
+    // from; a recalibrated table without a regenerated baseline means the
+    // tier means no longer describe the table the scores lean on.
+    const source = baselineSourceTables.find(
+      (/** @type {{ gameId: string }} */ e) => e.gameId === spec.id
+    );
+    if (!source) {
+      stale.push(
+        `${spec.id}: random-public.json records no sourceTables entry for the game — regenerate with node scoring/generate-baseline.js`
+      );
+    } else {
+      const actualHash = createHash('sha256').update(readFileSync(tablePath(spec.id))).digest('hex');
+      if (actualHash !== source.sha256) {
+        stale.push(
+          `${spec.id}: random baseline was generated from calibration/tables/${spec.id}.json @ ${source.sha256.slice(0, 12)} but the committed table hashes to ${actualHash.slice(0, 12)} — regenerate with node scoring/generate-baseline.js`
+        );
+      }
     }
   }
 

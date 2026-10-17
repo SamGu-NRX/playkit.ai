@@ -553,6 +553,9 @@ function gitCommit() {
  *   recorded. Takes precedence over `prices`.
  * @property {() => number} [now] Millisecond clock for timestamps.
  * @property {(ms: number) => Promise<void>} [sleep] Delay function.
+ * @property {(path: string, data: string, encoding: string) => Promise<void>} [appendLedgerFile]
+ *   How ledger lines reach disk (default fs appendFile). Tests inject one
+ *   that delays or reorders resolution to exercise append serialization.
  */
 
 /**
@@ -608,6 +611,7 @@ export async function runSuite({
   pricesPath,
   now = Date.now,
   sleep,
+  appendLedgerFile,
 }) {
   if (!suite || suite.format !== SUITE_FORMAT) {
     throw new Error(
@@ -748,19 +752,41 @@ export async function runSuite({
    * @param {Record<string, unknown>[]} values
    * @returns {Promise<void>}
    */
-  async function appendSpendLines(values) {
-    if (values.length === 0) return;
-    let text = '';
-    for (const value of values) {
-      const line = JSON.stringify({ ...value, prev: ledgerChainHead });
-      ledgerChainHead = sha256Hex(line);
-      text += line + '\n';
-    }
-    try {
-      await appendFile(ledgerPath, text, 'utf8');
-    } catch (err) {
-      ledgerProblems.push(`could not append ${values.length} ledger line(s): ${errorMessage(err)}`);
-    }
+  // Ledger appends are serialized through a promise chain: the hash head
+  // must advance in the same order bytes reach the file. Two workers
+  // flushing concurrently that awaited the append directly could interleave
+  // so the later chain link's bytes landed first — the file would then hold
+  // a line whose `prev` is not the hash of the line physically before it,
+  // and verify would refuse the whole bundle's ledger.
+  const writeLedgerFile = appendLedgerFile ?? appendFile;
+  let ledgerAppendTail = Promise.resolve();
+
+  /**
+   * Appends lines to the ledger, extending the hash chain, serialized so the
+   * chain order matches file order. On failure the problem is recorded
+   * (run.json's ledger.problems) and the run continues: losing provenance
+   * must not corrupt a paid run mid-flight.
+   *
+   * @param {Record<string, unknown>[]} values
+   * @returns {Promise<void>}
+   */
+  function appendSpendLines(values) {
+    if (values.length === 0) return Promise.resolve();
+    const write = ledgerAppendTail.then(() => {
+      let text = '';
+      for (const value of values) {
+        const line = JSON.stringify({ ...value, prev: ledgerChainHead });
+        ledgerChainHead = sha256Hex(line);
+        text += line + '\n';
+      }
+      return writeLedgerFile(ledgerPath, text, 'utf8').catch((err) => {
+        ledgerProblems.push(`could not append ${values.length} ledger line(s): ${errorMessage(err)}`);
+      });
+    });
+    // The tail always resolves so one failed write cannot poison the queue;
+    // the caller's promise still carries the error to the awaiting worker.
+    ledgerAppendTail = write.catch(() => {});
+    return write;
   }
 
   await appendSpendLines([

@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { appendFile, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -844,6 +844,56 @@ test('a worker queued on the rate limiter re-checks maxUsd before calling', { ti
     assert.equal(result.run.calls, 2);
     assert.ok(Math.abs(result.run.spendUsd - 2) < 1e-9, `spend is exactly $2, got ${result.run.spendUsd}`);
     assert.equal(result.stopped, 'budget');
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('concurrent worker ledger flushes keep the hash chain in file order', async () => {
+  const outDir = await tempDir('ledger-order');
+  try {
+    const games = [makeGatedGame(1)];
+    const suite = buildSuite(games, { split: 'public' });
+
+    /** @returns {Agent} */
+    const pricedAgent = () =>
+      /** @type {Agent} */ ({
+        id: 'fake-priced',
+        track: 'community',
+        async act(ctx) {
+          return {
+            text: /** @type {string[]} */ (ctx.legalActions)[0],
+            usage: { inputTokens: 10, outputTokens: 2, costUsd: 0.01 },
+          };
+        },
+      });
+
+    // A writer that really appends the bytes, but resolves the first
+    // call-record write long after the second: the runner computes each
+    // chain link before the write, so an implementation that lets the two
+    // workers' writes land out of order physically puts the second link's
+    // bytes first. With serialization the second link is not even computed
+    // until the first write has resolved, so file order matches the chain.
+    let writes = 0;
+    const appendLedgerFile = async (/** @type {string} */ filePath, /** @type {string} */ text) => {
+      const delay = writes === 1 ? 60 : 10;
+      writes += 1;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      await appendFile(filePath, text, 'utf8');
+    };
+
+    const result = await runSuite({
+      suite,
+      games,
+      outDir,
+      concurrency: 2,
+      agentFactory: async () => pricedAgent(),
+      appendLedgerFile,
+    });
+
+    // The end-of-run ledger re-read verifies the chain; a reorder would
+    // surface as a problem here.
+    assert.deepEqual(result.ledger.problems, [], JSON.stringify(result.ledger.problems));
   } finally {
     await rm(outDir, { recursive: true, force: true });
   }

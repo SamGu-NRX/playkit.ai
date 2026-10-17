@@ -28,3 +28,13 @@ default 2 — the stub usage is ~$0.33 per call, so it binds mid-run), `SEPARATI
 Run it on a quiet box: stage B's no-leftover-engine assertion and stage B's
 timing are only meaningful when nothing else is launching engines. Stage E
 re-derives the instrument bundles (~10 min, deterministic, untracked).
+
+## Known follow-ups
+
+- `studies/separation-pilot/outputs/suites/suite.smallest-8.json` pins `wordle`
+  at version 1.1.0, but #108 shipped wordle 1.2.0 — the committed suite is
+  stale and `gauntlet run` refuses it (games-lookup version mismatch, first
+  seen on the wordle arm after sliding/sokoban had already played). Stage E0
+  of this script re-cuts the suite with the study's own `make-suite.mjs`
+  before running `instrument.sh`; the committed file itself should be
+  regenerated and re-committed by the study owner.

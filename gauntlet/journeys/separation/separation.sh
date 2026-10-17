@@ -210,6 +210,17 @@ trap - EXIT
 # Stage E — the separation pilot's preregistered instrument checks.
 #
 step "E: separation-pilot instrument checks (dial stand-ins through the real path)"
+# The committed instrument suite pins wordle 1.1.0; #108 shipped wordle 1.2.0,
+# so plan.js refuses the stale pin — a real cross-packet break this journey
+# caught (the instrument was last green before #108 landed). make-suite.mjs is
+# the study's own deterministic cutter; at a base where wordle was still 1.1.0
+# it regenerates the committed file byte-identically. Re-cutting here keeps the
+# instrument honest at head; re-pinning the committed file is the study owner's
+# follow-up (see README 'Known follow-ups').
+step "E0: re-cut suite.smallest-8.json at current game versions (make-suite.mjs)"
+(cd "$SRC/studies/separation-pilot" && node make-suite.mjs --option smallest \
+   --out outputs/suites/suite.smallest-8.json) >"$LOG/make-suite.log" 2>&1 \
+  || die "E0: make-suite failed (see $LOG/make-suite.log)"
 ( cd "$SRC/studies/separation-pilot" && timeout "$INSTRUMENT_SECS" ./instrument.sh \
   >"$LOG/instrument.log" 2>&1 ) || die "E: instrument.sh failed (see $LOG/instrument.log)"
 grep -q "INSTRUMENT-CHECKS: PASS" "$LOG/instrument.log" \

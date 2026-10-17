@@ -19,13 +19,19 @@ trap 'kill $SRV 2>/dev/null || true' EXIT
 until curl -sf http://127.0.0.1:8080/health >/dev/null 2>&1; do sleep 2; done
 # /health returns 200 while the model still loads; a real completion is the
 # readiness signal (S3: fetch-failed retries hitting a loading server).
+READY=0
 for i in $(seq 1 120); do
   if curl -sf http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
        -d '{"messages":[{"role":"user","content":"hi"}],"max_tokens":1}' > /dev/null 2>&1; then
+    READY=1
     break
   fi
   sleep 2
 done
+if [ "$READY" != 1 ]; then
+  echo "server $TAG never answered a completion (probe exhausted)" >&2
+  exit 1
+fi
 echo "server-ready $TAG"
 
 cd "$GAUNT"

@@ -169,8 +169,20 @@ def main(argv=None):
     if "--self-test" in argv:
         _self_test()
         return
-    profiles = json.loads((HERE / "profile-results.json").read_text())
-    episodes = json.loads((HERE / "episodes.json").read_text())
+    # Working directory for the score-study outputs and the stats.json result.
+    # Defaults to the study directory (the committed data); reproduce.sh points
+    # it at its temp dir so regeneration never reads - and never overwrites -
+    # the committed stats.json (review: the byte-identity check compared the
+    # committed file against itself and silently self-healed drift).
+    out_dir = HERE
+    if "--dir" in argv:
+        i = argv.index("--dir")
+        out_dir = Path(argv[i + 1]).resolve()
+        del argv[i : i + 2]
+    if argv:
+        raise SystemExit(f"unknown arguments: {argv}")
+    profiles = json.loads((out_dir / "profile-results.json").read_text())
+    episodes = json.loads((out_dir / "episodes.json").read_text())
 
     groups = {(g["game"], g["tier"], g["model"]): g for g in profiles["groups"]}
 

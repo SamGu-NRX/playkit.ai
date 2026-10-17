@@ -29,8 +29,8 @@ node scoring/generate-baseline.js --out="$HERE/baseline-random.json"
 echo "== regenerate stats.json from committed bundles =="
 TMP=$(mktemp -d)
 cp "$HERE/stats.json" "$TMP/stats.committed.json"
-node "$HERE/score-study.mjs" --runs="$HERE/runs" --out="$TMP"
-python3 "$HERE/compute-stats.py" > "$TMP/regen.log" 2>&1 || { cat "$TMP/regen.log"; exit 1; }
+node "$HERE/score-study.mjs" --runs "$HERE/runs" --out "$TMP"
+python3 "$HERE/compute-stats.py" --dir "$TMP" > "$TMP/regen.log" 2>&1 || { cat "$TMP/regen.log"; exit 1; }
 
 if cmp -s "$TMP/profile-results.json" "$HERE/profile-results.json"; then
   echo "profile-results.json byte-identical on regeneration ✓"
@@ -70,11 +70,19 @@ for PAIR in \
   SRV=$!
   trap 'kill $SRV 2>/dev/null || true' EXIT
   until curl -sf http://127.0.0.1:8080/health >/dev/null 2>&1; do sleep 2; done
+  READY=0
   for i in $(seq 1 120); do
-    curl -sf http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
-      -d '{"messages":[{"role":"user","content":"hi"}],"max_tokens":1}' > /dev/null 2>&1 && break
+    if curl -sf http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
+         -d '{"messages":[{"role":"user","content":"hi"}],"max_tokens":1}' > /dev/null 2>&1; then
+      READY=1
+      break
+    fi
     sleep 2
   done
+  if [ "$READY" != 1 ]; then
+    echo "server $STEM never answered a completion (probe exhausted)" >&2
+    exit 1
+  fi
   START=$(date +%s)
   node cli/gauntlet.js run --suite "$HERE/suite.public.json" \
     --agent "model:openai-chat/$STEM" --base-url http://127.0.0.1:8080 \
@@ -86,6 +94,6 @@ done
 pkill -x llama-server 2>/dev/null || true
 
 echo "== rescore =="
-node "$HERE/score-study.mjs" --runs="$HERE/runs"
+node "$HERE/score-study.mjs" --runs "$HERE/runs"
 python3 "$HERE/compute-stats.py"
 echo "== done (full path) =="

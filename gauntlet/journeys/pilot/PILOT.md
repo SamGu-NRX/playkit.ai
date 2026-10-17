@@ -1,148 +1,171 @@
-# Pilot journey — one-command capped frontier pilots, rehearsed without spend
+# The frontier pilot runbook — one capped command, chosen suite
 
-Pilot tooling coordinates suite construction, estimates, dollar-capped resumable
-evaluations, replay verification, scoring comparisons, and actual-versus-estimated
-cost analysis. Local loopback stubs for Anthropic Messages, OpenAI Responses, and
-OpenAI-compatible chat-completions APIs emulate provider replies, usage, and
-common failures for no-spend rehearsals.
+`pilot.sh` runs the frontier pilot for ONE model on ONE suite you name, end
+to end, under a bundle-wide dollar cap. `separation-run.sh` runs the whole
+preregistered separation pilot — the three frontier arms plus the free
+random arm on the same suite — and prints the six comparisons with their
+verdicts. `rehearse.sh` is `separation-run.sh --rehearse`: the identical
+command against loopback stubs, no keys, no spend.
 
-## Live pilot: `pilot.sh MODEL EFFORT MAX_USD [BASE_URL]`
+## The arguments are the decision
 
-Runs the full pilot for ONE model end to end. Without `BASE_URL` it calls the
-real provider — it then requires the provider's API key in the environment
-(`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`) and refuses to start without it, so a
-live run never half-starts unpaid. With `BASE_URL` it aims the model agent at
-that root instead (rehearsals pass a `127.0.0.1` stub).
+Every argument is required and none has a default:
 
-Steps, in the order of `reports/release/RUN-SEQUENCE.md`, capped and per model:
+```
+./pilot.sh SUITE MODEL EFFORT CAP_USD CONCURRENCY [BASE_URL]
+./separation-run.sh SUITE CAP_PER_ARM CONCURRENCY [--rehearse]
+./rehearse.sh SUITE CAP_PER_ARM CONCURRENCY
+```
 
-1. `suite build --split public --seeds-per-tier 1` — built on the current tree,
-   and the script prints the current game/job count. The public split has grown
-   since the release evidence was captured (the projection board records
-   13 games / 49 jobs; the current tree carries 18 games / 76 jobs), so the
-   count is reported live instead of pinned.
-2. `estimate` — local probe episodes and tier pars; no API calls, no spend.
-   Output lands in `runs/<model>-<stamp>/estimate/`.
-3. `run --max-usd MAX_USD` — resuming with `--resume` until the bundle
-   completes (each resume re-verifies finished trajectories and replays only
-   what is missing; a failed episode is replayed, a completed one untouched).
-   `PILOT_MAX_RESUMES` bounds the loop (default 10).
-4. `verify` — replay-verify every trajectory in the bundle.
-5. `leaderboard` under all three scoring profiles — rhae-v1,
-   chance-adjusted, squared-outcome. Decision #36 (the floor profile) is an
-   open call; publishing all three keeps it open rather than pre-deciding it.
-6. `estimate --against` — what the run actually cost vs the estimate.
+`SUITE` is a suite manifest file — for the separation pilot, one of the
+option files committed under `studies/separation-pilot/outputs/suites/`
+(`suite.smallest-8.json`, `suite.larger-12.json`, `suite.pilot-1seed.json`).
+The script never builds a suite silently: running a committed option file is
+the preregistered choice, and a suite built ad hoc would not be. The options,
+their seed/episode counts and their per-model dollar estimates are rendered
+in `studies/separation-pilot/REPORT.md`. The budget decision — which option,
+what cap — is #36 and stays open; these scripts execute the choice, they do
+not make it. `EFFORT` is the reasoning effort (`high` is #102's recorded
+choice, what `separation-run.sh` fixes). `CONCURRENCY` is the run's worker
+count.
 
-Every console transcript is teed under `runs/<model>-<stamp>/`.
+## The dollar cap, precisely
 
-### The dollar cap, precisely
+The cap you pass is **bundle-wide**. `pilot.sh` forwards it to
+`gauntlet run --max-usd-total`, and the runner enforces it against the
+bundle's spend ledger (`run/spend.jsonl`) — the record of every paid call
+across every invocation, not just the current one. Resuming therefore cannot
+multiply spend: ten resumes and one run draw on the same cap.
 
-The cap binds **per run invocation** on **settled spend**: a turn's cost only
-counts once its provider call settles, and a turn that never settles (process
-kill, unhandled provider error) is not billed against it — though the response
-could still cost money. Worst case for the suite with cap C is roughly
-C + (one turn) per invocation: the in-flight turn's worst-case quote, not its
-settled cost, can land after the check. `quoteWorstCaseUsd` already reserves
-the outstanding calls inside that accounting, so the overage is bounded by the
-reservation, not by the whole run. The bound is enforced by the harness; the
-provider-side hard limits are whatever the console budget is — the two are
-independent and both worth setting for a real pilot.
+Mechanics (pinned by `runs/cap-unwind.test.js`, concurrency 1 and 3, and
+documented at the cap stop in `runs/run.js`):
 
-Resume interacts with the cap in one way that matters: a cap stop unwinds the
-**episode in flight** without writing it, and a resume replays that episode
-from scratch. An episode whose full cost exceeds the cap can therefore never
-finish under that cap — the resume-loop failure mode in `pilot.sh`
-(`giving up after N invocations`) is the symptom; raise the cap. Episodes with
-a `maxActions` budget in the thousands (2048's top tiers) are the ones that can
-do this for real models that keep playing legally.
+- Every admitted call reserves its worst-case quote (max output tokens at
+  the model's price) before starting. Because settled + reserved can never
+  pass the cap, **the ledger total never crosses it** — it can land exactly
+  on it.
+- The first admission that would not fit refuses **before the call starts**:
+  a call the cap refuses is never charged. The run then sets
+  `stopped: "budget"` and unwinds.
+- **Every episode still in flight unwinds**: it ends without a trajectory
+  and its already-settled calls are flushed into the ledger with
+  `kept: false` — paid spend that stays on the books and is replayed on
+  resume. At concurrency C that is up to C episodes' committed spend.
+- **A finished episode's spend is always `kept: true`** — the attempt's flag
+  is the trajectory-write result — and is never counted as unwound, even
+  when the same episode's earlier attempt unwound and its replay finished.
+- `run.json` reports the split: `ledger.totalUsd = keptUsd + unwoundUsd`,
+  `ledger.unwoundCalls`, `ledger.cap`. The `resume` command replays the
+  unwound episodes as new attempts; the pre-write dedupe and resume
+  machinery already count nothing twice.
 
-### Effort choice
+**Worst case paid-but-discarded at one cap stop** — money that leaves the
+budget and buys no trajectory: the committed spend of the episodes in flight
+at the stop, bounded by `min(concurrency × per-episode spend, cap)`. The
+pre-flight line `pilot.sh` prints before the first paid call shows this
+number for your cap and concurrency (per-episode spend taken as the
+estimate's high side per job).
 
-`RUN-SEQUENCE.md` names no effort level. The rehearsals and the recommended
-pilot use `high`: all three pilot models document a `high` level in their
-capability rows, and it is the highest level common to Anthropic, OpenAI, and
-the Gemini OpenAI-compatible wire, so one effort keeps the three runs
-comparable without per-provider special-casing. Record the choice in any
-leaderboard reporting.
+**Headroom guidance.** Pick a cap that clears the whole suite with room:
+estimate-high (the pre-flight line shows it) **plus** a few
+concurrency × per-episode-high. A cap that only matches the estimate grinds:
+the run stops near the end, each resume advances a call or two while more
+unwinds around it, and after `PILOT_MAX_RESUMES` (default 10) invocations the
+script aborts loudly with work unplayed. A cap that cannot afford even one
+call aborts immediately with the same loudness (`stopped=budget` with zero
+calls this invocation). Both failures are messages, not spins — raise the
+cap. The `$` amount at risk of being discarded at any ONE stop is still
+bounded as above; it does not grow with the cap.
 
-## Rehearsal: `rehearse.sh MODEL [EFFORT] [PORT]`
+## Keys, wires, and what counts as live
 
-One command, no spend, no keys: starts the matching loopback stub for the
-model's wire (127.0.0.1 only, accepts any key), then runs `pilot.sh` against
-it with a low cap (`REHEARSAL_MAX_USD`, default $1) chosen to bind mid-suite,
-so the resume path is exercised rather than assumed. Stub fault rates (every
-5th request 429 with `retry-after`, every 13th overloaded 529/503, every 11th
-refusal, every 7th truncated reply) are set so one rehearsal meets every reply
-shape a live run meets; override with `STUB_*_EVERY` variables (0 disables).
+`pilot.sh` reads each arm's key from **its own** variable and passes the
+variable's name to the agent with `--api-key-env`; the key is read at call
+time and never printed. A key is never taken from one provider's variable
+and sent to another's host.
 
-The stub replies are deliberately never a legal action in any registered game,
-so every episode ends forfeit-invalid after exactly three priced calls — the
-same ending a live model with format problems reaches. That bound is what lets
-a low rehearsal cap bind and still finish: see the cap note above for why an
-occasionally-legal stub reply would make the rehearsal unfinishable. A
-rehearsal exercises plumbing (cap, resume, verify, leaderboards,
-estimate-vs-actual, all three wires' reply shapes and faults), not play
-quality.
+| Model | Wire | Key variable | Default base |
+|---|---|---|---|
+| `anthropic/*` | Anthropic Messages | `ANTHROPIC_API_KEY` | `https://api.anthropic.com` |
+| `openai/*` | OpenAI Responses | `OPENAI_API_KEY` | `https://api.openai.com` |
+| `openai-chat/gemini-*` | Gemini OpenAI-compatible | `GEMINI_API_KEY` | Google's OpenAI-compat endpoint (set by the script) |
+| `openai-chat/<other>` | OpenAI chat completions | `OPENAI_API_KEY` | none — a live run refuses without `BASE_URL` |
 
-## Stubs (`stubs/`)
+A run is a **rehearsal only** when `BASE_URL` is loopback
+(`http://127.0.0.1:*` / `http://localhost:*`): a dummy key is injected when
+the arm's own variable is unset, and nothing is spent. Any other explicit
+`BASE_URL` is live and is never called a rehearsal; no `BASE_URL` means live
+against the provider's public API, which requires the arm's own key variable
+and refuses to start without it.
 
-- `anthropic.mjs` — POST `/v1/messages`, documented Anthropic Messages shape:
-  thinking + text content blocks, `stop_reason` `end_turn` / `max_tokens`
-  (truncated) / `refusal` with `stop_details`, `usage.input_tokens` /
-  `usage.output_tokens` with `output_tokens_details.thinking_tokens`.
-  Overload is HTTP 529 `overloaded_error`; rate limit is HTTP 429 with
-  `retry-after`.
-- `openai.mjs` — POST `/v1/responses`, documented Responses API shape:
-  reasoning + message output items, `status` `completed` / `incomplete` with
-  `incomplete_details.reason` `max_output_tokens`, refusal content part,
-  `usage.input_tokens` / `usage.output_tokens` with
-  `output_tokens_details.reasoning_tokens`. Overload is HTTP 503.
-- `openai-chat.mjs` — POST `/v1/chat/completions`, the wire behind the
-  `openai-chat` provider (how the Gemini OpenAI-compatible endpoint is
-  reached): `choices[].message` with `content` and `reasoning_content`,
-  `finish_reason` `stop` / `length` / refusal via `message.refusal`,
-  `usage.prompt_tokens` / `usage.completion_tokens` with
-  `completion_tokens_details.reasoning_tokens`. Overload is HTTP 503.
+`PILOT_REQUESTS_PER_MINUTE`, when set, is forwarded as
+`--requests-per-minute` — use it if a provider's tier limits you.
 
-All three: loopback only, any API key accepted (the same contract the real
-APIs have), prompt tokens derived from request size (bytes/4 + 50, the
-conservative basis the estimate uses), fixed realistic output tokens with a
-reasoning portion, one log line per request, and **never** an outbound
-connection — a stub cannot spend, leak, or phone home.
+## Rehearsal
 
-## What a rehearsal proves
+`./rehearse.sh SUITE CAP_PER_ARM CONCURRENCY` = `separation-run.sh … --rehearse`.
+It starts one stub per wire from `stubs/` on 127.0.0.1 (ports 8081/8082/8083,
+Anthropic Messages / OpenAI Responses / Gemini chat-completions shapes), each
+accepting any key and talking to nothing off-machine. The stubs return
+plausible replies under injected faults — 429 with retry-after, 529/503 with
+Retry-After, hard refusals, truncated JSON — at rates set so one rehearsal
+meets every reply shape a live run meets; tune per stub with
+`STUB_RATE_LIMIT_EVERY`, `STUB_OVERLOAD_EVERY`, `STUB_REFUSE_EVERY`,
+`STUB_TRUNCATE_EVERY` (`0` disables).
 
-That the six pilot steps compose against each provider wire; that the dollar
-cap binds mid-suite and `--resume` completes the bundle; that truncated,
-refusal, 429 (with retry), and overload replies are handled per wire; that
-`verify` accepts every produced trajectory; that all three scoring profiles
-render; and that actual cost lands inside the estimate. It proves nothing
-about model play quality — for that, run the live pilot.
+Rehearsal cap arithmetic: the stubs forfeit every episode after exactly three
+priced calls and price each call from the request's size, so a suite's
+stub-basis total concentrates in the big-observation games, and the three
+model arms price differently (for the 76-job `suite.pilot-1seed.json` the
+pre-flight estimate-high was $43.13 for the Anthropic arm and $107.81 for the
+OpenAI arm). `separation-run.sh` takes one cap for all arms, so size it for
+the priciest arm: clear that arm's pre-flight estimate-high plus headroom —
+$150 per arm finishes this suite — while a small cap (e.g. $2) deliberately
+exercises the cap-stop/resume path and ends in the loud abort (observed: 46
+episodes played, then ~one call of progress per resume until the attempt
+bound, ledger pinned under the cap throughout, 30 episodes unplayed at the
+abort). Both are useful; the completing one is the pre-flight green light.
 
-## Outputs
+The random arm and the preregistered analysis run exactly as live in a
+rehearsal — pairing, bootstrap and verdicts included.
 
-`runs/` is git-ignored. Each rehearsal leaves: `suite.pilot.json`,
-`estimate/`, `run/` (the verified bundle), `leaderboard/<profile>/`,
-`run-N.console.txt` transcripts, `estimate-against.console.txt`, and the stub
-log `stub-<port>.log` with one line per request.
+## What the scripts run, in order
 
-## Known bounds the script applies (this base)
+`pilot.sh` (per model arm):
 
-- **`estimate` does not exit here.** Its go-ladder probe episodes wedge — gnugo
-  GTP children blocked, node never exits even after writing complete outputs —
-  consistent with the GTP-client stale-reply bug the burst13 branch fixes.
-  `ESTIMATE_TIMEOUT_SECS` (default 900) bounds step 2; outputs-present after a
-  kill is treated as complete with a loud warning, orphaned gnugo instances are
-  reaped, and estimate numbers are a scoping aid, never a gate.
-- **`estimate --against` has the same non-exit hang.** The comparison table is
-  fully printed to the console, then the process wedges. `ESTIMATE_AGAINST_TIMEOUT_SECS`
-  (default 600) bounds step 6; a printed `| **Total** |` row counts as the
-  deliverable.
-- **`RUN_TIMEOUT_SECS`** (default 0 = off; rehearsals 600) bounds each `run`
-  invocation so a wedged go episode cannot hang a live pilot forever; a killed
-  invocation leaves the bundle exactly as `--resume` expects it.
-- **Leaderboard profiles fail independently.** A stale committed scoring
-  baseline makes the chance-rescaling profiles refuse a tier with the harness's
-  actionable version error (correct behavior; the recal is sibling-owned). One
-  profile refusing never loses the other two.
+1. `gauntlet estimate --no-probes` — local: no API calls, no engines, no
+   spend. Tier pars and calibration come from the committed tables; for a
+   committed option the result matches that option's per-model estimate in
+   `studies/separation-pilot/outputs/estimates/`. (Older runbooks timed this
+   step because probe episodes ran go-ladder GTP probes; `--no-probes` drops
+   the probes and the hang with them.)
+2. Pre-flight line — jobs, estimate-high, cap, concurrency, worst-case
+   discarded — printed **before** the first paid call.
+3. `gauntlet run --max-usd-total CAP --concurrency C`, resuming with
+   `--resume` until the bundle completes, each attempt summarized from
+   `run.json` (`stopped`, `unplayed`, `failed`, invocation calls, ledger
+   total vs cap). Aborts loudly on error, on zero-headroom, or after
+   `PILOT_MAX_RESUMES`.
+4. `gauntlet verify` — replay-verify every trajectory in the bundle.
+5. `gauntlet leaderboard` under all three scoring profiles (`rhae-v1`,
+   `_chance-adjusted`, `squared-outcome`) — profiles fail independently;
+   which one is the published floor is decision #36 and stays open.
+6. `gauntlet estimate --no-probes --against` — actual calls/tokens/dollars
+   against the estimate's low and high.
 
+`separation-run.sh`: the three model arms through `pilot.sh` (effort
+`high`), then the free random arm on the same suite (`--agent random`, same
+seeds, no cap needed), `verify` on its bundle, a per-arm ledger-vs-cap
+summary, then `studies/separation-pilot/analyze.mjs` on the four bundles —
+which replay-verifies and mirror-scores every trajectory, prints the six
+preregistered comparisons (3 model-vs-model + 3 model-vs-random, paired by
+seed) with pooled 95% seeded-percentile intervals and the
+SEPARATED / NOT_SEPARATED verdicts, and exits 0 with the verdicts as data
+either way.
+
+Outputs: `separation-run.sh` writes everything under
+`journeys/pilot/runs/separation-<suite>-<timestamp>/` (override with
+`SEPARATION_RUN_OUT`; `pilot.sh` alone uses `runs/<model>-<timestamp>`,
+override with `PILOT_OUT`). Each arm's directory holds its `run/` bundle,
+estimate, leaderboards, per-attempt console transcripts; the analysis
+transcript lands beside the arm directories.

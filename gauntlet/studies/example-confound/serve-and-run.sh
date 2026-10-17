@@ -19,7 +19,9 @@ M="$1"; ARMS="$2"; ROOT="$3"
 
 pkill -f llama-server 2>/dev/null || true
 sleep 1
-"$LLAMA" -m "$MODELS/$M.gguf" --host 127.0.0.1 --port 8080 \
+MODELFILE="$MODELS/$M.gguf"
+[ -f "$MODELFILE" ] || MODELFILE="$MODELS/$M-00001-of-00002.gguf"   # sharded GGUF: llama.cpp auto-merges
+"$LLAMA" -m "$MODELFILE" --host 127.0.0.1 --port 8080 \
   --ctx-size 4096 --temp 0.0 --seed 42 --threads 8 > "/tmp/llama-example-confound-$M.log" 2>&1 &
 SRV=$!
 trap 'kill $SRV 2>/dev/null || true' EXIT

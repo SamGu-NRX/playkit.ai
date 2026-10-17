@@ -113,7 +113,8 @@ function agentFactoryStub(pricesPath, stubUrl) {
     });
 }
 
-async function writePrices(dir: string) {
+/** @param {string} dir */
+async function writePrices(dir) {
   const pricesPath = join(dir, 'prices.json');
   await writeFile(pricesPath, JSON.stringify(PRICES, null, 2));
   return pricesPath;
@@ -253,6 +254,7 @@ test('resume under a raised cap: the replay is a new attempt; a finished attempt
   // The decisive attribution: the replayed episode appears twice in the
   // ledger — its unwound attempt kept:false, its finished attempt kept:true.
   const lines = await readCallLines(dir);
+  /** @type {Map<string, { kept: boolean }[]>} */
   const countdownJobs = new Map();
   for (const line of lines) {
     if (!line.job.startsWith('countdown/')) continue;
@@ -263,7 +265,7 @@ test('resume under a raised cap: the replay is a new attempt; a finished attempt
   const attempts = [...countdownJobs.entries()];
   assert.equal(attempts.length, 3, 'two kept replay attempts + one unwound attempt');
   for (const [key, attemptLines] of attempts) {
-    const flags = new Set(attemptLines.map((l: { kept: boolean }) => l.kept));
+    const flags = new Set(attemptLines.map((l) => l.kept));
     assert.equal(flags.size, 1, `attempt ${key} has a single kept flag`);
   }
   const unwoundAttempts = attempts.filter(([, ls]) => ls[0].kept === false);

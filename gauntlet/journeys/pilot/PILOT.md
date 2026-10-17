@@ -115,15 +115,16 @@ meets every reply shape a live run meets; tune per stub with
 
 Rehearsal cap arithmetic: the stubs forfeit every episode after exactly three
 priced calls and price each call from the request's size, so a suite's
-stub-basis total concentrates in the big-observation games — for the 76-job
-`suite.pilot-1seed.json` it is ~$43 per arm (the pre-flight line prints the
-number). Pass a cap that clears the pre-flight estimate-high plus headroom —
-for that suite, $50 per arm finishes with all six comparisons printed — while
-a small cap (e.g. $2) deliberately exercises the cap-stop/resume path and
-ends in the loud abort (observed: 46 episodes played, then ~one call of
-progress per resume until the attempt bound, ledger pinned under the cap
-throughout, 30 episodes unplayed at the abort). Both are useful; the
-completing one is the pre-flight green light.
+stub-basis total concentrates in the big-observation games, and the three
+model arms price differently (for the 76-job `suite.pilot-1seed.json` the
+pre-flight estimate-high was $43.13 for the Anthropic arm and $107.81 for the
+OpenAI arm). `separation-run.sh` takes one cap for all arms, so size it for
+the priciest arm: clear that arm's pre-flight estimate-high plus headroom —
+$150 per arm finishes this suite — while a small cap (e.g. $2) deliberately
+exercises the cap-stop/resume path and ends in the loud abort (observed: 46
+episodes played, then ~one call of progress per resume until the attempt
+bound, ledger pinned under the cap throughout, 30 episodes unplayed at the
+abort). Both are useful; the completing one is the pre-flight green light.
 
 The random arm and the preregistered analysis run exactly as live in a
 rehearsal — pairing, bootstrap and verdicts included.

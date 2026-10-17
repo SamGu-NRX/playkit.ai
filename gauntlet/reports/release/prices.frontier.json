@@ -16,5 +16,17 @@
     "outputPerMTok": 10,
     "source": "ai.google.dev/gemini-api/docs/pricing (read 2026-10-15): Gemini 4 Argon standard tier, $2.00/MTok input and $10.00/MTok output (including thinking tokens) through November 30, 2026; $4.00/$20.00 from December 1, 2026. Served through Gemini's OpenAI-compatible chat-completions endpoint, hence the openai-chat key.",
     "checked": "2026-10-15"
+  },
+  "openai/claude-opus-5-5": {
+    "inputPerMTok": 4,
+    "outputPerMTok": 20,
+    "source": "Not a real listing. The no-spend pilot rehearsal (journeys/pilot/rehearse.sh) stubs every provider wire with a server that impersonates claude-opus-5-5; since the bundle spend cap (burst15) refuses a capped run whose calls are unpriced, this row mirrors the anthropic/claude-opus-5-5 prices so the rehearsal's nominal cap is enforceable on the openai wire. Stub spend is loopback-only and never billed.",
+    "checked": "2026-10-17"
+  },
+  "openai-chat/claude-opus-5-5": {
+    "inputPerMTok": 4,
+    "outputPerMTok": 20,
+    "source": "Not a real listing. Same stub-model row as openai/claude-opus-5-5: lets the no-skill pilot rehearsal enforce its nominal cap on the openai-chat wire (the stub impersonates claude-opus-5-5 on every wire). Stub spend is loopback-only and never billed.",
+    "checked": "2026-10-17"
   }
 }

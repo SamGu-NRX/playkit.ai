@@ -38,6 +38,7 @@ import path from 'node:path';
 import { GAMES } from '../../../games/index.js';
 import { score } from '../../../scoring/score.js';
 import { streamFromSeed } from '../../../core/rng.js';
+import { aggregateRates, round6, usageOf } from './usage-lib.mjs';
 
 const COLLECTED = {};
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -71,7 +72,6 @@ const PAIRS = [
   { name: '7b-minus-1.5b', big: 'qwen2.5-7b', small: 'qwen2.5-1.5b' },
 ];
 
-const round6 = (v) => (v === null || v === undefined || !Number.isFinite(v) ? null : Math.round(v * 1e6) / 1e6);
 const roundCI = (ci) => (ci ? [round6(ci[0]), round6(ci[1])] : null);
 
 /** Walk a run directory collecting every trajectory file. */
@@ -87,19 +87,6 @@ function trajectoryFiles(runDir) {
   };
   walk(runDir);
   return found.sort();
-}
-
-/** Usage summary over a trajectory's agent steps. */
-function usageOf(trajectory) {
-  const agentSteps = trajectory.steps.filter((s) => s.by === 'agent');
-  const usage = agentSteps.map((s) => s.usage).filter(Boolean);
-  return {
-    calls: agentSteps.length,
-    invalid: agentSteps.filter((s) => s.invalid).length,
-    ms: agentSteps.reduce((a, s) => a + (s.ms || 0), 0),
-    tokIn: usage.reduce((a, u) => a + (u.promptTokens ?? u.inputTokens ?? 0), 0),
-    tokOut: usage.reduce((a, u) => a + (u.completionTokens ?? u.outputTokens ?? 0), 0),
-  };
 }
 
 /** Clone a suite manifest down to one seed. */
@@ -259,7 +246,10 @@ for (const { game, tier } of TIERS) {
     const suite = JSON.parse(readFileSync(path.join(runDir, 'suite.json'), 'utf8'));
     const trajectories = trajectoryFiles(runDir).map((p) => JSON.parse(readFileSync(p, 'utf8')));
     const usage = trajectories.map(usageOf);
-    const calls = usage.reduce((a, u) => a + u.calls, 0) || 1;
+    const totals = usage.reduce(
+      (a, u) => ({ invalid: a.invalid + u.invalid, ms: a.ms + u.ms, tokIn: a.tokIn + u.tokIn, tokOut: a.tokOut + u.tokOut, calls: a.calls + u.calls, attempts: a.attempts + u.attempts }),
+      { invalid: 0, ms: 0, tokIn: 0, tokOut: 0, calls: 0, attempts: 0 }
+    );
 
     const scoresByProfile = {};
     for (const profile of PROFILES) {
@@ -285,9 +275,11 @@ for (const { game, tier } of TIERS) {
       episodes: trajectories.length,
       seeds: episodes.map((e) => e.seed),
       scores: scoresByProfile,
-      invalidReplyRate: round6(usage.reduce((a, u) => a + u.invalid, 0) / calls),
-      secPerCall: round6(usage.reduce((a, u) => a + u.ms, 0) / 1000 / calls),
-      tokensPerCall: round6(usage.reduce((a, u) => a + u.tokIn + u.tokOut, 0) / calls),
+      invalidReplyRate: aggregateRates(totals).invalidReplyRate,
+      // Per PROVIDER call, not per turn: a retried assisted step aggregated
+      // every attempt's wall time and tokens into one recorded step.
+      secPerCall: aggregateRates(totals).secPerCall,
+      tokensPerCall: aggregateRates(totals).tokensPerCall,
     };
   }
 

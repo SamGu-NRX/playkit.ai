@@ -40,7 +40,8 @@ size-separated (minesweeper rho 0.5; 1.5B scores below 0.5B).
   record the community-track run shape and `--threads 2`.
 
 ## Results (rhae-v1; invalidReplyRate = share of turns whose reply stayed
-unparseable after up to 2 retries; secPerCall is wall time per agent call)
+unparseable after up to 2 retries; secPerCall is wall time per provider call,
+counting the harness's retry attempts - see the addendum below)
 
 ### mastermind/mini — random mean 0.0298
 
@@ -88,6 +89,43 @@ arm.
    (legal actions + retry feedback) multiplies secPerCall roughly 5-9x across
    the board; 7B minesweeper calls average 54.5 s against 6.1 s unassisted on
    this box. Assistance buys clean turns, not efficiency.
+
+## Addendum (2026-10-17): per-call metrics corrected to count retry attempts
+
+Review finding (PR #97): an assisted step that retried aggregates EVERY
+provider attempt's wall time and tokens into one recorded step (see
+`reply.meta.assisted.attempts`), but `secPerCall` and `tokensPerCall` divided
+by agent TURNS - understating both by the retry factor exactly where the
+harness worked hardest. `usage-lib.mjs` now accounts per provider attempt;
+`invalidReplyRate` intentionally stays per-turn (a retried-away invalid
+attempt never became a recorded step, so a per-attempt numerator does not
+exist).
+
+Corrected assisted-arm numbers, recomputed directly from the committed
+trajectories (usage-lib requires no scorer):
+
+| model | game | turns → attempts | secPerCall (was) | tokensPerCall |
+|---|---|---|---|---|
+| 0.5B | mastermind/mini | 24 → 72 | 0.484 (1.45) | 1037.4 |
+| 1.5B | mastermind/mini | 24 → 72 | 1.466 (4.40) | 1045.7 |
+| 7B | mastermind/mini | 54 → 54 | 40.50 (40.50, unchanged) | 1159.1 |
+| 0.5B | minesweeper/beginner | 23 → 52 | 3.114 (7.04) | 1221.8 |
+| 1.5B | minesweeper/beginner | 26 → 70 | 12.641 (34.03) | 1275.1 |
+| 7B | minesweeper/beginner | 6 → 6 | 54.51 (54.51, unchanged) | 1164.0 |
+
+The 7B rows are unchanged because 7B never retried (clean replies, one call
+per turn) - which doubles as the cross-check that the recompute matches the
+committed stats. The tables above keep the old turn-based secPerCall pairs:
+regenerating `stats.json` end to end is currently blocked by the scorer's
+version refusal (committed mastermind 1.0.0 bundles vs registry 1.1.0), the
+same pre-existing breakage recorded for the example-confound study. The
+corrected accounting is what any future regeneration will produce.
+
+Finding 4's "5-9x" secPerCall multiplier was a per-turn ratio. Per provider
+call, unassisted → assisted ranges roughly 0.6x (0.5B mastermind) to 10.1x
+(1.5B minesweeper); the capable model is still hit hardest (7B: 6.6x on
+mastermind, 8.9x on minesweeper), so the finding's conclusion stands —
+prompt growth buys clean turns, not efficiency.
 
 ## Deviations
 

@@ -1,0 +1,109 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "wordle",
+    "version": "1.2.0"
+  },
+  "tier": "classic",
+  "seed": "wordle/classic/public/7",
+  "split": "public",
+  "agent": {
+    "id": "dial-engine-p75",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b6506fe3c4287c99",
+      "reply": {
+        "text": "guess BILGE"
+      },
+      "action": "guess BILGE",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "55069498c635cb4e",
+      "reply": {
+        "text": "guess PETER"
+      },
+      "action": "guess PETER",
+      "invalid": false,
+      "usage": null,
+      "ms": 142
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f91cd761cca55f64",
+      "reply": {
+        "text": "guess KETCH"
+      },
+      "action": "guess KETCH",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ce830e7e846eef61",
+      "reply": {
+        "text": "guess YURTS"
+      },
+      "action": "guess YURTS",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "8a88e86e30c62985",
+      "reply": {
+        "text": "guess BAKED"
+      },
+      "action": "guess BAKED",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "91f2b8642ae83ac0",
+      "reply": {
+        "text": "guess CECAL"
+      },
+      "action": "guess CECAL",
+      "invalid": false,
+      "usage": null,
+      "ms": 5
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.4444444444444444
+      ],
+      "raw": [
+        6
+      ],
+      "reason": "solved: the answer was found in 6 guess(es), reference par 4",
+      "solved": true,
+      "par": 4
+    },
+    "agentActions": 6,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T18:14:22.674Z",
+  "finishedAt": "2026-10-17T18:14:22.938Z"
+}

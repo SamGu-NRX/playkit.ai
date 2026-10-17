@@ -1,25 +1,25 @@
 {
   "suite": {
     "id": "separation-pilot-smallest-8",
-    "sha256": "7e12cdb32ecde010742123aa2d0e37c8eb2571d1fa95ea08a6cc45cef13ed9e9"
+    "sha256": "833feae3a6155ba77eadbb19d9eda7265202d49f2bbbd5eae4472741c42ad0f7"
   },
   "warnings": [],
   "comparisons": [
     {
       "comparison": "dial-sliding-solver-p25~vs~dial-sliding-solver-p75",
       "profile": "rhae-v1",
-      "sharedTiers": 9,
+      "sharedTiers": 7,
       "outcomeTiers": 0,
       "droppedTiers": [],
       "readings": {
         "raw": {
           "verdict": "SEPARATED",
-          "D": 0.477429,
+          "D": 0.465824,
           "ci95": [
-            0.422105,
-            0.535387
+            0.401477,
+            0.529615
           ],
-          "signAgree": "9/9",
+          "signAgree": "7/7",
           "perTier": [
             {
               "tier": "sliding/p15-long",
@@ -47,19 +47,9 @@
               "m": 0.51109
             },
             {
-              "tier": "sokoban/four-box",
-              "n": 8,
-              "m": 0.498022
-            },
-            {
               "tier": "sokoban/one-box",
               "n": 8,
               "m": 0.39502
-            },
-            {
-              "tier": "sokoban/three-box",
-              "n": 8,
-              "m": 0.538072
             },
             {
               "tier": "wordle/classic",
@@ -74,18 +64,18 @@
     {
       "comparison": "dial-sliding-solver-p25~vs~dial-sliding-solver-p75",
       "profile": "squared-outcome",
-      "sharedTiers": 9,
+      "sharedTiers": 7,
       "outcomeTiers": 0,
       "droppedTiers": [],
       "readings": {
         "raw": {
           "verdict": "SEPARATED",
-          "D": 0.477429,
+          "D": 0.465824,
           "ci95": [
-            0.419352,
-            0.534774
+            0.401046,
+            0.531923
           ],
-          "signAgree": "9/9",
+          "signAgree": "7/7",
           "perTier": [
             {
               "tier": "sliding/p15-long",
@@ -113,19 +103,9 @@
               "m": 0.51109
             },
             {
-              "tier": "sokoban/four-box",
-              "n": 8,
-              "m": 0.498022
-            },
-            {
               "tier": "sokoban/one-box",
               "n": 8,
               "m": 0.39502
-            },
-            {
-              "tier": "sokoban/three-box",
-              "n": 8,
-              "m": 0.538072
             },
             {
               "tier": "wordle/classic",
@@ -140,18 +120,18 @@
     {
       "comparison": "dial-sliding-solver-p25~vs~dial-sliding-solver-p75",
       "profile": "chance-adjusted",
-      "sharedTiers": 9,
+      "sharedTiers": 7,
       "outcomeTiers": 0,
       "droppedTiers": [],
       "readings": {
         "raw": {
           "verdict": "SEPARATED",
-          "D": 0.477429,
+          "D": 0.465824,
           "ci95": [
-            0.4189,
-            0.534992
+            0.401207,
+            0.531091
           ],
-          "signAgree": "9/9",
+          "signAgree": "7/7",
           "perTier": [
             {
               "tier": "sliding/p15-long",
@@ -179,19 +159,9 @@
               "m": 0.51109
             },
             {
-              "tier": "sokoban/four-box",
-              "n": 8,
-              "m": 0.498022
-            },
-            {
               "tier": "sokoban/one-box",
               "n": 8,
               "m": 0.39502
-            },
-            {
-              "tier": "sokoban/three-box",
-              "n": 8,
-              "m": 0.538072
             },
             {
               "tier": "wordle/classic",

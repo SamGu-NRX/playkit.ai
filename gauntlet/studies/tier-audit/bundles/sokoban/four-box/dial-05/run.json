@@ -6,7 +6,7 @@
     "manifestSha256": "7c464743b32bc1c689c17e9fe862ccaddf8d59787995bdc6556af152ade2a429"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "5e040283cb1932395ca1c8de72cca2545d371417"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:35:19.877Z",
-  "finishedAt": "2026-10-17T00:37:27.706Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T17:44:17.129Z",
+  "finishedAt": "2026-10-17T17:45:44.500Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -31,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 1351,
+  "calls": 985,
   "total": {
     "episodes": 25,
     "calls": 0,
@@ -44,16 +45,37 @@
   },
   "counts": {
     "jobs": 25,
-    "played": 25,
-    "skipped": 0,
+    "played": 17,
+    "skipped": 8,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [],
+  "skipped": [
+    "sokoban/four-box/sokoban/four-box/public/0",
+    "sokoban/four-box/sokoban/four-box/public/1",
+    "sokoban/four-box/sokoban/four-box/public/2",
+    "sokoban/four-box/sokoban/four-box/public/3",
+    "sokoban/four-box/sokoban/four-box/public/4",
+    "sokoban/four-box/sokoban/four-box/public/5",
+    "sokoban/four-box/sokoban/four-box/public/6",
+    "sokoban/four-box/sokoban/four-box/public/7"
+  ],
   "replayed": [],
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 4,
+    "calls": 1351,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 1351,
+    "problems": []
+  }
 }

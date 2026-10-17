@@ -1,0 +1,107 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "wordle",
+    "version": "1.2.0"
+  },
+  "tier": "classic",
+  "seed": "wordle/classic/public/5",
+  "split": "public",
+  "agent": {
+    "id": "dial-engine-p75",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b6506fe3c4287c99",
+      "reply": {
+        "text": "guess DRABS"
+      },
+      "action": "guess DRABS",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a1e59fe18bcd67c0",
+      "reply": {
+        "text": "guess VEALS"
+      },
+      "action": "guess VEALS",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "fd9c922f94f53868",
+      "reply": {
+        "text": "guess SHEEP"
+      },
+      "action": "guess SHEEP",
+      "invalid": false,
+      "usage": null,
+      "ms": 47
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d8bc2f6c14db9ad1",
+      "reply": {
+        "text": "guess EQUID"
+      },
+      "action": "guess EQUID",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f7a535c4451f73b7",
+      "reply": {
+        "text": "guess CURES"
+      },
+      "action": "guess CURES",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "332e42bd4125c784",
+      "reply": {
+        "text": "guess SNEER"
+      },
+      "action": "guess SNEER",
+      "invalid": false,
+      "usage": null,
+      "ms": 6
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0
+      ],
+      "raw": null,
+      "reason": "unsolved: the 6-guess budget ran out without finding the answer, reference par 3",
+      "solved": false,
+      "par": 3
+    },
+    "agentActions": 6,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T18:14:22.498Z",
+  "finishedAt": "2026-10-17T18:14:22.599Z"
+}

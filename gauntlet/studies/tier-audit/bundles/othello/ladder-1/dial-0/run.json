@@ -6,7 +6,7 @@
     "manifestSha256": "f3b5f1968fe9963c8f8f505a07466a896174f71db7170b76d180cfaa6db16450"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "cd2f7bc0e760e4d9c3a5d149db1f00decfc37d6b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:41:31.070Z",
-  "finishedAt": "2026-10-17T00:41:59.804Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T16:49:56.693Z",
+  "finishedAt": "2026-10-17T16:50:04.730Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -31,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 360,
+  "calls": 121,
   "total": {
     "episodes": 12,
     "calls": 0,
@@ -44,16 +45,42 @@
   },
   "counts": {
     "jobs": 12,
-    "played": 12,
-    "skipped": 0,
+    "played": 4,
+    "skipped": 8,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [],
+  "skipped": [
+    "othello/ladder-1/othello/ladder-1/public/0",
+    "othello/ladder-1/othello/ladder-1/public/1",
+    "othello/ladder-1/othello/ladder-1/public/2",
+    "othello/ladder-1/othello/ladder-1/public/3",
+    "othello/ladder-1/othello/ladder-1/public/4",
+    "othello/ladder-1/othello/ladder-1/public/5",
+    "othello/ladder-1/othello/ladder-1/public/6",
+    "othello/ladder-1/othello/ladder-1/public/7"
+  ],
   "replayed": [],
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 2,
+    "calls": 360,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 360,
+    "problems": [
+      "line 241: prev hash mismatch (expected e0e1fbd5f80c…, got ee2214df2d47…)",
+      "line 271: prev hash mismatch (expected c357b502417c…, got e0e1fbd5f80c…)",
+      "line 300: prev hash mismatch (expected ee2214df2d47…, got 99d23edbd180…)",
+      "line 331: prev hash mismatch (expected 5fb1e27a994a…, got c357b502417c…)"
+    ]
+  }
 }

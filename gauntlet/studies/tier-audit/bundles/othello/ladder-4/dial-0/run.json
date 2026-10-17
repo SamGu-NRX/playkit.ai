@@ -6,7 +6,7 @@
     "manifestSha256": "0a6ff9093f02cd3430c336705b2f2d60cc84ab0e0e0002fc7658eed9d303f365"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "cd2f7bc0e760e4d9c3a5d149db1f00decfc37d6b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:43:51.196Z",
-  "finishedAt": "2026-10-17T00:44:47.130Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T16:55:10.863Z",
+  "finishedAt": "2026-10-17T16:55:26.212Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -31,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 352,
+  "calls": 116,
   "total": {
     "episodes": 12,
     "calls": 0,
@@ -44,16 +45,37 @@
   },
   "counts": {
     "jobs": 12,
-    "played": 12,
-    "skipped": 0,
+    "played": 4,
+    "skipped": 8,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [],
+  "skipped": [
+    "othello/ladder-4/othello/ladder-4/public/0",
+    "othello/ladder-4/othello/ladder-4/public/1",
+    "othello/ladder-4/othello/ladder-4/public/2",
+    "othello/ladder-4/othello/ladder-4/public/3",
+    "othello/ladder-4/othello/ladder-4/public/4",
+    "othello/ladder-4/othello/ladder-4/public/5",
+    "othello/ladder-4/othello/ladder-4/public/6",
+    "othello/ladder-4/othello/ladder-4/public/7"
+  ],
   "replayed": [],
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 2,
+    "calls": 352,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 352,
+    "problems": []
+  }
 }

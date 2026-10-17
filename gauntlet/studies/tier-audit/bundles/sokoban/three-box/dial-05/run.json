@@ -6,7 +6,7 @@
     "manifestSha256": "68acd84460b9a8c44c72f3c276fe55f8e303aadaa32f49a5797bb4129796b703"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "5e040283cb1932395ca1c8de72cca2545d371417"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:34:32.731Z",
-  "finishedAt": "2026-10-17T00:34:42.186Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T17:44:09.627Z",
+  "finishedAt": "2026-10-17T17:44:11.995Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -31,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 943,
+  "calls": 43,
   "total": {
     "episodes": 25,
     "calls": 0,
@@ -44,16 +45,53 @@
   },
   "counts": {
     "jobs": 25,
-    "played": 25,
-    "skipped": 0,
+    "played": 1,
+    "skipped": 24,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [],
+  "skipped": [
+    "sokoban/three-box/sokoban/three-box/public/0",
+    "sokoban/three-box/sokoban/three-box/public/1",
+    "sokoban/three-box/sokoban/three-box/public/2",
+    "sokoban/three-box/sokoban/three-box/public/3",
+    "sokoban/three-box/sokoban/three-box/public/4",
+    "sokoban/three-box/sokoban/three-box/public/5",
+    "sokoban/three-box/sokoban/three-box/public/6",
+    "sokoban/three-box/sokoban/three-box/public/7",
+    "sokoban/three-box/sokoban/three-box/public/8",
+    "sokoban/three-box/sokoban/three-box/public/9",
+    "sokoban/three-box/sokoban/three-box/public/10",
+    "sokoban/three-box/sokoban/three-box/public/11",
+    "sokoban/three-box/sokoban/three-box/public/12",
+    "sokoban/three-box/sokoban/three-box/public/13",
+    "sokoban/three-box/sokoban/three-box/public/14",
+    "sokoban/three-box/sokoban/three-box/public/15",
+    "sokoban/three-box/sokoban/three-box/public/16",
+    "sokoban/three-box/sokoban/three-box/public/17",
+    "sokoban/three-box/sokoban/three-box/public/18",
+    "sokoban/three-box/sokoban/three-box/public/19",
+    "sokoban/three-box/sokoban/three-box/public/20",
+    "sokoban/three-box/sokoban/three-box/public/21",
+    "sokoban/three-box/sokoban/three-box/public/22",
+    "sokoban/three-box/sokoban/three-box/public/23"
+  ],
   "replayed": [],
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 4,
+    "calls": 943,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 943,
+    "problems": []
+  }
 }

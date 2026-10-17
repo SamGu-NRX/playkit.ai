@@ -1,0 +1,109 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "wordle",
+    "version": "1.2.0"
+  },
+  "tier": "classic",
+  "seed": "wordle/classic/public/2",
+  "split": "public",
+  "agent": {
+    "id": "dial-engine-p75",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b6506fe3c4287c99",
+      "reply": {
+        "text": "guess WINEY"
+      },
+      "action": "guess WINEY",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c9f5ca2c26fed7d4",
+      "reply": {
+        "text": "guess SOLAR"
+      },
+      "action": "guess SOLAR",
+      "invalid": false,
+      "usage": null,
+      "ms": 240
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "8d068e2539670956",
+      "reply": {
+        "text": "guess DATED"
+      },
+      "action": "guess DATED",
+      "invalid": false,
+      "usage": null,
+      "ms": 22
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "920081e001731485",
+      "reply": {
+        "text": "guess UNPEG"
+      },
+      "action": "guess UNPEG",
+      "invalid": false,
+      "usage": null,
+      "ms": 1
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "f20d7688d4090d37",
+      "reply": {
+        "text": "guess ARGUE"
+      },
+      "action": "guess ARGUE",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a60683cc1d4fa47c",
+      "reply": {
+        "text": "guess TAMED"
+      },
+      "action": "guess TAMED",
+      "invalid": false,
+      "usage": null,
+      "ms": 19
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.25
+      ],
+      "raw": [
+        6
+      ],
+      "reason": "solved: the answer was found in 6 guess(es), reference par 3",
+      "solved": true,
+      "par": 3
+    },
+    "agentActions": 6,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-17T18:14:21.943Z",
+  "finishedAt": "2026-10-17T18:14:22.296Z"
+}

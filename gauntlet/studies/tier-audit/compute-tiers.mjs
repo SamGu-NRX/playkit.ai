@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { GAMES } from '../../games/index.js';
 import { score } from '../../scoring/score.js';
 import { loadBaselineFile } from '../../scoring/baselines.js';
+import { soloReuseCurrent, soloVersionAtStudyHead } from './audit-lib.mjs';
 
 import {
   auditDir,
@@ -78,7 +79,19 @@ for (const [gameId, gameRaw] of Object.entries(GAMES)) {
       const isDial = cell.startsWith('dial-');
       if (isDial) {
         const p = cell === 'dial-0' ? 0 : cell === 'dial-05' ? 0.5 : 1;
-        const reused = seeds.every((s) => solo.has(`${gameId}|${tier.id}|${p}|${s}`));
+        // Reuse is valid only while the solo study measured the game at the
+        // registry's current version — a version bump strands its dial rows
+        // and the cell must come from a freshly played local bundle instead.
+        const soloCurrent = await soloReuseCurrent(gameId);
+        const soloHasAll = seeds.every((s) => solo.has(`${gameId}|${tier.id}|${p}|${s}`));
+        if (soloHasAll && !soloCurrent) {
+          process.stderr.write(
+            `[compute-tiers] ${gameId}/${tier.id} ${cell}: skill-dial solo reuse is stale (study measured game ` +
+              `version ${(await soloVersionAtStudyHead(gameId)) ?? 'unknown'}, registry is at ${game.spec.version}); ` +
+              `reading the local bundle\n`
+          );
+        }
+        const reused = soloCurrent && soloHasAll;
         if (reused) {
           sources[cell] = 'skill-dial-solo';
           for (const seed of seeds) {

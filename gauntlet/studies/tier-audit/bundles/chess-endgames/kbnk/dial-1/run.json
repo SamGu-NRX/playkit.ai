@@ -6,7 +6,7 @@
     "manifestSha256": "6756670f5981c9ce2d0f0c68919c522e61274e51c7baef92c75d2463213c4bf1"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "5e040283cb1932395ca1c8de72cca2545d371417"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:54:58.408Z",
-  "finishedAt": "2026-10-17T00:55:05.681Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T17:40:12.445Z",
+  "finishedAt": "2026-10-17T17:40:18.516Z",
+  "concurrency": 8,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -31,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 53,
+  "calls": 8,
   "total": {
     "episodes": 10,
     "calls": 0,
@@ -44,16 +45,37 @@
   },
   "counts": {
     "jobs": 10,
-    "played": 10,
-    "skipped": 0,
+    "played": 2,
+    "skipped": 8,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [],
+  "skipped": [
+    "chess-endgames/kbnk/chess-endgames/kbnk/public/0",
+    "chess-endgames/kbnk/chess-endgames/kbnk/public/1",
+    "chess-endgames/kbnk/chess-endgames/kbnk/public/2",
+    "chess-endgames/kbnk/chess-endgames/kbnk/public/3",
+    "chess-endgames/kbnk/chess-endgames/kbnk/public/4",
+    "chess-endgames/kbnk/chess-endgames/kbnk/public/5",
+    "chess-endgames/kbnk/chess-endgames/kbnk/public/6",
+    "chess-endgames/kbnk/chess-endgames/kbnk/public/7"
+  ],
   "replayed": [],
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 4,
+    "calls": 53,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 53,
+    "problems": []
+  }
 }

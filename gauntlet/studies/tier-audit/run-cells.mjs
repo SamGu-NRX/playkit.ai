@@ -23,13 +23,14 @@
  * @module
  */
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { GAMES } from '../../games/index.js';
+import { manifestSha256 } from '../../runs/plan.js';
 import { runSuite } from '../../runs/run.js';
-import { seedsForTier, tierSuite, loadSoloReuse, soloVersionAtStudyHead, auditDir, repoRoot, CELL_KINDS } from './audit-lib.mjs';
+import { seedsForTier, tierSuite, loadSoloReuse, soloVersionAtStudyHead, soloReuseCurrent, cellBundleVerdict as cellComplete, auditDir, repoRoot, CELL_KINDS } from './audit-lib.mjs';
 import { extractExampleToken, createCopyExampleAgent, createFirstLegalAgent } from './no-skill.mjs';
 import { NA_CELLS } from './audit-lib.mjs';
 
@@ -87,7 +88,17 @@ for (const gameId of Object.keys(GAMES)) {
       }
       if (['dial-0', 'dial-05', 'dial-1'].includes(cell)) {
         const p = cell === 'dial-0' ? 0 : cell === 'dial-05' ? 0.5 : 1;
-        if (coveredBySolo) {
+        // Reuse currency: the solo study's dial rows are valid only while the
+        // game version matches the one it measured (#108 bumped mastermind
+        // and wordle; stale solo rows must not stand in for fresh dial cells).
+        const soloCurrent = coveredBySolo && (await soloReuseCurrent(gameId));
+        if (coveredBySolo && !soloCurrent) {
+          log(
+            `reuse STALE ${gameId}/${tier.id} ${cell}: solo study measured game version ${soloVersion ?? 'unknown'}, ` +
+              `registry is at ${game.spec.version}; running the cell`
+          );
+        }
+        if (soloCurrent) {
           const missing = seeds.filter((s) => !reuse.has(`${gameId}|${tier.id}|${p}|${s}`));
           if (missing.length === 0) {
             log(`reuse ${gameId}/${tier.id} ${cell} (${seeds.length} seeds, solo v${soloVersion ?? '?'})`);
@@ -96,20 +107,32 @@ for (const gameId of Object.keys(GAMES)) {
           log(`reuse INCOMPLETE ${gameId}/${tier.id} ${cell}: ${missing.length} missing, running the cell`);
         }
         const bundle = join(root, 'bundles', gameId, tier.id, cell);
-        if (await cellComplete(bundle, gameId, tier.id, seeds)) {
-          log(`done ${gameId}/${tier.id} ${cell}`);
+        const dialVerdict = await cellComplete(bundle, gameId, tier.id, seeds);
+        if (dialVerdict.complete) {
+          log(`done ${gameId}/${tier.id} ${cell} (${dialVerdict.reason})`);
           continue;
         }
+        log(`re-run ${gameId}/${tier.id} ${cell}: ${dialVerdict.reason}`);
         const { suite } = tierSuite(gameId, tier.id);
         const suitePath = join(root, 'suites', `${gameId}--${tier.id}.json`);
         await mkdir(join(root, 'suites'), { recursive: true });
         await writeFile(suitePath, JSON.stringify(suite, null, 2) + '\n');
+        await clearStaleBundle(bundle, suite, `${gameId}/${tier.id} ${cell}`);
+        // A prior aborted or timed-out attempt leaves its run.json behind
+        // (the CLI's abort path writes it). The wrapper below kills the CLI
+        // once run.json EXISTS, so a stale record would kill the resumed run
+        // seconds in and the cell could never complete. Remove it: resume
+        // replays only the missing seeds, and this attempt writes its own
+        // record when it finishes.
+        await rm(join(bundle, 'run.json'), { force: true });
         const spec = `skill:${p}:baseline:${gameId}:engine`;
         log(`run  ${gameId}/${tier.id} ${cell} agent=${spec} timeout=${timeoutSec}s`);
         const { spawnSync } = await import('node:child_process');
-        // The CLI writes run.json after the last episode, then may hang on
+        // The CLI writes run.json after its last episode, then may hang on
         // leaked engine GTP connections (alpha's engine-dispose gap). Watch
         // for run.json, then kill — the bundle is already complete on disk.
+        // The stale record from any earlier attempt was removed above, so
+        // the only run.json this poll can see is this attempt's own.
         const outDir = bundle;
         const wrap = [
           'node cli/gauntlet.js run --suite', JSON.stringify(suitePath),
@@ -134,11 +157,14 @@ for (const gameId of Object.keys(GAMES)) {
         }
       } else if (cell === 'copy-example' || cell === 'first-legal') {
         const bundle = join(root, 'bundles', gameId, tier.id, cell);
-        if (await cellComplete(bundle, gameId, tier.id, seeds)) {
-          log(`done ${gameId}/${tier.id} ${cell}`);
+        const noSkillVerdict = await cellComplete(bundle, gameId, tier.id, seeds);
+        if (noSkillVerdict.complete) {
+          log(`done ${gameId}/${tier.id} ${cell} (${noSkillVerdict.reason})`);
           continue;
         }
+        log(`re-run ${gameId}/${tier.id} ${cell}: ${noSkillVerdict.reason}`);
         const { suite } = tierSuite(gameId, tier.id);
+        await clearStaleBundle(bundle, suite, `${gameId}/${tier.id} ${cell}`);
         const example = extractExampleToken(game.spec.rulesText);
         const exampleInfo =
           cell === 'copy-example'
@@ -159,22 +185,28 @@ for (const gameId of Object.keys(GAMES)) {
   }
 }
 
+log('cells complete for the selection');
+
 /**
- * True when the bundle has run.json and a trajectory for every seed.
+ * A cell whose game version changed carries a bundle built from an older
+ * suite manifest; resuming into it either refuses (run.js refuses to mix
+ * manifests in one bundle) or would strand the stale trajectories inside a
+ * bundle claiming the new manifest. Clear the stale bundle when its recorded
+ * manifest differs from the incoming one; a fresh or partial bundle of the
+ * CURRENT suite is kept and filled by --resume.
  *
  * @param {string} bundle
- * @param {string[]} seeds
+ * @param {*} suite
+ * @param {string} label
  */
-async function cellComplete(bundle, gameId, tierId, seeds) {
-  if (!existsSync(join(bundle, 'run.json'))) return false;
+async function clearStaleBundle(bundle, suite, label) {
   try {
-    const run = JSON.parse(await readFile(join(bundle, 'run.json'), 'utf8'));
-    const count = Number(run?.total?.episodes ?? 0);
-    if (count >= seeds.length) return true;
+    const recorded = JSON.parse(await readFile(join(bundle, 'suite.json'), 'utf8'));
+    if (manifestSha256(recorded) !== manifestSha256(suite)) {
+      log(`clear ${label}: bundle suite manifest differs from the current suite; removing the stale bundle`);
+      await rm(bundle, { recursive: true, force: true });
+    }
   } catch {
-    /* fall through to file listing */
+    /* no readable suite.json: nothing committed to compare — resume fills gaps */
   }
-  return seeds.every((s) => existsSync(join(bundle, gameId, tierId, `${s}.json`)));
 }
-
-log('cells complete for the selection');

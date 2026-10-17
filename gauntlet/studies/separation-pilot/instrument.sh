@@ -40,7 +40,14 @@ console.log("per-game suites:", suite.games.map((g) => g.id).join(", "));
 # 2. Play every arm. Six dial runs (3 games × 2 dials) + I2 reuses the 0.25
 #    arms (same spec, same seeds ⇒ byte-identical trajectories, so the I2 pair
 #    is two INDEPENDENT invocations: the 0.25 run and a second fresh 0.25 run).
-games=(sliding sokoban wordle)
+#    The arm list is DERIVED from the committed smallest suite — a re-cut that
+#    changes the suite's games automatically changes the instruments with it.
+games=()
+while IFS= read -r g_; do games+=("$g_"); done < <(node -e '
+  const s = JSON.parse(require("fs").readFileSync("outputs/suites/suite.smallest-8.json", "utf8"));
+  for (const g of s.games) console.log(g.id);
+')
+echo "instrument games (from suite.smallest-8.json): ${games[*]}"
 declare -A runs
 for g_ in "${games[@]}"; do
   runs[$g_]="$(node -e '

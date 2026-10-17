@@ -6,6 +6,7 @@
  */
 
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
@@ -180,6 +181,9 @@ export async function loadSoloReuse() {
   return map;
 }
 
+/** Cache for {@link soloVersionAtStudyHead}: one git show per game. @type {Map<string, string | null>} */
+const soloVersionCache = new Map();
+
 /**
  * Game version at the skill-dial solo study's head, for the reuse-currency
  * assertion.
@@ -188,6 +192,7 @@ export async function loadSoloReuse() {
  * @returns {Promise<string | null>} null when the lookup cannot be made.
  */
 export async function soloVersionAtStudyHead(gameId) {
+  if (soloVersionCache.has(gameId)) return /** @type {string | null} */ (soloVersionCache.get(gameId));
   try {
     const { execFile } = await import('node:child_process');
     const { promisify } = await import('node:util');
@@ -196,10 +201,29 @@ export async function soloVersionAtStudyHead(gameId) {
       'f7698f9a6c724780b8e2275df039255b84c2a900:gauntlet/games/' + gameId + '/index.js',
     ]);
     const match = out.stdout.match(/version:\s*'([^']+)'/);
-    return match ? match[1] : null;
+    const version = match ? match[1] : null;
+    soloVersionCache.set(gameId, version);
+    return version;
   } catch {
+    soloVersionCache.set(gameId, null);
     return null;
   }
+}
+
+/**
+ * Whether the committed skill-dial solo reuse is current for a game: the
+ * version the solo study measured must equal the registry's current version.
+ * A game version bump strands the solo dial rows — run-cells then plays the
+ * dial cells fresh and compute-tiers reads the local bundles instead.
+ *
+ * @param {string} gameId
+ * @returns {Promise<boolean>}
+ */
+export async function soloReuseCurrent(gameId) {
+  const game = /** @type {*} */ (GAMES[gameId]);
+  if (!game?.spec?.version) return false;
+  const solo = await soloVersionAtStudyHead(gameId);
+  return solo !== null && solo === game.spec.version;
 }
 
 /** Repo root on disk. */
@@ -210,4 +234,50 @@ export function repoRoot() {
 /** The audit's own directory. */
 export function auditDir() {
   return here;
+}
+
+/**
+ * Cell-completion verdict for one audit cell bundle: the cell is complete
+ * only when every planned seed has a trajectory on disk that records the
+ * registry's **current** game version. `run.json` saying the episode count is
+ * reached is not enough — #107 committed run.json plus suite.json with the
+ * raw trajectories left untracked, and a game version bump (#108: mastermind
+ * 1.1.0, wordle 1.2.0) strands every recorded episode — a stale or
+ * trajectory-less cell must re-run, not skip.
+ *
+ * @param {string} bundle the cell's bundle directory
+ * @param {string} gameId
+ * @param {string} tierId
+ * @param {string[]} seeds the planned public seeds for the tier
+ * @returns {Promise<{ complete: boolean, reason: string }>}
+ */
+export async function cellBundleVerdict(bundle, gameId, tierId, seeds) {
+  const game = /** @type {*} */ (GAMES[gameId]);
+  if (!existsSync(join(bundle, 'run.json'))) {
+    return { complete: false, reason: 'no run.json' };
+  }
+  const dir = join(bundle, gameId, tierId);
+  for (const seed of seeds) {
+    const path = join(dir, `${seed}.json`);
+    if (!existsSync(path)) {
+      return { complete: false, reason: `missing trajectory ${seed}` };
+    }
+    let trajectory;
+    try {
+      trajectory = JSON.parse(await readFile(path, 'utf8'));
+    } catch (err) {
+      return { complete: false, reason: `unreadable trajectory ${seed} (${/** @type {Error} */ (err).message})` };
+    }
+    const recorded = /** @type {*} */ (trajectory)?.game?.version ?? null;
+    if (recorded !== game?.spec?.version) {
+      return {
+        complete: false,
+        reason: `trajectory ${seed} recorded game version ${recorded ?? 'none'}, registry is at ${game?.spec?.version ?? 'unknown'}`,
+      };
+    }
+  }
+  return {
+    complete: true,
+    reason: `all ${seeds.length} planned trajectories carry the current game version ${game?.spec?.version ?? 'unknown'}`,
+  };
 }

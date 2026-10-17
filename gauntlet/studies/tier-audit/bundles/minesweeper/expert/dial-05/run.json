@@ -6,7 +6,7 @@
     "manifestSha256": "fe0da2a710bb36dfc2519a17a99d52141ff7a526283a2cfba6c052dbad74638c"
   },
   "git": {
-    "commit": "ff3f1b53abc3506de37f4823eee5f165b5f9a91c"
+    "commit": "2b1cfba8fcd21e7b91f7114ab3a66db1c34f89af"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,11 +16,12 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T00:40:29.131Z",
-  "finishedAt": "2026-10-17T00:40:31.131Z",
-  "concurrency": 2,
+  "startedAt": "2026-10-17T13:49:31.143Z",
+  "finishedAt": "2026-10-17T13:49:33.319Z",
+  "concurrency": 6,
   "limits": {
     "maxUsd": null,
+    "maxUsdTotal": null,
     "maxCalls": null,
     "requestsPerMinute": null,
     "maxOutputTokens": null,
@@ -31,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 307,
+  "calls": 40,
   "total": {
     "episodes": 25,
     "calls": 0,
@@ -44,16 +45,50 @@
   },
   "counts": {
     "jobs": 25,
-    "played": 25,
-    "skipped": 0,
+    "played": 4,
+    "skipped": 21,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [],
+  "skipped": [
+    "minesweeper/expert/minesweeper/expert/public/0",
+    "minesweeper/expert/minesweeper/expert/public/1",
+    "minesweeper/expert/minesweeper/expert/public/2",
+    "minesweeper/expert/minesweeper/expert/public/3",
+    "minesweeper/expert/minesweeper/expert/public/4",
+    "minesweeper/expert/minesweeper/expert/public/5",
+    "minesweeper/expert/minesweeper/expert/public/6",
+    "minesweeper/expert/minesweeper/expert/public/7",
+    "minesweeper/expert/minesweeper/expert/public/8",
+    "minesweeper/expert/minesweeper/expert/public/9",
+    "minesweeper/expert/minesweeper/expert/public/10",
+    "minesweeper/expert/minesweeper/expert/public/11",
+    "minesweeper/expert/minesweeper/expert/public/12",
+    "minesweeper/expert/minesweeper/expert/public/13",
+    "minesweeper/expert/minesweeper/expert/public/14",
+    "minesweeper/expert/minesweeper/expert/public/15",
+    "minesweeper/expert/minesweeper/expert/public/16",
+    "minesweeper/expert/minesweeper/expert/public/17",
+    "minesweeper/expert/minesweeper/expert/public/18",
+    "minesweeper/expert/minesweeper/expert/public/19",
+    "minesweeper/expert/minesweeper/expert/public/20"
+  ],
   "replayed": [],
   "unplayed": [],
   "failed": [],
   "stopped": null,
-  "stopReason": null
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 2,
+    "calls": 307,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 307,
+    "problems": []
+  }
 }

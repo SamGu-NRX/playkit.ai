@@ -168,8 +168,9 @@ import { OFFICIAL_SYSTEM_PROMPT, buildOfficialTurnMessage } from './official.js'
  *   fetch.
  * @property {number} [maxRetries] Retries for 429/5xx/network errors. Default 3.
  * @property {number} [retryBaseDelayMs] Exponential backoff base. Default 500.
- * @property {(ms: number) => Promise<void>} [sleep] Delay function, injectable
- *   for fast tests.
+ * @property {SleepFn} [sleep] Delay function, injectable for fast tests. An
+ *   injected sleep is used as-is; the default sleep's promise carries an
+ *   optional `cancel()` the harness uses to release an aborted wait.
  * @property {string} [id] Agent id. Default "<provider>/<model>", plus
  *   ":reasoning-effort=<level>" (or ":reasoning-effort=provider-default")
  *   when the model's capability row documents effort levels (any provider) —
@@ -739,12 +740,34 @@ function retryError(message, retries) {
 }
 
 /**
- * @param {(ms: number) => Promise<void>} [sleep]
- * @returns {(ms: number) => Promise<void>}
+ * A retry-wait sleep. An injected sleep is a plain `(ms) => Promise<void>`
+ * function owned by its caller; the default sleep's promise additionally
+ * carries an optional `cancel()` that clears its pending timer, so an aborted
+ * wait can release the event loop instead of riding the window out.
+ *
+ * @typedef {(ms: number) => Promise<void> & { cancel?: () => void }} SleepFn
+ */
+
+/**
+ * The injected sleep when one was given; otherwise a timer-backed sleep whose
+ * promise carries `cancel()` (f07: an abort during a retry wait must not
+ * leave the Retry-After setTimeout holding the process alive until the window
+ * elapses).
+ *
+ * @param {SleepFn} [sleep]
+ * @returns {SleepFn}
  */
 function sleepOrDefault(sleep) {
   if (typeof sleep === 'function') return sleep;
-  return (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  return (ms) => {
+    /** @type {() => void} */
+    let clear = () => {};
+    const pending = new Promise((resolve) => {
+      const timer = setTimeout(resolve, ms);
+      clear = () => clearTimeout(timer);
+    });
+    return Object.assign(pending, { cancel: () => clear() });
+  };
 }
 
 /**
@@ -841,7 +864,7 @@ function episodeAbortError(model, retries) {
  *
  * @param {number} ms
  * @param {AbortSignal | undefined} externalSignal
- * @param {(ms: number) => Promise<void>} sleep
+ * @param {SleepFn} sleep
  * @param {string | undefined} model
  * @param {number} retries
  * @returns {Promise<void>}
@@ -858,10 +881,17 @@ async function delayOrAbort(ms, externalSignal, sleep, model, retries) {
     onAbort = () => reject(episodeAbortError(model, retries));
   });
   externalSignal.addEventListener('abort', onAbort, { once: true });
+  const slept = sleep(ms);
   try {
-    await Promise.race([sleep(ms), aborted]);
+    await Promise.race([slept, aborted]);
   } finally {
     externalSignal.removeEventListener('abort', onAbort);
+    // Cancel the default sleep's pending timer (f07): the race above cuts the
+    // wait, but the underlying setTimeout would keep the event loop — and the
+    // process — alive until the Retry-After window elapses. Injected sleeps
+    // carry no cancel and are left to their owner. Clearing an already-fired
+    // timer is harmless.
+    if (typeof slept.cancel === 'function') slept.cancel();
   }
 }
 
@@ -882,7 +912,7 @@ async function delayOrAbort(ms, externalSignal, sleep, model, retries) {
  * @param {typeof fetch} options.fetchImpl
  * @param {number} options.maxRetries
  * @param {number} options.retryBaseDelayMs
- * @param {(ms: number) => Promise<void>} options.sleep
+ * @param {SleepFn} options.sleep
  * @param {string} options.provider For error messages only.
  * @param {string} [options.model] For timeout error messages only.
  * @param {number} [options.callTimeoutMs] Per-attempt timeout in ms; absent
@@ -1094,7 +1124,7 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  * @property {typeof fetch} fetchImpl
  * @property {number} maxRetries
  * @property {number} retryBaseDelayMs
- * @property {(ms: number) => Promise<void>} sleep
+ * @property {SleepFn} sleep
  * @property {number} [thinkingBudget] Anthropic extended-thinking budget_tokens;
  *   only on models whose capability row accepts manual mode (checked at
  *   construction); with it set the wire max_tokens is maxOutputTokens +
@@ -1475,7 +1505,7 @@ async function callOpenAI({
  * @property {typeof fetch} fetchImpl
  * @property {number} maxRetries
  * @property {number} retryBaseDelayMs
- * @property {(ms: number) => Promise<void>} sleep
+ * @property {SleepFn} sleep
  * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
  *   Reasoning effort, sent as the chat-completions reasoning_effort field.
  * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.

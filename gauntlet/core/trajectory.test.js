@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { runEpisode } from './runner.js';
-import { verifyTrajectory } from './trajectory.js';
+import { runEpisode, timeLimitOutcome } from './runner.js';
+import { verifyTrajectory, hashObservation } from './trajectory.js';
 import { getGame } from '../games/index.js';
 import { createRandomAgent } from '../agents/random.js';
 
@@ -195,4 +195,65 @@ test('a forged forfeit threshold above the recorded consecutive invalids is reje
   const result = await verifyTrajectory(game, trajectory);
   assert.equal(result.ok, false);
   if (!result.ok) assert.match(result.reason, /threshold/);
+});
+
+
+test('agent attempts beyond tier.maxActions are rejected on every end reason', async () => {
+  // A live episode ends the moment the agent's attempts reach the tier
+  // budget, so no honest trajectory can carry more agent steps. Forge one
+  // that stays fully replayable: play a real budget-exhausted episode on
+  // cube-2 (maxActions 15), continue the same state walk two more moves with
+  // fresh observation hashes, and re-stamp the end as time-limit — its
+  // self-reported fields are shape-checked only and the game is not over, so
+  // every pre-existing check passes. The tier budget is what must refuse it.
+  const cube = getGame('cube');
+  const tierId = 'cube-2';
+  const trajectory = await runEpisode({
+    game: cube,
+    tierId,
+    seed: 'over-budget-forgery',
+    agent: createRandomAgent({ episodeSeed: 'over-budget-forgery' }),
+  });
+  assert.equal(trajectory.end.reason, 'budget-exhausted', 'the walk must reach the budget, not solve the cube');
+  const tier = cube.spec.tiers.find((t) => t.id === tierId);
+  assert.ok(tier);
+  const budgetAttempts = trajectory.end.agentActions;
+  assert.equal(budgetAttempts, tier.maxActions);
+
+  // Replay the recorded state forward...
+  let state = cube.reset(tier, trajectory.seed);
+  for (const step of trajectory.steps) {
+    state = cube.step(state, step.seat, step.action);
+  }
+  // ...then continue two forged agent turns with fresh observations.
+  for (let i = 0; i < 2; i++) {
+    const seat = cube.toAct(state);
+    assert.ok(seat !== null, 'the cube is not over mid-forgery');
+    const observation = cube.observe(state, seat);
+    const action = cube.legalActions(state, seat)[0];
+    trajectory.steps.push({
+      seat,
+      by: 'agent',
+      observationHash: hashObservation(observation),
+      reply: { text: action },
+      action,
+      invalid: false,
+      usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 },
+      ms: 1,
+    });
+    state = cube.step(state, seat, action);
+  }
+  const priorEnd = trajectory.end;
+  trajectory.end = {
+    reason: 'time-limit',
+    outcome: timeLimitOutcome(cube.spec.seats, trajectory.agent.seat),
+    timeLimitMs: 60000,
+    elapsedMs: 60001,
+    agentActions: budgetAttempts + 2,
+    invalidActions: priorEnd.invalidActions,
+    forfeitThreshold: priorEnd.forfeitThreshold,
+  };
+  const result = await verifyTrajectory(cube, trajectory);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.match(result.reason, /tier\.maxActions/);
 });

@@ -240,6 +240,18 @@ export async function verifyTrajectory(game, trajectory) {
       reason: `end.invalidActions is ${trajectory.end.invalidActions} but the replay counts ${invalidActions}`,
     };
   }
+  // The tier action budget, on every end reason. The runner ends the episode
+  // the moment the agent's attempts reach tier.maxActions, so a replayable
+  // trajectory can never carry more agent attempts than the budget — only
+  // the budget-exhausted branch previously compared the count, leaving
+  // terminal/forfeit/time-limit endings free to exceed it.
+  if (agentActions > tier.maxActions) {
+    return {
+      ok: false,
+      step: trajectory.steps.length,
+      reason: `the replay counts ${agentActions} agent attempts but tier.maxActions is ${tier.maxActions}; the runner ends an episode at the budget`,
+    };
+  }
 
   const end = trajectory.end;
   const reason = end.reason;

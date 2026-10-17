@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -38,8 +37,11 @@ describe('journeys/release/release.sh', () => {
   });
 
   it('replays stage D (Go): one verified episode per GNU Go tier', { timeout: 600000 }, (t) => {
-    if (!existsSync('/usr/bin/gnugo') && !existsSync('/usr/games/gnugo')) {
+    // Detect GNU Go exactly as release.sh does (command -v over PATH), so the
+    // test runs wherever the stage runs — not only at the two distro paths.
+    if (spawnSync('bash', ['-c', 'command -v gnugo'], { encoding: 'utf8' }).status !== 0) {
       t.skip();
+      return;
     }
     const out = runStage('D');
     assert.match(out, /journey D: PASS/);

@@ -17,7 +17,7 @@
  *   m[t]    per-tier mean of d
  *   D       equal-weight mean of m over shared tiers
  *   CI      percentile 95% interval from 10,000 seeded joint resamples
- *           (streamFromSeed('separation-pilot/<key>/<profile>/<reading>')) —
+ *           (streamFromSeed('separation-pilot/<sorted-pair>/<reading>/<profile>')) —
  *           identical bundles always yield byte-identical intervals
  *
  * SEPARATED iff the interval excludes zero and at least ceil(T/2) shared tiers
@@ -473,7 +473,11 @@ for (const b of bundles) {
 const comparisons = [];
 for (let i = 0; i < bundles.length; i++) {
   for (let j = i + 1; j < bundles.length; j++) {
-    const key = `${bundles[i].label}~vs~${bundles[j].label}`;
+    // The comparison is an unordered pair: the comparison name and the
+    // bootstrap stream are keyed by the SORTED labels, so analyze(B, A)
+    // negates D and the interval bounds exactly — the preregistered
+    // label-swap symmetry (PREREGISTRATION.md, instrument checks).
+    const key = [bundles[i].label, bundles[j].label].slice().sort().join('~vs~');
     for (const profile of PROFILES) {
       if (profile === 'chance-adjusted' && !baseline) {
         comparisons.push({ comparison: key, profile, error: `no baseline at ${DEFAULT_BASELINE} — chance-adjusted reported only with a usable baseline` });

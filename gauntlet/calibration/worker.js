@@ -193,6 +193,10 @@ export async function runWorker(config, deps = {}) {
         episodesRun,
         capHit,
         failure,
+        // The effective per-game cap this worker ran under — render-report
+        // reads it back so a capped re-render prints the real cap instead of
+        // a default the run may not have used.
+        timeCapSec: config.timeCapSec,
       },
       null,
       2

@@ -113,7 +113,7 @@ function agentFactoryStub(pricesPath, stubUrl) {
     });
 }
 
-async function writePrices(dir) {
+async function writePrices(dir: string) {
   const pricesPath = join(dir, 'prices.json');
   await writeFile(pricesPath, JSON.stringify(PRICES, null, 2));
   return pricesPath;
@@ -263,7 +263,7 @@ test('resume under a raised cap: the replay is a new attempt; a finished attempt
   const attempts = [...countdownJobs.entries()];
   assert.equal(attempts.length, 3, 'two kept replay attempts + one unwound attempt');
   for (const [key, attemptLines] of attempts) {
-    const flags = new Set(attemptLines.map((l) => l.kept));
+    const flags = new Set(attemptLines.map((l: { kept: boolean }) => l.kept));
     assert.equal(flags.size, 1, `attempt ${key} has a single kept flag`);
   }
   const unwoundAttempts = attempts.filter(([, ls]) => ls[0].kept === false);

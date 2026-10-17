@@ -134,7 +134,7 @@ const recordedCaps = [...new Set(metas.map((m) => m.timeCapSec).filter((v) => ty
 if (timeCapGiven) {
   // operator said it: render with it (metas may predate cap recording)
 } else if (recordedCaps.length === 1) {
-  options.timeCapSec = recordedCaps[0];
+  options.timeCapSec = recordedCaps[0] ?? DEFAULT_TIME_CAP_SEC;
 } else if (recordedCaps.length > 1) {
   console.error(
     `render-report: metas record conflicting per-game caps (${recordedCaps.join('s, ')}s) — pass --time-cap=<sec> to say which run this report renders`

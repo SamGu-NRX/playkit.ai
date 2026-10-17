@@ -436,19 +436,6 @@ export async function runEpisode({
                 }
               );
             });
-            if (steps.length === 0) {
-              // Mirror the between-turns guard: setup time must not end an
-              // episode at zero steps, and neither may a first call that
-              // outlives the whole budget — the trajectory would hold no
-              // step at all, nothing to replay. The episode fails loudly
-              // instead: the caller records the failure, the job stays
-              // unplayed, and a resume retries it. The in-flight attempt's
-              // own accounting (a timed-out call charges its reserved
-              // worst-case quote) already ran in the agent wrapper.
-              throw new Error(
-                `episode time limit ${episodeTimeLimitMs}ms reached before the first step completed`
-              );
-            }
             end = {
               reason: 'time-limit',
               outcome: timeLimitOutcome(seats, agentSeat),

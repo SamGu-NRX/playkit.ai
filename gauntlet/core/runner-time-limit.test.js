@@ -73,6 +73,40 @@ test('an episode whose agent hangs past the limit ends with reason time-limit an
   assert.deepEqual(verdict, { ok: true });
 });
 
+test('a deadline firing during the first call fails the episode instead of writing a zero-step trajectory', async () => {
+  // The very first call hangs until the abort signal fires: the deadline
+  // wins the race at zero recorded steps. Ending there would write a
+  // trajectory with nothing to replay — the same invariant the between-turns
+  // check enforces for setup time — so the episode fails loudly and the
+  // caller keeps the job unplayed for a resume to retry.
+  const agent = {
+    id: 'hangs-on-call-1',
+    track: /** @type {'baseline'} */ ('baseline'),
+    async act(/** @type {import('./types.js').TurnContext} */ ctx) {
+      return new Promise((_resolve, reject) => {
+        const settle = () => reject(new Error('aborted in flight'));
+        if (ctx.signal?.aborted) {
+          settle();
+          return;
+        }
+        ctx.signal?.addEventListener('abort', settle, { once: true });
+      });
+    },
+  };
+  await assert.rejects(
+    () =>
+      runEpisode({
+        game,
+        tierId,
+        seed: 'time-limit-first-call',
+        agent,
+        episodeTimeLimitMs: 120,
+        timeLimitGraceMs: 500,
+      }),
+    /before the first step completed/
+  );
+});
+
 test('an agent that ignores the abort signal is still bounded by the grace window', async () => {
   const trajectory = await runEpisode({
     game,

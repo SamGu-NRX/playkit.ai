@@ -88,7 +88,10 @@ async function startCapStub() {
   return { url: stub.url, close: stub.close, maxInFlight: () => maxInFlight };
 }
 
-/** Reads the bundle's spend ledger and returns its `kind: "call"` lines. */
+/**
+ * Reads the bundle's spend ledger and returns its `kind: "call"` lines.
+ * @param {string} dir
+ */
 async function readCallLines(dir) {
   const text = await readFile(join(dir, SPEND_LEDGER_FILENAME), 'utf8');
   return text
@@ -98,6 +101,10 @@ async function readCallLines(dir) {
     .filter((line) => line.kind === 'call');
 }
 
+/**
+ * @param {string} pricesPath
+ * @param {string} stubUrl
+ */
 function agentFactoryStub(pricesPath, stubUrl) {
   return () =>
     createModelAgent({
@@ -260,7 +267,7 @@ test('resume under a raised cap: the replay is a new attempt; a finished attempt
     if (!line.job.startsWith('countdown/')) continue;
     const key = `${line.job}#${line.invocation}`;
     if (!countdownJobs.has(key)) countdownJobs.set(key, []);
-    countdownJobs.get(key).push(line);
+    countdownJobs.get(key)?.push(line);
   }
   const attempts = [...countdownJobs.entries()];
   assert.equal(attempts.length, 3, 'two kept replay attempts + one unwound attempt');

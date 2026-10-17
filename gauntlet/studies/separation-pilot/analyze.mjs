@@ -477,7 +477,12 @@ const suite = /** @type {SuiteManifest} */ (JSON.parse(readFileSync(suiteFile, '
 const suiteSha256 = createHash('sha256').update(readFileSync(suiteFile)).digest('hex');
 
 let baseline;
-if (existsSync(DEFAULT_BASELINE)) baseline = loadBaselineFile(DEFAULT_BASELINE);
+if (existsSync(DEFAULT_BASELINE)) {
+  // loadBaselineFile returns a LoadedBaseline wrapper ({ baseline, sha256 });
+  // the analyzer wants the validated ScoringBaseline itself. The sha256 is
+  // file provenance and is not consumed here.
+  baseline = loadBaselineFile(DEFAULT_BASELINE).baseline;
+}
 for (const b of bundles) await scoreAndMirror(b, suite);
 
 /** @type {string[]} */

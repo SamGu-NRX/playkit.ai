@@ -134,7 +134,7 @@ while [ "$attempt" -lt 6 ]; do
   summary="$(ledger)"
   total="$(node -e 'const s=JSON.parse(process.argv[1]); console.log(s.totalUsd ?? "null")' "$summary")"
   if grep -qE "stopped[ =]+done" "$c_out"; then verdict="finished on attempt $attempt (stopped=done)"; break; fi
-  if grep -q "stopped=budget" "$c_out"; then
+  if grep -qE "stopped[ =]+budget" "$c_out"; then
     if node -e "process.exit(Math.abs(Number(process.argv[1]) - Number(process.argv[2])) < 1e-9 ? 0 : 1)" "$total" "$prev_total"; then
       verdict="refused on attempt $attempt (stopped=budget, 0 episodes played — the cap is exhausted with work remaining)"
       break

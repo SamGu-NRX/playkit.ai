@@ -42,7 +42,7 @@ import { fileURLToPath } from 'node:url';
 import { verifyTrajectory } from '../../core/trajectory.js';
 import { streamFromSeed } from '../../core/rng.js';
 import { getGame, GAMES } from '../../games/index.js';
-import { score, EFFICIENCY_CAP_OPTIMAL, EFFICIENCY_CAP_REFERENCE } from '../../scoring/score.js';
+import { score, EFFICIENCY_CAP_OPTIMAL, EFFICIENCY_CAP_REFERENCE, GauntletRefusalError } from '../../scoring/score.js';
 import { transformOutcomeEpisode } from '../../scoring/profiles.js';
 import { loadBaselineFile } from '../../scoring/baselines.js';
 import { loadTrajectories } from '../../cli/verify.js';
@@ -394,7 +394,25 @@ async function scoreAndMirror(bundle, suite) {
   for (const g of suite.games) {
     const trajs = bundle.trajectories.filter((t) => t.game.id === g.id);
     if (trajs.length === 0) continue;
-    const entry = await score({ ...suite, games: [g] }, trajs, GAMES, {});
+    let entry;
+    try {
+      entry = await score({ ...suite, games: [g] }, trajs, GAMES, {});
+    } catch (err) {
+      // A single-game suite of a game whose spec.benchmark is not true is
+      // refused before any tier is scored: score() defines the benchmark
+      // aggregate only over benchmark-flagged games, and a suite with none
+      // has no benchmark score. That refusal is about the suite shape, not
+      // about this game's tier scores - production computes those the same
+      // way in any multi-game suite (the pilot-1seed option carries
+      // tictactoe, the registry's only benchmark:false game, and its
+      // full-suite leaderboard scores it). Skip this game's mirror loudly
+      // rather than block the preregistered analysis on the suite shape.
+      if (err instanceof GauntletRefusalError && err.step === 'benchmark-games') {
+        process.stderr.write(`analyze: mirror skipped for ${g.id}: production score() refuses a single-game suite with no benchmark-flagged games (spec.benchmark !== true)\n`);
+        continue;
+      }
+      throw err;
+    }
     const gameScore = entry.games[g.id];
     if (!gameScore) continue;
     for (const t of g.tiers) {

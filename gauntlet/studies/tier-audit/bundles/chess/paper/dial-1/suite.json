@@ -1,0 +1,27 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "playkit-gauntlet-tier-audit-chess-paper",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "chess",
+      "version": "1.2.0",
+      "requires": [],
+      "tiers": [
+        {
+          "id": "paper",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess/paper/public/0",
+            "chess/paper/public/1",
+            "chess/paper/public/2",
+            "chess/paper/public/3",
+            "chess/paper/public/4"
+          ]
+        }
+      ]
+    }
+  ]
+}

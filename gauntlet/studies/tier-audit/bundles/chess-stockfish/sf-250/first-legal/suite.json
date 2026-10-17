@@ -1,0 +1,29 @@
+{
+  "format": "playkit-gauntlet-suite/1",
+  "id": "playkit-gauntlet-tier-audit-chess-stockfish-sf-250",
+  "split": "public",
+  "saltCommitment": null,
+  "games": [
+    {
+      "id": "chess-stockfish",
+      "version": "1.1.0",
+      "requires": [
+        "stockfish"
+      ],
+      "tiers": [
+        {
+          "id": "sf-250",
+          "rank": 1,
+          "scoring": "outcome",
+          "seeds": [
+            "chess-stockfish/sf-250/public/0",
+            "chess-stockfish/sf-250/public/1",
+            "chess-stockfish/sf-250/public/2",
+            "chess-stockfish/sf-250/public/3",
+            "chess-stockfish/sf-250/public/4"
+          ]
+        }
+      ]
+    }
+  ]
+}

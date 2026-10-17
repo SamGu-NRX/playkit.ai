@@ -1,0 +1,6 @@
+# Raw episode trajectories are re-derivable (deterministic seeds, agents, and
+# recorded engine versions) and are not committed. The per-cell run records
+# and suite manifests are committed.
+**/*.json
+!**/run.json
+!**/suite.json

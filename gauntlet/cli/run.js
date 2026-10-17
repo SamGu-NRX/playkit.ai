@@ -40,6 +40,8 @@ import { parseAgentSpec } from './agents.js';
  *   can reject it explicitly for engine-backed runs.
  * @property {number} [concurrency] Worker count (default 1).
  * @property {number} [maxUsd] Hard dollar cap on summed usage.costUsd.
+ * @property {number} [maxUsdTotal] Bundle-wide dollar cap on the spend ledger
+ *   (spend.jsonl) — enforced across resumes, not just this invocation.
  * @property {number} [maxCalls] Hard cap on agent calls across the run.
  * @property {number} [requestsPerMinute] Shared rate limit on agent calls.
  * @property {number} [maxOutputTokens] --max-output-tokens: per-reply output
@@ -150,6 +152,7 @@ export async function runSuite(options) {
     },
     ...(options.concurrency !== undefined ? { concurrency: options.concurrency } : {}),
     ...(options.maxUsd !== undefined ? { maxUsd: options.maxUsd } : {}),
+    ...(options.maxUsdTotal !== undefined ? { maxUsdTotal: options.maxUsdTotal } : {}),
     ...(options.maxCalls !== undefined ? { maxCalls: options.maxCalls } : {}),
     ...(options.requestsPerMinute !== undefined
       ? { requestsPerMinute: options.requestsPerMinute }
@@ -199,6 +202,13 @@ export function printRunSummary(result) {
     `episodes ${run.counts.jobs} planned, ${run.counts.played} played, ${run.counts.skipped} skipped (verified on resume), ${run.counts.replayed} replayed, ${run.counts.unplayed} unplayed, ${run.counts.failed} failed`,
     `calls    ${run.calls}${run.limits.maxCalls !== null ? ` / cap ${run.limits.maxCalls}` : ''}`,
     `spend    ${spendText}${run.limits.maxUsd !== null ? ` / cap ${run.limits.maxUsd}` : ''}`,
+    // Additive ledger line: the bundle-wide, resume-surviving view of spend.
+    // The existing spend line is per-invocation and unchanged.
+    ...(run.ledger?.file
+      ? [
+          `ledger   ${run.ledger.file} — ${run.ledger.totalUsd.toFixed(6)} recorded across the bundle${run.ledger.cap !== null ? ` / cap ${run.ledger.cap}` : ''}${run.ledger.unwoundCalls > 0 ? `, ${run.ledger.unwoundCalls} unwound call(s) (${run.ledger.unwoundUsd.toFixed(6)})` : ''}`,
+        ]
+      : []),
     `record   run.json (format ${run.format})`,
   ];
   if (result.stopped) {

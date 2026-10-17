@@ -17,7 +17,7 @@ import { verifyBridgeLog } from '../bridge/session-log.js';
 import { score } from '../scoring/score.js';
 import { SUITE_FORMAT } from '../scoring/suite.js';
 
-import { RUN_FORMAT } from './run.js';
+import { RUN_FORMAT, readSpendLedger, SPEND_LEDGER_FILENAME } from './run.js';
 import { normalizeGames, planJobs } from './plan.js';
 import { canonicalSha256, readJsonFile, trajectoryPath } from './fsutil.js';
 
@@ -140,7 +140,103 @@ async function verifyPageSessions(outDir) {
  * @property {Record<string, *> | null} score The recomputed entry score, or
  *   null when scoring refused.
  * @property {string | null} scoreError Why scoring refused.
+ * @property {{ present: boolean, ok: boolean, problems: string[], invocations: number, calls: number, cap: number | null, totalUsd: number, keptUsd: number, unwoundUsd: number, unwoundCalls: number, unknownCalls: number, trajectoryUsd: number } | null} ledger
+ *   The spend-ledger verdict, or null for a page-only bundle.
  */
+
+/**
+ * Verify a bundle's spend ledger against its trajectories. The ledger is
+ * evidence, not authentication: the hash chain catches naive edits, and what
+ * even a full re-chain cannot fake is the trajectories — every usage-carrying
+ * agent step inside a kept episode must be accounted for, cost for cost and in
+ * order, by a kept ledger line naming that job, and the ledger's recorded
+ * total must cover the trajectories' spend (unwound and rejected calls make it
+ * strictly larger). A bundle from before the ledger has none, and verifies
+ * without one.
+ *
+ * @param {string} outDir
+ * @param {Job[]} jobs
+ * @returns {Promise<{ present: boolean, ok: boolean, problems: string[], invocations: number, calls: number, cap: number | null, totalUsd: number, keptUsd: number, unwoundUsd: number, unwoundCalls: number, unknownCalls: number, trajectoryUsd: number }>} 
+ */
+async function verifyBundleSpendLedger(outDir, jobs) {
+  const ledger = await readSpendLedger(outDir);
+  /** @type {string[]} */
+  const problems = [...ledger.problems];
+  if (!ledger.present) {
+    return {
+      present: false,
+      ok: true,
+      problems: [],
+      invocations: 0,
+      calls: 0,
+      cap: null,
+      totalUsd: 0,
+      keptUsd: 0,
+      unwoundUsd: 0,
+      unwoundCalls: 0,
+      unknownCalls: 0,
+      trajectoryUsd: 0,
+    };
+  }
+
+  // Agent-seat usage spend per job, walked from the trajectory files so a
+  // re-chained ledger edit that also rewrote run.json totals still has to
+  // agree with the trajectories themselves.
+  let trajectoryUsd = 0;
+  for (const job of jobs) {
+    const parsed = await readJsonFile(trajectoryPath(outDir, job));
+    if (!parsed.ok) continue; // a missing trajectory is the trajectory verdicts' finding
+    const t = /** @type {any} */ (parsed.value);
+    if (!t || t.format !== TRAJECTORY_FORMAT || !Array.isArray(t.steps)) continue;
+    const usageSteps = t.steps.filter((/** @type {any} */ s) => s?.usage && (s.by === undefined || s.by === 'agent'));
+    const keptUsageLines = ledger.lines
+      .map((l) => l.value)
+      .filter((v) => v && v.kind === 'call' && v.kept === true && v.job === job.key && v.usage === true);
+    if (keptUsageLines.length !== usageSteps.length) {
+      problems.push(
+        `${job.key}: ${usageSteps.length} trajectory usage step(s) are not covered by a kept ledger line (the kept ledger lines account for ${keptUsageLines.length})`
+      );
+      continue;
+    }
+    for (let i = 0; i < usageSteps.length; i++) {
+      const lineCost = keptUsageLines[i].costUsd;
+      const stepCost = usageSteps[i].usage?.costUsd;
+      const lineFinite = typeof lineCost === 'number' && Number.isFinite(lineCost);
+      const stepFinite = typeof stepCost === 'number' && Number.isFinite(stepCost);
+      const matches =
+        lineFinite && stepFinite
+          ? Math.abs(lineCost - stepCost) <= 1e-9 + 1e-9 * Math.abs(lineCost)
+          : !lineFinite && !stepFinite;
+      if (!matches) {
+        problems.push(
+          `${job.key}: trajectory step ${i} is not covered by a kept ledger line (ledger ${JSON.stringify(lineCost)}, trajectory ${JSON.stringify(stepCost)})`
+        );
+      }
+      if (stepFinite) trajectoryUsd += /** @type {number} */ (stepCost);
+    }
+  }
+
+  if (ledger.summary.totalUsd + 1e-9 < trajectoryUsd) {
+    problems.push(
+      `the ledger's recorded total (${ledger.summary.totalUsd}) is below the trajectories' own spend (${trajectoryUsd})`
+    );
+  }
+
+  return {
+    present: true,
+    ok: problems.length === 0,
+    problems,
+    invocations: ledger.summary.invocations,
+    calls: ledger.summary.calls,
+    cap: ledger.summary.cap,
+    totalUsd: ledger.summary.totalUsd,
+    keptUsd: ledger.summary.keptUsd,
+    unwoundUsd: ledger.summary.unwoundUsd,
+    unwoundCalls: ledger.summary.unwoundCalls,
+    unknownCalls: ledger.summary.unknownCalls,
+    trajectoryUsd,
+  };
+}
 
 /**
  * Verify a results bundle produced by `runSuite`.
@@ -184,6 +280,7 @@ export async function verifyBundle(outDir, games) {
         stray: strayPageOnly,
         score: null,
         scoreError: null,
+        ledger: null,
       };
     }
     refuse('suite', `no readable suite.json in ${outDir} (${suiteParsed.error}); not a run bundle`);
@@ -207,6 +304,11 @@ export async function verifyBundle(outDir, games) {
   const recordedHash =
     /** @type {any} */ (run.suite)?.manifestSha256 ?? null;
   const manifestHashOk = typeof recordedHash === 'string' && recordedHash === actualHash;
+
+  // Completeness is the pre-existing contract — every planned job needs a
+  // trajectory — so an incomplete (budget-stopped, not-yet-resumed) bundle
+  // still fails verify; resume it to completion first. The ledger walk below
+  // merely tolerates the missing files when it cross-checks coverage.
 
   /** @type {TrajectoryVerdict[]} */
   const verdicts = [];
@@ -293,8 +395,17 @@ export async function verifyBundle(outDir, games) {
     scoreError = err instanceof Error ? err.message : String(err);
   }
 
+  // The spend ledger: hash chain, call shape, and — what a re-chain cannot
+  // fake — coverage of every kept episode's usage-carrying agent steps.
+  const ledger = await verifyBundleSpendLedger(outDir, jobs);
+
   const ok =
-    manifestHashOk && verdicts.every((v) => v.ok) && pageSessions.every((v) => v.ok) && stray.length === 0 && scoreError === null;
+    manifestHashOk &&
+    verdicts.every((v) => v.ok) &&
+    pageSessions.every((v) => v.ok) &&
+    stray.length === 0 &&
+    scoreError === null &&
+    ledger.ok;
 
   return {
     ok,
@@ -308,5 +419,6 @@ export async function verifyBundle(outDir, games) {
     stray,
     score: scoreResult,
     scoreError,
+    ledger,
   };
 }

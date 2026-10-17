@@ -229,4 +229,12 @@ all eighteen games, a CLI end-to-end run (suite build → random run → bundle
 verify → verify → leaderboard rank → dry-run model entry flagged unranked),
 an engine-backed CLI run against a local OpenAI-compatible stub server
 (live provider run → budget stop → resume → tamper detection → priced
+estimate → leaderboard), a bundle-wide spend-cap run (`--max-usd-total`:
+budget stop → carried cap → recorded raise → verified ledger → re-chained
+tamper caught), and the Python-client-over-serve episode.
+ Python-client-over-serve episode.
+CLI end-to-end run (suite build → random run → bundle
+verify → verify → leaderboard rank → dry-run model entry flagged unranked),
+an engine-backed CLI run against a local OpenAI-compatible stub server
+(live provider run → budget stop → resume → tamper detection → priced
 estimate → leaderboard), and the Python-client-over-serve episode.

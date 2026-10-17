@@ -27,11 +27,26 @@
  * step whose `usage.costUsd` is null stops the run with an error: a cap
  * cannot be enforced over unknown prices, and guessing would hide real spend.
  *
+ * Bundle-wide spend: `maxUsdTotal` bounds the whole results bundle across
+ * resumes, where `maxUsd` bounds one invocation. The bundle carries
+ * `spend.jsonl`, an append-only ledger with one line per run invocation, per
+ * recorded cap, and per paid call — kept (its episode produced a trajectory)
+ * or unwound (a stop threw the episode away; the spend stays recorded). A
+ * rejected call is charged at its reserved worst-case quote: the provider may
+ * bill a call the client abandoned, and the client cannot see the amount. The
+ * ledger is hash-chained (each line names the SHA-256 of the previous line's
+ * exact text), so editing or dropping a line is detectable; resuming records
+ * the invocation and carries the recorded cap unless a new `maxUsdTotal` is
+ * passed, which is itself recorded. A bundle whose ledger holds unpriced
+ * calls refuses a total cap: unknown spend cannot be bounded. Graceful stops
+ * (budget, calls, signal, error) flush every buffered line; a hard kill
+ * mid-episode can lose that episode's buffered lines.
+ *
  * @module
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdir, readFile, readdir } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runEpisode } from '../core/runner.js';
@@ -47,6 +62,176 @@ import { atomicWriteFile, canonicalSha256, readJsonFile, sha256Hex, trajectoryPa
 
 /** Provenance record format, written as `run.json`. */
 export const RUN_FORMAT = 'playkit-gauntlet-run/1';
+
+/**
+ * The bundle's spend ledger, written next to run.json. Append-only JSON
+ * Lines; each line's `prev` names the SHA-256 of the previous line's exact
+ * text (null on the first line), so any edit or drop of a line is visible.
+ */
+export const SPEND_LEDGER_FILENAME = 'spend.jsonl';
+
+/**
+ * @typedef {object} SpendLedgerSummary
+ * @property {number} invocations Run invocations recorded.
+ * @property {number} calls Paid agent calls recorded (kept and unwound).
+ * @property {number | null} cap The recorded bundle-wide cap, when one was set.
+ * @property {number} totalUsd Summed known cost over every recorded call.
+ * @property {number} keptUsd Spend inside episodes that produced a trajectory.
+ * @property {number} unwoundUsd Spend a stop threw away (replayed on resume).
+ * @property {number} unwoundCalls Calls belonging to unwound episodes.
+ * @property {number} unknownCalls Calls recorded without a usable cost.
+ */
+
+/**
+ * Parse and validate the ledger's text: per-line kind shape plus the hash
+ * chain. Well-formed lines return their parsed value even when later lines
+ * are broken; the chain cannot be verified past a line that does not parse.
+ *
+ * @param {string} text
+ * @returns {{ lines: { text: string, value: any }[], problems: string[], summary: SpendLedgerSummary }}
+ */
+export function parseSpendLedger(text) {
+  /** @type {{ text: string, value: any }[]} */
+  const lines = [];
+  /** @type {string[]} */
+  const problems = [];
+  const rawLines = String(text).split('\n').filter((l) => l.trim().length > 0);
+  let prevHash = null;
+  let invocations = 0;
+  for (let i = 0; i < rawLines.length; i++) {
+    const raw = rawLines[i];
+    let value;
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      problems.push(`line ${i}: not JSON`);
+      lines.push({ text: raw, value: null });
+      prevHash = sha256Hex(raw);
+      continue;
+    }
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+      problems.push(`line ${i}: not a JSON object`);
+      lines.push({ text: raw, value: null });
+      prevHash = sha256Hex(raw);
+      continue;
+    }
+    if (value.prev !== prevHash) {
+      const got = value.prev === null || value.prev === undefined ? 'null' : `${String(value.prev).slice(0, 12)}…`;
+      const expected = prevHash === null ? 'null' : `${prevHash.slice(0, 12)}…`;
+      problems.push(`line ${i}: prev hash mismatch (expected ${expected}, got ${got})`);
+    }
+    switch (value.kind) {
+      case 'invocation': {
+        if (value.invocation !== invocations) {
+          problems.push(`line ${i}: invocation index ${JSON.stringify(value.invocation)}, expected ${invocations}`);
+        }
+        if (typeof value.startedAt !== 'string' || value.startedAt.length === 0) {
+          problems.push(`line ${i}: invocation without a startedAt`);
+        }
+        invocations += 1;
+        break;
+      }
+      case 'cap': {
+        if (!Number.isInteger(value.invocation) || value.invocation < 0 || value.invocation >= Math.max(invocations, 1)) {
+          problems.push(`line ${i}: cap names invocation ${JSON.stringify(value.invocation)} which has not started`);
+        }
+        if (typeof value.maxUsdTotal !== 'number' || !Number.isFinite(value.maxUsdTotal) || value.maxUsdTotal <= 0) {
+          problems.push(`line ${i}: cap maxUsdTotal must be a positive finite number, got ${JSON.stringify(value.maxUsdTotal)}`);
+        }
+        break;
+      }
+      case 'call': {
+        if (!Number.isInteger(value.invocation) || value.invocation < 0 || value.invocation >= Math.max(invocations, 1)) {
+          problems.push(`line ${i}: call names invocation ${JSON.stringify(value.invocation)} which has not started`);
+        }
+        if (typeof value.job !== 'string' || value.job.length === 0) {
+          problems.push(`line ${i}: call without a job key`);
+        }
+        if (!Number.isInteger(value.call) || value.call < 0) {
+          problems.push(`line ${i}: call index must be a non-negative integer, got ${JSON.stringify(value.call)}`);
+        }
+        if (value.costUsd !== null && (typeof value.costUsd !== 'number' || !Number.isFinite(value.costUsd))) {
+          problems.push(`line ${i}: call costUsd must be a finite number or null, got ${JSON.stringify(value.costUsd)}`);
+        }
+        if (typeof value.kept !== 'boolean') {
+          problems.push(`line ${i}: call kept must be a boolean`);
+        }
+        if (typeof value.chargedAtReservation !== 'boolean') {
+          problems.push(`line ${i}: call chargedAtReservation must be a boolean`);
+        }
+        break;
+      }
+      default:
+        problems.push(`line ${i}: unknown kind ${JSON.stringify(value.kind)}`);
+    }
+    lines.push({ text: raw, value });
+    prevHash = sha256Hex(raw);
+  }
+  return { lines, problems, summary: summarizeSpendLedgerLines(lines, invocations) };
+}
+
+/**
+ * @param {{ text: string, value: any }[]} lines
+ * @param {number} invocations
+ * @returns {SpendLedgerSummary}
+ */
+function summarizeSpendLedgerLines(lines, invocations) {
+  let calls = 0;
+  let totalUsd = 0;
+  let keptUsd = 0;
+  let unwoundUsd = 0;
+  let unwoundCalls = 0;
+  let unknownCalls = 0;
+  let cap = /** @type {number | null} */ (null);
+  for (const { value } of lines) {
+    if (!value) continue;
+    if (value.kind === 'cap' && typeof value.maxUsdTotal === 'number' && Number.isFinite(value.maxUsdTotal)) {
+      cap = value.maxUsdTotal;
+    }
+    if (value.kind !== 'call') continue;
+    calls += 1;
+    const cost = value.costUsd;
+    if (typeof cost === 'number' && Number.isFinite(cost)) {
+      totalUsd += cost;
+      if (value.kept === true) keptUsd += cost;
+      else {
+        unwoundUsd += cost;
+        unwoundCalls += 1;
+      }
+    } else {
+      unknownCalls += 1;
+    }
+  }
+  return { invocations, calls, cap, totalUsd, keptUsd, unwoundUsd, unwoundCalls, unknownCalls };
+}
+
+/**
+ * Read and validate the bundle's spend ledger. A missing file reports
+ * `{ present: false }` (bundles from before the ledger stay verifiable); an
+ * unreadable or malformed one reports the problems and lets the caller refuse.
+ *
+ * @param {string} outDir
+ * @returns {Promise<{ present: boolean, lines: { text: string, value: any }[], problems: string[], summary: SpendLedgerSummary }>}
+ */
+export async function readSpendLedger(outDir) {
+  const ledgerPath = path.join(outDir, SPEND_LEDGER_FILENAME);
+  let text;
+  try {
+    text = await readFile(ledgerPath, 'utf8');
+  } catch (err) {
+    if (/** @type {*} */ (err)?.code === 'ENOENT') {
+      return { present: false, lines: [], problems: [], summary: summarizeSpendLedgerLines([], 0) };
+    }
+    return {
+      present: true,
+      lines: [],
+      problems: [`could not read ${SPEND_LEDGER_FILENAME}: ${errorMessage(err)}`],
+      summary: summarizeSpendLedgerLines([], 0),
+    };
+  }
+  const parsed = parseSpendLedger(text);
+  return { present: true, lines: parsed.lines, problems: parsed.problems, summary: parsed.summary };
+}
 
 /**
  * @typedef {'budget' | 'calls' | 'cancelled' | 'error'} StopReason
@@ -293,7 +478,7 @@ function gitCommit() {
  * @property {string} startedAt
  * @property {string} finishedAt
  * @property {number} concurrency
- * @property {{ maxUsd: number | null, maxCalls: number | null, requestsPerMinute: number | null, maxOutputTokens: number | null, callTimeoutMs: number | null, thinkingBudget: number | null, reasoningEffort: string | null, episodeTimeLimitMs: number | null }} limits
+ * @property {{ maxUsd: number | null, maxUsdTotal: number | null, maxCalls: number | null, requestsPerMinute: number | null, maxOutputTokens: number | null, callTimeoutMs: number | null, thinkingBudget: number | null, reasoningEffort: string | null, episodeTimeLimitMs: number | null }} limits
  * @property {number} spendUsd Sum of the steps' known costs. A step that
  *   reported usage without a priced cost counts here as 0 and separately in
  *   unknownCostSteps — unknown stays unknown, it is never folded into 0.
@@ -306,6 +491,13 @@ function gitCommit() {
  *   `--resume` it covers episodes played and verified by earlier invocations
  *   too, where the per-invocation fields above describe only the invocation
  *   that wrote this record.
+ * @property {{ file: string, invocations: number, calls: number, cap: number | null, totalUsd: number, keptUsd: number, unwoundUsd: number, unwoundCalls: number, unknownCalls: number, problems: string[] }} ledger
+ *   The bundle's spend-ledger state after this invocation: the re-read
+ *   summary of `spend.jsonl` (which now includes this invocation's lines)
+ *   with the effective cap (a new `maxUsdTotal`, else the recorded one) and
+ *   any problems met while appending. Call lines buffer per episode and
+ *   flush at its end, so a graceful stop loses nothing; a hard kill
+ *   mid-episode can lose that episode's buffered lines.
  * @property {RunCounts} counts
  * @property {string[]} skipped
  * @property {string[]} replayed
@@ -327,6 +519,12 @@ function gitCommit() {
  * @property {string} outDir Results bundle directory, created if missing.
  * @property {number} [concurrency] Worker count. Default 1.
  * @property {number} [maxUsd] Hard dollar cap on summed usage.costUsd.
+ * @property {number} [maxUsdTotal] Hard dollar cap on the whole results
+ *   bundle across resumes, recorded in the bundle's spend ledger
+ *   (`spend.jsonl`). On resume the recorded cap is carried unless a new
+ *   value is passed; the raise (or a rewrite of the same value) is recorded
+ *   too. Requires a prices file, because the cap must price every call it
+ *   bounds.
  * @property {number} [maxCalls] Hard cap on agent calls across the run.
  * @property {number} [requestsPerMinute] Shared rate limit on agent calls.
  * @property {number} [maxOutputTokens] Recorded in run.json's limits for
@@ -377,6 +575,7 @@ function gitCommit() {
  * @property {number} spendUsd Known-cost sum; see RunRecord.
  * @property {number} unknownCostSteps Steps with usage but unknown cost.
  * @property {number} calls
+ * @property {RunRecord['ledger']} ledger The bundle's spend-ledger state after this invocation.
  */
 
 /**
@@ -395,6 +594,7 @@ export async function runSuite({
   outDir,
   concurrency = 1,
   maxUsd,
+  maxUsdTotal,
   maxCalls,
   requestsPerMinute,
   maxOutputTokens,
@@ -425,6 +625,11 @@ export async function runSuite({
   }
   if (maxUsd !== undefined && (typeof maxUsd !== 'number' || !Number.isFinite(maxUsd) || maxUsd <= 0)) {
     throw new Error(`[gauntlet/runs/run.js] maxUsd: must be a positive finite number, got ${JSON.stringify(maxUsd)}`);
+  }
+  if (maxUsdTotal !== undefined && (typeof maxUsdTotal !== 'number' || !Number.isFinite(maxUsdTotal) || maxUsdTotal <= 0)) {
+    throw new Error(
+      `[gauntlet/runs/run.js] maxUsdTotal: must be a positive finite number, got ${JSON.stringify(maxUsdTotal)}`
+    );
   }
   if (maxCalls !== undefined && (!Number.isInteger(maxCalls) || maxCalls < 1)) {
     throw new Error(`[gauntlet/runs/run.js] maxCalls: must be a positive integer, got ${JSON.stringify(maxCalls)}`);
@@ -507,6 +712,69 @@ export async function runSuite({
   }
 
   //
+  // The bundle's spend ledger. Every invocation appends one `invocation`
+  // line; a run with `maxUsdTotal` appends a `cap` line when the value is new
+  // (on a fresh bundle, or when resuming with a raised or rewritten cap); a
+  // resumed run without `maxUsdTotal` carries the recorded cap. Call lines
+  // buffer per episode and flush in the worker's finally block, so a graceful
+  // stop records every paid call — including the spend of episodes a stop
+  // threw away.
+  //
+  const ledgerPath = path.join(outDir, SPEND_LEDGER_FILENAME);
+  const ledgerAtStart = await readSpendLedger(outDir);
+  if (ledgerAtStart.problems.length > 0) {
+    throw new Error(
+      `[gauntlet/runs/run.js] refusing to run on top of a malformed spend.jsonl: ${ledgerAtStart.problems[0]}` +
+        (ledgerAtStart.problems.length > 1 ? ` (and ${ledgerAtStart.problems.length - 1} more problem(s))` : '')
+    );
+  }
+  if (maxUsdTotal !== undefined && ledgerAtStart.summary.unknownCalls > 0) {
+    throw new Error(
+      `[gauntlet/runs/run.js] maxUsdTotal: spend.jsonl records ${ledgerAtStart.summary.unknownCalls} call(s) with unknown spend; a total cap cannot be enforced over unknown spend — rerun without maxUsdTotal, or start a fresh bundle`
+    );
+  }
+  const invocationIndex = ledgerAtStart.summary.invocations;
+  const maxUsdTotalEffective = /** @type {number | null} */ (maxUsdTotal ?? ledgerAtStart.summary.cap);
+  let ledgerChainHead =
+    ledgerAtStart.lines.length > 0 ? sha256Hex(ledgerAtStart.lines[ledgerAtStart.lines.length - 1].text) : null;
+  /** @type {string[]} */
+  const ledgerProblems = [];
+
+  /**
+   * Appends lines to the ledger, extending the hash chain. On failure the
+   * problem is recorded (run.json's ledger.problems) and the run continues:
+   * losing provenance must not corrupt a paid run mid-flight.
+   *
+   * @param {Record<string, unknown>[]} values
+   * @returns {Promise<void>}
+   */
+  async function appendSpendLines(values) {
+    if (values.length === 0) return;
+    let text = '';
+    for (const value of values) {
+      const line = JSON.stringify({ ...value, prev: ledgerChainHead });
+      ledgerChainHead = sha256Hex(line);
+      text += line + '\n';
+    }
+    try {
+      await appendFile(ledgerPath, text, 'utf8');
+    } catch (err) {
+      ledgerProblems.push(`could not append ${values.length} ledger line(s): ${errorMessage(err)}`);
+    }
+  }
+
+  await appendSpendLines([
+    { kind: 'invocation', invocation: invocationIndex, startedAt: new Date(startedAtMs).toISOString(), resumed: resume },
+  ]);
+  if (maxUsdTotal !== undefined && (ledgerAtStart.summary.cap === null || ledgerAtStart.summary.cap !== maxUsdTotal)) {
+    await appendSpendLines([{ kind: 'cap', invocation: invocationIndex, maxUsdTotal }]);
+  }
+  // Spend already on the books from earlier invocations. The per-invocation
+  // admission checks below add this invocation's settled and reserved spend.
+  const ledgerUsd = ledgerAtStart.summary.totalUsd;
+  const spendCapped = maxUsd !== undefined || maxUsdTotalEffective !== null;
+
+  //
   // Resume: classify every planned job. Verified files are skipped;
   // missing or unverifiable ones are re-run.
   //
@@ -561,6 +829,9 @@ export async function runSuite({
     reason: null,
     detail: null,
   });
+  // Buffered ledger call lines per in-flight episode attempt, keyed by job
+  // key; the worker's finally block flushes them with the kept flag.
+  const episodeRecords = new Map();
   let spendUsd = 0;
   let unknownCostSteps = 0;
   let reservedUsd = 0;
@@ -577,6 +848,12 @@ export async function runSuite({
    * @returns {Agent}
    */
   function wrapAgent(base, job) {
+    // Call records for this episode attempt, buffered and flushed (with their
+    // kept flag) when the episode ends — the worker's finally block owns them.
+    /** @type {any[]} */
+    const records = [];
+    episodeRecords.set(job.key, records);
+    let episodeCall = 0;
     return {
       ...base,
       async act(/** @type {TurnContext} */ ctx) {
@@ -593,14 +870,11 @@ export async function runSuite({
           stopped.detail = stopped.detail ?? `${jobLabel(job)}: maxCalls ${maxCalls} reached`;
           throw new RunAbortedError('calls', `maxCalls ${maxCalls} reached at ${jobLabel(job)}`);
         }
-        // Worst-case admission for the dollar cap: a quote-carrying agent
+        // Worst-case admission for the dollar caps: a quote-carrying agent
         // reserves its next call's upper-bound cost, so concurrent in-flight
-        // calls cannot jointly push spend past `maxUsd`. A quote-less agent
-        // keeps the settled-only check (its quote is null).
-        const quote =
-          maxUsd !== undefined && typeof base.quoteWorstCaseUsd === 'function'
-            ? base.quoteWorstCaseUsd(ctx)
-            : null;
+        // calls cannot jointly push spend past a cap. A quote-less agent keeps
+        // the settled-only check (its quote is null).
+        const quote = typeof base.quoteWorstCaseUsd === 'function' ? base.quoteWorstCaseUsd(ctx) : null;
         if (maxUsd !== undefined) {
           const projected = spendUsd + reservedUsd + (quote ?? 0);
           const overBudget = projected > maxUsd || spendUsd >= maxUsd;
@@ -615,18 +889,54 @@ export async function runSuite({
             );
           }
         }
+        if (maxUsdTotalEffective !== null) {
+          const settledTotal = ledgerUsd + spendUsd;
+          const projectedTotal = settledTotal + reservedUsd + (quote ?? 0);
+          if (projectedTotal > maxUsdTotalEffective || settledTotal >= maxUsdTotalEffective) {
+            stopped.reason = stopped.reason ?? 'budget';
+            stopped.detail =
+              stopped.detail ??
+              `${jobLabel(job)}: maxUsdTotal ${maxUsdTotalEffective} reached (ledger ${ledgerUsd}, settled this invocation ${spendUsd}, reserved ${reservedUsd}, next-call worst case ${quote ?? 'unknown'})`;
+            throw new RunAbortedError(
+              'budget',
+              `maxUsdTotal ${maxUsdTotalEffective} would be exceeded at ${jobLabel(job)} (ledger ${ledgerUsd}, settled this invocation ${spendUsd}, reserved ${reservedUsd}, next-call worst case ${quote ?? 'unknown'})`
+            );
+          }
+        }
         if (limiter) await limiter.acquire();
         calls += 1;
+        const callIndex = episodeCall;
+        episodeCall += 1;
         if (quote !== null) reservedUsd += quote;
         try {
           const reply = await base.act(ctx);
           const cost = reply?.usage?.costUsd;
-          if (maxUsd !== undefined && !(typeof cost === 'number' && Number.isFinite(cost))) {
+          const priced = typeof cost === 'number' && Number.isFinite(cost);
+          if (spendCapped && !priced) {
+            const capNames =
+              maxUsd !== undefined && maxUsdTotalEffective !== null
+                ? 'maxUsd/maxUsdTotal'
+                : maxUsdTotalEffective !== null
+                  ? 'maxUsdTotal'
+                  : 'maxUsd';
             const message =
               `[gauntlet/runs/run.js] budget: episode ${jobLabel(job)} step returned costUsd ` +
-              `${JSON.stringify(cost === undefined ? null : cost)} with maxUsd ${maxUsd} set; the cap cannot be ` +
+              `${JSON.stringify(cost === undefined ? null : cost)} with ${capNames} set; the cap cannot be ` +
               `enforced without a price entry for ${base.id ?? 'this agent'} — add the provider/model to the ` +
-              'prices file, or run without maxUsd';
+              'prices file, or run without the dollar cap' +
+              (maxUsd !== undefined ? '' : ' (the recorded maxUsdTotal cannot be dropped: start a new bundle without it)');
+            records.push({
+              kind: 'call',
+              invocation: invocationIndex,
+              job: job.key,
+              call: callIndex,
+              costUsd: null,
+              inputTokens: reply?.usage?.inputTokens ?? null,
+              outputTokens: reply?.usage?.outputTokens ?? null,
+              usage: Boolean(reply && reply.usage),
+              kept: false,
+              chargedAtReservation: false,
+            });
             stopped.reason = 'error';
             stopped.detail = message;
             throw new UnknownCostError(message);
@@ -638,12 +948,45 @@ export async function runSuite({
           // usage but without a cost is not free — it is unknown — so it is
           // counted separately and the summary says unknown instead of
           // printing a known-cost sum as if it were the whole spend.
-          if (typeof cost === 'number' && Number.isFinite(cost)) {
+          if (priced) {
             spendUsd += cost;
           } else if (reply && reply.usage) {
             unknownCostSteps += 1;
           }
+          records.push({
+            kind: 'call',
+            invocation: invocationIndex,
+            job: job.key,
+            call: callIndex,
+            costUsd: priced ? cost : null,
+            inputTokens: reply?.usage?.inputTokens ?? null,
+            outputTokens: reply?.usage?.outputTokens ?? null,
+            usage: Boolean(reply && reply.usage),
+            kept: false,
+            chargedAtReservation: false,
+          });
           return reply;
+        } catch (err) {
+          if (err instanceof UnknownCostError) throw err; // recorded above
+          // The call rejected: timeout, abort, network error. The provider
+          // may bill a call the client abandoned and the client cannot see
+          // the amount, so the ledger charges the call at its reserved
+          // worst-case quote — the same number admission counted.
+          if (quote !== null) spendUsd += quote;
+          records.push({
+            kind: 'call',
+            invocation: invocationIndex,
+            job: job.key,
+            call: callIndex,
+            costUsd: quote,
+            inputTokens: null,
+            outputTokens: null,
+            usage: false,
+            kept: false,
+            chargedAtReservation: true,
+            rejectReason: errorMessage(err),
+          });
+          throw err;
         } finally {
           // Settle the reservation: the call's actual cost has been added to
           // spendUsd (or the call failed), so the worst-case hold is released.
@@ -671,6 +1014,7 @@ export async function runSuite({
       next += 1;
       if (i >= toRun.length) return;
       const job = toRun[i];
+      let keptThisAttempt = false;
       try {
         const base = await agentFactory(job);
         if (!base || typeof base.act !== 'function') {
@@ -689,6 +1033,7 @@ export async function runSuite({
         await atomicWriteFile(trajectoryPath(outDir, job), JSON.stringify(trajectory, null, 2) + '\n');
         written.add(job.key);
         trajectories.push(trajectory);
+        keptThisAttempt = true;
       } catch (err) {
         if (err instanceof UnknownCostError) {
           stopped.reason = 'error';
@@ -704,6 +1049,17 @@ export async function runSuite({
         // Agent or game error on one episode: record it and keep going; the
         // episode is unplayed, so a later resume retries it.
         failures.push({ key: job.key, error: errorMessage(err) });
+      } finally {
+        // Flush this attempt's buffered call lines. Every attempt records —
+        // an episode that was unwound and re-run leaves its earlier attempt's
+        // spend on the books with kept:false. Graceful stops flush here; only
+        // a hard kill mid-episode can lose buffered lines.
+        const records = episodeRecords.get(job.key);
+        episodeRecords.delete(job.key);
+        if (records !== undefined && records.length > 0) {
+          for (const record of records) record.kept = keptThisAttempt;
+          await appendSpendLines(/** @type {Record<string, unknown>[]} */ (/** @type {*} */ (records)));
+        }
       }
     }
   }
@@ -734,6 +1090,17 @@ export async function runSuite({
   const skippedSet = new Set(skipped);
   const unplayed = jobs.filter((j) => !skippedSet.has(j.key) && !written.has(j.key)).map((j) => j.key);
 
+    // Re-read the ledger for the record: it now includes this invocation's
+  // invocation/cap/call lines (appended above and from the workers).
+  const ledgerNow = await readSpendLedger(outDir);
+  /** @type {RunRecord['ledger']} */
+  const ledgerRecord = {
+    file: SPEND_LEDGER_FILENAME,
+    ...(ledgerNow.present ? ledgerNow.summary : summarizeSpendLedgerLines([], invocationIndex + 1)),
+    cap: maxUsdTotalEffective,
+    problems: [...ledgerProblems, ...ledgerNow.problems],
+  };
+
   /** @type {RunRecord} */
   const run = {
     format: RUN_FORMAT,
@@ -747,6 +1114,7 @@ export async function runSuite({
     concurrency,
     limits: {
       maxUsd: maxUsd ?? null,
+      maxUsdTotal: maxUsdTotalEffective,
       maxCalls: maxCalls ?? null,
       requestsPerMinute: requestsPerMinute ?? null,
       maxOutputTokens: maxOutputTokens ?? null,
@@ -773,6 +1141,7 @@ export async function runSuite({
     failed: failures,
     stopped: stopped.reason,
     stopReason: stopped.detail,
+    ledger: ledgerRecord,
   };
   await atomicWriteFile(path.join(outDir, 'run.json'), JSON.stringify(run, null, 2) + '\n');
 
@@ -790,5 +1159,6 @@ export async function runSuite({
     spendUsd,
     unknownCostSteps,
     calls,
+    ledger: ledgerRecord,
   };
 }

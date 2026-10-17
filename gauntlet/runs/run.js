@@ -890,6 +890,22 @@ export async function runSuite({
           }
         }
         if (maxUsdTotalEffective !== null) {
+          // Cap-stop rule (pinned by runs/cap-unwind.test.js at concurrency 1
+          // and 3): this refusal fires BEFORE the call starts, so a call the
+          // cap refuses is never charged. Every episode still in flight then
+          // unwinds — its attempt ends without a trajectory and the worker's
+          // finally block flushes its settled calls with kept:false: paid
+          // spend that stays on the books (keptUsd + unwoundUsd = totalUsd)
+          // and is replayed on resume as a new attempt. A finished episode's
+          // spend is always kept:true — the attempt's flag is the trajectory
+          // write's result — and is never counted as unwound. Because every
+          // admitted call reserved its worst-case quote at admission,
+          // settled + reserved stays <= the cap through the stop, so the
+          // ledger total never passes it (it can land exactly on it). The
+          // paid-but-discarded amount at one stop is the committed spend of
+          // the in-flight episodes, bounded by
+          // min(concurrency x per-episode spend, cap); headroom guidance for
+          // picking the cap lives in journeys/pilot/PILOT.md.
           const settledTotal = ledgerUsd + spendUsd;
           const projectedTotal = settledTotal + reservedUsd + (quote ?? 0);
           if (projectedTotal > maxUsdTotalEffective || settledTotal >= maxUsdTotalEffective) {

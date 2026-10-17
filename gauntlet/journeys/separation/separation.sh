@@ -43,7 +43,7 @@ REPO_URL="${1:-${repo_default:-https://github.com/SamGu-NRX/playkit.ai.git}}"
 REF="${2:-$ref_default}"
 WORK="${3:-$(mktemp -d /tmp/separation-journey.XXXXXX)}"
 
-CAP="${SEPARATION_MAX_USD_TOTAL:-0.5}"
+CAP="${SEPARATION_MAX_USD_TOTAL:-2}"
 ESTIMATE_SECS="${SEPARATION_ESTIMATE_SECS:-900}"
 INSTRUMENT_SECS="${SEPARATION_INSTRUMENT_SECS:-2400}"
 MODEL="anthropic/claude-opus-5-5"
@@ -122,8 +122,8 @@ RUN=(node "$SRC/cli/gauntlet.js" run --suite "$WORK/suite-public.json"
 
 c_out="$LOG/run-attempt-1.log"
 timeout 900 "${RUN[@]}" >"$c_out" 2>&1 || true
-grep -q "stopped=budget" "$c_out" || die "C: attempt 1 did not stop on the budget cap (see $c_out)"
-echo "C: attempt 1 bound the cap: $(grep -o 'stopped=budget.*' "$c_out" | head -1)"
+grep -qE "stopped[ =]+budget" "$c_out" || die "C: attempt 1 did not stop on the budget cap (see $c_out)"
+echo "C: attempt 1 bound the cap: $(grep -oE 'stopped[ =]+budget.*' "$c_out" | head -1)"
 prev_total="$(node -e 'const s=JSON.parse(process.argv[1]); console.log(s.totalUsd ?? 0)' "$(ledger)")"
 echo "C: ledger after attempt 1: total $prev_total"
 verdict=""; attempt=1
@@ -133,7 +133,7 @@ while [ "$attempt" -lt 6 ]; do
   timeout 900 "${RUN[@]}" --resume >"$c_out" 2>&1 || true
   summary="$(ledger)"
   total="$(node -e 'const s=JSON.parse(process.argv[1]); console.log(s.totalUsd ?? "null")' "$summary")"
-  if grep -q "stopped=done" "$c_out"; then verdict="finished on attempt $attempt (stopped=done)"; break; fi
+  if grep -qE "stopped[ =]+done" "$c_out"; then verdict="finished on attempt $attempt (stopped=done)"; break; fi
   if grep -q "stopped=budget" "$c_out"; then
     if node -e "process.exit(Math.abs(Number(process.argv[1]) - Number(process.argv[2])) < 1e-9 ? 0 : 1)" "$total" "$prev_total"; then
       verdict="refused on attempt $attempt (stopped=budget, 0 episodes played — the cap is exhausted with work remaining)"
@@ -158,7 +158,7 @@ node -e '
   }
   console.log(`C: PASS — settled total ${s.totalUsd} never passed the cap ${cap} (kept ${s.keptUsd}, unwound ${s.unwoundUsd} across ${s.unwoundCalls} unwound episode call(s), ${s.calls} calls)`);
 ' "$summary" "$CAP" || die "C: cap assertion failed"
-if grep -q "stopped=done" "$LOG"/run-attempt-*.log; then
+if grep -qE "stopped[ =]+done" "$LOG"/run-attempt-*.log; then
   node "$SRC/cli/gauntlet.js" verify "$WORK/bundle-cap" >"$LOG/verify-c.log" 2>&1 \
     || die "C: bundle verify failed after done (see $LOG/verify-c.log)"
   echo "C: bundle replay-verified after completion"

@@ -22,7 +22,7 @@ gauntlet/journeys/separation/separation.sh [REPO_URL] [REF] [WORKDIR]
 Defaults: the origin remote and HEAD of the checkout the script lives in, and
 a fresh temporary work directory that is kept (its `logs/` holds every stage
 transcript). Environment knobs: `SEPARATION_MAX_USD_TOTAL` (stage C cap,
-default 0.5), `SEPARATION_ESTIMATE_SECS` (default 900),
+default 2 — the stub usage is ~$0.33 per call, so it binds mid-run), `SEPARATION_ESTIMATE_SECS` (default 900),
 `SEPARATION_INSTRUMENT_SECS` (default 2400).
 
 Run it on a quiet box: stage B's no-leftover-engine assertion and stage B's

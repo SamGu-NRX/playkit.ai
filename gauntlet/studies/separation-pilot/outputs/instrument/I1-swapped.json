@@ -1,0 +1,207 @@
+{
+  "suite": {
+    "id": "separation-pilot-smallest-8",
+    "sha256": "7e12cdb32ecde010742123aa2d0e37c8eb2571d1fa95ea08a6cc45cef13ed9e9"
+  },
+  "warnings": [],
+  "comparisons": [
+    {
+      "comparison": "dial-sliding-solver-p25~vs~dial-sliding-solver-p75",
+      "profile": "rhae-v1",
+      "sharedTiers": 9,
+      "outcomeTiers": 0,
+      "droppedTiers": [],
+      "readings": {
+        "raw": {
+          "verdict": "SEPARATED",
+          "D": -0.477429,
+          "ci95": [
+            -0.535387,
+            -0.422105
+          ],
+          "signAgree": "9/9",
+          "perTier": [
+            {
+              "tier": "sliding/p15-long",
+              "n": 8,
+              "m": -0.438103
+            },
+            {
+              "tier": "sliding/p15-mid",
+              "n": 8,
+              "m": -0.41117
+            },
+            {
+              "tier": "sliding/p15-short",
+              "n": 8,
+              "m": -0.498246
+            },
+            {
+              "tier": "sliding/p8",
+              "n": 8,
+              "m": -0.488632
+            },
+            {
+              "tier": "sliding/p8-short",
+              "n": 8,
+              "m": -0.51109
+            },
+            {
+              "tier": "sokoban/four-box",
+              "n": 8,
+              "m": -0.498022
+            },
+            {
+              "tier": "sokoban/one-box",
+              "n": 8,
+              "m": -0.39502
+            },
+            {
+              "tier": "sokoban/three-box",
+              "n": 8,
+              "m": -0.538072
+            },
+            {
+              "tier": "wordle/classic",
+              "n": 8,
+              "m": -0.518507
+            }
+          ]
+        },
+        "invalid-adjusted": null
+      }
+    },
+    {
+      "comparison": "dial-sliding-solver-p25~vs~dial-sliding-solver-p75",
+      "profile": "squared-outcome",
+      "sharedTiers": 9,
+      "outcomeTiers": 0,
+      "droppedTiers": [],
+      "readings": {
+        "raw": {
+          "verdict": "SEPARATED",
+          "D": -0.477429,
+          "ci95": [
+            -0.534774,
+            -0.419352
+          ],
+          "signAgree": "9/9",
+          "perTier": [
+            {
+              "tier": "sliding/p15-long",
+              "n": 8,
+              "m": -0.438103
+            },
+            {
+              "tier": "sliding/p15-mid",
+              "n": 8,
+              "m": -0.41117
+            },
+            {
+              "tier": "sliding/p15-short",
+              "n": 8,
+              "m": -0.498246
+            },
+            {
+              "tier": "sliding/p8",
+              "n": 8,
+              "m": -0.488632
+            },
+            {
+              "tier": "sliding/p8-short",
+              "n": 8,
+              "m": -0.51109
+            },
+            {
+              "tier": "sokoban/four-box",
+              "n": 8,
+              "m": -0.498022
+            },
+            {
+              "tier": "sokoban/one-box",
+              "n": 8,
+              "m": -0.39502
+            },
+            {
+              "tier": "sokoban/three-box",
+              "n": 8,
+              "m": -0.538072
+            },
+            {
+              "tier": "wordle/classic",
+              "n": 8,
+              "m": -0.518507
+            }
+          ]
+        },
+        "invalid-adjusted": null
+      }
+    },
+    {
+      "comparison": "dial-sliding-solver-p25~vs~dial-sliding-solver-p75",
+      "profile": "chance-adjusted",
+      "sharedTiers": 9,
+      "outcomeTiers": 0,
+      "droppedTiers": [],
+      "readings": {
+        "raw": {
+          "verdict": "SEPARATED",
+          "D": -0.477429,
+          "ci95": [
+            -0.534992,
+            -0.4189
+          ],
+          "signAgree": "9/9",
+          "perTier": [
+            {
+              "tier": "sliding/p15-long",
+              "n": 8,
+              "m": -0.438103
+            },
+            {
+              "tier": "sliding/p15-mid",
+              "n": 8,
+              "m": -0.41117
+            },
+            {
+              "tier": "sliding/p15-short",
+              "n": 8,
+              "m": -0.498246
+            },
+            {
+              "tier": "sliding/p8",
+              "n": 8,
+              "m": -0.488632
+            },
+            {
+              "tier": "sliding/p8-short",
+              "n": 8,
+              "m": -0.51109
+            },
+            {
+              "tier": "sokoban/four-box",
+              "n": 8,
+              "m": -0.498022
+            },
+            {
+              "tier": "sokoban/one-box",
+              "n": 8,
+              "m": -0.39502
+            },
+            {
+              "tier": "sokoban/three-box",
+              "n": 8,
+              "m": -0.538072
+            },
+            {
+              "tier": "wordle/classic",
+              "n": 8,
+              "m": -0.518507
+            }
+          ]
+        },
+        "invalid-adjusted": null
+      }
+    }
+  ]
+}

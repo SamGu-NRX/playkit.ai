@@ -197,6 +197,9 @@ async function loadBundle(dir, ordinal) {
       failures.push(key);
       continue;
     }
+    if (byKey.has(key)) {
+      throw new Error(`bundle "${dir}": duplicate trajectory key ${key} — refusing rather than silently overwriting`);
+    }
     byKey.set(key, trajectory);
     ends.set(key, { invalidActions: trajectory.end.invalidActions, agentActions: trajectory.end.agentActions });
   }
@@ -367,7 +370,10 @@ function outsideSuite(bundle, suite) {
 /**
  * Compute the per-episode raw (rhae-v1) score for every in-suite episode of a
  * bundle, then verify the mirror: production `score()` tier means must equal
- * the per-episode means to 1e-9 under the same default profile.
+ * the per-episode means to 1e-9 under the same default profile. Mirror per
+ * game: `score()` refuses trajectories with mixed agent ids
+ * (agent-identity refusal), and a composite bundle legitimately carries one
+ * dial id per game.
  *
  * @param {Bundle} bundle
  * @param {SuiteManifest} suite
@@ -383,10 +389,12 @@ async function scoreAndMirror(bundle, suite) {
       }
     }
   }
-  const entry = await score(suite, bundle.trajectories, GAMES, {});
   /** @type {string[]} */
   const mismatches = [];
   for (const g of suite.games) {
+    const trajs = bundle.trajectories.filter((t) => t.game.id === g.id);
+    if (trajs.length === 0) continue;
+    const entry = await score({ ...suite, games: [g] }, trajs, GAMES, {});
     const gameScore = entry.games[g.id];
     if (!gameScore) continue;
     for (const t of g.tiers) {
@@ -400,8 +408,11 @@ async function scoreAndMirror(bundle, suite) {
       }
       if (mine.length === 0) continue;
       const mean = mine.reduce((x, y) => x + y, 0) / mine.length;
-      if (Math.abs(mean - tierScore.score.value) > 1e-9) {
-        mismatches.push(`${g.id}/${t.id}: mirror mean ${mean} vs score() ${tierScore.score.value}`);
+      // score() reports tier values rounded to 6 decimals — compare at that
+      // precision, not against the raw mean.
+      const rounded = Math.round(mean * 1e6) / 1e6;
+      if (Math.abs(rounded - tierScore.score.value) > 1e-9) {
+        mismatches.push(`${g.id}/${t.id}: mirror mean ${mean} (rounded ${rounded}) vs score() ${tierScore.score.value}`);
       }
     }
   }

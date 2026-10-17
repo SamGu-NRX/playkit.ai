@@ -74,6 +74,7 @@ done
 #    composite is self-describing. No run.json at the root: analyze.mjs falls
 #    back to the trajectories' own agent ids for labels.
 for arm in i1-p0.25 i1-p0.75 i2-p0.25a i2-p0.25b; do
+  rm -rf "$out/$arm"          # never merge into a stale composite: nested game dirs duplicate trajectories
   mkdir -p "$out/$arm"
   cp outputs/suites/suite.smallest-8.json "$out/$arm/suite.json"
 done

@@ -235,6 +235,12 @@ async function probeEpisode(game, tier, seed, split, baseline) {
       calls += 1;
       return reply;
     },
+    // The runner disposes the actor it was seated — this wrapper, not the
+    // baseline. Forward it: engine-backed baselines (go's GTP client,
+    // chess-stockfish's UCI client) hold child processes, and a wrapper
+    // without forwarding leaks one engine per probe episode and keeps the
+    // estimate process from ever exiting (PR #102).
+    dispose: () => baseline.dispose?.(),
   });
   const trajectory = await runEpisode({ game, tierId: tier.id, seed, split, agent: probeAgent });
   return {

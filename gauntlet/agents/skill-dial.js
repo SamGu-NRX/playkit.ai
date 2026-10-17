@@ -48,7 +48,7 @@ import { nextFloat, nextInt, rngFromSeed } from '../core/rng.js';
  *   random agent's move instead of the expert's. 0 = pure expert, 1 = pure
  *   random.
  * @param {SkillDialOptions} options
- * @returns {Agent}
+ * @returns {Agent & { dispose: () => Promise<void> }}
  */
 export function skillDial(expert, p, { episodeSeed }) {
   if (!expert || typeof expert.act !== 'function') {
@@ -87,6 +87,12 @@ export function skillDial(expert, p, { episodeSeed }) {
         return { text: legal[pick] };
       }
       return expert.act(ctx);
+    },
+    // The runner disposes the actor it was seated — the dial, not the
+    // expert. Forward it so an engine-backed expert's process is shut down
+    // with the episode instead of leaking one engine per episode.
+    dispose: async () => {
+      await expert.dispose?.();
     },
   };
 }

@@ -820,6 +820,52 @@ async function responseExcerpt(response) {
 }
 
 /**
+ * The error for a call ended by the episode's time limit: distinct from the
+ * per-attempt timeout's message, and never retried (the episode is over).
+ *
+ * @param {string | undefined} model
+ * @param {number} retries
+ * @returns {Error}
+ */
+function episodeAbortError(model, retries) {
+  return retryError(
+    `model "${model}" call aborted: the episode's time limit ended the call`,
+    retries
+  );
+}
+
+/**
+ * Wait `ms` through the injected sleep, but cut the wait short when the
+ * episode's time-limit signal fires — a 30 s Retry-After must not outlive its
+ * episode.
+ *
+ * @param {number} ms
+ * @param {AbortSignal | undefined} externalSignal
+ * @param {(ms: number) => Promise<void>} sleep
+ * @param {string | undefined} model
+ * @param {number} retries
+ * @returns {Promise<void>}
+ */
+async function delayOrAbort(ms, externalSignal, sleep, model, retries) {
+  if (!externalSignal) {
+    await sleep(ms);
+    return;
+  }
+  if (externalSignal.aborted) throw episodeAbortError(model, retries);
+  /** @type {() => void} */
+  let onAbort = () => {};
+  const aborted = new Promise((_, reject) => {
+    onAbort = () => reject(episodeAbortError(model, retries));
+  });
+  externalSignal.addEventListener('abort', onAbort, { once: true });
+  try {
+    await Promise.race([sleep(ms), aborted]);
+  } finally {
+    externalSignal.removeEventListener('abort', onAbort);
+  }
+}
+
+/**
  * One provider request with retries. 429, 5xx and network errors retry up to
  * `maxRetries` times with exponential backoff (plus a server-provided
  * Retry-After when present); any other non-OK status fails immediately with an
@@ -841,6 +887,10 @@ async function responseExcerpt(response) {
  * @param {string} [options.model] For timeout error messages only.
  * @param {number} [options.callTimeoutMs] Per-attempt timeout in ms; absent
  *   for no timeout.
+ * @param {AbortSignal} [options.externalSignal] The episode's time-limit
+ *   signal (TurnContext.signal). Joined with the per-attempt timeout —
+ *   whichever fires first cancels the request and cuts the retry waits; the
+ *   resulting error is never retried.
  * @param {(raw: string) => *} [options.parseBody] Body parser for a 2xx
  *   response. Default JSON.parse, whose failure is a final (non-retried)
  *   unparseable-body error. Supplied by streaming callers (SSE), whose parse
@@ -859,6 +909,7 @@ async function requestWithRetries({
   provider,
   model,
   callTimeoutMs,
+  externalSignal,
   parseBody,
 }) {
   let retries = 0;
@@ -866,15 +917,29 @@ async function requestWithRetries({
     /** @type {Response} */
     let response;
     try {
+      // The episode's time-limit signal joins the per-attempt timeout —
+      // whichever fires first cancels the request. No signal is passed when
+      // neither is configured.
+      const perAttemptSignal =
+        callTimeoutMs !== undefined ? AbortSignal.timeout(callTimeoutMs) : undefined;
+      const signal =
+        perAttemptSignal && externalSignal
+          ? AbortSignal.any([perAttemptSignal, externalSignal])
+          : (perAttemptSignal ?? externalSignal);
       response = await fetchImpl(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
-        ...(callTimeoutMs !== undefined
-          ? { signal: AbortSignal.timeout(callTimeoutMs) }
-          : {}),
+        ...(signal ? { signal } : {}),
       });
     } catch (err) {
+      // An episode abort (the runner's time-limit signal) outranks the
+      // per-attempt timeout: without the priority check an abort would be
+      // misattributed to the timeout whenever both are configured. It is
+      // never retried — the episode is over.
+      if (externalSignal?.aborted) {
+        throw episodeAbortError(model, retries);
+      }
       // AbortSignal.timeout rejects with a TimeoutError (or AbortError on
       // older runtimes); an abort here can only be ours — no other signal is
       // ever passed.
@@ -894,7 +959,13 @@ async function requestWithRetries({
         );
       }
       retries += 1;
-      await sleep(retryBaseDelayMs * 2 ** (retries - 1));
+      await delayOrAbort(
+        retryBaseDelayMs * 2 ** (retries - 1),
+        externalSignal,
+        sleep,
+        model,
+        retries
+      );
       continue;
     }
     if (response.ok) {
@@ -923,7 +994,13 @@ async function requestWithRetries({
             );
           }
           retries += 1;
-          await sleep(retryBaseDelayMs * 2 ** (retries - 1));
+          await delayOrAbort(
+            retryBaseDelayMs * 2 ** (retries - 1),
+            externalSignal,
+            sleep,
+            model,
+            retries
+          );
           continue;
         }
         const excerpt =
@@ -959,7 +1036,7 @@ async function requestWithRetries({
     const waitMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
       ? Math.max(backoff, retryAfterSeconds * 1000)
       : backoff;
-    await sleep(waitMs);
+    await delayOrAbort(waitMs, externalSignal, sleep, model, retries);
   }
 }
 
@@ -1030,6 +1107,8 @@ function computeCostUsd(prices, provider, model, inputTokens, outputTokens) {
  *   per-model values are validated at construction. Absent when the run
  *   leaves the provider default in place.
  * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.
+ * @property {AbortSignal} [externalSignal] The episode's time-limit signal
+ *   (TurnContext.signal); joined with the per-attempt timeout.
  * @property {boolean} [stream] Anthropic only: send `stream: true` and parse
  *   the reply out of server-sent events instead of a JSON body. Used when the
  *   whole-reply cap exceeds what a non-streaming request should carry.
@@ -1194,6 +1273,7 @@ async function callAnthropic({
   retryBaseDelayMs,
   sleep,
   callTimeoutMs,
+  externalSignal,
 }) {
   // Thinking rides inside max_tokens on both thinking modes. On a manual
   // budget (the 4.6 generation and earlier) the wire max_tokens is the text
@@ -1237,6 +1317,7 @@ async function callAnthropic({
     provider: 'anthropic',
     model,
     callTimeoutMs,
+    externalSignal,
     ...(stream ? { parseBody: parseAnthropicSse } : {}),
   });
   const blocks = Array.isArray(/** @type {*} */ (json)?.content)
@@ -1309,6 +1390,7 @@ async function callOpenAI({
   retryBaseDelayMs,
   sleep,
   callTimeoutMs,
+  externalSignal,
 }) {
   const body = {
     ...(params ?? {}),
@@ -1336,6 +1418,7 @@ async function callOpenAI({
     provider: 'openai',
     model,
     callTimeoutMs,
+    externalSignal,
   });
   const items = Array.isArray(/** @type {*} */ (json)?.output)
     ? /** @type {Array<any>} */ (json.output)
@@ -1396,6 +1479,8 @@ async function callOpenAI({
  * @property {'low' | 'medium' | 'high' | 'xhigh' | 'max'} [reasoningEffort]
  *   Reasoning effort, sent as the chat-completions reasoning_effort field.
  * @property {number} [callTimeoutMs] Per-attempt timeout, or absent for none.
+ * @property {AbortSignal} [externalSignal] The episode's time-limit signal
+ *   (TurnContext.signal); joined with the per-attempt timeout.
  */
 
 /**
@@ -1439,6 +1524,7 @@ async function callOpenAIChat({
   retryBaseDelayMs,
   sleep,
   callTimeoutMs,
+  externalSignal,
 }) {
   const body = {
     ...(params ?? {}),
@@ -1476,6 +1562,7 @@ async function callOpenAIChat({
     provider: 'openai-chat',
     model,
     callTimeoutMs,
+    externalSignal,
   });
   const choice = Array.isArray(/** @type {*} */ (json)?.choices)
     ? /** @type {Array<any>} */ (json.choices)[0]
@@ -1777,6 +1864,11 @@ export function createModelAgent({
     },
     async act(ctx) {
       const userMessage = buildOfficialTurnMessage(ctx, previousReply);
+      // The runner aborts this signal at the episode's wall-clock limit (the
+      // --episode-time-limit-ms deadline): cancel the in-flight call and the
+      // retry waits instead of riding out the grace window with the request
+      // still open.
+      const turnSignal = ctx.signal;
       const apiKey =
         provider === 'openai-chat'
           ? resolveOptionalApiKey(keyEnv, provider)
@@ -1804,6 +1896,7 @@ export function createModelAgent({
               retryBaseDelayMs: backoff,
               sleep: wait,
               callTimeoutMs: timeoutMs,
+              ...(turnSignal ? { externalSignal: turnSignal } : {}),
             })
           : provider === 'openai'
             ? await callOpenAI({
@@ -1819,6 +1912,7 @@ export function createModelAgent({
                 retryBaseDelayMs: backoff,
                 sleep: wait,
                 callTimeoutMs: timeoutMs,
+                ...(turnSignal ? { externalSignal: turnSignal } : {}),
               })
             : await callOpenAIChat({
                 baseUrl: base,
@@ -1841,6 +1935,7 @@ export function createModelAgent({
                 retryBaseDelayMs: backoff,
                 sleep: wait,
                 callTimeoutMs: timeoutMs,
+                ...(turnSignal ? { externalSignal: turnSignal } : {}),
               });
       previousReply = result.text;
       /** @type {Usage} */

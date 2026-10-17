@@ -107,7 +107,7 @@ function wrapActionList(joined) {
  * Build the community-track assisted agent around an inner agent.
  *
  * @param {AssistedAgentOptions} options
- * @returns {Agent}
+ * @returns {Agent & { dispose: () => Promise<void> }}
  */
 export function createAssistedAgent(options) {
   const { inner } = options;
@@ -222,6 +222,12 @@ export function createAssistedAgent(options) {
           ...(last.meta !== undefined ? { inner: last.meta } : {}),
         },
       };
+    },
+    // The runner disposes the actor it was seated — this wrapper, not the
+    // inner agent. Forward it so an engine-backed inner agent's process is
+    // shut down with the episode instead of leaking one engine per episode.
+    dispose: async () => {
+      await inner.dispose?.();
     },
   };
 }

@@ -311,8 +311,11 @@ def main(argv=None):
             "spearmanSizeVsScore": spearman(pooled_means),
         },
     }
-    (HERE / "stats.json").write_text(json.dumps(stats, indent=1) + "\n")
-    print(f"wrote {HERE/'stats.json'}")
+    # Write beside the inputs actually read: with --dir, regeneration lands in
+    # the regeneration directory and the committed stats.json is never touched
+    # (reproduce.sh compares its own snapshot against this output instead).
+    (out_dir / "stats.json").write_text(json.dumps(stats, indent=1) + "\n")
+    print(f"wrote {out_dir/'stats.json'}")
     for cell in tiers_out:
         row = " ".join(
             f"{m}={cell['models'][m]['mean'] if cell['models'][m]['mean'] is not None else 'n/a'}"

@@ -328,3 +328,32 @@ test('a solved efficiency trajectory without usable par/actions is NOT complete'
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('a run.json recording no suite manifest hash is NOT complete when a manifest is expected', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'cell-complete-'));
+  try {
+    const bundle = await makeBundle(root, gameId, tierId, seeds, {
+      versions: Object.fromEntries(seeds.map((s) => [s, currentVersion])),
+    });
+    const { suite } = tierSuite(gameId, tierId);
+    await writeFile(join(bundle, 'suite.json'), JSON.stringify(suite, null, 2) + '\n');
+    await writeFile(
+      join(bundle, 'run.json'),
+      JSON.stringify({
+        format: 'playkit-gauntlet-run/1',
+        suite: { id: suite.id },
+        agent: { id: 'dial-engine-p1', track: 'baseline' },
+        total: { episodes: seeds.length },
+      }) + '\n'
+    );
+    // The old check only rejected a MISMATCHING hash (runHash !== null && ...),
+    // so a run record with no hash at all slipped through as complete.
+    const verdict = await cellBundleVerdict(bundle, gameId, tierId, seeds, {
+      expectedManifestSha256: manifestSha256(suite),
+    });
+    assert.equal(verdict.complete, false);
+    assert.match(verdict.reason, /run\.json records no suite manifest/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

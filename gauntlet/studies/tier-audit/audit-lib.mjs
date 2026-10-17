@@ -324,7 +324,15 @@ export async function cellBundleVerdict(bundle, gameId, tierId, seeds, opts = {}
       return { complete: false, reason: `unreadable run.json (${/** @type {Error} */ (err).message})` };
     }
     const runHash = /** @type {*} */ (run)?.suite?.manifestSha256 ?? null;
-    if (runHash !== null && runHash !== opts.expectedManifestSha256) {
+    // A missing hash is not evidence of correctness: only a recorded hash that
+    // equals the expected one can vouch for the executed suite (Codex PR #115).
+    if (runHash === null) {
+      return {
+        complete: false,
+        reason: `run.json records no suite manifest (expected ${opts.expectedManifestSha256.slice(0, 12)})`,
+      };
+    }
+    if (runHash !== opts.expectedManifestSha256) {
       return {
         complete: false,
         reason: `run.json suite manifest ${String(runHash).slice(0, 12)} differs from the expected ${opts.expectedManifestSha256.slice(0, 12)}`,

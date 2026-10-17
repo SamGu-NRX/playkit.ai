@@ -39,7 +39,7 @@ else
   diff "$TMP/profile-results.json" "$HERE/profile-results.json" | head -20
   exit 1
 fi
-if cmp -s "$TMP/stats.committed.json" "$HERE/stats.json"; then
+if cmp -s "$TMP/stats.committed.json" "$TMP/stats.json"; then
   echo "stats.json byte-identical on regeneration ✓"
 else
   echo "stats.json MISMATCH on regeneration"

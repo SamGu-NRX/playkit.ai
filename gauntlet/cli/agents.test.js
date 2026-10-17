@@ -274,3 +274,35 @@ test('a name with a colon is not a human spec — the grammar refuses it', async
   // and the unknown-spec error names the human form so it is discoverable
   await assert.rejects(() => parseAgentSpec('humanoid'), /"human\[:name\]"/);
 });
+
+test('model and community-assisted specs build a FRESH agent per episode', async () => {
+  // The inner model agent carries its previous reply across provider calls;
+  // a shared instance across episodes would leak one episode's conversation
+  // into the next. Both spec kinds therefore expose createForEpisode()
+  // factories — this pins that repeated calls return DISTINCT agent objects
+  // and that the track/identity stay stable across episodes.
+  const ctx = {
+    game: getGame('tictactoe'),
+    tier: getGame('tictactoe').spec.tiers[0],
+    seed: 's0',
+    agentSeat: 0,
+  };
+
+  const modelSpec = await parseAgentSpec('model:openai-chat/stub-model', {
+    dryRun: true,
+    script: repliesFile,
+  });
+  const a = await modelSpec.createForEpisode(ctx);
+  const b = await modelSpec.createForEpisode(ctx);
+  assert.notEqual(a, b, 'a second episode must get its own scripted model agent');
+  assert.equal(a.id, 'model:openai-chat/stub-model');
+
+  const assistedSpec = await parseAgentSpec('community-assisted:openai-chat/stub-model', {
+    dryRun: true,
+    script: repliesFile,
+  });
+  const c = await assistedSpec.createForEpisode(ctx);
+  const d = await assistedSpec.createForEpisode(ctx);
+  assert.notEqual(c, d, 'a second episode must get its own assisted wrapper');
+  assert.equal(c.id, 'community-assisted:openai-chat/stub-model:retries=2');
+});

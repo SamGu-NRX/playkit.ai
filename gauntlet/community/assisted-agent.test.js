@@ -174,3 +174,57 @@ test('a legal-list longer than the cap shows the first cap actions plus the full
   assert.ok(text.includes('a00'));
   assert.ok(!text.includes('a29, '));
 });
+
+test('the wrapper quotes the run engine at the retry-inclusive worst case', async () => {
+  // The dollar caps reserve a quoted agent's next call before it starts
+  // (runs/run.js). The wrapper hides up to retries + 1 provider calls behind
+  // one turn, so its quote must cover every attempt, not just the first.
+  const inner = stubInner(['ACTION: up']);
+  inner.quoteWorstCaseUsd = () => 0.4;
+  const agent = createAssistedAgent({ inner, retries: 2 });
+  const quoted = agent.quoteWorstCaseUsd?.(legalCtx());
+  assert.ok(quoted !== null && quoted !== undefined && Math.abs(quoted - 1.2) < 1e-9);
+  const single = createAssistedAgent({ inner, retries: 0 });
+  assert.equal(single.quoteWorstCaseUsd?.(legalCtx()), 0.4);
+});
+
+test('the quote is computed against the derived context the inner agent sees', async () => {
+  // The inner agent's request is built from the augmented observation (legal
+  // block + ACTION instruction), so the quote must price that text.
+  const inner = stubInner(['ACTION: up']);
+  /** @type {TurnContext[]} */
+  const quoted = [];
+  inner.quoteWorstCaseUsd = (/** @type {TurnContext} */ ctx) => {
+    quoted.push(ctx);
+    return 0.5;
+  };
+  const agent = createAssistedAgent({ inner, retries: 0 });
+  agent.quoteWorstCaseUsd?.(legalCtx());
+  assert.equal(quoted.length, 1);
+  assert.equal(quoted[0].legalActions, null, 'the inner agent is on the official wire');
+  assert.match(quoted[0].observation.text, /Legal actions \(4\)/);
+  assert.match(quoted[0].observation.text, /ACTION: <action>/);
+});
+
+test('a quote-less inner agent stays quote-less', async () => {
+  const inner = stubInner(['ACTION: up']);
+  const agent = createAssistedAgent({ inner });
+  assert.equal(agent.quoteWorstCaseUsd?.(legalCtx()), null);
+});
+
+test('an action beyond the display cap is accepted on the first attempt', async () => {
+  // The legal-action DISPLAY truncates to the first maxLegalActions entries,
+  // but first-attempt acceptance checks the runner's FULL legalActions list —
+  // the cap is presentational only. This pins that contract: nothing in the
+  // wrapper may narrow first-attempt acceptance to the displayed prefix.
+  const legal = Array.from({ length: 70 }, (_, i) => `move${i + 1}`);
+  const inner = stubInner(['ACTION: move70']);
+  const agent = createAssistedAgent({ inner, maxLegalActions: 10 });
+  const reply = await agent.act({ ...legalCtx(), legalActions: legal });
+  assert.equal(inner.calls.length, 1, 'no retry for an un-displayed but legal action');
+  assert.equal(reply.meta?.assisted?.attempts, 1);
+  // The display still truncates.
+  const shown = inner.calls[0].observation.text;
+  assert.match(shown, /Legal actions \(70 total, first 10 shown/);
+  assert.ok(!shown.includes('move70'), 'move70 is beyond the displayed prefix');
+});

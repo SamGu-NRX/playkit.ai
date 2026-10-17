@@ -190,3 +190,41 @@ test('a number input without a listed legal list re-prompts', async () => {
   assert.equal(reply.text, 'up');
   assert.match(out(), /\(no legal action number 1\)/);
 });
+
+test('a second agent on the same piped input owns the next line after dispose', async () => {
+  // Sequential episodes share one stdin: a line piped while episode one's
+  // agent is idle belongs to episode two's agent, not to the idle agent's
+  // (discarded) queue. The shared interface is paused while nobody awaits,
+  // so the line waits in the stream buffer for the next subscriber.
+  const input = new PassThrough();
+  const output = new PassThrough();
+  output.resume();
+  const first = createHumanAgent({ input, output });
+  input.write('1\n');
+  const firstReply = await first.act(makeCtx({}));
+  assert.equal(firstReply.text, 'a1');
+  await first.dispose?.();
+  input.write('2\n');
+  // Give a per-agent readline implementation ample time to wrongly consume
+  // the line into the disposed agent's queue.
+  await new Promise((resolve) => setTimeout(resolve, 25));
+  const second = createHumanAgent({ input, output });
+  const secondReply = await Promise.race([
+    second.act(makeCtx({})),
+    new Promise(
+      (_resolve, reject) =>
+        setTimeout(() => reject(new Error('the line piped for the second agent was never delivered')), 2000)
+    ),
+  ]);
+  assert.equal(secondReply.text, 'a2');
+  await second.dispose?.();
+});
+
+test('dispose before any turn is a no-op and the agent still plays afterwards', async () => {
+  const { agent, input } = makeAgent();
+  await agent.dispose?.();
+  script(input, ['1']);
+  const reply = await agent.act(makeCtx({}));
+  assert.equal(reply.text, 'a1');
+  await agent.dispose?.();
+});

@@ -60,6 +60,47 @@ import readline from 'node:readline';
 /** @import { Agent, AgentReply, TurnContext } from '../core/types.js' */
 
 /**
+ * One readline interface per input stream, shared by every human agent
+ * seated from that stream. Sharing (instead of one interface per agent)
+ * is what makes sequential episodes on one stream work: buffered-but-
+ * unread data stays inside the same interface, and explicit subscribe/
+ * pause moves ownership between agents. `eof` records that the stream has
+ * ended so a late subscriber takes the forfeit path immediately.
+ *
+ * @typedef {object} SharedInput
+ * @property {readline.Interface} rl
+ * @property {Set<{ onLine: (line: string) => void, onClose: () => void }>} subscribers
+ * @property {boolean} eof
+ */
+
+/** @type {WeakMap<import('node:stream').Readable, SharedInput>} */
+const sharedInputs = new WeakMap();
+
+/**
+ * @param {import('node:stream').Readable} input
+ * @returns {SharedInput}
+ */
+function acquireInput(input) {
+  let shared = sharedInputs.get(input);
+  if (shared !== undefined) return shared;
+  const rl = readline.createInterface({ input, terminal: false });
+  shared = {
+    rl,
+    subscribers: new Set(),
+    eof: false,
+  };
+  rl.on('line', (line) => {
+    for (const subscriber of shared.subscribers) subscriber.onLine(line);
+  });
+  rl.on('close', () => {
+    shared.eof = true;
+    for (const subscriber of shared.subscribers) subscriber.onClose();
+  });
+  sharedInputs.set(input, shared);
+  return shared;
+}
+
+/**
  * @typedef {object} HumanAgentOptions
  * @property {string} [name] Player name for the agent id: `human:<name>`.
  *   The name is descriptive only — the trajectory's agent id records it, but
@@ -109,18 +150,32 @@ export function createHumanAgent(options = {}) {
     throw new Error('createHumanAgent: name must be a non-empty string when given');
   }
 
-  // Input plumbing: one readline interface for the agent's lifetime, lines
-  // queued so scripted input piped faster than the game turns still arrives
-  // line by line. `closed` marks EOF — the forfeit path.
+  // Input plumbing: one readline interface PER INPUT STREAM, shared by
+  // every human agent seated from that stream (a WeakMap keyed by the
+  // stream). Re-creating an interface per agent would steal already-buffered
+  // lines and never release the stream; a shared interface with explicit
+  // ownership does both jobs:
+  //
+  //   - Only the subscribed agent receives lines, and the interface is
+  //     paused while no agent is awaiting one — so a line piped for the
+  //     NEXT episode stays in the stream buffer instead of being consumed
+  //     into the previous agent's (discarded) queue.
+  //   - dispose() unsubscribes; when the last subscriber leaves, the
+  //     interface pauses and the stream is released for the next episode's
+  //     agent (who resumes it) instead of holding process.stdin forever.
   /** @type {string[]} */
   const pending = [];
   let closed = false;
   let started = false;
   let rulesShown = false;
   let quitting = false;
+  /** @type {{ onLine: (line: string) => void, onClose: () => void } | null} */
+  let subscription = null;
+  /** @type {ReturnType<typeof acquireInput> | null} */
+  let shared = null;
 
   /**
-   * Attach the readline interface lazily, on the first turn, so an agent
+   * Attach to the shared interface lazily, on the first turn, so an agent
    * built but never seated does not hold the process's stdin open.
    *
    * @returns {void}
@@ -128,13 +183,36 @@ export function createHumanAgent(options = {}) {
   function startInput() {
     if (started) return;
     started = true;
-    const rl = readline.createInterface({ input, terminal: false });
-    rl.on('line', (line) => {
-      pending.push(line);
-    });
-    rl.on('close', () => {
+    shared = acquireInput(input);
+    subscription = {
+      onLine: (line) => {
+        pending.push(line);
+      },
+      onClose: () => {
+        closed = true;
+      },
+    };
+    shared.subscribers.add(subscription);
+    if (shared.eof) {
+      // The stream ended before this agent subscribed (a previous episode
+      // consumed the script): take the forfeit path immediately.
       closed = true;
-    });
+    } else {
+      shared.rl.resume();
+    }
+  }
+
+  /**
+   * Release the stream while this agent is not awaiting a line: pause the
+   * shared interface when this agent is its only subscriber, so piped data
+   * waits for the next reader instead of piling into this agent's queue.
+   *
+   * @returns {void}
+   */
+  function idleInput() {
+    if (shared !== null && shared.subscribers.size === 1 && !shared.eof) {
+      shared.rl.pause();
+    }
   }
 
   /**
@@ -177,11 +255,12 @@ export function createHumanAgent(options = {}) {
     async act(ctx) {
       startInput();
 
-      if (quitting) {
-        // Already quitting: no further prompting, just keep feeding the
-        // invalid path until the runner's forfeit threshold ends the episode.
-        return quitReply();
-      }
+      try {
+        if (quitting) {
+          // Already quitting: no further prompting, just keep feeding the
+          // invalid path until the runner's forfeit threshold ends the episode.
+          return quitReply();
+        }
 
       if (!rulesShown) {
         rulesShown = true;
@@ -258,6 +337,32 @@ export function createHumanAgent(options = {}) {
         // illegal action consumes an attempt and comes back as feedback.
         return { text: line.trim() };
       }
+      } finally {
+        // The turn is over (action, quit, or forfeit): release the stream so
+        // the next episode's agent — or the next reader of this stream —
+        // owns it.
+        idleInput();
+      }
+    },
+
+    /**
+     * Release the input stream: unsubscribe from the shared interface and,
+     * when this was the last subscriber, pause it. The runner calls this at
+     * episode end; without it the interface would hold the stream (and the
+     * process's stdin) open after the episode.
+     *
+     * @returns {Promise<void>}
+     */
+    async dispose() {
+      if (subscription !== null && shared !== null) {
+        shared.subscribers.delete(subscription);
+        subscription = null;
+        if (shared.subscribers.size === 0) {
+          shared.rl.pause();
+        }
+      }
+      shared = null;
+      started = false;
     },
   };
 }

@@ -31,6 +31,16 @@
  *   --replicates=N         bootstrap replicates, default 2000
  *   --ladder-results=PATH  ladder results JSON to refit from
  *   --out=PATH             results JSON path
+ *   --merge-from=PATH      reuse a prior results file's played calibration
+ *                          games exactly as recorded and refit against the
+ *                          CURRENT ladder results — no engine games are
+ *                          replayed. Carried games keep their recorded
+ *                          scores: verify they postdate any scoring change
+ *                          the new ladder reflects before trusting the fit.
+ *
+ * The played calibration games are written to the output path BEFORE the
+ * fit runs, so a failing fit never costs the episodes — refit from that
+ * file with --merge-from.
  *
  * Node-only. Deterministic for a given engine binary.
  *
@@ -220,6 +230,7 @@ async function main() {
     new URL('./ladder-results.json', import.meta.url).pathname;
   const outPath =
     flags.out ?? new URL('./absolute-results.json', import.meta.url).pathname;
+  const mergeFrom = flags['merge-from'];
 
   const ladder = JSON.parse(readFileSync(ladderPath, 'utf8'));
   const ladderGames = ladderFitGames(ladder);
@@ -229,17 +240,40 @@ async function main() {
     );
   }
 
-  const binaryPath = findEngineBinary();
-  const engineId = probeEngineIdSync(binaryPath);
-
   /** @type {Record<string, ReturnType<typeof runLevelPair> extends Promise<infer T> ? T : never>} */
-  const levelResults = {};
-  for (const elo of levels) {
-    for (const opponent of OPPONENTS) {
-      const levelRung = `sf-elo-${elo}`;
-      process.stdout.write(`pair ${levelRung} vs ${opponent.rung}\n`);
-      const key = `${levelRung}-vs-${opponent.rung}`;
-      levelResults[key] = await runLevelPair(levelRung, opponent, gamesPerColour);
+  let levelResults = {};
+  /** @type {{ binaryPath: string | null, id: string | null, carriedFrom?: string }} */
+  let stockfish;
+  if (mergeFrom) {
+    // Refit mode: the calibration episodes already cost their engine time;
+    // reuse them as recorded and redo only the fit against the current
+    // ladder input.
+    const prior = JSON.parse(readFileSync(mergeFrom, 'utf8'));
+    if (!prior.levels || typeof prior.levels !== 'object') {
+      throw new Error(`absolute: ${mergeFrom} has no saved level games to reuse`);
+    }
+    levelResults = prior.levels;
+    stockfish = {
+      binaryPath: null,
+      id: prior.meta?.stockfish?.id ?? 'unknown (carried games)',
+      carriedFrom: mergeFrom,
+    };
+    const priorLevels = /** @type {any} */ (prior.meta?.levels ?? []).join(', ');
+    process.stdout.write(
+      `--merge-from: reusing ${Object.keys(levelResults).length} saved level pairs ` +
+        `(levels ${priorLevels || 'unknown'}) from ${mergeFrom}; no engine games replayed\n`
+    );
+  } else {
+    const binaryPath = findEngineBinary();
+    const engineId = probeEngineIdSync(binaryPath);
+    stockfish = { binaryPath, id: engineId };
+    for (const elo of levels) {
+      for (const opponent of OPPONENTS) {
+        const levelRung = `sf-elo-${elo}`;
+        process.stdout.write(`pair ${levelRung} vs ${opponent.rung}\n`);
+        const key = `${levelRung}-vs-${opponent.rung}`;
+        levelResults[key] = await runLevelPair(levelRung, opponent, gamesPerColour);
+      }
     }
   }
 
@@ -247,6 +281,33 @@ async function main() {
     r.games.map((g) => ({ a: r.agentRung, b: r.opponentRung, score: g.agentScore }))
   );
   const fitGames = [...ladderGames, ...calibrationGames];
+
+  const meta = {
+    run: 'gauntlet/rating/absolute.js',
+    ladderResults: ladderPath,
+    ladderMeta: ladder.meta ?? null,
+    gamesPerColour,
+    levels,
+    calibrationNodeBudget: 1000,
+    bootstrapReplicates: replicates,
+    anchor: { rung: ANCHOR_RUNG, rating: ANCHOR_RATING },
+    stockfish,
+    git: gitProvenance(),
+    finishedAt: new Date().toISOString(),
+  };
+
+  if (!mergeFrom) {
+    // Raw games hit disk BEFORE the fit: a divergent or throwing fit must
+    // not cost the played episodes. This pre-fit file is exactly what
+    // --merge-from consumes to refit without replaying anything.
+    writeFileSync(
+      outPath,
+      `${JSON.stringify({ meta, levels: levelResults }, null, 2)}\n`
+    );
+    process.stdout.write(
+      `pre-fit games written to ${outPath} — if the fit fails, refit with --merge-from=${outPath}\n`
+    );
+  }
 
   process.stdout.write(
     `\nfitting ${fitGames.length} games (${ladderGames.length} ladder + ${calibrationGames.length} calibration) anchored at ${ANCHOR_RUNG}=${ANCHOR_RATING}\n`
@@ -275,19 +336,7 @@ async function main() {
   );
 
   const results = {
-    meta: {
-      run: 'gauntlet/rating/absolute.js',
-      ladderResults: ladderPath,
-      ladderMeta: ladder.meta ?? null,
-      gamesPerColour,
-      levels,
-      calibrationNodeBudget: 1000,
-      bootstrapReplicates: replicates,
-      anchor: { rung: ANCHOR_RUNG, rating: ANCHOR_RATING },
-      stockfish: { binaryPath, id: engineId },
-      git: gitProvenance(),
-      finishedAt: new Date().toISOString(),
-    },
+    meta,
     levels: levelResults,
     fit: {
       ratings: fit.ratings,

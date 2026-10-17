@@ -229,5 +229,24 @@ export function createAssistedAgent(options) {
     dispose: async () => {
       await inner.dispose?.();
     },
+    // Worst-case accounting the run engine can reserve against: the dollar
+    // caps price a quoted agent's next call before it starts (runs/run.js),
+    // and the wrapper hides up to `retries + 1` inner calls behind one
+    // turn — so the turn's worst case is every attempt running at the
+    // inner agent's per-call worst case. Quoted against the augmented
+    // context attempt 0 actually sees; a retry only appends the fixed
+    // feedback line to the request, well inside the estimate's per-byte
+    // slack. null without an inner quote, mirroring the official agents.
+    quoteWorstCaseUsd(/** @type {TurnContext} */ ctx) {
+      if (typeof inner.quoteWorstCaseUsd !== 'function') return null;
+      if (!Array.isArray(ctx.legalActions)) return inner.quoteWorstCaseUsd(ctx);
+      const quoted = inner.quoteWorstCaseUsd({
+        ...ctx,
+        legalActions: null,
+        observation: { ...ctx.observation, text: buildObservationText(ctx) },
+      });
+      if (quoted === null || !Number.isFinite(quoted)) return null;
+      return quoted * (retries + 1);
+    },
   };
 }

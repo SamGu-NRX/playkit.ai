@@ -219,6 +219,150 @@ function solveSymmetric(matrix, rhs, singularTolerance) {
  */
 
 /**
+ * Undirected connectivity from the anchor: every player must reach the
+ * anchor through played games. A disconnected group can leave the solver's
+ * gradient exactly zero (an all-draws group with anchorRating 0 converges
+ * on the first iteration), so the fit's own tolerance cannot be trusted to
+ * report it — check the game graph directly.
+ *
+ * @param {readonly GameResult[]} games
+ * @param {readonly string[]} players
+ * @param {string} anchorPlayer
+ * @returns {void}
+ */
+function checkConnected(games, players, anchorPlayer) {
+  const adjacency = /** @type {Map<string, string[]>} */ (new Map());
+  for (const player of players) adjacency.set(player, []);
+  for (const g of games) {
+    adjacency.get(g.a)?.push(g.b);
+    adjacency.get(g.b)?.push(g.a);
+  }
+  const seen = new Set([anchorPlayer]);
+  const queue = [anchorPlayer];
+  while (queue.length > 0) {
+    const player = /** @type {string} */ (queue.pop());
+    for (const neighbour of adjacency.get(player) ?? []) {
+      if (!seen.has(neighbour)) {
+        seen.add(neighbour);
+        queue.push(neighbour);
+      }
+    }
+  }
+  const stranded = players.filter((p) => !seen.has(p));
+  if (stranded.length > 0) {
+    throw new EloFitError(
+      'UNIDENTIFIED',
+      `results never connect ${stranded.join(', ')} to the anchor ${anchorPlayer}: a disconnected group's ratings are unchanged by any common shift, so the fit is not identified`
+    );
+  }
+}
+
+/**
+ * Group-sweep divergence: the likelihood has no finite maximum when some
+ * non-empty proper group of players won every game it played against the
+ * rest. Riding the group's ratings up (or down) together leaves every
+ * within-group gap — and so the within-group likelihood — fixed, while
+ * every swept cross game's likelihood improves, so the total climbs
+ * without bound. A group S has that shape exactly when no player outside S
+ * ever scored against it, i.e. no edge arrives at S in the directed graph
+ * with an edge x -> y whenever x scored > 0 against y. Once the
+ * connectivity check has passed, every source strongly connected component
+ * of that graph is such a group (a component with no cross games would be
+ * disconnected), so the check is: build the graph, compute the strongly
+ * connected components (Kosaraju; ladders are a dozen rungs), and refuse
+ * when more than one exists, naming a source component and the players it
+ * swept. This catches fits the iteration guards miss: gradient underflow
+ * can "converge" a swept group ~23 logit units from its opponents — a
+ * finite-looking rating that is a numerical artifact, not a fit.
+ *
+ * @param {readonly GameResult[]} games
+ * @param {readonly string[]} players
+ * @returns {void}
+ */
+function checkBounded(games, players) {
+  /** Edge x -> y iff x scored > 0 against y (aggregated over their games). */
+  const edges = /** @type {Map<string, Set<string>>} */ (new Map());
+  for (const player of players) edges.set(player, new Set());
+  for (const g of games) {
+    if (g.score > 0) edges.get(g.a)?.add(g.b);
+    if (g.score < 1) edges.get(g.b)?.add(g.a);
+  }
+
+  // Kosaraju: post-order DFS on the graph, then components on the reverse.
+  /** @type {string[]} */
+  const order = [];
+  const visited = new Set();
+  for (const root of players) {
+    if (visited.has(root)) continue;
+    const stack = [/** @type {[string, number]} */ ([root, 0])];
+    visited.add(root);
+    while (stack.length > 0) {
+      const frame = stack[stack.length - 1];
+      const targets = [...(edges.get(frame[0]) ?? [])];
+      if (frame[1] < targets.length) {
+        const target = targets[frame[1]];
+        frame[1] += 1;
+        if (!visited.has(target)) {
+          visited.add(target);
+          stack.push([target, 0]);
+        }
+      } else {
+        order.push(frame[0]);
+        stack.pop();
+      }
+    }
+  }
+  const reverse = /** @type {Map<string, Set<string>>} */ (new Map());
+  for (const player of players) reverse.set(player, new Set());
+  for (const [from, tos] of edges) {
+    for (const to of tos) reverse.get(to)?.add(from);
+  }
+  const componentOf = /** @type {Map<string, number>} */ (new Map());
+  /** @type {string[][]} */
+  const components = [];
+  for (const node of [...order].reverse()) {
+    if (componentOf.has(node)) continue;
+    const component = components.length;
+    components.push([]);
+    const queue = [node];
+    componentOf.set(node, component);
+    while (queue.length > 0) {
+      const player = /** @type {string} */ (queue.pop());
+      components[component].push(player);
+      for (const source of reverse.get(player) ?? []) {
+        if (!componentOf.has(source)) {
+          componentOf.set(source, component);
+          queue.push(source);
+        }
+      }
+    }
+  }
+  if (components.length <= 1) return;
+
+  // Some source component of the condensation is the diverging group.
+  const incoming = components.map(() => 0);
+  for (const [from, tos] of edges) {
+    for (const to of tos) {
+      const fromC = /** @type {number} */ (componentOf.get(from));
+      const toC = /** @type {number} */ (componentOf.get(to));
+      if (fromC !== toC) incoming[toC] += 1;
+    }
+  }
+  const sourceIndex = incoming.findIndex((count) => count === 0);
+  const group = [...components[sourceIndex]].sort();
+  const outside = players
+    .filter((p) => componentOf.get(p) !== sourceIndex)
+    .sort();
+  throw new EloFitError(
+    'DIVERGENT',
+    `no finite maximum-likelihood rating: the group (${group.join(', ')}) ` +
+      `won every game it played outside itself (against ${outside.join(', ')}), ` +
+      'so the likelihood rises without bound as the group\'s rating climbs — ' +
+      'drop the group\'s games or collect a result that scores against it'
+  );
+}
+
+/**
  * Maximum-likelihood ratings for a result list. See the module doc for the
  * model. Throws `EloFitError` (code `DIVERGENT`) for input with no finite
  * maximum — including the all-wins case — and (code `UNIDENTIFIED`) when the
@@ -234,6 +378,8 @@ export function fitRatings(games, options) {
   const maxIterations = options.maxIterations ?? 300;
   const tolerance = options.tolerance ?? 1e-10;
   const { players, nGames } = validateGames(games, anchorPlayer);
+  checkConnected(games, players, anchorPlayer);
+  checkBounded(games, players);
 
   // Design in natural-logit units: x = rating * ln(10) / 400, so
   // p = 1 / (1 + exp(xb - xa)).
@@ -465,12 +611,26 @@ export function bootstrapRatings(games, options) {
           maxIterations: options.maxIterations,
           tolerance: options.tolerance,
         });
-        for (const player of players) samples[player].push(fit.ratings[player]);
-        fitted++;
-        ok = true;
+        // A resample can fit cleanly while omitting a player entirely (not
+        // one of their games was drawn): pushing would plant an undefined
+        // sample that poisons the percentile sort into a NaN bound. Treat
+        // it like a divergent replicate: redraw, then count it.
+        let complete = true;
+        for (const player of players) {
+          if (!Number.isFinite(fit.ratings[player])) {
+            complete = false;
+            break;
+          }
+        }
+        if (complete) {
+          for (const player of players) samples[player].push(fit.ratings[player]);
+          fitted++;
+          ok = true;
+        }
       } catch (err) {
         if (!(err instanceof EloFitError)) throw err;
-        // Divergent resample: re-draw, then count it and move on.
+        // Divergent, unidentified, or unbounded resample: re-draw, then
+        // count it and move on.
       }
     }
     if (!ok) divergent++;
@@ -642,8 +802,16 @@ export function rateAgent(trajectories, ladder, options = {}) {
     if (totalScore <= 0 || totalScore >= n) {
       throw new EloFitError('DIVERGENT', 'all-wins or all-losses input');
     }
+    // Expand until the monotone score equation is bracketed: the fixed
+    // ±2400 window clipped honest fits (a draw against the top rung wants
+    // that rung's rating, 3320 in the committed ladder, and the bisection
+    // then returned the clipped bound as if it were the fit). At -inf the
+    // gradient tends to totalScore > 0 and at +inf to totalScore - n < 0,
+    // so both expansion loops terminate.
     let lo = -2400;
     let hi = 2400;
+    while (gradient(lo) <= 0) lo *= 2;
+    while (gradient(hi) >= 0) hi *= 2;
     for (let i = 0; i < 200; i++) {
       const mid = (lo + hi) / 2;
       if (gradient(mid) > 0) lo = mid;
@@ -694,12 +862,16 @@ export function rateAgent(trajectories, ladder, options = {}) {
   const lows = [];
   const highs = [];
   for (let r = 0; r < replicates; r++) {
-    const state = rngFromSeed(`${seed}/${r}`);
+    // Thread the RNG state through the draws: re-seeding inside the loop
+    // made every draw of a replicate pick the same game, so each replicate
+    // was n copies of one trajectory and the intervals collapsed.
+    let state = rngFromSeed(`${seed}/${r}`);
     /** @type {number[]} */
     const drawnScores = new Array(n).fill(0);
     for (let i = 0; i < n; i++) {
-      const source = nextInt(state, 0, n - 1).value;
-      drawnScores[source] += 1;
+      const draw = nextInt(state, 0, n - 1);
+      state = draw.state;
+      drawnScores[draw.value] += 1;
     }
     // Aggregate drawn scores per rung.
     const replicateTotal = games.reduce(
@@ -717,12 +889,10 @@ export function rateAgent(trajectories, ladder, options = {}) {
       highs.push(Number.POSITIVE_INFINITY);
       continue;
     }
-    // Solve the aggregated score equation across the rungs played.
-    let lo = -2400;
-    let hi = 2400;
-    for (let i = 0; i < 200; i++) {
-      const mid = (lo + hi) / 2;
-      const grad = rungsPlayed.reduce((acc, rung) => {
+    // Solve the aggregated score equation across the rungs played, with
+    // the same expanding bracket as the point estimate.
+    const repGrad = (/** @type {number} */ mid) =>
+      rungsPlayed.reduce((acc, rung) => {
         const rating = ladder.ratings[rung];
         const count = perRungIndex[rung].reduce(
           (acc2, idx) => acc2 + drawnScores[idx],
@@ -734,7 +904,13 @@ export function rateAgent(trajectories, ladder, options = {}) {
         );
         return acc + (scoreSum - count * expectedScore(mid, rating));
       }, 0);
-      if (grad > 0) lo = mid;
+    let lo = -2400;
+    let hi = 2400;
+    while (repGrad(lo) <= 0) lo *= 2;
+    while (repGrad(hi) >= 0) hi *= 2;
+    for (let i = 0; i < 200; i++) {
+      const mid = (lo + hi) / 2;
+      if (repGrad(mid) > 0) lo = mid;
       else hi = mid;
     }
     const estimate = (lo + hi) / 2;

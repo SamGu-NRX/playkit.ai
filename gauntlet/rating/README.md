@@ -63,6 +63,7 @@ Rungs and pairs:
 | sand-vs-paper | chess | chess-sand | chess-paper |
 | paper-vs-wood | chess | chess-wood | chess-paper |
 | wood-vs-sf-250 | chess-stockfish | chess-wood | chess-stockfish-sf-250 |
+| sf-250-vs-sf-1k | chess-stockfish | sf-250 | sf-1k |
 | sf-1k-vs-sf-10k | chess-stockfish | sf-1k | sf-10k |
 | sf-10k-vs-sf-100k | chess-stockfish | sf-10k | sf-100k |
 | skip-paper-vs-sf-1k | chess-stockfish | chess-paper | sf-1k |

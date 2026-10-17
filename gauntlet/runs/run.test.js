@@ -448,6 +448,109 @@ test('resume refuses to mix manifests in one bundle', async () => {
   }
 });
 
+test('resume refuses an invocation whose agent differs from the recorded trajectories', async () => {
+  const outDir = await tempDir('agent-mix');
+  try {
+    // The two one-shot episodes anchor the bundle's agent identity; the
+    // call cap leaves the second one unplayed for the resume.
+    const suite = buildSuite([takeOrPass], { split: 'public' });
+    const games = [takeOrPass];
+    const first = await runSuite({
+      suite,
+      games,
+      agentFactory: pricedFactory(),
+      outDir,
+      maxCalls: 1,
+    });
+    assert.equal(first.stopped, 'calls');
+    assert.equal(first.run.counts.played, 1);
+
+    // Resuming with a different agent must refuse before it skips the other
+    // agent's verified file or plays a single episode: skipping agent A's
+    // files and writing agent B's beside them reports success over a bundle
+    // scoring refuses.
+    let calls = 0;
+    await assert.rejects(
+      runSuite({
+        suite,
+        games,
+        outDir,
+        resume: true,
+        agentFactory: () => /** @type {Agent} */ ({
+          id: 'fake-priced-b',
+          track: 'community',
+          async act(ctx) {
+            calls += 1;
+            return {
+              text: /** @type {string[]} */ (ctx.legalActions)[0],
+              usage: { inputTokens: 50, outputTokens: 10, costUsd: 0.001 },
+            };
+          },
+        }),
+      }),
+      /holds trajectories from agent/
+    );
+    assert.equal(calls, 0, 'nothing was played before the refusal');
+
+    // The bundle still belongs to the original agent: resuming with the
+    // same agent id completes it.
+    const third = await runSuite({
+      suite,
+      games,
+      agentFactory: pricedFactory(),
+      outDir,
+      resume: true,
+    });
+    assert.equal(third.stopped, null);
+    assert.equal(third.run.counts.unplayed, 0);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a parseable but damaged trajectory (no agent record) is re-run on resume', async () => {
+  const outDir = await tempDir('damaged');
+  try {
+    await runSuite({ suite: SUITE, games: GAMES, agentFactory: pricedFactory(), outDir });
+    const jobs = planJobs(SUITE);
+    const victim = trajectoryPath(outDir, jobs[3]);
+    // Parseable JSON that matches the job's identity (format, game id AND
+    // version, tier, seed, split — every field the resume classification and
+    // the verifier's opening check look at) but is not a well-formed
+    // trajectory: no agent record, no steps list. The verifier throws on the
+    // missing shape; the resume must treat the file exactly like corrupt
+    // JSON and re-run the episode.
+    const victimGame = /** @type {Game<*>} */ (GAMES.find((g) => g.spec.id === jobs[3].gameId));
+    await writeFile(
+      victim,
+      JSON.stringify({
+        format: 'playkit-gauntlet-trajectory/1',
+        game: { id: jobs[3].gameId, version: victimGame.spec.version },
+        tier: jobs[3].tierId,
+        seed: jobs[3].seed,
+        split: jobs[3].split,
+      })
+    );
+    const second = await runSuite({
+      suite: SUITE,
+      games: GAMES,
+      agentFactory: pricedFactory(),
+      outDir,
+      resume: true,
+    });
+    assert.equal(second.stopped, null);
+    assert.deepEqual(second.replayed, [jobs[3].key]);
+    assert.equal(second.skipped.length, jobs.length - 1);
+    const t = JSON.parse(await readFile(victim, 'utf8'));
+    assert.equal(t.agent.id, 'fake-priced');
+    const game = /** @type {Game<*>} */ (GAMES.find((g) => g.spec.id === jobs[3].gameId));
+    const verdict = await verifyTrajectory(game, t);
+    if (!verdict.ok) assert.fail(`${jobs[3].key}: step ${verdict.step}: ${verdict.reason}`);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
 test('createRateLimiter spaces acquisitions by 60000/rpm under a fake clock', async () => {
   let t = 1000;
   const slept = [];

@@ -784,6 +784,42 @@ export async function runSuite({
   const replayed = [];
   /** @type {Job[]} */
   const toRun = [];
+  // Probe the invocation's agent before anything is skipped or played: the
+  // run record needs it, and a resuming invocation whose agent differs from
+  // the one already in the bundle must refuse before it skips a file or
+  // plays a single episode — skipping verified trajectories written by a
+  // different agent and writing new ones beside them would mix two agents
+  // in one bundle, which bundle scoring refuses (the run would report
+  // success over an unusable bundle).
+  /** @type {RunAgentRecord | null} */
+  let agentRecord = null;
+  try {
+    const probe = await agentFactory(jobs[0]);
+    if (probe && typeof probe.id === 'string') {
+      agentRecord = {
+        id: probe.id,
+        track: String(probe.track),
+        ...(probe.provider !== undefined ? { provider: probe.provider } : {}),
+        ...(probe.model !== undefined ? { model: probe.model } : {}),
+        ...(typeof probe.thinking === 'string' ? { thinking: probe.thinking } : {}),
+      };
+    }
+  } catch {
+    agentRecord = null; // the run itself reports factory failures per job
+  }
+  // Comparable agent identity: the fields a trajectory's agent record also
+  // carries. (seat and dryRun are per-episode; thinking is a request knob,
+  // not identity.)
+  const incomingAgentIdentity = agentRecord
+    ? JSON.stringify({
+        id: agentRecord.id,
+        track: agentRecord.track,
+        provider: agentRecord.provider ?? null,
+        model: agentRecord.model ?? null,
+      })
+    : null;
+  /** @type {Map<string, string>} */ // skipped job key -> the trajectory's recorded agent identity
+  const skippedAgentIdentities = new Map();
   for (const job of jobs) {
     if (!resume) {
       toRun.push(job);
@@ -808,12 +844,51 @@ export async function runSuite({
       toRun.push(job);
       continue;
     }
-    const verdict = await verifyTrajectory(/** @type {Game<*>} */ (gameMap.get(job.gameId)), t);
+    // A parseable file that is not a well-formed trajectory (a missing agent
+    // record or steps list, say) throws inside the verifier instead of
+    // producing a verdict. It is exactly as unusable as corrupt JSON: re-run
+    // the episode and overwrite the file.
+    let verdict = /** @type {Awaited<ReturnType<typeof verifyTrajectory>> | null} */ (null);
+    try {
+      verdict = await verifyTrajectory(/** @type {Game<*>} */ (gameMap.get(job.gameId)), t);
+    } catch {
+      replayed.push(job.key);
+      toRun.push(job);
+      continue;
+    }
     if (verdict.ok) {
       skipped.push(job.key);
+      skippedAgentIdentities.set(
+        job.key,
+        JSON.stringify({
+          id: t.agent?.id ?? null,
+          track: t.agent?.track ?? null,
+          provider: t.agent?.provider ?? null,
+          model: t.agent?.model ?? null,
+        })
+      );
     } else {
       replayed.push(job.key);
       toRun.push(job);
+    }
+  }
+
+  // Refuse a mixed bundle before anything runs: every already-played
+  // trajectory must carry this invocation's agent, and the bundle must not
+  // already hold two agents.
+  if (resume && skippedAgentIdentities.size > 0) {
+    const distinct = new Set(skippedAgentIdentities.values());
+    if (distinct.size > 1) {
+      throw new Error(
+        `[gauntlet/runs/run.js] resume: the bundle under ${outDir} already holds trajectories from more than one agent (${[...distinct].join(' vs ')}); refusing to add to a mixed bundle — use a fresh outDir`
+      );
+    }
+    const [recordedIdentity] = distinct;
+    if (incomingAgentIdentity !== null && recordedIdentity !== incomingAgentIdentity) {
+      const sampleJob = skippedAgentIdentities.keys().next().value;
+      throw new Error(
+        `[gauntlet/runs/run.js] resume: the bundle under ${outDir} holds trajectories from agent ${recordedIdentity} but this invocation runs agent ${incomingAgentIdentity} (first mismatch at ${sampleJob}); refusing to skip another agent's files and mix two agents in one bundle — resume with the same agent or use a fresh outDir`
+      );
     }
   }
 
@@ -1087,22 +1162,6 @@ export async function runSuite({
   // Provenance.
   //
   /** @type {RunAgentRecord | null} */
-  let agentRecord = null;
-  try {
-    const probe = await agentFactory(jobs[0]);
-    if (probe && typeof probe.id === 'string') {
-      agentRecord = {
-        id: probe.id,
-        track: String(probe.track),
-        ...(probe.provider !== undefined ? { provider: probe.provider } : {}),
-        ...(probe.model !== undefined ? { model: probe.model } : {}),
-        ...(typeof probe.thinking === 'string' ? { thinking: probe.thinking } : {}),
-      };
-    }
-  } catch {
-    agentRecord = null; // the run itself reports factory failures per job
-  }
-
   const skippedSet = new Set(skipped);
   const unplayed = jobs.filter((j) => !skippedSet.has(j.key) && !written.has(j.key)).map((j) => j.key);
 

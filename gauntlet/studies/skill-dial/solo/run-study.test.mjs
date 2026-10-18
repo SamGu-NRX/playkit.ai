@@ -76,3 +76,57 @@ test('the orchestrator runs its workers concurrently', async () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// A worker that exits nonzero used to reject the orchestrator's
+// Promise.all before manifest.json was written, while the sibling workers
+// ran on unwatched - the run left no manifest and no exit naming the
+// failure (PR review r4305289838). Pins the settle-all fix: every worker is
+// awaited, the manifest is always written (naming the failed worker), and
+// the orchestrator exits nonzero only AFTER the manifest lands.
+const WORKER_ONE_FAILS_STUB = `#!/usr/bin/env node
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+const argv = process.argv.slice(2);
+const out = argv[argv.indexOf('--out') + 1];
+const index = argv[argv.indexOf('--index') + 1];
+writeFileSync(join(out, \`done-\${index}\`), String(Date.now()));
+if (index === '1') {
+  process.stderr.write('stub worker 1 exploded\\n');
+  process.exit(3);
+}
+`;
+
+test('a failed worker does not skip the manifest: all workers settle, the manifest names the failure, exit is nonzero', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'skill-dial-orch-fail-'));
+  const out = join(dir, 'runs');
+  writeFileSync(join(dir, 'worker-fail-stub.mjs'), WORKER_ONE_FAILS_STUB);
+  try {
+    const child = spawn(
+      process.execPath,
+      [join(here, 'run-study.mjs'), '--out', out, '--workers', '3'],
+      { cwd: here, env: { ...process.env, SKILL_DIAL_WORKER_SCRIPT: join(dir, 'worker-fail-stub.mjs') }, stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+    const stderr = [];
+    child.stderr.on('data', (d) => stderr.push(d));
+    const exit = await new Promise((res, rej) => {
+      child.on('exit', (code) => res(code));
+      child.on('error', rej);
+    });
+    const names = readdirSync(out);
+    // All workers ran to completion before the orchestrator exited - the
+    // failure settled, it did not cancel the siblings.
+    for (const k of ['0', '1', '2']) {
+      assert.ok(names.includes(`done-${k}`), `worker ${k} finished`);
+    }
+    const stderrText = stderr.join('');
+    assert.match(stderrText, /worker 1 exited with code 3/, `stderr must name the failing worker (got: ${stderrText})`);
+    assert.equal(exit, 1, 'a failed worker must fail the orchestrator');
+    const manifestPath = join(out, 'manifest.json');
+    assert.ok(names.includes('manifest.json'), 'manifest.json must be written even when a worker fails');
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    assert.deepEqual(manifest.failedWorkers, [1], 'the manifest must name the failed worker');
+    assert.equal(manifest.missing, manifest.jobs, 'the stub wrote no episodes, so the missing gate still holds');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

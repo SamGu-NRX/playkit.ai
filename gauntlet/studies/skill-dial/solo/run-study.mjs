@@ -16,6 +16,16 @@
  * proven range once noise kicks in) are recorded as error records, not
  * trajectories, and counted by the scorer.
  *
+ * Worker exits settle, never reject: a worker that dies (nonzero exit) must
+ * not skip manifest.json — the orchestrator used to `Promise.all` raw exit
+ * promises, so one failed worker rejected the await and the process died
+ * before the manifest landed while siblings ran on unwatched (PR review
+ * r4305289838). Every worker is now awaited to completion, the manifest names
+ * the failed workers, and the exit is nonzero only after the manifest is
+ * written. Residual, documented: a worker that never exits (hung episode)
+ * still blocks the run — that is an episode-level hang, not an orchestrator
+ * crash, and resume covers it on the next invocation.
+ *
  * @module
  */
 
@@ -136,10 +146,14 @@ process.stdout.write(`${jobs.length} episodes across ${args.workers} workers\n`)
 const children = [];
 // Spawn EVERY worker first, then wait: awaiting inside the loop serialized the
 // workers - `--workers 6` ran one episode at a time in six passes.
+//
+// Exits settle, never reject: a failed worker (nonzero exit) must reach the
+// manifest and the final exit code, not skip the manifest via an unhandled
+// rejection while its siblings run on unwatched.
 const workerExits = [];
 for (let k = 0; k < args.workers; k++) {
   workerExits.push(
-    new Promise((res, rej) => {
+    new Promise((res) => {
       const child = spawn(
         process.execPath,
         [WORKER_SCRIPT, '--worker', '--index', String(k), '--of', String(args.workers), '--out', args.out],
@@ -147,11 +161,12 @@ for (let k = 0; k < args.workers; k++) {
       );
       children.push(child);
       child.stdout.on('data', (d) => process.stdout.write(`  ${d}`));
-      child.on('exit', (code) => (code === 0 ? res(code) : rej(new Error(`worker ${k} exited ${code}`))));
+      child.on('exit', (code, signal) => res({ index: k, code, signal }));
     })
   );
 }
-await Promise.all(workerExits);
+const exits = await Promise.all(workerExits);
+const failedWorkers = exits.filter((e) => e.code !== 0);
 const missing = jobs.filter((j) => !done(join(args.out, j.file)));
 const errored = jobs.filter((j) => {
   if (missing.includes(j)) return false;
@@ -168,8 +183,12 @@ const manifest = {
   missing: missing.length,
   errorFiles: errored.map((j) => j.file),
 };
+if (failedWorkers.length > 0) manifest.failedWorkers = failedWorkers.map((f) => f.index);
 writeFileSync(join(args.out, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 process.stdout.write(
   `bundle: ${manifest.ran} trajectories, ${manifest.errors} error records, ${manifest.missing} missing -> ${args.out}\n`
 );
-if (manifest.missing > 0) process.exit(1);
+for (const f of failedWorkers) {
+  process.stderr.write(`run-study: worker ${f.index} exited with code ${f.code}${f.signal ? ` on ${f.signal}` : ''}\n`);
+}
+if (failedWorkers.length > 0 || manifest.missing > 0) process.exit(1);

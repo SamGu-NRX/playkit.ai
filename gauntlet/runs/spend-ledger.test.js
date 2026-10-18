@@ -331,7 +331,8 @@ test('when both caps are set, both apply — the tighter one binds per invocatio
     assert.ok(Math.abs(ledger.summary.totalUsd - 0.8) < 1e-9);
     assert.equal(ledger.summary.invocations, 4, 'each budget-shaped resume iteration is one recorded invocation');
     const capLines = ledger.lines.map((l) => l.value).filter((l) => l.kind === 'cap');
-    assert.equal(capLines.length, 1, 're-passing the same cap records nothing new');
+    assert.equal(capLines.length, 4, 'every resume that re-passes the cap records it for that invocation');
+    assert.ok(capLines.every((l) => l.maxUsdTotal === 1), 'each recorded cap is the supplied value');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

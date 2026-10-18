@@ -77,19 +77,24 @@ export class Play2048Adapter extends Adapter {
    * @param {0|1|2|3} dir Direction to move
    */
   sendMove(dir) {
-    // Deliver exactly one move request per call. Touch-capable browsers
-    // (phones, phone device emulation) bind BOTH the keyboard and touch
-    // handlers on the page, so firing a keyboard event and then a synthetic
-    // swipe moved the board twice per sendMove() — the solver's chosen move
-    // applied against a stale board every tick. The touch path stays as a
-    // fallback for environments where keyboard delivery is impossible.
+    // Deliver effectively one move request per call. Keyboard is the primary
+    // delivery: the touch path fires only when the keyboard delivery THREW or
+    // was left UNCLAIMED — an ineffective synthetic keydown (touch-only pages,
+    // keyboard-deaf clones) does not throw, and treating it as delivered
+    // silently dropped the solver's move every tick (f09). On dual-binding
+    // pages (phone browsers bind both keyboard and touch) a claimed keyboard
+    // keydown suppresses the touch path, so the historical keyboard-then-touch
+    // double-move cannot return.
+    let claimed = false;
     try {
-      this._dispatchKeyboardEvent(dir);
+      claimed = this._dispatchKeyboardEvent(dir);
     } catch (error) {
       console.warn(
         "Play2048Adapter: keyboard move failed, falling back to touch:",
         error
       );
+    }
+    if (!claimed) {
       try {
         this._simulateTouch(dir);
       } catch (touchError) {
@@ -233,12 +238,17 @@ export class Play2048Adapter extends Adapter {
    * Dispatch keyboard event for move
    * @private
    * @param {number} dir Direction
+   * @returns {boolean} Whether the page claimed the keydown — the event was
+   *   dispatched and something called preventDefault() on it. The vendored
+   *   reference page's keyboard_input_manager.js preventDefaults exactly the
+   *   keys it maps, so an un-prevented keydown means no handler consumed the
+   *   key.
    */
   _dispatchKeyboardEvent(dir) {
     const key = this.keyMap[dir];
     const keyCode = this.keyCodeMap[dir];
 
-    if (!key) return;
+    if (!key) return false;
 
     const target = document.activeElement || document.body;
 
@@ -263,6 +273,8 @@ export class Play2048Adapter extends Adapter {
     });
 
     target.dispatchEvent(keyupEvent);
+
+    return keydownEvent.defaultPrevented;
   }
 
   /**

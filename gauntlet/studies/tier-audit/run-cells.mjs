@@ -107,13 +107,20 @@ for (const gameId of Object.keys(GAMES)) {
           log(`reuse INCOMPLETE ${gameId}/${tier.id} ${cell}: ${missing.length} missing, running the cell`);
         }
         const bundle = join(root, 'bundles', gameId, tier.id, cell);
-        const dialVerdict = await cellComplete(bundle, gameId, tier.id, seeds);
+        // The expected manifest must be derived BEFORE the verdict: a bundle
+        // built from an older manifest is not complete even when every file
+        // is present, and the refusal must come before clearStaleBundle's
+        // cleanup runs (Codex P1 #112: verdict-then-clear let one resumption
+        // skip a stale cell the same invocation then cleared).
+        const { suite } = tierSuite(gameId, tier.id);
+        const dialVerdict = await cellComplete(bundle, gameId, tier.id, seeds, {
+          expectedManifestSha256: manifestSha256(suite),
+        });
         if (dialVerdict.complete) {
           log(`done ${gameId}/${tier.id} ${cell} (${dialVerdict.reason})`);
           continue;
         }
         log(`re-run ${gameId}/${tier.id} ${cell}: ${dialVerdict.reason}`);
-        const { suite } = tierSuite(gameId, tier.id);
         const suitePath = join(root, 'suites', `${gameId}--${tier.id}.json`);
         await mkdir(join(root, 'suites'), { recursive: true });
         await writeFile(suitePath, JSON.stringify(suite, null, 2) + '\n');
@@ -157,13 +164,17 @@ for (const gameId of Object.keys(GAMES)) {
         }
       } else if (cell === 'copy-example' || cell === 'first-legal') {
         const bundle = join(root, 'bundles', gameId, tier.id, cell);
-        const noSkillVerdict = await cellComplete(bundle, gameId, tier.id, seeds);
+        // Expected manifest before the verdict — same ordering rule as the
+        // dial path above (Codex P1 #112).
+        const { suite } = tierSuite(gameId, tier.id);
+        const noSkillVerdict = await cellComplete(bundle, gameId, tier.id, seeds, {
+          expectedManifestSha256: manifestSha256(suite),
+        });
         if (noSkillVerdict.complete) {
           log(`done ${gameId}/${tier.id} ${cell} (${noSkillVerdict.reason})`);
           continue;
         }
         log(`re-run ${gameId}/${tier.id} ${cell}: ${noSkillVerdict.reason}`);
-        const { suite } = tierSuite(gameId, tier.id);
         await clearStaleBundle(bundle, suite, `${gameId}/${tier.id} ${cell}`);
         const example = extractExampleToken(game.spec.rulesText);
         const exampleInfo =

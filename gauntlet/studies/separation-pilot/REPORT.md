@@ -39,10 +39,10 @@ production scorer before printing any verdict).
 
 | Check | Expected | Result |
 |---|---|---|
-| **I1** — `skill:0.25` vs `skill:0.75` on the smallest resolving suite (56 episodes/arm) | SEPARATED on `rhae-v1`, D > 0 | **PASS** — D = 0.465824, ci95 = [0.401477, 0.529615], sign agreement 7/7 tiers, **SEPARATED** |
-| I1 on `squared-outcome` / `chance-adjusted` | note | **SEPARATED** — D = 0.465824 on both (efficiency-only suite ⇒ profiles coincide; CI wiggle is resampling seed only) |
+| **I1** — `skill:0.25` vs `skill:0.75` on the smallest resolving suite (56 episodes/arm) | SEPARATED on `rhae-v1`, D > 0 | **PASS** — D = 0.465824, ci95 = [0.400717, 0.527971], sign agreement 7/7 tiers, **SEPARATED** |
+| I1 on `squared-outcome` / `chance-adjusted` | note | **SEPARATED** — D = 0.465824 and the SAME ci95 on both (efficiency-only suite ⇒ profiles coincide exactly: one preregistered resampling stream per comparison, shared by every profile and reading) |
 | **I2** — `skill:0.25` vs itself (two independent runs) | NOT SEPARATED, D = 0 exactly | **PASS** — D = 0, ci95 = [0, 0], **NOT_SEPARATED** |
-| **Label-swap symmetry** — `analyze(B, A)` | negates D and the interval bounds **exactly** | **PASS** — D = −0.465824, ci95 = [−0.529615, −0.401477] |
+| **Label-swap symmetry** — `analyze(B, A)` | negates D and the interval bounds **exactly** | **PASS** — D = −0.465824, ci95 = [−0.527971, −0.400717] |
 | Determinism | byte-identical output for identical bundles | **PASS** — two full runs `cmp`-identical |
 
 Committed evidence: `outputs/instrument/{I1,I2,I1-swapped}.json`; re-run with

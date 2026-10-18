@@ -411,3 +411,46 @@ test('real engine: a CLI play run exits promptly after its last episode', { skip
     `the CLI run took ${(elapsedMs / 1000).toFixed(1)}s — an engine child outlived the last episode`
   );
 });
+
+test('wiring: a long model turn does not idle-reap the episode-owned engine', async (t) => {
+  const previous = process.env[STOCKFISH_ENV_VAR];
+  process.env[STOCKFISH_ENV_VAR] = FIXTURE;
+  const tier = /** @type {TierSpec} */ (chessStockfish.spec.tiers[0]);
+  const state = chessStockfish.reset(tier, 'reap-seed');
+  const seat = /** @type {number} */ (chessStockfish.toAct(state));
+  const opponent = /** @type {any} */ (chessStockfish).opponent(tier, 'reap-seed', seat);
+  try {
+    // Mock the clock while the first turn runs so the tick can jump past the
+    // client's default 60s idle window without waiting: the client arms its
+    // reaper with setTimeout, and I/O events resolve the turn's commands
+    // before any mocked deadline. Turn #2 runs on the restored real clock.
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const reply1 = await opponent.act(/** @type {any} */ ({
+      observation: chessStockfish.observe(state, seat),
+      legalActions: chessStockfish.legalActions(state, seat),
+      turn: 0,
+      seat,
+    }));
+    assert.equal(reply1.text, 'e7e5');
+    t.mock.timers.tick(120_000);
+    // No manual restore: node:test restores mocks at test end, and on this
+    // Node the explicit restore throws after a tick. Act #2's I/O events are
+    // real — only timers are mocked — so it runs fine on the mocked clock.
+    // Pre-fix, the default idle reaper killed the engine during the tick and
+    // turn #2 died on the still-cached engine promise — a rate-limit wait or
+    // slow model turn longer than the idle window failed the next Stockfish
+    // turn. The runner disposes every actor itself, so the episode-owned
+    // engine must not reap on idle at all.
+    const reply2 = await opponent.act(/** @type {any} */ ({
+      observation: chessStockfish.observe(state, seat),
+      legalActions: chessStockfish.legalActions(state, seat),
+      turn: 1,
+      seat,
+    }));
+    assert.equal(reply2.text, 'e7e5');
+  } finally {
+    await opponent.dispose().catch(() => {});
+    if (previous === undefined) delete process.env[STOCKFISH_ENV_VAR];
+    else process.env[STOCKFISH_ENV_VAR] = previous;
+  }
+});

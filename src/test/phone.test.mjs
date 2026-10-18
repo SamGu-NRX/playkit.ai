@@ -228,6 +228,11 @@ test("2048 adapter: one move per sendMove on touch-capable browsers", async () =
   let touch = 0;
   adapter._dispatchKeyboardEvent = () => {
     keyboard++;
+    // The real page's keyboard_input_manager preventDefaults every mapped key,
+    // so a delivered keydown is CLAIMED (defaultPrevented) — the f09 sendMove
+    // contract falls back to touch only on a throw or an unclaimed keydown.
+    // A stub returning undefined models an unclaimed key and must fall back.
+    return true;
   };
   adapter._simulateTouch = () => {
     touch++;

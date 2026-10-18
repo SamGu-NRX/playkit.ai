@@ -61,7 +61,40 @@ PR #90's mastermind/mini tier and PR #92's connect4 example-copier study both pu
 
 **Answer to the connect4 half: largely yes.** Removing the copiable example costs the same model a quarter of its win rate; what survives example removal is real but modest play against a random opponent.
 
-### Provenance
+### Addendum (2026-10-17): compute-stats fixed to the preregistered shape
+
+PR #104 review findings, now fixed in `compute-stats.mjs` (helpers in
+`stats-lib.mjs`, unit-tested in `stats-lib.test.mjs`):
+
+- **Arm parsing** read the arm from a non-greedy regex that misparsed the
+  connect4 control (`...-connect4-neutral-connect4-ladder-1-12` parsed as the
+  arm "connect4-neutral-connect4", matching nothing). Arms are now matched by
+  known prefix; every committed suite id parses.
+- **The random-floor gap hardcoded the mastermind/mini floor** for every arm
+  behind a guard that could never fire. Each run now takes its OWN tier's
+  floor — the connect4 control gets the calibrated connect4/ladder-1 floor
+  (prereg H3).
+- **H2's statistic was omitted**: the tie-corrected Spearman rho (Pearson on
+  mid-ranks, "as in #81") over the three per-model corrected-official means is
+  now computed. From the committed means (0.5B 0, 1.5B 0, 7B 0.25) the
+  corrected script yields **rho = 0.866025** (n=3): with the format trap
+  removed, means order by parameter count — the tie-corrected reading of H2's
+  "yes".
+- **H1's preregistered cross-study comparisons were omitted**: the corrected
+  arms are now paired by seed against the prior studies' committed bundles
+  (`--prior-official-runs` / `--prior-assisted-runs`; #97's assisted bundles
+  are in-repo and compared by default, #81's official bundles are not
+  committed here so that comparison records a note until the bundles are
+  available). Prior bundles carry their recorded game version, so a scorer
+  refusal at the registry's current version is recorded in stats.json rather
+  than swallowed.
+
+`stats.json` itself is NOT regenerated: the scorer still refuses the committed
+mastermind 1.0.0 bundles against registry 1.1.0 — the pre-existing blocker
+recorded above — so the committed tables stand and the corrected script is
+what future regeneration will produce.
+
+## Provenance
 
 Every episode is a community-track bundle (`community-example-patch:...` agent ids in run.json and trajectories); the official leaderboard is untouched by construction. All 56 bundles pass `gauntlet bundle verify`. stats.json is deterministic (seeded bootstraps, no timestamps).
 
@@ -72,6 +105,8 @@ cd gauntlet/studies/example-confound
 bash run-small-models.sh   # 0.5B + 1.5B, arms 1+2+4
 bash run-7b.sh             # arm 3 (+ arm 4 for 7B last, per the drop order)
 node compute-stats.mjs     # stats.json from the committed bundles
+                           # [--prior-official-runs <dir>] [--prior-assisted-runs <dir>]
+                           # fixed per the PR #104 review; see the addendum
 node cli/gauntlet.js bundle verify studies/example-confound/runs/<model>/<arm-dir>
 ```
 

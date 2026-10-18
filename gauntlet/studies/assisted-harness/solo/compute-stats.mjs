@@ -38,7 +38,7 @@ import path from 'node:path';
 import { GAMES } from '../../../games/index.js';
 import { score } from '../../../scoring/score.js';
 import { streamFromSeed } from '../../../core/rng.js';
-import { usageOf } from './usage-lib.mjs';
+import { aggregateRates, round6, usageOf } from './usage-lib.mjs';
 
 const COLLECTED = {};
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -72,7 +72,6 @@ const PAIRS = [
   { name: '7b-minus-1.5b', big: 'qwen2.5-7b', small: 'qwen2.5-1.5b' },
 ];
 
-const round6 = (v) => (v === null || v === undefined || !Number.isFinite(v) ? null : Math.round(v * 1e6) / 1e6);
 const roundCI = (ci) => (ci ? [round6(ci[0]), round6(ci[1])] : null);
 
 /** Walk a run directory collecting every trajectory file. */
@@ -247,7 +246,10 @@ for (const { game, tier } of TIERS) {
     const suite = JSON.parse(readFileSync(path.join(runDir, 'suite.json'), 'utf8'));
     const trajectories = trajectoryFiles(runDir).map((p) => JSON.parse(readFileSync(p, 'utf8')));
     const usage = trajectories.map(usageOf);
-    const calls = usage.reduce((a, u) => a + u.calls, 0) || 1;
+    const totals = usage.reduce(
+      (a, u) => ({ invalid: a.invalid + u.invalid, ms: a.ms + u.ms, tokIn: a.tokIn + u.tokIn, tokOut: a.tokOut + u.tokOut, calls: a.calls + u.calls, attempts: a.attempts + u.attempts }),
+      { invalid: 0, ms: 0, tokIn: 0, tokOut: 0, calls: 0, attempts: 0 }
+    );
 
     const scoresByProfile = {};
     for (const profile of PROFILES) {
@@ -273,12 +275,11 @@ for (const { game, tier } of TIERS) {
       episodes: trajectories.length,
       seeds: episodes.map((e) => e.seed),
       scores: scoresByProfile,
-      // Numerator: wrapper-rejected attempts (usage-lib counts
-      // meta.assisted.invalidAttempts per step, per-step-flag fallback on
-      // legacy trajectories) — the same unit as the calls denominator.
-      invalidReplyRate: round6(usage.reduce((a, u) => a + u.invalid, 0) / calls),
-      secPerCall: round6(usage.reduce((a, u) => a + u.ms, 0) / 1000 / calls),
-      tokensPerCall: round6(usage.reduce((a, u) => a + u.tokIn + u.tokOut, 0) / calls),
+      invalidReplyRate: aggregateRates(totals).invalidReplyRate,
+      // Per PROVIDER call, not per turn: a retried assisted step aggregated
+      // every attempt's wall time and tokens into one recorded step.
+      secPerCall: aggregateRates(totals).secPerCall,
+      tokensPerCall: aggregateRates(totals).tokensPerCall,
     };
   }
 

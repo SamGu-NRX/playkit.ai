@@ -234,3 +234,19 @@ export function seedsNeeded(diffs, seed) {
 export function round6(x) {
   return Math.round(x * 1e6) / 1e6;
 }
+
+
+/**
+ * Whether two closed numeric intervals overlap at all. Used by the
+ * luck-dominated flag: two tiers' intervals overlap when EITHER endpoint of
+ * one lies inside the other, not merely when the first interval's low bound
+ * sits below the second's high bound — a one-sided check lets
+ * entirely-below-zero intervals through as "luck-dominated".
+ *
+ * @param {[number, number]} a Closed interval [lo, hi], lo <= hi.
+ * @param {[number, number]} b Closed interval [lo, hi], lo <= hi.
+ * @returns {boolean}
+ */
+export function intervalsOverlap(a, b) {
+  return a[0] <= b[1] && b[0] <= a[1];
+}

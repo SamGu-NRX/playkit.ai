@@ -136,7 +136,12 @@ const CHAT_LENGTH = /** @type {[number, *]} */ ([
   },
 ]);
 
-test('openai: an unknown gpt-* id is refused, naming the capability table', () => {
+test('openai: an untabled gpt-* id carrying settings is refused, naming the capability table; a plain request constructs', () => {
+  // f05: the refusal is settings-dependent. A request with reasoningEffort or
+  // a sampling field is refused with the table-naming message; the plain
+  // request (no reasoningEffort, no sampling fields) is wire-valid on every
+  // Responses-API model and constructs with the permissive default — the
+  // documented openai/gpt-4o path.
   assert.throws(
     () =>
       createModelAgent({
@@ -144,6 +149,7 @@ test('openai: an unknown gpt-* id is refused, naming the capability table', () =
         model: 'gpt-9-nova',
         baseUrl: 'http://127.0.0.1:1',
         apiKeyEnv: 'GAUNTLET_TEST_KEY',
+        reasoningEffort: /** @type {'low' | 'medium' | 'high' | 'xhigh' | 'max'} */ ('high'),
       }),
     (/** @type {Error} */ err) => {
       assert.match(err.message, /OpenAI capability table/);
@@ -151,6 +157,14 @@ test('openai: an unknown gpt-* id is refused, naming the capability table', () =
       assert.match(err.message, /platform\.openai\.com\/docs\/models/);
       return true;
     }
+  );
+  assert.doesNotThrow(() =>
+    createModelAgent({
+      provider: 'openai',
+      model: 'gpt-9-nova',
+      baseUrl: 'http://127.0.0.1:1',
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+    })
   );
 });
 

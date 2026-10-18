@@ -301,6 +301,59 @@ test('runEpisode ends time-limit inside the grace window and the stub connection
   );
 });
 
+test('a synchronously-throwing injected sleep during the retry wait still detaches the abort listener (no late unhandled rejection)', { timeout: 10_000 }, async () => {
+  let requests = 0;
+  const stub = await startStubServer(
+    /** @param {import('node:http').IncomingMessage} req @param {import('node:http').ServerResponse} res */
+    (req, res) => {
+      requests += 1;
+      res.statusCode = 429;
+      res.setHeader('retry-after', '30');
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify({ error: { type: 'rate_limit', message: 'slow down' } }));
+    }
+  );
+  try {
+    const controller = new AbortController();
+    /** @type {unknown} */
+    let lateAbortRejection = null;
+    const onUnhandled = (/** @type {unknown} */ reason) => {
+      if (String(reason).includes("episode's time limit ended the call")) {
+        lateAbortRejection = reason;
+      }
+    };
+    process.on('unhandledRejection', onUnhandled);
+    const agent = createModelAgent({
+      provider: 'openai',
+      model: 'stub-model',
+      baseUrl: stub.url,
+      apiKeyEnv: API_KEY_ENV,
+      maxOutputTokens: 64,
+      sleep: () => {
+        throw new Error('injected backoff sleep exploded');
+      },
+    });
+    try {
+      await assert.rejects(agent.act(turnCtx(controller.signal)));
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
+    assert.ok(requests >= 1, 'the stub saw the first attempt');
+    controller.abort();
+    // Drain macrotasks: a leaked abort listener would reject the never-raced
+    // `aborted` promise here as an unhandled rejection (greptile r4305572937).
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(
+      lateAbortRejection,
+      null,
+      'an abort after a synchronously-throwing sleep must not reject the never-raced aborted promise'
+    );
+  } finally {
+    await stub.close();
+  }
+});
+
 // ---------------------------------------------------------------------------
 // f07 (codex review #103): an abort during the default-sleep retry wait must
 // cancel the pending backoff timer. The in-process tests above prove the WAIT
@@ -313,11 +366,14 @@ test('runEpisode ends time-limit inside the grace window and the stub connection
 // ---------------------------------------------------------------------------
 
 /**
- * The child: a loopback 429 server with a 30 s Retry-After, an agent with NO
- * sleep injection (default sleep, default retries), an abort 200 ms into the
- * backoff, and no further cleanup — node exits iff the event loop is drained,
- * i.e. iff the aborted wait's timer was canceled. Every request stays on
- * 127.0.0.1; no paid calls.
+ * The child: a loopback 429 server with a 30 s Retry-After, an agent whose
+ * sleep wraps the true default sleep (the pending timer under test is the
+ * default one — cancel survives the forward), an abort 200 ms into the
+ * backoff armed only after the retry wait has begun — a slow startup or
+ * first request must not abort before the wait and let the test pass
+ * vacuously — and no further cleanup: node exits iff the event loop is
+ * drained, i.e. iff the aborted wait's timer was canceled. Every request
+ * stays on 127.0.0.1; no paid calls.
  */
 const CHILD_SCRIPT = `
 import http from 'node:http';
@@ -330,7 +386,8 @@ const server = http.createServer((req, res) => {
 });
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const port = server.address().port;
-const { createModelAgent } = await import(process.env.AGENT_PATH);
+const { createModelAgent, sleepOrDefault } = await import(process.env.AGENT_PATH);
+const defaultSleep = sleepOrDefault();
 const controller = new AbortController();
 const ctx = {
   spec: { rulesText: 'RULES TEXT.' },
@@ -342,23 +399,41 @@ const ctx = {
   feedback: null,
   signal: controller.signal,
 };
+let retryWaitStarted;
+const retryWaitStartedPromise = new Promise((resolve) => { retryWaitStarted = resolve; });
+let retryWaitMs = 0;
 const agent = createModelAgent({
   provider: 'openai',
   model: 'stub-model',
   baseUrl: 'http://127.0.0.1:' + port,
   apiKeyEnv: 'GAUNTLET_ABORT_EXIT_TEST_KEY',
   maxOutputTokens: 64,
+  sleep: (ms) => {
+    if (ms >= 1000) { retryWaitMs = ms; retryWaitStarted(); }
+    return defaultSleep(ms);
+  },
 });
+const actOutcome = agent.act(ctx).then(
+  (reply) => ({ ok: true }),
+  (err) => ({ ok: false, message: err && err.message })
+);
+// Arm the abort countdown only once the 30s Retry-After wait has begun
+// (greptile r4305572940): the abort must land inside the wait, never on the
+// first request, or the test passes without covering the timer cancellation.
+await retryWaitStartedPromise;
+if (retryWaitMs !== 30000) {
+  console.error('expected to enter the 30s Retry-After wait, saw ' + retryWaitMs + 'ms');
+  process.exit(1);
+}
 setTimeout(() => controller.abort(), 200);
-try {
-  await agent.act(ctx);
+const outcome = await actOutcome;
+if (outcome.ok) {
   console.error('expected act() to reject');
   process.exit(1);
-} catch (err) {
-  if (!err || !/episode's time limit ended the call/.test(err.message)) {
-    console.error('unexpected rejection: ' + (err && err.message));
-    process.exit(1);
-  }
+}
+if (!/episode's time limit ended the call/.test(outcome.message)) {
+  console.error('unexpected rejection: ' + outcome.message);
+  process.exit(1);
 }
 server.closeAllConnections();
 await new Promise((resolve) => server.close(resolve));

@@ -237,6 +237,36 @@ test('an untabled gpt-* id carrying a sampling param is refused', async () => {
   }
 });
 
+test('an untabled gpt-* id carrying a raw reasoning setting in params is refused (params.reasoning reaches the wire unvalidated)', async () => {
+  const stub = await openaiStub([OPENAI_OK]);
+  try {
+    for (const model of ['gpt-4o', 'gpt-9-nova']) {
+      for (const raw of [
+        { reasoning: { effort: 'high' } },
+        { reasoning_effort: 'high' },
+      ]) {
+        assert.throws(
+          () =>
+            createModelAgent({
+              provider: 'openai',
+              model,
+              baseUrl: stub.url,
+              apiKeyEnv: 'GAUNTLET_TEST_KEY',
+              params: raw,
+            }),
+          (/** @type {Error} */ err) => {
+            assert.match(err.message, /matches no row in the OpenAI capability table/);
+            return true;
+          }
+        );
+      }
+    }
+    assert.equal(stub.requests.length, 0, 'refused at construction: the stub saw zero requests');
+  } finally {
+    await stub.close();
+  }
+});
+
 test('the previous reply and invalid feedback are carried into the next message', async () => {
   const stub = await anthropicStub([
     ANTHROPIC_OK,

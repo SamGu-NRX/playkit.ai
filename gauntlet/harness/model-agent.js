@@ -757,7 +757,7 @@ function retryError(message, retries) {
  * @param {SleepFn} [sleep]
  * @returns {SleepFn}
  */
-function sleepOrDefault(sleep) {
+export function sleepOrDefault(sleep) {
   if (typeof sleep === 'function') return sleep;
   return (ms) => {
     /** @type {() => void} */
@@ -881,8 +881,14 @@ async function delayOrAbort(ms, externalSignal, sleep, model, retries) {
     onAbort = () => reject(episodeAbortError(model, retries));
   });
   externalSignal.addEventListener('abort', onAbort, { once: true });
-  const slept = sleep(ms);
+  /** @type {ReturnType<SleepFn> | undefined} */
+  let slept;
   try {
+    // Called inside the try (greptile r4305572937): an injected sleep that
+    // throws synchronously must still run the finally below, or the abort
+    // listener outlives the wait and a later abort rejects the never-raced
+    // `aborted` promise as an unhandled rejection.
+    slept = sleep(ms);
     await Promise.race([slept, aborted]);
   } finally {
     externalSignal.removeEventListener('abort', onAbort);
@@ -891,7 +897,7 @@ async function delayOrAbort(ms, externalSignal, sleep, model, retries) {
     // process — alive until the Retry-After window elapses. Injected sleeps
     // carry no cancel and are left to their owner. Clearing an already-fired
     // timer is harmless.
-    if (typeof slept.cancel === 'function') slept.cancel();
+    if (slept && typeof slept.cancel === 'function') slept.cancel();
   }
 }
 
@@ -1737,9 +1743,13 @@ export function createModelAgent({
         ? resolveOpenAICapability(model)
         : resolveGeminiCapability(model);
   // An untabled `gpt-*` id (f05) is refused only when the request carries
-  // settings the OpenAI capability table exists to validate — reasoningEffort
-  // or a sampling field (temperature/top_p/top_k, the same three fields the
-  // tabled rows govern). A request without them is wire-valid on every
+  // settings the OpenAI capability table exists to validate — reasoningEffort,
+  // a sampling field (temperature/top_p/top_k, the same three fields the
+  // tabled rows govern), or a raw reasoning setting smuggled through params:
+  // callOpenAI spreads `params` into the request body ahead of the validated
+  // fields, so `params.reasoning.effort` would reach the wire unvalidated and
+  // unrecorded — the same wire effect the reasoningEffort refusal guards. A
+  // request without any of those is wire-valid on every
   // Responses-API model, so it runs with the permissive default: no wire
   // effort, the legacy output cap unless maxOutputTokens is explicit. That is
   // the documented openai/gpt-4o path (clients/python/README.md).
@@ -1749,12 +1759,12 @@ export function createModelAgent({
     /^gpt-/i.test(model) &&
     (reasoningEffort !== undefined ||
       (params !== undefined &&
-        ['temperature', 'top_p', 'top_k'].some((field) =>
+        ['temperature', 'top_p', 'top_k', 'reasoning', 'reasoning_effort'].some((field) =>
           Object.prototype.hasOwnProperty.call(params, field)
         )))
   ) {
     throw new Error(
-      `createModelAgent: model ${JSON.stringify(model)} is a GPT id that matches no row in the OpenAI capability table (harness/model-agent.js), so it is refused rather than run with settings it may reject. Add a row with the model-id pattern, the documented effort levels and default, the sampling-field rule, and a documented output cap, citing the doc URL and the date checked — see ${OPENAI_CAPABILITY_DOC_URL}. A request without reasoningEffort or sampling fields is wire-valid on every Responses-API model and is allowed — that is the documented openai/gpt-4o path (clients/python/README.md).`
+      `createModelAgent: model ${JSON.stringify(model)} is a GPT id that matches no row in the OpenAI capability table (harness/model-agent.js), so it is refused rather than run with settings it may reject. Add a row with the model-id pattern, the documented effort levels and default, the sampling-field rule, and a documented output cap, citing the doc URL and the date checked — see ${OPENAI_CAPABILITY_DOC_URL}. A request without reasoningEffort, sampling fields, or raw reasoning settings is wire-valid on every Responses-API model and is allowed — that is the documented openai/gpt-4o path (clients/python/README.md).`
     );
   }
   // The refusal messages name the table for the row's provider.

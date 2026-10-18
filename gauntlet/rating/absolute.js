@@ -55,7 +55,7 @@ import { createEngineBaselineAgent } from '../games/chess/baselines.js';
 import { createStockfishOpponentAgent } from '../games/chess-stockfish/stockfish-agent.js';
 import { runEpisode } from '../core/runner.js';
 import { fitRatings, bootstrapRatings } from './elo.js';
-import { sweptOnlyPlayers } from './absolute-lib.js';
+import { sweptOnlyPlayers, carriedSettings } from './absolute-lib.js';
 import { findEngineBinary, probeEngineIdSync } from '../engines/uci/client.js';
 
 const ANCHOR_RUNG = 'chess-paper';
@@ -220,9 +220,9 @@ async function runLevelPair(levelRung, opponent, gamesPerColour) {
 
 async function main() {
   const flags = parseFlags();
-  const gamesPerColour = Number(flags['games-per-colour'] ?? 8);
+  let gamesPerColour = Number(flags['games-per-colour'] ?? 8);
   const replicates = Number(flags.replicates ?? 2000);
-  const levels = (flags.levels ?? '1320,1500,1700,1900,2100,2300')
+  let levels = (flags.levels ?? '1320,1500,1700,1900,2100,2300')
     .split(',')
     .map((s) => Number(s.trim()))
     .filter((n) => Number.isInteger(n));
@@ -263,6 +263,21 @@ async function main() {
     process.stdout.write(
       `--merge-from: reusing ${Object.keys(levelResults).length} saved level pairs ` +
         `(levels ${priorLevels || 'unknown'}) from ${mergeFrom}; no engine games replayed\n`
+    );
+    // The carried games were played at the prior run's settings: meta and the
+    // report must cover exactly those rungs. Keeping the current CLI flags
+    // would mislabel meta.levels/meta.gamesPerColour and print unplayed
+    // default levels as "excluded — played a total sweep".
+    const carried = carriedSettings(prior);
+    levels = carried.levels;
+    if (carried.gamesPerColour !== null) {
+      gamesPerColour = carried.gamesPerColour;
+    }
+    process.stdout.write(
+      `--merge-from: restoring carried settings — levels ${levels.join(', ')}, ` +
+        `games per colour ${
+          carried.gamesPerColour ?? `${gamesPerColour} (not recorded in the prior file; keeping the CLI flag)`
+        }\n`
     );
   } else {
     const binaryPath = findEngineBinary();

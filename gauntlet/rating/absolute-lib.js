@@ -57,3 +57,59 @@ export function sweptOnlyPlayers(games) {
     })
     .sort();
 }
+
+/**
+ * The carried run settings for a --merge-from refit: the prior file's levels
+ * and games-per-colour describe the SAVED games, so meta and the report must
+ * cover exactly those rungs — the current run's CLI flags say nothing about
+ * what was played before, and carrying them instead would mislabel
+ * meta.levels/meta.gamesPerColour and report unplayed levels as "excluded —
+ * played a total sweep".
+ *
+ * `levels` is taken from `prior.meta.levels` when that array matches the
+ * rungs actually present in the saved level-pair keys, and otherwise derived
+ * from the keys' `sf-elo-<n>` rungs (so a prior saved with different flags,
+ * or one whose meta is missing or drifted, still reports every carried rung
+ * and nothing else). `gamesPerColour` passes through from the prior meta
+ * when it is a positive integer, and is null otherwise (the caller keeps its
+ * CLI flag).
+ *
+ * @param {{ meta?: { levels?: unknown, gamesPerColour?: unknown }, levels: Record<string, unknown> }} prior
+ *   A parsed prior results file: `levels` maps `<rung>-vs-<opponent>` pair
+ *   keys to the saved games.
+ * @returns {{ levels: number[], gamesPerColour: number | null }} `levels`
+ *   ascending; `gamesPerColour` null when the prior file does not record a
+ *   usable one.
+ */
+export function carriedSettings(prior) {
+  const RUNG_PREFIX = 'sf-elo-';
+  /** @type {Set<number>} */
+  const rungs = new Set();
+  for (const key of Object.keys(prior.levels ?? {})) {
+    const vs = key.indexOf('-vs-');
+    const rung = vs === -1 ? key : key.slice(0, vs);
+    if (!rung.startsWith(RUNG_PREFIX)) continue;
+    const elo = Number(rung.slice(RUNG_PREFIX.length));
+    if (Number.isInteger(elo)) rungs.add(elo);
+  }
+  const fromKeys = [...rungs].sort((x, y) => x - y);
+
+  const priorLevels = prior.meta?.levels;
+  const matchesKeys =
+    Array.isArray(priorLevels) &&
+    priorLevels.length === fromKeys.length &&
+    priorLevels.every((n) => typeof n === 'number' && rungs.has(n));
+  const levels = matchesKeys
+    ? /** @type {number[]} */ (priorLevels).slice().sort((x, y) => x - y)
+    : fromKeys;
+
+  const priorGamesPerColour = prior.meta?.gamesPerColour;
+  const gamesPerColour =
+    typeof priorGamesPerColour === 'number' &&
+    Number.isInteger(priorGamesPerColour) &&
+    priorGamesPerColour > 0
+      ? priorGamesPerColour
+      : null;
+
+  return { levels, gamesPerColour };
+}

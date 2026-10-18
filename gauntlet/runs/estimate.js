@@ -843,10 +843,14 @@ function callsVerdict(callsLowRatio) {
  * @property {number} unknownCostSteps Steps with usage but no finite cost —
  *   the actual spend is understated by them.
  * @property {ComparisonFigures} figures
+ * @property {number} expectedEpisodes Planned episodes for the game from the
+ *   estimate (one job per episode).
  * @property {'within-2x' | 'over-2x' | 'under-2x' | null} callsVerdict
  *   Whether the actual calls landed within 2x of the expected (low) figure:
  *   the acceptance question a bare ratio does not answer. Null where the game
- *   has no low basis — a missing basis is neither a hit nor a miss.
+ *   has no low basis — a missing basis is neither a hit nor a miss — and null
+ *   while the game's planned episodes are not all played, because a partial
+ *   run's actuals would read as "under" without meaning anything.
  */
 
 /**
@@ -997,12 +1001,18 @@ export async function compareRunAgainstEstimate(estimate, runDir) {
       actual.get(game.gameId) ??
       { episodes: 0, calls: 0, tokensIn: 0, tokensOut: 0, spendUsd: 0, unknownCostSteps: 0 };
     const figures = withRatios(act, estimateRows(jobsByGame.get(game.gameId) ?? []));
+    // A verdict answers the acceptance question against the game's full
+    // expected figure. While any of the game's planned episodes are unplayed,
+    // the actuals are a partial run — a cap-stop would read as "under-2x" —
+    // so no verdict is issued for that game yet.
+    const gameComplete = act.episodes >= game.jobs;
     return {
       gameId: game.gameId,
       episodes: act.episodes,
+      expectedEpisodes: game.jobs,
       unknownCostSteps: act.unknownCostSteps,
       figures,
-      callsVerdict: callsVerdict(figures.ratio.callsLow),
+      callsVerdict: gameComplete ? callsVerdict(figures.ratio.callsLow) : null,
     };
   });
 
@@ -1040,7 +1050,14 @@ export async function compareRunAgainstEstimate(estimate, runDir) {
       unknownCostSteps: rows.reduce((a, r) => a + r.unknownCostSteps, 0),
       unplayedEpisodes,
       figures: totalFigures,
-      callsVerdict: callsVerdict(totalFigures.ratio.callsLow),
+      // The total verdict answers the acceptance question over the whole
+      // suite; on an incomplete bundle (episodes unplayed per run.json, or
+      // any game short of its planned episodes) the actuals understate the
+      // run and no verdict is issued.
+      callsVerdict:
+        unplayedEpisodes > 0 || rows.some((r) => r.episodes < r.expectedEpisodes)
+          ? null
+          : callsVerdict(totalFigures.ratio.callsLow),
     },
   };
 }
@@ -1077,9 +1094,15 @@ export function comparisonToMarkdown(comparison) {
       `${comparison.totals.unknownCostSteps} step(s) reported usage without a priced cost — actual spend is understated by them.`
     );
   }
-  if (comparison.unplayedEpisodes > 0) {
+  const shortGames = comparison.games.filter(
+    (r) => r.episodes < (r.expectedEpisodes ?? r.episodes)
+  );
+  if (comparison.unplayedEpisodes > 0 || shortGames.length > 0) {
+    const detail = shortGames.map((r) => `${r.gameId} ${r.expectedEpisodes - r.episodes}`).join(', ');
     lines.push(
-      `${comparison.unplayedEpisodes} episode(s) are still unplayed in this bundle — the actuals are partial-run figures.`
+      `This bundle is incomplete — ${comparison.unplayedEpisodes} episode(s) unplayed per run.json` +
+        (detail ? `; games short of their planned episodes: ${detail}` : '') +
+        '. The actuals are partial-run figures, so no within-2x verdict is issued.'
     );
   }
   lines.push('');

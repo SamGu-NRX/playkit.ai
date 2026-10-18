@@ -553,6 +553,9 @@ function gitCommit() {
  *   recorded. Takes precedence over `prices`.
  * @property {() => number} [now] Millisecond clock for timestamps.
  * @property {(ms: number) => Promise<void>} [sleep] Delay function.
+ * @property {(path: string, data: string, encoding: string) => Promise<void>} [appendLedgerFile]
+ *   How ledger lines reach disk (default fs appendFile). Tests inject one
+ *   that delays or reorders resolution to exercise append serialization.
  */
 
 /**
@@ -608,6 +611,7 @@ export async function runSuite({
   pricesPath,
   now = Date.now,
   sleep,
+  appendLedgerFile,
 }) {
   if (!suite || suite.format !== SUITE_FORMAT) {
     throw new Error(
@@ -713,12 +717,13 @@ export async function runSuite({
 
   //
   // The bundle's spend ledger. Every invocation appends one `invocation`
-  // line; a run with `maxUsdTotal` appends a `cap` line when the value is new
-  // (on a fresh bundle, or when resuming with a raised or rewritten cap); a
-  // resumed run without `maxUsdTotal` carries the recorded cap. Call lines
-  // buffer per episode and flush in the worker's finally block, so a graceful
-  // stop records every paid call — including the spend of episodes a stop
-  // threw away.
+  // line; a run with `maxUsdTotal` appends a `cap` line recording the
+  // supplied value — including a resume that re-passes the same cap, so the
+  // ledger proves the flag was supplied for that invocation; a resumed run
+  // without `maxUsdTotal` carries the recorded cap. Call lines buffer per
+  // episode and flush in the worker's finally block, so a graceful stop
+  // records every paid call — including the spend of episodes a stop threw
+  // away.
   //
   const ledgerPath = path.join(outDir, SPEND_LEDGER_FILENAME);
   const ledgerAtStart = await readSpendLedger(outDir);
@@ -748,25 +753,47 @@ export async function runSuite({
    * @param {Record<string, unknown>[]} values
    * @returns {Promise<void>}
    */
-  async function appendSpendLines(values) {
-    if (values.length === 0) return;
-    let text = '';
-    for (const value of values) {
-      const line = JSON.stringify({ ...value, prev: ledgerChainHead });
-      ledgerChainHead = sha256Hex(line);
-      text += line + '\n';
-    }
-    try {
-      await appendFile(ledgerPath, text, 'utf8');
-    } catch (err) {
-      ledgerProblems.push(`could not append ${values.length} ledger line(s): ${errorMessage(err)}`);
-    }
+  // Ledger appends are serialized through a promise chain: the hash head
+  // must advance in the same order bytes reach the file. Two workers
+  // flushing concurrently that awaited the append directly could interleave
+  // so the later chain link's bytes landed first — the file would then hold
+  // a line whose `prev` is not the hash of the line physically before it,
+  // and verify would refuse the whole bundle's ledger.
+  const writeLedgerFile = appendLedgerFile ?? appendFile;
+  let ledgerAppendTail = Promise.resolve();
+
+  /**
+   * Appends lines to the ledger, extending the hash chain, serialized so the
+   * chain order matches file order. On failure the problem is recorded
+   * (run.json's ledger.problems) and the run continues: losing provenance
+   * must not corrupt a paid run mid-flight.
+   *
+   * @param {Record<string, unknown>[]} values
+   * @returns {Promise<void>}
+   */
+  function appendSpendLines(values) {
+    if (values.length === 0) return Promise.resolve();
+    const write = ledgerAppendTail.then(() => {
+      let text = '';
+      for (const value of values) {
+        const line = JSON.stringify({ ...value, prev: ledgerChainHead });
+        ledgerChainHead = sha256Hex(line);
+        text += line + '\n';
+      }
+      return writeLedgerFile(ledgerPath, text, 'utf8').catch((err) => {
+        ledgerProblems.push(`could not append ${values.length} ledger line(s): ${errorMessage(err)}`);
+      });
+    });
+    // The tail always resolves so one failed write cannot poison the queue;
+    // the caller's promise still carries the error to the awaiting worker.
+    ledgerAppendTail = write.catch(() => {});
+    return write;
   }
 
   await appendSpendLines([
     { kind: 'invocation', invocation: invocationIndex, startedAt: new Date(startedAtMs).toISOString(), resumed: resume },
   ]);
-  if (maxUsdTotal !== undefined && (ledgerAtStart.summary.cap === null || ledgerAtStart.summary.cap !== maxUsdTotal)) {
+  if (maxUsdTotal !== undefined) {
     await appendSpendLines([{ kind: 'cap', invocation: invocationIndex, maxUsdTotal }]);
   }
   // Spend already on the books from earlier invocations. The per-invocation
@@ -784,6 +811,42 @@ export async function runSuite({
   const replayed = [];
   /** @type {Job[]} */
   const toRun = [];
+  // Probe the invocation's agent before anything is skipped or played: the
+  // run record needs it, and a resuming invocation whose agent differs from
+  // the one already in the bundle must refuse before it skips a file or
+  // plays a single episode — skipping verified trajectories written by a
+  // different agent and writing new ones beside them would mix two agents
+  // in one bundle, which bundle scoring refuses (the run would report
+  // success over an unusable bundle).
+  /** @type {RunAgentRecord | null} */
+  let agentRecord = null;
+  try {
+    const probe = await agentFactory(jobs[0]);
+    if (probe && typeof probe.id === 'string') {
+      agentRecord = {
+        id: probe.id,
+        track: String(probe.track),
+        ...(probe.provider !== undefined ? { provider: probe.provider } : {}),
+        ...(probe.model !== undefined ? { model: probe.model } : {}),
+        ...(typeof probe.thinking === 'string' ? { thinking: probe.thinking } : {}),
+      };
+    }
+  } catch {
+    agentRecord = null; // the run itself reports factory failures per job
+  }
+  // Comparable agent identity: the fields a trajectory's agent record also
+  // carries. (seat and dryRun are per-episode; thinking is a request knob,
+  // not identity.)
+  const incomingAgentIdentity = agentRecord
+    ? JSON.stringify({
+        id: agentRecord.id,
+        track: agentRecord.track,
+        provider: agentRecord.provider ?? null,
+        model: agentRecord.model ?? null,
+      })
+    : null;
+  /** @type {Map<string, string>} */ // skipped job key -> the trajectory's recorded agent identity
+  const skippedAgentIdentities = new Map();
   for (const job of jobs) {
     if (!resume) {
       toRun.push(job);
@@ -808,12 +871,51 @@ export async function runSuite({
       toRun.push(job);
       continue;
     }
-    const verdict = await verifyTrajectory(/** @type {Game<*>} */ (gameMap.get(job.gameId)), t);
+    // A parseable file that is not a well-formed trajectory (a missing agent
+    // record or steps list, say) throws inside the verifier instead of
+    // producing a verdict. It is exactly as unusable as corrupt JSON: re-run
+    // the episode and overwrite the file.
+    let verdict = /** @type {Awaited<ReturnType<typeof verifyTrajectory>> | null} */ (null);
+    try {
+      verdict = await verifyTrajectory(/** @type {Game<*>} */ (gameMap.get(job.gameId)), t);
+    } catch {
+      replayed.push(job.key);
+      toRun.push(job);
+      continue;
+    }
     if (verdict.ok) {
       skipped.push(job.key);
+      skippedAgentIdentities.set(
+        job.key,
+        JSON.stringify({
+          id: t.agent?.id ?? null,
+          track: t.agent?.track ?? null,
+          provider: t.agent?.provider ?? null,
+          model: t.agent?.model ?? null,
+        })
+      );
     } else {
       replayed.push(job.key);
       toRun.push(job);
+    }
+  }
+
+  // Refuse a mixed bundle before anything runs: every already-played
+  // trajectory must carry this invocation's agent, and the bundle must not
+  // already hold two agents.
+  if (resume && skippedAgentIdentities.size > 0) {
+    const distinct = new Set(skippedAgentIdentities.values());
+    if (distinct.size > 1) {
+      throw new Error(
+        `[gauntlet/runs/run.js] resume: the bundle under ${outDir} already holds trajectories from more than one agent (${[...distinct].join(' vs ')}); refusing to add to a mixed bundle — use a fresh outDir`
+      );
+    }
+    const [recordedIdentity] = distinct;
+    if (incomingAgentIdentity !== null && recordedIdentity !== incomingAgentIdentity) {
+      const sampleJob = skippedAgentIdentities.keys().next().value;
+      throw new Error(
+        `[gauntlet/runs/run.js] resume: the bundle under ${outDir} holds trajectories from agent ${recordedIdentity} but this invocation runs agent ${incomingAgentIdentity} (first mismatch at ${sampleJob}); refusing to skip another agent's files and mix two agents in one bundle — resume with the same agent or use a fresh outDir`
+      );
     }
   }
 
@@ -857,6 +959,14 @@ export async function runSuite({
     return {
       ...base,
       async act(/** @type {TurnContext} */ ctx) {
+        // The rate limiter is waited on BEFORE any check: everything from
+        // here through the reservation below is synchronous, so admission and
+        // reservation are atomic under concurrency. A worker queued on the
+        // limiter re-checks every stop rule once it holds a slot — checks
+        // made before the wait went stale while it queued — and no
+        // interleaving can admit two calls that both believe the same spend
+        // headroom is available.
+        if (limiter) await limiter.acquire();
         if (stopped.reason) {
           throw new RunAbortedError(stopped.reason, `run stopped (${stopped.reason}): ${stopped.detail ?? ''}`);
         }
@@ -873,8 +983,12 @@ export async function runSuite({
         // Worst-case admission for the dollar caps: a quote-carrying agent
         // reserves its next call's upper-bound cost, so concurrent in-flight
         // calls cannot jointly push spend past a cap. A quote-less agent keeps
-        // the settled-only check (its quote is null).
-        const quote = typeof base.quoteWorstCaseUsd === 'function' ? base.quoteWorstCaseUsd(ctx) : null;
+        // the settled-only check (its quote is null). The hook is consulted
+        // only when a dollar cap needs admission checking — with no cap set
+        // there is nothing to protect, and a call that later rejects stays
+        // recorded at unknown cost.
+        const quote =
+          spendCapped && typeof base.quoteWorstCaseUsd === 'function' ? base.quoteWorstCaseUsd(ctx) : null;
         if (maxUsd !== undefined) {
           const projected = spendUsd + reservedUsd + (quote ?? 0);
           const overBudget = projected > maxUsd || spendUsd >= maxUsd;
@@ -919,7 +1033,6 @@ export async function runSuite({
             );
           }
         }
-        if (limiter) await limiter.acquire();
         calls += 1;
         const callIndex = episodeCall;
         episodeCall += 1;
@@ -1086,23 +1199,6 @@ export async function runSuite({
   //
   // Provenance.
   //
-  /** @type {RunAgentRecord | null} */
-  let agentRecord = null;
-  try {
-    const probe = await agentFactory(jobs[0]);
-    if (probe && typeof probe.id === 'string') {
-      agentRecord = {
-        id: probe.id,
-        track: String(probe.track),
-        ...(probe.provider !== undefined ? { provider: probe.provider } : {}),
-        ...(probe.model !== undefined ? { model: probe.model } : {}),
-        ...(typeof probe.thinking === 'string' ? { thinking: probe.thinking } : {}),
-      };
-    }
-  } catch {
-    agentRecord = null; // the run itself reports factory failures per job
-  }
-
   const skippedSet = new Set(skipped);
   const unplayed = jobs.filter((j) => !skippedSet.has(j.key) && !written.has(j.key)).map((j) => j.key);
 

@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { appendFile, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -448,6 +448,109 @@ test('resume refuses to mix manifests in one bundle', async () => {
   }
 });
 
+test('resume refuses an invocation whose agent differs from the recorded trajectories', async () => {
+  const outDir = await tempDir('agent-mix');
+  try {
+    // The two one-shot episodes anchor the bundle's agent identity; the
+    // call cap leaves the second one unplayed for the resume.
+    const suite = buildSuite([takeOrPass], { split: 'public' });
+    const games = [takeOrPass];
+    const first = await runSuite({
+      suite,
+      games,
+      agentFactory: pricedFactory(),
+      outDir,
+      maxCalls: 1,
+    });
+    assert.equal(first.stopped, 'calls');
+    assert.equal(first.run.counts.played, 1);
+
+    // Resuming with a different agent must refuse before it skips the other
+    // agent's verified file or plays a single episode: skipping agent A's
+    // files and writing agent B's beside them reports success over a bundle
+    // scoring refuses.
+    let calls = 0;
+    await assert.rejects(
+      runSuite({
+        suite,
+        games,
+        outDir,
+        resume: true,
+        agentFactory: () => /** @type {Agent} */ ({
+          id: 'fake-priced-b',
+          track: 'community',
+          async act(ctx) {
+            calls += 1;
+            return {
+              text: /** @type {string[]} */ (ctx.legalActions)[0],
+              usage: { inputTokens: 50, outputTokens: 10, costUsd: 0.001 },
+            };
+          },
+        }),
+      }),
+      /holds trajectories from agent/
+    );
+    assert.equal(calls, 0, 'nothing was played before the refusal');
+
+    // The bundle still belongs to the original agent: resuming with the
+    // same agent id completes it.
+    const third = await runSuite({
+      suite,
+      games,
+      agentFactory: pricedFactory(),
+      outDir,
+      resume: true,
+    });
+    assert.equal(third.stopped, null);
+    assert.equal(third.run.counts.unplayed, 0);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a parseable but damaged trajectory (no agent record) is re-run on resume', async () => {
+  const outDir = await tempDir('damaged');
+  try {
+    await runSuite({ suite: SUITE, games: GAMES, agentFactory: pricedFactory(), outDir });
+    const jobs = planJobs(SUITE);
+    const victim = trajectoryPath(outDir, jobs[3]);
+    // Parseable JSON that matches the job's identity (format, game id AND
+    // version, tier, seed, split — every field the resume classification and
+    // the verifier's opening check look at) but is not a well-formed
+    // trajectory: no agent record, no steps list. The verifier throws on the
+    // missing shape; the resume must treat the file exactly like corrupt
+    // JSON and re-run the episode.
+    const victimGame = /** @type {Game<*>} */ (GAMES.find((g) => g.spec.id === jobs[3].gameId));
+    await writeFile(
+      victim,
+      JSON.stringify({
+        format: 'playkit-gauntlet-trajectory/1',
+        game: { id: jobs[3].gameId, version: victimGame.spec.version },
+        tier: jobs[3].tierId,
+        seed: jobs[3].seed,
+        split: jobs[3].split,
+      })
+    );
+    const second = await runSuite({
+      suite: SUITE,
+      games: GAMES,
+      agentFactory: pricedFactory(),
+      outDir,
+      resume: true,
+    });
+    assert.equal(second.stopped, null);
+    assert.deepEqual(second.replayed, [jobs[3].key]);
+    assert.equal(second.skipped.length, jobs.length - 1);
+    const t = JSON.parse(await readFile(victim, 'utf8'));
+    assert.equal(t.agent.id, 'fake-priced');
+    const game = /** @type {Game<*>} */ (GAMES.find((g) => g.spec.id === jobs[3].gameId));
+    const verdict = await verifyTrajectory(game, t);
+    if (!verdict.ok) assert.fail(`${jobs[3].key}: step ${verdict.step}: ${verdict.reason}`);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
 test('createRateLimiter spaces acquisitions by 60000/rpm under a fake clock', async () => {
   let t = 1000;
   const slept = [];
@@ -506,5 +609,345 @@ test('usage reported without a priced cost stays unknown in the run record and s
     assert.doesNotMatch(captured, /spend    0\.000000/, 'unknown spend is never printed as a bare 0');
   } finally {
     await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+/**
+ * A deferred promise the test resolves manually.
+ * @returns {{ promise: Promise<void>, resolve: () => void }}
+ */
+function deferred() {
+  /** @type {() => void} */
+  let resolve = () => {};
+  const promise = new Promise((res) => {
+    resolve = /** @type {() => void} */ (/** @type {unknown} */ (res));
+  });
+  return { promise, resolve };
+}
+
+/**
+ * A one-seat fixture game where every episode takes exactly `calls` agent
+ * calls: the agent replies 'go' until the counter runs out.
+ *
+ * @param {number} calls
+ * @returns {Game<{ remaining: number }>}
+ */
+function makeGatedGame(calls) {
+  return /** @type {Game<{ remaining: number }>} */ ({
+    spec: {
+      id: 'gated',
+      version: '1.0.0',
+      title: 'gated',
+      seats: 1,
+      information: 'perfect',
+      stochastic: false,
+      tags: [],
+      benchmark: false,
+      requires: [],
+      rulesText: 'Say "go" until the counter reaches zero.',
+      tiers: [
+        { id: 'main', rank: 1, scoring: 'outcome', maxActions: 64, publicSeeds: 2, params: {} },
+      ],
+    },
+    reset() {
+      return { remaining: calls };
+    },
+    toAct(state) {
+      return state.remaining <= 0 ? null : 0;
+    },
+    observe(state) {
+      return { text: `remaining ${state.remaining}`, data: { remaining: state.remaining } };
+    },
+    legalActions() {
+      return ['go'];
+    },
+    parseAction(_state, _seat, text) {
+      return text.trim().toLowerCase() === 'go'
+        ? { ok: true, action: 'go' }
+        : { ok: false, error: 'the only action is "go"' };
+    },
+    step(state) {
+      return { remaining: state.remaining - 1 };
+    },
+    outcome(state) {
+      return { normalized: [1], raw: [state.remaining], reason: 'done' };
+    },
+    truncate() {
+      return { normalized: [0], raw: null, reason: 'ran out of budget' };
+    },
+  });
+}
+
+test('a worker queued on the rate limiter re-checks maxCalls before calling', { timeout: 60 * 1000 }, async () => {
+  const outDir = await tempDir('limiter-calls');
+  try {
+    const games = [makeGatedGame(2)];
+    const suite = buildSuite(games, { split: 'public' });
+    const jobs = planJobs(suite);
+    let agentCalls = 0;
+    let t = 0;
+    let waits = 0;
+    const bGate = deferred(); // worker B holds until worker A is queued
+    const heldGate = deferred(); // worker A's limiter wait, held by the test
+    const releaseGate = deferred(); // the test lets worker A proceed
+    /** @returns {Agent} */
+    const countingAgent = () =>
+      /** @type {Agent} */ ({
+        id: 'fake-priced',
+        track: 'community',
+        async act(ctx) {
+          agentCalls += 1;
+          return {
+            text: /** @type {string[]} */ (ctx.legalActions)[0],
+            usage: { inputTokens: 50, outputTokens: 10, costUsd: 0.001 },
+          };
+        },
+      });
+
+    const runPromise = runSuite({
+      suite,
+      games,
+      outDir,
+      concurrency: 2,
+      maxCalls: 2,
+      // One token immediately, then one per 1000 ms of fake time: the first
+      // taker runs free, the next acquire queues on the limiter.
+      requestsPerMinute: 60,
+      now: () => t,
+      sleep: async (ms) => {
+        waits += 1;
+        // The limiter serializes acquirers through a promise chain: the
+        // first wait is worker A's queued second admission, and worker B,
+        // chained behind it, is suspended before its own admission checks
+        // ever run. Only A's wait is held under test control.
+        if (waits === 1) {
+          heldGate.resolve();
+          await releaseGate.promise;
+        }
+        t += ms;
+      },
+      agentFactory: async (job) => {
+        if (job.key === jobs[0].key) return countingAgent();
+        // Worker B holds until worker A is queued on the limiter.
+        await bGate.promise;
+        return countingAgent();
+      },
+    });
+
+    // Worker A took the free token, made call 1, and is now queued on the
+    // limiter for call 2. Worker B is let in now and queues behind A on the
+    // limiter's chain — suspended before its own admission checks run.
+    await heldGate.promise;
+    bGate.resolve();
+    // Release A: its queued admission resolves, its checks re-run, it makes
+    // call 2 and finishes its episode.
+    releaseGate.resolve();
+    let spins = 0;
+    while (agentCalls < 2) {
+      if (spins++ > 5000) throw new Error('worker A never made its second call');
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    }
+
+    const result = await runPromise;
+    // Exactly maxCalls calls happened: B's admission ran only after its slot
+    // on the chain, when the cap was already reached, and was refused.
+    // Without the re-check B's queued position would not save it — its
+    // checks would still see only calls=1 and the run would make
+    // maxCalls + 1 calls.
+    assert.equal(agentCalls, 2);
+    assert.equal(result.run.calls, 2);
+    assert.equal(result.stopped, 'calls');
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a worker queued on the rate limiter re-checks maxUsd before calling', { timeout: 60 * 1000 }, async () => {
+  const outDir = await tempDir('limiter-usd');
+  try {
+    const games = [makeGatedGame(2)];
+    const suite = buildSuite(games, { split: 'public' });
+    const jobs = planJobs(suite);
+    const state = { calls: 0, quotes: 0 };
+    let t = 0;
+    let waits = 0;
+    const bGate = deferred(); // worker B holds until worker A is queued
+    const heldGate = deferred(); // worker A's limiter wait, held by the test
+    const releaseGate = deferred(); // the test lets worker A proceed
+    /** @returns {Agent} */
+    const quotingAgent = () =>
+      /** @type {Agent} */ ({
+        id: 'fake-priced',
+        track: 'community',
+        quoteWorstCaseUsd: () => {
+          state.quotes += 1;
+          return 1;
+        },
+        async act(ctx) {
+          state.calls += 1;
+          return {
+            text: /** @type {string[]} */ (ctx.legalActions)[0],
+            usage: { inputTokens: 1, outputTokens: 1, costUsd: 1 },
+          };
+        },
+      });
+
+    const runPromise = runSuite({
+      suite,
+      games,
+      outDir,
+      concurrency: 2,
+      maxUsd: 2,
+      requestsPerMinute: 60,
+      now: () => t,
+      sleep: async (ms) => {
+        waits += 1;
+        // As in the maxCalls test: the limiter's promise chain suspends
+        // worker B before its own admission checks; only worker A's wait is
+        // held under test control.
+        if (waits === 1) {
+          heldGate.resolve();
+          await releaseGate.promise;
+        }
+        t += ms;
+      },
+      agentFactory: async (job) => {
+        if (job.key === jobs[0].key) return quotingAgent();
+        await bGate.promise;
+        return quotingAgent();
+      },
+    });
+
+    // Worker A took the free token, made call 1 ($1 settled), and is now
+    // queued on the limiter for call 2. Worker B is let in now and queues
+    // behind A on the limiter's chain — suspended before its own admission
+    // checks run.
+    await heldGate.promise;
+    bGate.resolve();
+    // Release A: its queued admission is re-checked ($1 settled + $1 quote =
+    // $2, exactly at the cap — admitted), it makes call 2 and finishes its
+    // episode with spend at exactly $2.
+    releaseGate.resolve();
+    let spins = 0;
+    while (state.calls < 2) {
+      if (spins++ > 5000) throw new Error('worker A never made its second call');
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    }
+
+    const result = await runPromise;
+    // The cap held exactly: B's admission ran only after its slot on the
+    // chain, saw $2 settled + $1 quote > $2, and was refused. Without the
+    // re-check B's checks would see $1 settled and spend would land at $3 of
+    // a $2 cap.
+    assert.equal(state.calls, 2);
+    assert.equal(state.quotes, 3, 'two admitted calls plus the refused one are quoted');
+    assert.equal(result.run.calls, 2);
+    assert.ok(Math.abs(result.run.spendUsd - 2) < 1e-9, `spend is exactly $2, got ${result.run.spendUsd}`);
+    assert.equal(result.stopped, 'budget');
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('concurrent worker ledger flushes keep the hash chain in file order', async () => {
+  const outDir = await tempDir('ledger-order');
+  try {
+    const games = [makeGatedGame(1)];
+    const suite = buildSuite(games, { split: 'public' });
+
+    /** @returns {Agent} */
+    const pricedAgent = () =>
+      /** @type {Agent} */ ({
+        id: 'fake-priced',
+        track: 'community',
+        async act(ctx) {
+          return {
+            text: /** @type {string[]} */ (ctx.legalActions)[0],
+            usage: { inputTokens: 10, outputTokens: 2, costUsd: 0.01 },
+          };
+        },
+      });
+
+    // A writer that really appends the bytes, but resolves the first
+    // call-record write long after the second: the runner computes each
+    // chain link before the write, so an implementation that lets the two
+    // workers' writes land out of order physically puts the second link's
+    // bytes first. With serialization the second link is not even computed
+    // until the first write has resolved, so file order matches the chain.
+    let writes = 0;
+    const appendLedgerFile = async (/** @type {string} */ filePath, /** @type {string} */ text) => {
+      const delay = writes === 1 ? 60 : 10;
+      writes += 1;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      await appendFile(filePath, text, 'utf8');
+    };
+
+    const result = await runSuite({
+      suite,
+      games,
+      outDir,
+      concurrency: 2,
+      agentFactory: async () => pricedAgent(),
+      appendLedgerFile,
+    });
+
+    // The end-of-run ledger re-read verifies the chain; a reorder would
+    // surface as a problem here.
+    assert.deepEqual(result.ledger.problems, [], JSON.stringify(result.ledger.problems));
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('the worst-case quote hook is consulted only when a dollar cap needs it', async () => {
+  const games = [takeOrPass];
+  const suite = buildSuite(games, { split: 'public' });
+
+  /** @returns {Agent} */
+  const quoteCountingAgent = (/** @type {{ quotes: number }} */ state) =>
+    /** @type {Agent} */ ({
+      id: 'fake-priced',
+      track: 'community',
+      quoteWorstCaseUsd: () => {
+        state.quotes += 1;
+        return 0.01;
+      },
+      async act(ctx) {
+        return {
+          text: /** @type {string[]} */ (ctx.legalActions)[0],
+          usage: { inputTokens: 50, outputTokens: 10, costUsd: 0.001 },
+        };
+      },
+    });
+
+  // Uncapped: the hook is never consulted — there is nothing to protect.
+  {
+    const outDir = await tempDir('quote-uncapped');
+    try {
+      const state = { quotes: 0 };
+      const result = await runSuite({ suite, games, outDir, agentFactory: () => quoteCountingAgent(state) });
+      assert.equal(result.stopped, null);
+      assert.equal(state.quotes, 0, 'no cap set: the quote hook was not consulted');
+    } finally {
+      await rm(outDir, { recursive: true, force: true });
+    }
+  }
+  // Capped: every admitted call is quoted for admission.
+  {
+    const outDir = await tempDir('quote-capped');
+    try {
+      const state = { quotes: 0 };
+      const result = await runSuite({
+        suite,
+        games,
+        outDir,
+        maxUsd: 1,
+        agentFactory: () => quoteCountingAgent(state),
+      });
+      assert.equal(result.stopped, null);
+      assert.equal(state.quotes, 2, 'a cap set: every admitted call is quoted');
+    } finally {
+      await rm(outDir, { recursive: true, force: true });
+    }
   }
 });

@@ -41,32 +41,71 @@ const suite = {
   ],
 };
 
-function bundleFrom(scores) {
+function bundleFrom(scores, efficiencyActions = {}) {
   const byKey = new Map();
   const ends = new Map();
   for (const [key, value] of Object.entries(scores)) {
     // A minimal trajectory-like record; compare() only reads end.outcome /
-    // agent.seat / game/tier/seed through episodeScore.
+    // agent.seat / game/tier/seed through episodeScore. efficiencyActions
+    // marks episodes as SOLVED efficiency episodes with the given
+    // agentActions, so episodeScore yields (par/agentActions)^2 instead of
+    // 0 — any fixture that must produce a nonzero statistic needs this; an
+    // all-unsolved fixture makes every diff 0 and both intervals [0, 0],
+    // which passes stream-keying pins vacuously (greptile r4305289845).
     const [game, tier, seed] = key.split('/');
+    const actions = efficiencyActions[key];
+    const solvedEfficiency = Number.isInteger(actions) && actions > 0;
     byKey.set(key, {
       game: { id: game, version: '9.9.9' },
       tier,
       seed,
       agent: { seat: 0 },
-      end: { outcome: { normalized: [value], solved: false, par: 1 }, agentActions: 3, invalidActions: 0 },
+      end: {
+        outcome: { normalized: [value], solved: solvedEfficiency, par: 1 },
+        agentActions: solvedEfficiency ? actions : 3,
+        invalidActions: 0,
+      },
     });
-    ends.set(key, { invalidActions: 0, agentActions: 3 });
+    ends.set(key, { invalidActions: 0, agentActions: solvedEfficiency ? actions : 3 });
   }
   return { byKey, ends };
 }
 
 test('the bootstrap stream is keyed by the comparison key alone — profiles share one stream', () => {
-  const a = bundleFrom({ 'g1/t1/s1': 1, 'g1/t1/s2': 0.4, 'g1/t2/s1': 0.8, 'g1/t2/s2': 0.2 });
-  const b = bundleFrom({ 'g1/t1/s1': 0.2, 'g1/t1/s2': 0.1, 'g1/t2/s1': 0.1, 'g1/t2/s2': 0.3 });
+  // Solved efficiency episodes with distinct action counts: the score
+  // (par/agentActions)^2 is nonzero and seed-dependent, so the diffs are not
+  // all zero and the interval is not [0, 0]. FOUR seeds per tier with
+  // mixed-sign diffs put the interval endpoints INSIDE the resample
+  // distribution: the extreme atom of an n-seed resample carries (1/n)^n
+  // mass, so with n = 3 the 2.5%/97.5% endpoints still pin to the extreme
+  // atoms (3.7% > 2.5%) and every stream yields the same interval — the pin
+  // would pass vacuously. At n = 4 (0.4% mass) the endpoints move when the
+  // stream moves. Nondegeneracy is asserted FIRST — an all-zero fixture
+  // passes everything against even a profile-dependent stream, the exact
+  // defect this pin exists for (greptile r4305289845).
+  const suite4 = {
+    id: 'unit-4seed',
+    games: [
+      { id: 'g1', tiers: [
+        { id: 't1', scoring: 'efficiency', seeds: ['s1', 's2', 's3', 's4'] },
+        { id: 't2', scoring: 'efficiency', seeds: ['s1', 's2', 's3', 's4'] },
+      ] },
+    ],
+  };
+  const a = bundleFrom(
+    { 'g1/t1/s1': 1, 'g1/t1/s2': 0.4, 'g1/t1/s3': 0.9, 'g1/t1/s4': 0.6, 'g1/t2/s1': 0.8, 'g1/t2/s2': 0.2, 'g1/t2/s3': 0.5, 'g1/t2/s4': 0.7 },
+    { 'g1/t1/s1': 1, 'g1/t1/s2': 2, 'g1/t1/s3': 4, 'g1/t1/s4': 3, 'g1/t2/s1': 1, 'g1/t2/s2': 3, 'g1/t2/s3': 2, 'g1/t2/s4': 5 }
+  );
+  const b = bundleFrom(
+    { 'g1/t1/s1': 0.2, 'g1/t1/s2': 0.1, 'g1/t1/s3': 0.3, 'g1/t1/s4': 0.5, 'g1/t2/s1': 0.1, 'g1/t2/s2': 0.3, 'g1/t2/s3': 0.2, 'g1/t2/s4': 0.4 },
+    { 'g1/t1/s1': 2, 'g1/t1/s2': 3, 'g1/t1/s3': 2, 'g1/t1/s4': 4, 'g1/t2/s1': 4, 'g1/t2/s2': 2, 'g1/t2/s3': 2, 'g1/t2/s4': 3 }
+  );
   // The same pair on two profiles: efficiency tiers score identically under
   // every profile, so the STATISTIC is identical and so must the interval be.
-  const rhae = compare(a, b, suite, 'rhae-v1', undefined, 'a~vs~b', 'raw');
-  const squared = compare(a, b, suite, 'squared-outcome', undefined, 'a~vs~b', 'raw');
+  const rhae = compare(a, b, suite4, 'rhae-v1', undefined, 'a~vs~b', 'raw');
+  const squared = compare(a, b, suite4, 'squared-outcome', undefined, 'a~vs~b', 'raw');
+  assert.notEqual(rhae.D, 0, 'the fixture must produce a nonzero statistic');
+  assert.notEqual(rhae.ci[0], rhae.ci[1], 'the fixture must produce a nondegenerate interval');
   assert.equal(rhae.D, squared.D);
   assert.deepEqual(rhae.ci, squared.ci);
 });

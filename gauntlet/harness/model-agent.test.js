@@ -294,6 +294,21 @@ test('usage maps from the provider shape and costUsd is null without prices', as
   }
 });
 
+test('the agent exposes its effective output cap for wrapper quotes', () => {
+  // The assisted wrapper (community/assisted-agent.js) bounds a retry's
+  // request growth with the inner agent's cap when it prices the turn's
+  // worst case — the cap must be readable off the agent object, like
+  // reasoningEffort.
+  const agent = createModelAgent({
+    provider: 'anthropic',
+    model: 'stub-model',
+    baseUrl: 'http://127.0.0.1:1/unreachable',
+    apiKeyEnv: 'GAUNTLET_TEST_KEY',
+    maxOutputTokens: 64,
+  });
+  assert.equal(agent.maxOutputTokens, 64);
+});
+
 test('costUsd comes only from the caller-supplied prices file', async () => {
   const stub = await anthropicStub([ANTHROPIC_OK]);
   try {

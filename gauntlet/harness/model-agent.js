@@ -1889,6 +1889,12 @@ export function createModelAgent({
         }
       : {}),
     ...(thinkingMode !== undefined ? { thinking: thinkingMode } : {}),
+    // The effective per-reply text cap, exposed for wrapper quotes: the
+    // assisted wrapper (community/assisted-agent.js) bounds how much a
+    // retry's request can grow (the previous reply it embeds is capped by
+    // it) when pricing the turn's worst case — identity metadata in the
+    // reasoningEffort style.
+    maxOutputTokens: limit,
     quoteWorstCaseUsd(ctx) {
       // Upper bound on one act() call's USD cost, computable before the call
       // starts: the request text is priced at a conservative token estimate

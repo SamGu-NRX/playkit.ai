@@ -18,8 +18,9 @@
  * legal list again as the turn's feedback — up to `retries` times within the
  * same turn. Usage and cost sum across attempts (a null token count anywhere
  * propagates: unmeasured is never reported as measured), and `meta.assisted`
- * records the attempt count, so one runner turn with retries is still one
- * trajectory step.
+ * records the attempt count and how many of them the wrapper rejected
+ * (`invalidAttempts` — the exhausted turn counts every attempt), so one
+ * runner turn with retries is still one trajectory step.
  *
  * The wrapper only ever *withholds* a retry, never a submission: after the
  * last retry (or on success) the inner agent's last reply text is returned
@@ -193,7 +194,11 @@ export function createAssistedAgent(options) {
             text: last.text,
             usage: total,
             meta: {
-              assisted: { attempts: attempt + 1, retried: attempt > 0 },
+              assisted: {
+                attempts: attempt + 1,
+                retried: attempt > 0,
+                invalidAttempts: attempt,
+              },
               ...(last.meta !== undefined ? { inner: last.meta } : {}),
             },
           };
@@ -218,6 +223,7 @@ export function createAssistedAgent(options) {
             attempts: retries + 1,
             retried: retries > 0,
             exhausted: true,
+            invalidAttempts: retries + 1,
           },
           ...(last.meta !== undefined ? { inner: last.meta } : {}),
         },
@@ -228,6 +234,55 @@ export function createAssistedAgent(options) {
     // shut down with the episode instead of leaking one engine per episode.
     dispose: async () => {
       await inner.dispose?.();
+    },
+    // Worst-case accounting the run engine can reserve against: the dollar
+    // caps price a quoted agent's next call before it starts (runs/run.js),
+    // and the wrapper hides up to `retries + 1` inner calls behind one
+    // turn. A retry's request is NOT attempt 0's request: the inner agent
+    // carries its previous reply across the turn's attempts, and the
+    // official turn message embeds that reply in full (harness/official.js)
+    // while the rejection feedback re-embeds the attempted action — itself
+    // a substring of the reply. Model agents expose their effective output
+    // cap (maxOutputTokens), which bounds the growth: under this quote's
+    // own conversion (at most one token per two UTF-8 bytes) a capped reply
+    // contributes at most 2 * cap bytes as the next previous-reply section,
+    // so the pair (previous reply + feedback) grows the request by at most
+    // 4 * cap + 256 bytes per retry. Price the largest (last) attempt's
+    // padded request once and charge every attempt at that worst case —
+    // the quote is monotone in bytes, so this bounds the whole turn. An
+    // inner agent without a numeric maxOutputTokens (only model agents
+    // carry the cap) falls back to attempt 0's price times the attempt
+    // count: its growth is unbounded from outside. null without an inner
+    // quote, mirroring the official agents.
+    quoteWorstCaseUsd(/** @type {TurnContext} */ ctx) {
+      if (typeof inner.quoteWorstCaseUsd !== 'function') return null;
+      if (!Array.isArray(ctx.legalActions)) return inner.quoteWorstCaseUsd(ctx);
+      const baseCtx = {
+        ...ctx,
+        legalActions: null,
+        observation: { ...ctx.observation, text: buildObservationText(ctx) },
+      };
+      const cap = inner.maxOutputTokens;
+      if (retries > 0 && typeof cap === 'number' && Number.isFinite(cap)) {
+        // Price the largest (last) attempt's request once — the padded
+        // observation bounds what every retry's request can have grown to —
+        // and charge every attempt at that worst case.
+        const lastQuote = inner.quoteWorstCaseUsd({
+          ...baseCtx,
+          observation: {
+            ...baseCtx.observation,
+            text: `${baseCtx.observation.text}${' '.repeat(retries * (4 * cap + 256))}`,
+          },
+        });
+        if (lastQuote === null || !Number.isFinite(lastQuote)) return null;
+        return lastQuote * (retries + 1);
+      }
+      const quoted = inner.quoteWorstCaseUsd(baseCtx);
+      if (quoted === null || !Number.isFinite(quoted)) return null;
+      if (retries === 0) return quoted;
+      // No numeric cap: the growth is unbounded from outside — price every
+      // attempt at attempt 0's request and accept the underestimate.
+      return quoted * (retries + 1);
     },
   };
 }

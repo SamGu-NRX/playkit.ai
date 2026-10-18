@@ -197,6 +197,10 @@
  * @property {string} [thinking] Thinking mode a model agent's requests run
  *   with (see createModelAgent in harness/model-agent.js); recorded in
  *   run.json's agent record.
+ * @property {number} [maxOutputTokens] The agent's effective per-reply text
+ *   cap (see createModelAgent in harness/model-agent.js). Exposed so a
+ *   wrapper's quoteWorstCaseUsd can bound how much a retry's request can
+ *   grow — the previous reply the next request embeds is capped by it.
  * @property {boolean} [dryRun] True for harness shakedowns that must not hit
  *   paid APIs.
  * @property {(ctx: TurnContext) => number | null} [quoteWorstCaseUsd] Upper

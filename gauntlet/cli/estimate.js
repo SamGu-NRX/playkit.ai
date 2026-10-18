@@ -72,7 +72,9 @@ export async function buildEstimate(options) {
     ? /** @type {Record<string, *>} */ (JSON.parse(readFileSync(pricesPath, 'utf8')))
     : undefined;
   if (prices && pricingKey && !(pricingKey in prices)) {
-    process.stdout.write(
+    // Diagnostics go to stderr: with --json the estimate JSON is the only
+    // thing on stdout, so it parses even when a price entry is missing.
+    process.stderr.write(
       `note: "${pricesPath}" has no entry for "${pricingKey}"; USD figures stay unknown\n`
     );
   }
@@ -96,7 +98,9 @@ export async function buildEstimate(options) {
 
   if (options.outDir) {
     await writeEstimate(options.outDir, estimate);
-    process.stdout.write(
+    // Progress line on stderr — same rule as the note above: stdout carries
+    // the printable result (or the --json payload), nothing else.
+    process.stderr.write(
       `wrote ${join(options.outDir, 'estimate.json')} and ${join(options.outDir, 'estimate.md')}\n`
     );
   } else if (options.json) {

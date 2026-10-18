@@ -10,10 +10,13 @@
  * were previously per-TURN, understating both by the retry factor on exactly
  * the episodes where the harness worked hardest (review finding, PR #97).
  *
- * `invalidReplyRate` deliberately stays per-turn: its numerator counts
- * recorded steps the referee rejected, and an attempt that was retried away
- * never became a recorded step, so a per-attempt denominator would pair with
- * a numerator we do not have.
+ * `invalidReplyRate` counts rejected PROVIDER attempts against the provider
+ * attempts denominator. Earlier this rate stayed per-turn for lack of a
+ * per-attempt numerator; PR #117's wrapper now records how many of a step's
+ * attempts were rejected in `reply.meta.assisted.invalidAttempts`, so the
+ * numerator and the denominator share units. Trajectories written before that
+ * field fall back to the recorded per-step invalid flag, whose count equals
+ * the old per-turn numerator on data that never carried the meta.
  *
  * @module
  */
@@ -35,10 +38,27 @@ export function stepAttempts(step) {
 }
 
 /**
- * Usage summary over a trajectory's agent steps: `calls` is the turn count,
- * `attempts` the provider-call count behind those turns.
+ * Rejected provider attempts behind one agent step: the wrapper's recorded
+ * `reply.meta.assisted.invalidAttempts` count when present (attempts rejected
+ * before the successful one; every attempt on exhaustion), otherwise the
+ * recorded invalid flag for legacy trajectories and unassisted steps.
  *
- * @param {{ steps: { by: string, invalid?: boolean, ms?: number, usage?: { promptTokens?: number, inputTokens?: number, completionTokens?: number, outputTokens?: number } | null }[] }} trajectory
+ * @param {{ invalid?: boolean, reply?: { meta?: { assisted?: { invalidAttempts?: number } } } } | null | undefined} step
+ * @returns {number}
+ */
+function stepInvalidAttempts(step) {
+  const rejected = step?.reply?.meta?.assisted?.invalidAttempts;
+  if (typeof rejected === 'number' && rejected >= 0) return rejected;
+  return step?.invalid ? 1 : 0;
+}
+
+/**
+ * Usage summary over a trajectory's agent steps: `calls` is the turn count,
+ * `attempts` the provider-call count behind those turns, and `invalid` the
+ * rejected-attempt count (see module doc).
+ *
+ * @param {{ steps: { by: string, invalid?: boolean, ms?: number, usage?: { promptTokens?: number | null, inputTokens?: number | null, completionTokens?: number | null, outputTokens?: number | null } | null, reply?: { meta?: { assisted?: { attempts?: number, invalidAttempts?: number } } } }[] }} trajectory
+ * @returns {{ calls: number, attempts: number, invalid: number, ms: number, tokIn: number, tokOut: number }}
  */
 export function usageOf(trajectory) {
   const agentSteps = trajectory.steps.filter((s) => s.by === 'agent');
@@ -46,7 +66,7 @@ export function usageOf(trajectory) {
   return {
     calls: agentSteps.length,
     attempts: agentSteps.reduce((a, s) => a + stepAttempts(s), 0),
-    invalid: agentSteps.filter((s) => s.invalid).length,
+    invalid: agentSteps.reduce((a, s) => a + stepInvalidAttempts(s), 0),
     ms: agentSteps.reduce((a, s) => a + (s.ms || 0), 0),
     tokIn: usage.reduce((a, u) => a + (u.promptTokens ?? u.inputTokens ?? 0), 0),
     tokOut: usage.reduce((a, u) => a + (u.completionTokens ?? u.outputTokens ?? 0), 0),
@@ -54,17 +74,17 @@ export function usageOf(trajectory) {
 }
 
 /**
- * The per-call metric block, from usage summed over a model's episodes.
- * `secPerCall`/`tokensPerCall` divide by provider attempts;
- * `invalidReplyRate` divides by turns (see module doc).
+ * The per-call metric block, from usage summed over a model's episodes. All
+ * three rates divide by provider attempts: `secPerCall`/`tokensPerCall`
+ * (review finding, PR #97) and `invalidReplyRate`, whose per-attempt numerator
+ * arrived with the wrapper's invalidAttempts recording (PR #117).
  *
  * @param {{ invalid: number, ms: number, tokIn: number, tokOut: number, calls: number, attempts: number }} usage
  */
 export function aggregateRates({ invalid, ms, tokIn, tokOut, calls, attempts }) {
-  const turns = calls || 1;
-  const providerCalls = attempts || turns;
+  const providerCalls = attempts || calls || 1;
   return {
-    invalidReplyRate: round6(invalid / turns),
+    invalidReplyRate: round6(invalid / providerCalls),
     secPerCall: round6(ms / 1000 / providerCalls),
     tokensPerCall: round6((tokIn + tokOut) / providerCalls),
   };

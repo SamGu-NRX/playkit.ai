@@ -323,3 +323,119 @@ test('selectLadderKnown partitions trajectories by ladder-known rungs', () => {
   // Unique unknown rungs in first-seen order — the CLI reports them per agent.
   assert.deepEqual(skippedRungs, ['connect4-ladder-1', 'minesweeper-beginner']);
 });
+
+test('a disconnected group with a zero anchor rating is unidentified, not silently fitted', () => {
+  // The all-draws shape zeroes the gradient of the disconnected group, so
+  // the solver's tolerance cannot be trusted to report it (the anchor
+  // rating 0 removes the draws' pull too). The graph check must catch it.
+  const games = [
+    { a: 'A', b: 'B', score: 0.5 },
+    { a: 'A', b: 'B', score: 0.5 },
+    { a: 'C', b: 'D', score: 0.5 },
+    { a: 'C', b: 'D', score: 0.5 },
+  ];
+  assert.throws(
+    () => fitRatings(games, { anchorPlayer: 'A', anchorRating: 0 }),
+    (err) => {
+      assert.ok(err instanceof EloFitError);
+      assert.equal(err.code, 'UNIDENTIFIED');
+      assert.match(err.message, /never connect C, D to the anchor A/);
+      return true;
+    }
+  );
+});
+
+test('a group that won every game outside itself is divergent, not a finite fit', () => {
+  // A and B draw each other; C loses to B. Riding A and B up together
+  // improves every B-over-C game while leaving the A-B games untouched, so
+  // the likelihood has no finite maximum — but the gradients underflow
+  // before any rating reaches the iteration clamp, and infoTrace stays
+  // positive. The pre-fit group check must refuse the fit.
+  const games = [
+    { a: 'A', b: 'B', score: 0.5 },
+    { a: 'A', b: 'B', score: 0.5 },
+    { a: 'B', b: 'C', score: 1 },
+    { a: 'B', b: 'C', score: 1 },
+  ];
+  assert.throws(
+    () => fitRatings(games, { anchorPlayer: 'A', anchorRating: 1000 }),
+    (err) => {
+      assert.ok(err instanceof EloFitError);
+      assert.equal(err.code, 'DIVERGENT');
+      assert.match(err.message, /no finite maximum/);
+      assert.match(err.message, /\(A, B\)/);
+      return true;
+    }
+  );
+});
+
+test('bootstrap replicates that omit a player are redrawn, not sampled as undefined', () => {
+  // A-B draws and B-C draws: a resample can draw only A-B games, fitting
+  // cleanly with C absent. The old code pushed `undefined` for C, whose
+  // sort position poisoned the percentile into a NaN/undefined bound.
+  const games = [
+    { a: 'A', b: 'B', score: 0.5 },
+    { a: 'A', b: 'B', score: 0.5 },
+    { a: 'B', b: 'C', score: 0.5 },
+    { a: 'B', b: 'C', score: 0.5 },
+  ];
+  const boot = bootstrapRatings(games, {
+    anchorPlayer: 'A',
+    anchorRating: 1000,
+    replicates: 300,
+    seed: 'gauntlet/rating/elo.test/completeness',
+  });
+  for (const player of ['B', 'C']) {
+    const interval = boot.intervals[player];
+    assert.ok(Number.isFinite(interval.low), `${player} low must be finite`);
+    assert.ok(Number.isFinite(interval.high), `${player} high must be finite`);
+    assert.ok(Number.isFinite(interval.mean), `${player} mean must be finite`);
+  }
+});
+
+test('rateAgent: a draw against a top rung wants that rung rating, not a clipped bound', () => {
+  // The committed ladder's top rung sits at 3320 - outside the old fixed
+  // +/-2400 bisection window, which returned the clip as if it were the fit.
+  const SF_100K = 3320.3463156721054;
+  const ladder = {
+    ratings: { 'chess-sf-100k': SF_100K },
+    anchorRung: 'chess-paper',
+  };
+  const draw = {
+    game: { id: 'chess' },
+    tier: 'sf-100k',
+    agent: { id: 'x', seat: 0 },
+    end: { outcome: { normalized: [0.5, 0.5] } },
+  };
+  const rated = rateAgent([draw], ladder);
+  assert.ok(typeof rated.rating === 'number', 'the draw fit is finite');
+  assert.ok(typeof rated.low === 'number' && typeof rated.high === 'number', 'the draw interval is finite');
+  assert.ok(Math.abs(rated.rating - SF_100K) < 0.5);
+  assert.ok(Math.abs(rated.low - SF_100K) < 1);
+  assert.ok(Math.abs(rated.high - SF_100K) < 1);
+});
+
+test('rateAgent: bootstrap draws vary within a replicate, so mixed histories get finite intervals', () => {
+  // With the RNG state never threaded, every draw of a replicate reused the
+  // same seed state: a replicate was n copies of ONE game, so every
+  // replicate of a wins-and-losses history was degenerate (all-wins or
+  // all-losses) and both interval ends came back null. Threaded draws mix
+  // wins and losses inside replicates, and the percentiles are finite.
+  const ladder = { ratings: { 'chess-paper': 1000 }, anchorRung: 'chess-paper' };
+  const game = (/** @type {number} */ score) => ({
+    game: { id: 'chess' },
+    tier: 'paper',
+    agent: { id: 'x', seat: 0 },
+    end: { outcome: { normalized: [score, 1 - score] } },
+  });
+  const trajectories = [
+    ...Array.from({ length: 28 }, () => game(1)),
+    ...Array.from({ length: 12 }, () => game(0)),
+  ];
+  const rated = rateAgent(trajectories, ladder, { replicates: 300 });
+  const expected = 1000 + 400 * Math.log10(28 / 12);
+  assert.ok(typeof rated.rating === 'number', 'the point estimate is finite');
+  assert.ok(Math.abs(rated.rating - expected) < 1);
+  assert.ok(typeof rated.low === 'number' && Number.isFinite(rated.low), 'low must be finite');
+  assert.ok(typeof rated.high === 'number' && Number.isFinite(rated.high), 'high must be finite');
+});

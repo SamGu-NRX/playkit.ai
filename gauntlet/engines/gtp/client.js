@@ -477,13 +477,38 @@ export class GtpEngine {
   async quit() {
     const child = this.#child;
     if (!child) return;
+    // Total polite-shutdown budget (greptile r4304978353): the queue wait
+    // included. #send runs each command's own timeout only when the command
+    // reaches the head of the queue, so a 60 s genmove ahead of quit used to
+    // hold shutdown hostage for the full move timeout before quit's own
+    // deadline even began. The race below bounds the entire polite phase —
+    // queue wait and send — and the kill settles a wedged engine either way.
+    const quitDeadlineMs = 2000;
+    const polite = this.command('quit', { timeoutMs: quitDeadlineMs });
+    // The deadline may abandon this promise mid-queue or mid-write; the
+    // rejection is expected, never unhandled.
+    polite.catch(() => {});
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    let deadlineTimer = null;
     try {
-      // Send the polite quit while the child reference is still live: nulling
-      // it first would fail every #send at its not-running guard and no quit
-      // command would ever reach the engine.
-      await this.command('quit', { timeoutMs: 2000 });
+      await Promise.race([
+        polite,
+        new Promise((_, reject) => {
+          deadlineTimer = setTimeout(() => {
+            reject(
+              new Error(
+                `GTP engine "${this.#binaryPath}" did not quit within ${quitDeadlineMs}ms (deadline covers queued commands); terminating`
+              )
+            );
+          }, quitDeadlineMs);
+          if (typeof deadlineTimer.unref === 'function') deadlineTimer.unref();
+        }),
+      ]);
     } catch {
-      // Engine may already be gone; the kill below settles it either way.
+      // The engine may be gone, wedged, or still busy; the kill below
+      // settles it either way.
+    } finally {
+      if (deadlineTimer !== null) clearTimeout(deadlineTimer);
     }
     this.#child = null;
     if (!child.killed && child.exitCode === null) {
@@ -493,6 +518,10 @@ export class GtpEngine {
         // Already gone.
       }
     }
+    // Resolve as soon as the process is gone. Check AFTER installing the
+    // exit listener (greptile r4304978358): an engine that already exited —
+    // e.g. it processed quit and exited before this wait — has fired the
+    // event, so without the check the wait would ride out the fallback.
     await /** @type {Promise<void>} */ (new Promise((resolve) => {
       const done = setTimeout(() => resolve(), 1500);
       if (typeof done.unref === 'function') done.unref();
@@ -500,6 +529,10 @@ export class GtpEngine {
         clearTimeout(done);
         resolve();
       });
+      if (child.exitCode !== null || child.signalCode !== null) {
+        clearTimeout(done);
+        resolve();
+      }
     }));
   }
 

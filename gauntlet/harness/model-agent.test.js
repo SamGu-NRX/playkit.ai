@@ -1222,3 +1222,30 @@ test('thinkingBudget and reasoningEffort together are refused on anthropic', () 
   );
 });
 
+test('params.thinking cannot reintroduce manual thinking on an adaptive row', async () => {
+  // f06 pin (bf5b30a): the Anthropic body spreads params BEFORE the thinking
+  // override, so params.thinking is silently overridden — manual budget mode
+  // cannot sneak back onto an adaptive row through params. top_p rides the
+  // fable-5 row's samplingFieldsAllowed:true and reaches the wire. Passes on
+  // base: a pin, not a fail-before.
+  const stub = await anthropicStub([ANTHROPIC_OK]);
+  try {
+    const agent = createModelAgent({
+      provider: 'anthropic',
+      model: 'claude-fable-5',
+      baseUrl: stub.url,
+      apiKeyEnv: 'GAUNTLET_TEST_KEY',
+      params: {
+        thinking: { type: 'enabled', budget_tokens: 2048 },
+        top_p: 0.9,
+      },
+    });
+    const reply = await agent.act(CTX);
+    assert.equal(reply.text, 'I play the center.\naction: b2');
+    assert.deepEqual(stub.requests[0].body.thinking, { type: 'adaptive' });
+    assert.equal(stub.requests[0].body.top_p, 0.9);
+  } finally {
+    await stub.close();
+  }
+});
+

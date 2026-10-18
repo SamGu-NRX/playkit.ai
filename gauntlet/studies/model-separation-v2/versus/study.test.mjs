@@ -180,3 +180,35 @@ test('compute-stats.py self-test passes when python3 is available', () => {
   }
   execFileSync(python, [join(here, 'compute-stats.py'), '--self-test'], { stdio: 'pipe' });
 });
+
+test('compute-stats.py --dir writes stats.json to the selected output directory, never beside the script', () => {
+  let python = null;
+  try {
+    execFileSync('python3', ['--version'], { stdio: 'ignore' });
+    python = 'python3';
+  } catch {
+    test.skip('python3 is not available on this machine', () => {});
+    return;
+  }
+  const out = mkdtempSync(join(tmpdir(), 'vstudy-stats-'));
+  // Minimal offline inputs: empty groups/episodes render n/a tiers, so the
+  // script runs end-to-end without bundles or models; calibration reads are
+  // the committed tables. The old behavior wrote the result beside the script,
+  // so reproduce.sh's --dir invocation clobbered the committed stats.json
+  // before comparing it against itself.
+  writeFileSync(
+    join(out, 'profile-results.json'),
+    JSON.stringify({ format: 'playkit-gauntlet-study-model-separation-v2-versus-profile-results/1', baseline: 'sha256:test-baseline', groups: [] }) + '\n'
+  );
+  writeFileSync(join(out, 'episodes.json'), '[]\n');
+  const committedBefore = existsSync(join(here, 'stats.json')) ? readFileSync(join(here, 'stats.json')) : null;
+  try {
+    execFileSync(python, [join(here, 'compute-stats.py'), '--dir', out], { stdio: 'pipe' });
+    assert.ok(existsSync(join(out, 'stats.json')), 'stats.json must be written to --dir, not beside the script');
+    if (committedBefore !== null) {
+      assert.deepEqual(readFileSync(join(here, 'stats.json')), committedBefore, 'compute-stats must never touch the committed stats.json under --dir');
+    }
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});

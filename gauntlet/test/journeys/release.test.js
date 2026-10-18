@@ -25,10 +25,14 @@ const hasGnugo = (env = process.env) => {
     execFileSync('gnugo', ['--version'], { stdio: 'ignore', timeout: 15000, env: { ...env } });
     return true;
   } catch (err) {
+    // ENOENT means no gnugo anywhere on that PATH — the same outcome
+    // release.sh's `command -v gnugo` gate produces. Any other failure means
+    // a gnugo was found but unhappy at runtime — it exists, which is what
+    // this gate asks; stage D below fails loudly if it cannot drive it.
+    // Resolution must happen against the passed env's own PATH (the custom
+    // PATH probe below depends on it), so no shell is spawned: `spawnSync`
+    // would resolve the shell itself against that PATH and ENOENT.
     const code = /** @type {NodeJS.ErrnoException} */ (err).code;
-    // ENOENT means no gnugo anywhere on that PATH. Any other failure means a
-    // gnugo was found but unhappy at runtime — it exists, which is what this
-    // gate asks; stage D below fails loudly if it cannot drive it.
     return code !== 'ENOENT';
   }
 };

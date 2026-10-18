@@ -31,6 +31,11 @@ import { allJobs, expertFor, NOW } from './study-lib.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+// Worker entry point: this script itself in production. The seam exists so
+// the orchestrator's concurrency can be tested against a stub worker without
+// running real episodes.
+const WORKER_SCRIPT = process.env.SKILL_DIAL_WORKER_SCRIPT || fileURLToPath(import.meta.url);
+
 /** Parse the CLI args this script understands. */
 function parseArgs(argv) {
   const out = { worker: false, index: 0, of: 1, out: null, workers: 1, fresh: false };
@@ -127,20 +132,26 @@ if (args.fresh) {
 mkdirSync(args.out, { recursive: true });
 const jobs = allJobs();
 process.stdout.write(`${jobs.length} episodes across ${args.workers} workers\n`);
+/** @type {import('node:child_process').ChildProcess[]} */
 const children = [];
+// Spawn EVERY worker first, then wait: awaiting inside the loop serialized the
+// workers - `--workers 6` ran one episode at a time in six passes.
+const workerExits = [];
 for (let k = 0; k < args.workers; k++) {
-  children.push(
-    await new Promise((res, rej) => {
+  workerExits.push(
+    new Promise((res, rej) => {
       const child = spawn(
         process.execPath,
-        [fileURLToPath(import.meta.url), '--worker', '--index', String(k), '--of', String(args.workers), '--out', args.out],
+        [WORKER_SCRIPT, '--worker', '--index', String(k), '--of', String(args.workers), '--out', args.out],
         { stdio: ['ignore', 'pipe', 'inherit'] }
       );
+      children.push(child);
       child.stdout.on('data', (d) => process.stdout.write(`  ${d}`));
       child.on('exit', (code) => (code === 0 ? res(code) : rej(new Error(`worker ${k} exited ${code}`))));
     })
   );
 }
+await Promise.all(workerExits);
 const missing = jobs.filter((j) => !done(join(args.out, j.file)));
 const errored = jobs.filter((j) => {
   if (missing.includes(j)) return false;

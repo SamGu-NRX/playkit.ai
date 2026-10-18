@@ -4,12 +4,15 @@
 #
 #   A  researcher, terminal      -> journeys/cli/journey.sh (install, episodes,
 #                                   suite, model, rate_serve, errors)
-#   C  frontier pilot rehearsal  -> journeys/pilot/rehearse.sh against each
-#                                   provider stub (Anthropic Messages, OpenAI
-#                                   Responses, OpenAI-compatible chat), a cap
-#                                   low enough to bind, then the resume; no
-#                                   spend, no keys — the stubs listen on
-#                                   127.0.0.1 only
+#   C  frontier pilot rehearsal  -> journeys/pilot/rehearse.sh (which drives
+#                                   separation-run.sh --rehearse): one loopback
+#                                   stub per provider wire (Anthropic Messages,
+#                                   OpenAI Responses, OpenAI-compatible chat) on
+#                                   free ports, then the three PRICED model arms
+#                                   plus the random arm through estimate, capped
+#                                   run, verify, and the estimate-vs-actual
+#                                   analysis; no spend, no keys — the stubs
+#                                   listen on 127.0.0.1 only
 #   D  Go                        -> one played + verified episode per GNU Go
 #                                   tier; when Go is not registered (or GNU Go
 #                                   is not installed) the stage records a skip
@@ -27,10 +30,10 @@
 # Environment:
 #   JOURNEY_WORK     scratch dir (default: ${TMPDIR:-/tmp}/gauntlet-release)
 #   RELEASE_STAGES   subset of "A C D E" to replay (default: all)
-#   RELEASE_MAX_USD  pilot rehearsal cap (REHEARSAL_MAX_USD; default 1, binds
-#                    mid-run so the resume has work to finish)
-#   RUN_TIMEOUT_SECS / ESTIMATE_TIMEOUT_SECS / ESTIMATE_AGAINST_TIMEOUT_SECS
-#                    bounds passed through to the pilot rehearsal
+#   RELEASE_MAX_USD  pilot rehearsal cap per model arm (default 10). It must
+#                    CLEAR the suite's stub-priced total so every arm runs to
+#                    done — a binding cap makes an arm end loudly on the
+#                    no-headroom guard instead (raise it for pricier suites).
 #   GAUNTLET_STOCKFISH detected automatically, passed per command (never global)
 
 set -u
@@ -66,17 +69,20 @@ fi
 
 # --- Journey C: frontier pilot rehearsal against every provider stub ---------
 if [[ " $STAGES " == *" C "* ]]; then
-  echo "=== journey C: pilot rehearsal (journeys/pilot/rehearse.sh, one per wire)"
-  for wire in anthropic:8081 openai:8082 openai-chat:8083; do
-    provider="${wire%%:*}"; port="${wire##*:}"
-    model="claude-opus-5-5"
-    [ "$provider" = "anthropic" ] || model="gpt-6-astra"
-    echo "--- rehearsal: $provider on 127.0.0.1:$port"
-    PILOT_OUT="$WORK/pilot-$provider" \
-    REHEARSAL_MAX_USD="${RELEASE_MAX_USD:-1}" \
-    bash journeys/pilot/rehearse.sh "$provider/$model" high "$port" \
-      || fail "journey C: pilot rehearsal for $provider"
-  done
+  echo "=== journey C: pilot rehearsal (journeys/pilot/rehearse.sh, all three wires)"
+  # rehearse.sh's current contract is SUITE CAP CONCURRENCY and it drives
+  # separation-run.sh --rehearse, whose arms are the priced trio in
+  # prices.frontier.json (anthropic/claude-opus-5-5, openai/gpt-6-astra,
+  # openai-chat/gemini-4-argon) plus the free random arm. Naming a model here
+  # (the old per-wire loop) broke against that contract, and openai-chat/
+  # gpt-6-astra has no price entry — an unpriced model cannot be cap-enforced.
+  # Stubs pick their own free ports; no keys, no spend.
+  SUITE="$WORK/suite-public.json"
+  run_gauntlet suite build --split public --seeds-per-tier 1 --out "$SUITE" \
+    || fail "journey C: suite build"
+  SEPARATION_RUN_OUT="$WORK/pilot" \
+  bash journeys/pilot/rehearse.sh "$SUITE" "${RELEASE_MAX_USD:-10}" 2 \
+    || fail "journey C: pilot rehearsal (all three wires)"
   echo "=== journey C: PASS"
 fi
 

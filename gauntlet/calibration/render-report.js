@@ -36,7 +36,11 @@ import { runChecks } from './checks.js';
 import { renderReport } from './report.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const tablesDir = join(here, 'tables');
+// Tests point this at a fixture tables directory; production always renders
+// the committed calibration/tables.
+const tablesDir = process.env.GAUNTLET_CALIBRATION_TABLES
+  ? resolve(process.env.GAUNTLET_CALIBRATION_TABLES)
+  : join(here, 'tables');
 
 /** Default per-game wall cap reported when the run's cap is not recoverable from metas. */
 const DEFAULT_TIME_CAP_SEC = 1200;
@@ -60,6 +64,7 @@ function git(cmd, fallback) {
 
 /** @type {{ report: string, timeCapSec: number }} */
 const options = { report: join(here, 'REPORT.md'), timeCapSec: DEFAULT_TIME_CAP_SEC };
+let timeCapGiven = false;
 for (const arg of process.argv.slice(2)) {
   const match = /^--([a-z-]+)(?:=(.*))?$/.exec(arg);
   if (!match) {
@@ -70,6 +75,7 @@ for (const arg of process.argv.slice(2)) {
   if (flag === 'report' && value) {
     options.report = resolve(value);
   } else if (flag === 'time-cap' && value) {
+    timeCapGiven = true;
     const n = Number(value);
     if (!(n > 0)) {
       console.error(`render-report: --time-cap must be a positive number of seconds (got ${JSON.stringify(value)})`);
@@ -94,7 +100,7 @@ if (tableFiles.length === 0) {
 
 /** @type {*} */
 const tables = [];
-/** @type {{ gameId: string, wallTimeSec: number, episodesRun: number, capHit: boolean }[]} */
+/** @type {{ gameId: string, wallTimeSec: number, episodesRun: number, capHit: boolean, timeCapSec?: number }[]} */
 const metas = [];
 /** @type {string[]} */
 const missingMetas = [];
@@ -114,6 +120,31 @@ if (missingMetas.length > 0) {
   console.error(
     `render-report: no .meta.json run record for ${missingMetas.join(', ')} — those game sections will not carry a _Run:_ line (produce one with node calibration/run.js)`
   );
+}
+
+// ---- Per-game wall cap, from evidence ----------------------------------------
+
+// The report names the run's per-game cap (the "Per-game wall cap" line and
+// the capHit warnings). An explicit --time-cap wins. Otherwise the cap the
+// run recorded in its metas (calibration/worker.js writes timeCapSec) is the
+// evidence; only a run with NO capped game may fall back to the historical
+// default. A capped run whose cap is not recoverable would render a wrong
+// cap, so render-report refuses instead of guessing.
+const recordedCaps = [...new Set(metas.map((m) => m.timeCapSec).filter((v) => typeof v === 'number' && v > 0))];
+if (timeCapGiven) {
+  // operator said it: render with it (metas may predate cap recording)
+} else if (recordedCaps.length === 1) {
+  options.timeCapSec = recordedCaps[0] ?? DEFAULT_TIME_CAP_SEC;
+} else if (recordedCaps.length > 1) {
+  console.error(
+    `render-report: metas record conflicting per-game caps (${recordedCaps.join('s, ')}s) — pass --time-cap=<sec> to say which run this report renders`
+  );
+  process.exit(1);
+} else if (metas.some((m) => m.capHit === true)) {
+  console.error(
+    'render-report: a meta records capHit but no recorded cap (pre-cap-recording metas) — pass --time-cap=<sec> naming the cap that stopped the run, or re-run the calibration to record it'
+  );
+  process.exit(1);
 }
 
 // ---- Re-render ---------------------------------------------------------------

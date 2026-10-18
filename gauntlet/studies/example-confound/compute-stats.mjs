@@ -17,16 +17,22 @@
  * - end-reason tally, seconds per agent call, tokens per agent call,
  * - the community-track agent id recorded in the bundles (provenance: the
  *   official leaderboard is untouched by construction),
- * - the arm's gap to the tier's random floor (calibration table).
+ * - the arm's gap to its own tier's random floor (calibration table),
+ * - H2: the tie-corrected Spearman rho over the three per-model
+ *   corrected-official means, ordered by parameter count (0.5B/1.5B/7B).
  *
- * Paired-by-seed differences with seeded bootstrap CIs, exactly as pinned in
- * PREREGISTRATION.md:
- * - per (0.5B, 1.5B): corrected-assisted minus corrected-official,
- * - per model: connect4-neutral mean next to the calibration random floor
- *   (#92's example-copier mean is reported in REPORT.md prose),
- * - (0.5B, 1.5B): 1.5B minus 0.5B on corrected-official.
+ * H1's preregistered cross-study comparisons pair this study's corrected arms
+ * with the prior studies' committed bundles by seed, via the
+ * --prior-official-runs / --prior-assisted-runs flags. #97's assisted bundles
+ * are in-repo (studies/assisted-harness/solo/runs) and that comparison is
+ * computed by default; #81's official bundles are not committed here, so its
+ * comparison stays uncomputed (with a note) unless the flag points at them.
+ * Prior bundles carry their recorded game version, so score() may refuse them
+ * at the registry's current version - the refusal is recorded in stats.json,
+ * not swallowed.
  *
  * Usage: node compute-stats.mjs [--runs <dir>] [--out <file>]
+ *       [--prior-official-runs <dir>] [--prior-assisted-runs <dir>]
  *
  * @module
  */
@@ -37,7 +43,9 @@ import path from 'node:path';
 
 import { GAMES } from '../../games/index.js';
 import { score } from '../../scoring/score.js';
+import { GauntletRefusalError } from '../../scoring/refusal.js';
 import { streamFromSeed } from '../../core/rng.js';
+import { armFromSuiteId, floorFor, pairBySeed, round6, tieCorrectedSpearman } from './stats-lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GAUNTLET = path.resolve(HERE, '../..');
@@ -57,7 +65,6 @@ const MODELS = [
 const ARMS = ['corrected-official', 'corrected-assisted', 'corrected-7b', 'connect4-neutral'];
 const BOOTSTRAP_DRAWS = 10_000;
 
-const round6 = (v) => (v === null || v === undefined || !Number.isFinite(v) ? null : Math.round(v * 1e6) / 1e6);
 const roundCI = (ci) => (ci ? [round6(ci[0]), round6(ci[1])] : null);
 
 /** Walk a run directory collecting every public trajectory file. */
@@ -165,11 +172,13 @@ async function collectRun(runDir, model) {
   const totalSteps = episodes.reduce((a, e) => a + e.steps, 0);
   const endReasons = {};
   for (const e of episodes) endReasons[e.endReason ?? 'unknown'] = (endReasons[e.endReason ?? 'unknown'] ?? 0) + 1;
-  const arm = suite.id.match(/example-confound-([a-z0-9-]+?)-[a-z0-9]+-[a-z0-9.]+-\d+$/)?.[1] ?? null;
+  const arm = armFromSuiteId(suite.id, ARMS);
   const secPerCallVals = episodes.filter((e) => e.secPerCall !== null).map((e) => e.secPerCall);
   return {
     runDir: path.relative(HERE, runDir),
     arm,
+    game: suite.games[0]?.id ?? null,
+    tier: suite.games[0]?.tiers?.[0]?.id ?? null,
     suiteId: suite.id,
     agentId: run.agent?.text ?? trajectories[0]?.agent?.id ?? null,
     gameVersion: run.suite?.games?.[0]?.version ?? suite.games[0]?.version ?? null,
@@ -229,22 +238,28 @@ for (const model of MODELS) {
   }
 }
 
-for (const model of MODELS) {
-  const official = stats.runs[`${model.short}:corrected-official`] ?? stats.runs[`${model.short}:corrected-7b`];
-  if (!official) continue;
-  // Floor gap: corrected example arm vs the tier's random floor (point diff
-  // plus the interval-overlap verdict the preregistration pins).
-  const floor = stats.randomFloors.mastermindMini;
-  if (floor && official.arm !== 'connect4-neutral') {
-    official.gapToRandomFloor = {
+// Floor gaps: each run gets its OWN tier's random floor (the old code
+// hardcoded the mastermind/mini floor for every arm and guarded on an arm
+// value that could never reach here). The connect4 control now gets the
+// calibrated connect4/ladder-1 floor too (prereg H3).
+for (const run of Object.values(stats.runs)) {
+  const floor = floorFor(stats.randomFloors, run.game, run.tier);
+  if (floor) {
+    run.gapToRandomFloor = {
       floorMean: floor.mean,
-      meanDiff: round6(official.meanScore - floor.mean),
-      ciOverlapsFloor: official.ci95 ? official.ci95[0] <= floor.mean && floor.mean <= official.ci95[1] : null,
-      aboveRandomPointEstimate: official.meanScore > floor.mean,
+      meanDiff: round6(run.meanScore - floor.mean),
+      ciOverlapsFloor: run.ci95 ? run.ci95[0] <= floor.mean && floor.mean <= run.ci95[1] : null,
+      aboveRandomPointEstimate: run.meanScore > floor.mean,
     };
   }
+}
+// Paired-by-seed within-study comparisons, exactly as pinned in
+// PREREGISTRATION.md: per model, corrected-assisted minus corrected-official;
+// plus 1.5B minus 0.5B on corrected-official.
+for (const model of MODELS) {
+  const official = stats.runs[`${model.short}:corrected-official`] ?? stats.runs[`${model.short}:corrected-7b`];
   const assisted = stats.runs[`${model.short}:corrected-assisted`];
-  if (assisted) {
+  if (official && assisted) {
     stats.paired[`${model.short}:corrected-assisted-minus-corrected-official`] = pairedDiff(
       official,
       assisted,
@@ -257,6 +272,82 @@ for (const model of MODELS) {
   const b = stats.runs['qwen2.5-1.5b:corrected-official'];
   if (a && b) {
     stats.paired['1.5b-minus-0.5b:corrected-official'] = pairedDiff(a, b, '1.5b-minus-0.5b:corrected-official');
+  }
+}
+
+// H2: the tie-corrected Spearman rho over the three per-model corrected-
+// official means, ordered by parameter count (PREREGISTRATION.md pins the
+// tie-corrected form "as in #81"; the old script omitted the statistic).
+{
+  const sizeOrder = MODELS.map((m) => {
+    const run = stats.runs[`${m.short}:corrected-official`];
+    const size = Number(m.short.match(/([\d.]+)b$/)?.[1]);
+    return run?.meanScore === null || run?.meanScore === undefined || !Number.isFinite(size)
+      ? null
+      : { x: size, y: run.meanScore };
+  });
+  stats.sizeOrder = sizeOrder.every((p) => p !== null)
+    ? { statistic: 'tie-corrected Spearman rho', ...tieCorrectedSpearman(sizeOrder) }
+    : { statistic: 'tie-corrected Spearman rho', rho: null, n: sizeOrder.filter(Boolean).length, note: 'corrected-official run missing for at least one model' };
+}
+
+// H1's cross-study comparisons: this study's corrected arms vs the prior
+// studies' committed bundles, paired by seed, diff = prior - corrected (H1
+// predicts the corrected arms score HIGHER, i.e. a negative mean diff).
+stats.prior = {};
+const priorSpecs = [
+  { key: 'prior-official-minus-corrected-official', arm: 'corrected-official', priorRuns: flag('prior-official-runs') },
+  {
+    key: 'prior-assisted-minus-corrected-assisted',
+    arm: 'corrected-assisted',
+    priorRuns: flag('prior-assisted-runs') ?? path.join(HERE, '../assisted-harness/solo/runs'),
+  },
+];
+for (const spec of priorSpecs) {
+  for (const model of MODELS) {
+    const key = `${model.short}:${spec.key}`;
+    if (!spec.priorRuns || !existsSync(spec.priorRuns)) {
+      stats.prior[key] = {
+        n: 0,
+        note: spec.priorRuns ? `prior runs dir not found: ${spec.priorRuns}` : 'no --prior-official-runs flag; #81 bundles are not committed to this repo',
+      };
+      continue;
+    }
+    const mine = stats.runs[`${model.short}:${spec.arm}`];
+    const modelDir = path.join(spec.priorRuns, model.stem);
+    if (!mine || !existsSync(modelDir)) {
+      stats.prior[key] = { n: 0, note: `no ${spec.arm} run or no prior runs for ${model.stem}` };
+      continue;
+    }
+    // First subdirectory holding a suite.json is the prior arm's run dir.
+    const runDir = readdirSync(modelDir)
+      .map((e) => path.join(modelDir, e))
+      .find((p) => existsSync(path.join(p, 'suite.json')));
+    if (!runDir) {
+      stats.prior[key] = { n: 0, note: `no suite.json under ${path.relative(HERE, modelDir)}` };
+      continue;
+    }
+    try {
+      const suite = JSON.parse(readFileSync(path.join(runDir, 'suite.json'), 'utf8'));
+      const trajectories = trajectoryFiles(runDir).map((p) => JSON.parse(readFileSync(p, 'utf8')));
+      const priorEpisodes = await collectEpisodes(suite, trajectories);
+      const pairs = pairBySeed(mine.episodes, priorEpisodes);
+      const diffs = pairs.map((p) => p.diff);
+      stats.prior[key] = {
+        priorDir: path.relative(HERE, runDir),
+        n: pairs.length,
+        meanDiff: diffs.length ? round6(diffs.reduce((a, v) => a + v, 0) / diffs.length) : null,
+        ci95: diffs.length ? bootstrapCi(diffs, `prior-${spec.key}-${model.short}`) : null,
+      };
+    } catch (err) {
+      stats.prior[key] = {
+        n: 0,
+        note:
+          err instanceof GauntletRefusalError
+            ? `score() refused the prior bundles at their recorded version: ${err.message}`
+            : `prior comparison failed: ${err.message}`,
+      };
+    }
   }
 }
 

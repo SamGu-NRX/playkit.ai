@@ -17,8 +17,10 @@
  *   m[t]    per-tier mean of d
  *   D       equal-weight mean of m over shared tiers
  *   CI      percentile 95% interval from 10,000 seeded joint resamples
- *           (streamFromSeed('separation-pilot/<sorted-pair>/<reading>/<profile>')) —
- *           identical bundles always yield byte-identical intervals
+ *           (streamFromSeed('separation-pilot/<sorted-pair>'), per
+ *           PREREGISTRATION.md — one resampling stream per comparison, shared
+ *           by every profile and reading) — identical bundles always yield
+ *           byte-identical intervals
  *
  * SEPARATED iff the interval excludes zero and at least ceil(T/2) shared tiers
  * agree in sign with D. Win/lose ("outcome") tiers are reported under both
@@ -27,6 +29,10 @@
  * construction and appear once. Verdicts are data — exit 0 either way; exit 2
  * only on structural errors (unverified trajectories, no shared seeds, mirror
  * mismatch).
+ *
+ * The pure statistics live in `analysis-lib.mjs`; this file is the I/O shell:
+ * bundle loading, replay verification, the production `score()` mirror, and
+ * output.
  *
  * Output is deterministic: fixed ordering, fixed rounding, no timestamps, no
  * wall-clock data — the same bundles always produce byte-identical output.
@@ -40,126 +46,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { verifyTrajectory } from '../../core/trajectory.js';
-import { streamFromSeed } from '../../core/rng.js';
 import { getGame, GAMES } from '../../games/index.js';
-import { score, EFFICIENCY_CAP_OPTIMAL, EFFICIENCY_CAP_REFERENCE, GauntletRefusalError } from '../../scoring/score.js';
-import { transformOutcomeEpisode } from '../../scoring/profiles.js';
+import { score, GauntletRefusalError } from '../../scoring/score.js';
 import { loadBaselineFile } from '../../scoring/baselines.js';
 import { loadTrajectories } from '../../cli/verify.js';
+import { cell, compare, episodeScore, PROFILES, READINGS, suiteKeysOf } from './analysis-lib.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_BASELINE = path.join(here, '../../scoring/baselines/random-public.json');
-const BOOTSTRAP_DRAWS = 10_000;
-
-/** The pre-registered reporting planes, in print order. */
-const PROFILES = ['rhae-v1', 'squared-outcome', 'chance-adjusted'];
-
-/** The pre-registered invalid-reply readings, in print order. */
-const READINGS = ['raw', 'invalid-adjusted'];
-
-/**
- * @param {number | null} v
- * @returns {number | null}
- */
-function round6(v) {
-  return v === null ? null : Math.round(v * 1e6) / 1e6;
-}
-
-/**
- * Percentile of a sorted numeric array with linear interpolation — mirrors
- * `scoring/score.js` `percentile` exactly.
- *
- * @param {number[]} sorted Ascending, non-empty.
- * @param {number} q In [0, 1].
- * @returns {number}
- */
-function percentile(sorted, q) {
-  if (sorted.length === 1) return sorted[0];
-  const pos = q * (sorted.length - 1);
-  const lo = Math.floor(pos);
-  const hi = Math.ceil(pos);
-  if (lo === hi) return sorted[lo];
-  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
-}
-
-/** A refusal that is part of normal operation (a tier drops), not a crash. */
-class TierDropped extends Error {}
-
-/**
- * @typedef {'raw' | 'invalid-adjusted'} Reading
- */
-
-/**
- * The pre-registered invalid-adjusted reading: e' = e × (1 −
- * invalidActions/agentActions), 0 when agentActions = 0. Applied only on
- * outcome tiers — efficiency tiers already price invalids into agentActions,
- * so both readings coincide there by construction.
- *
- * @param {{ e: number, invalidActions: number, agentActions: number }} episode
- * @param {string} scoring 'outcome' | 'efficiency'
- * @param {Reading} reading
- * @returns {number}
- */
-function readEpisode(episode, scoring, reading) {
-  if (reading === 'raw' || scoring !== 'outcome') return episode.e;
-  if (episode.agentActions <= 0) return 0;
-  return episode.e * (1 - episode.invalidActions / episode.agentActions);
-}
-
-/**
- * Per-episode score under a profile, mirroring `scoring/score.js`
- * `episodeScore` — including the `squared-outcome` and `chance-adjusted`
- * transforms — for one trajectory on one suite tier.
- *
- * @param {SuiteTier} tier
- * @param {Trajectory} trajectory
- * @param {string} profile
- * @param {ScoringBaseline | undefined} baseline
- * @returns {{ e: number }}
- */
-function episodeScore(tier, trajectory, profile, baseline) {
-  const outcome = trajectory.end.outcome;
-  const seat = trajectory.agent.seat;
-  if (tier.scoring === 'outcome') {
-    const normalized = outcome?.normalized;
-    if (!Array.isArray(normalized) || typeof normalized[seat] !== 'number' || !Number.isFinite(normalized[seat])) {
-      throw new Error(
-        `trajectory ${trajectory.game.id}/${trajectory.tier}/${trajectory.seed} ended without a finite normalized[${seat}] on an outcome tier`
-      );
-    }
-    const e = /** @type {number} */ (normalized[seat]);
-    if (profile === 'rhae-v1') return { e };
-    if (profile === 'squared-outcome') return { e: e * e };
-    // chance-adjusted: transformOutcomeEpisode(profile, e, r, ...) with the
-    // tier's random-baseline mean r — mirrors applyOutcomeProfile. A missing
-    // or stale baseline row drops the tier from this profile only.
-    const game = /** @type {ScoringBaseline} */ (baseline).games[trajectory.game.id];
-    if (!game || typeof game.version !== 'string') {
-      throw new TierDropped(`no baseline entry for game "${trajectory.game.id}"`);
-    }
-    if (game.version !== trajectory.game.version) {
-      throw new TierDropped(
-        `baseline for "${trajectory.game.id}" is version ${game.version}, trajectory ${trajectory.game.version}`
-      );
-    }
-    const entry = game.tiers[tier.id];
-    if (!entry) throw new TierDropped(`no baseline entry for ${trajectory.game.id}/${tier.id}`);
-    return { e: transformOutcomeEpisode(profile, e, entry.mean, trajectory.game.id, tier.id) };
-  }
-  // Efficiency tier — identical under every profile.
-  const solved = outcome?.solved === true;
-  if (!solved) return { e: 0 };
-  const par = outcome?.par;
-  if (typeof par !== 'number' || !Number.isFinite(par) || par <= 0) {
-    throw new Error(`trajectory ${trajectory.game.id}/${trajectory.tier}/${trajectory.seed} claims solved with par ${JSON.stringify(par)}`);
-  }
-  const agentActions = trajectory.end.agentActions;
-  if (!Number.isInteger(agentActions) || agentActions <= 0) {
-    throw new Error(`trajectory ${trajectory.game.id}/${trajectory.tier}/${trajectory.seed} claims solved with agentActions ${JSON.stringify(agentActions)}`);
-  }
-  const cap = tier.parKind === 'optimal' ? EFFICIENCY_CAP_OPTIMAL : EFFICIENCY_CAP_REFERENCE;
-  return { e: Math.min(cap, (par / agentActions) ** 2) };
-}
 
 /**
  * @typedef {object} Bundle
@@ -226,144 +120,12 @@ async function loadBundle(dir, ordinal) {
 }
 
 /**
- * @typedef {object} CompareResult
- * @property {number} sharedTiers
- * @property {number} outcomeTiers
- * @property {string[]} droppedTiers
- * @property {number} D
- * @property {[number, number] | null} ci
- * @property {number} signAgree
- * @property {Array<{ tier: string, n: number, m: number }>} perTier
- */
-
-/**
- * One comparison (pair of bundles) on one profile under one reading.
- *
- * @param {Bundle} a
- * @param {Bundle} b
- * @param {SuiteManifest} suite
- * @param {string} profile
- * @param {ScoringBaseline | undefined} baseline
- * @param {string} comparisonKey
- * @param {Reading} reading
- * @returns {CompareResult}
- */
-function compare(a, b, suite, profile, baseline, comparisonKey, reading) {
-  /** @type {Record<string, number[]>} */
-  const diffs = {};
-  /** @type {string[]} */
-  const dropped = [];
-  let outcomeTiers = 0;
-  for (const g of suite.games) {
-    for (const t of g.tiers) {
-      if (t.scoring === 'outcome') outcomeTiers++;
-      const seeds = /** @type {string[]} */ (t.seeds).filter((s) =>
-        a.byKey.has(`${g.id}/${t.id}/${s}`) && b.byKey.has(`${g.id}/${t.id}/${s}`)
-      );
-      if (seeds.length === 0) continue;
-      /** @type {number[]} */
-      const d = [];
-      try {
-        for (const s of seeds) {
-          const key = `${g.id}/${t.id}/${s}`;
-          const ta = /** @type {Trajectory} */ (a.byKey.get(key));
-          const tb = /** @type {Trajectory} */ (b.byKey.get(key));
-          const va = episodeScore(t, ta, profile, baseline);
-          const vb = episodeScore(t, tb, profile, baseline);
-          const ea = /** @type {{ invalidActions: number, agentActions: number }} */ (a.ends.get(key));
-          const eb = /** @type {{ invalidActions: number, agentActions: number }} */ (b.ends.get(key));
-          d.push(
-            readEpisode({ e: va.e, ...ea }, t.scoring, reading) -
-              readEpisode({ e: vb.e, ...eb }, t.scoring, reading)
-          );
-        }
-      } catch (err) {
-        if (err instanceof TierDropped) {
-          dropped.push(`${g.id}/${t.id} (${err.message})`);
-          continue;
-        }
-        throw err;
-      }
-      diffs[`${g.id}/${t.id}`] = d;
-    }
-  }
-  return summarize(diffs, dropped, comparisonKey, profile, outcomeTiers);
-}
-
-/**
- * Shared tail of the comparison path: per-tier means, pooled D, seeded
- * bootstrap, sign agreement.
- *
- * @param {Record<string, number[]>} diffs
- * @param {string[]} dropped
- * @param {string} comparisonKey
- * @param {string} profile
- * @param {number} outcomeTiers
- * @returns {CompareResult}
- */
-function summarize(diffs, dropped, comparisonKey, profile, outcomeTiers) {
-  const tierIds = Object.keys(diffs).sort();
-  if (tierIds.length === 0) {
-    return { sharedTiers: 0, outcomeTiers, droppedTiers: dropped, D: 0, ci: null, signAgree: 0, perTier: [] };
-  }
-  const perTier = tierIds.map((id) => {
-    const d = diffs[id];
-    return { tier: id, n: d.length, m: d.reduce((x, y) => x + y, 0) / d.length };
-  });
-  const D = perTier.reduce((acc, t) => acc + t.m, 0) / perTier.length;
-  const stream = streamFromSeed(`separation-pilot/${comparisonKey}/${profile}`);
-  /** @type {number[]} */
-  const draws = [];
-  for (let draw = 0; draw < BOOTSTRAP_DRAWS; draw++) {
-    let sum = 0;
-    for (const id of tierIds) {
-      const d = diffs[id];
-      let s = 0;
-      for (let i = 0; i < d.length; i++) s += d[Math.floor(stream.nextFloat() * d.length)];
-      sum += s / d.length;
-    }
-    draws.push(sum / tierIds.length);
-  }
-  const sorted = draws.slice().sort((x, y) => x - y);
-  const ci = /** @type {[number, number]} */ ([percentile(sorted, 0.025), percentile(sorted, 0.975)]);
-  const signAgree = perTier.filter((t) => (t.m > 0 && D > 0) || (t.m < 0 && D < 0)).length;
-  return { sharedTiers: tierIds.length, outcomeTiers, droppedTiers: dropped, D, ci, signAgree, perTier };
-}
-
-/**
- * The verdict under the pre-registered rule.
- *
- * @param {CompareResult} r
- * @returns {'SEPARATED' | 'NOT_SEPARATED' | 'NO_DATA'}
- */
-function verdict(r) {
-  if (r.sharedTiers === 0 || !r.ci) return 'NO_DATA';
-  const excludesZero = r.ci[0] > 0 || r.ci[1] < 0;
-  const k = Math.ceil(r.sharedTiers / 2);
-  return excludesZero && r.signAgree >= k ? 'SEPARATED' : 'NOT_SEPARATED';
-}
-
-/**
- * @param {CompareResult} r
- */
-function cell(r) {
-  return {
-    verdict: verdict(r),
-    D: round6(r.D),
-    ci95: r.ci ? [round6(r.ci[0]), round6(r.ci[1])] : null,
-    signAgree: `${r.signAgree}/${r.sharedTiers}`,
-    perTier: r.perTier.map((t) => ({ tier: t.tier, n: t.n, m: round6(t.m) })),
-  };
-}
-
-/**
  * @param {Bundle} bundle
  * @param {SuiteManifest} suite
  * @returns {string[]}
  */
 function outsideSuite(bundle, suite) {
-  const keys = new Set();
-  for (const g of suite.games) for (const t of g.tiers) for (const s of /** @type {string[]} */ (t.seeds)) keys.add(`${g.id}/${t.id}/${s}`);
+  const keys = suiteKeysOf(suite);
   return [...bundle.byKey.keys()].filter((k) => !keys.has(k)).sort();
 }
 
@@ -374,6 +136,11 @@ function outsideSuite(bundle, suite) {
  * game: `score()` refuses trajectories with mixed agent ids
  * (agent-identity refusal), and a composite bundle legitimately carries one
  * dial id per game.
+ *
+ * The mirror sees ONLY in-suite trajectories: the analysis documents
+ * out-of-suite episodes as ignored, so feeding them to `score()` would make
+ * the mirror check depend on leftover files instead of the analyzed data
+ * (Codex #4301264694).
  *
  * @param {Bundle} bundle
  * @param {SuiteManifest} suite
@@ -391,8 +158,9 @@ async function scoreAndMirror(bundle, suite) {
   }
   /** @type {string[]} */
   const mismatches = [];
+  const memberKeys = suiteKeysOf(suite);
   for (const g of suite.games) {
-    const trajs = bundle.trajectories.filter((t) => t.game.id === g.id);
+    const trajs = bundle.trajectories.filter((t) => t.game.id === g.id && memberKeys.has(`${t.game.id}/${t.tier}/${t.seed}`));
     if (trajs.length === 0) continue;
     let entry;
     try {
@@ -499,7 +267,10 @@ for (let i = 0; i < bundles.length; i++) {
     // The comparison is an unordered pair: the comparison name and the
     // bootstrap stream are keyed by the SORTED labels, so analyze(B, A)
     // negates D and the interval bounds exactly — the preregistered
-    // label-swap symmetry (PREREGISTRATION.md, instrument checks).
+    // label-swap symmetry (PREREGISTRATION.md, instrument checks). The key
+    // is the pair ALONE: every profile and reading of this comparison
+    // resamples from the same seeded stream, exactly as PREREGISTRATION.md
+    // pins it (streamFromSeed('separation-pilot/<comparison-key>')).
     const key = [bundles[i].label, bundles[j].label].slice().sort().join('~vs~');
     for (const profile of PROFILES) {
       if (profile === 'chance-adjusted' && !baseline) {
@@ -513,7 +284,7 @@ for (let i = 0; i < bundles.length; i++) {
       /** @type {string[]} */
       const droppedTiers = [];
       for (const reading of READINGS) {
-        const r = compare(bundles[i], bundles[j], suite, profile, profBaseline, `${key}/${reading}`, reading);
+        const r = compare(bundles[i], bundles[j], suite, profile, profBaseline, key, reading);
         sharedTiers = r.sharedTiers;
         outcomeTiers = r.outcomeTiers;
         droppedTiers.push(...r.droppedTiers);

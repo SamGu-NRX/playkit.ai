@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, chmodSync, rmSync, readdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, chmodSync, rmSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -251,6 +251,78 @@ test('process wiring: a late reply to a timed-out command is not misattributed t
     // The stale LATE block arrives while "name" is pending; id discipline
     // drops it and "name" settles from its own reply.
     assert.equal(await engine.command('name', { timeoutMs: 1500 }), 'SlowGo');
+  } finally {
+    // Even on a failed assertion: a live engine's open stdio pipe would hold
+    // the test process open past the runner's exit.
+    await engine.quit().catch(() => {});
+    cleanupFake();
+  }
+});
+
+test('process wiring: CRLF-terminated blocks from a Windows-style engine parse normally', async () => {
+  // Some GTP engines terminate blocks with \r\n\r\n (Windows stdio), which
+  // never matches the client's '\n\n' boundary search. The handshake would
+  // time out and the episode would die before its first move.
+  const fake = fakeEngine('while IFS= read -r line; do printf \'= ok\\r\\n\\r\\n\'; done');
+  try {
+    const engine = new GtpEngine({ binaryPath: fake });
+    await engine.start();
+    assert.equal(await engine.command('is_legal black C3'), 'ok');
+    await engine.quit();
+  } finally {
+    cleanupFake();
+  }
+});
+
+test('process wiring: the quit command actually reaches the engine', async () => {
+  // quit() used to null the child reference before sending, so the polite
+  // quit failed at the not-running guard and no quit line ever left stdin.
+  const fake = fakeEngine(
+    'while IFS= read -r line; do printf \'%s\\n\' "$line" >> "$0.log"; printf \'= \\n\\n\'; done'
+  );
+  try {
+    const engine = new GtpEngine({ binaryPath: fake });
+    await engine.start();
+    await engine.quit();
+    const log = readFileSync(`${fake}.log`, 'utf8');
+    // The wire command is id-prefixed ("3 quit"); a bare quit would be a
+    // protocol violation.
+    assert.match(log, /(^|\n)[0-9]+ quit(\n|$)/, 'the engine must receive the quit command');
+  } finally {
+    cleanupFake();
+  }
+});
+
+test('process wiring: a timeout on a non-id-echoing engine retires it instead of shifting replies', async () => {
+  // Same late-reply shape as the id-discipline test, but this engine never
+  // echoes command ids: the stale LATE block is indistinguishable from the
+  // next command's reply. The client must retire the engine loudly rather
+  // than hand back the wrong answer as if it were real.
+  const fake = fakeEngine(
+    'namecount=0\n' +
+      'while IFS= read -r line; do\n' +
+      '  cmd=$(printf \'%s\' "$line" | sed -E \'s/^[0-9]+ //\')\n' +
+      '  case "$cmd" in\n' +
+      '    name)\n' +
+      '      namecount=$((namecount + 1))\n' +
+      '      if [ "$namecount" -ge 2 ]; then sleep 0.5; fi\n' +
+      '      printf \'= SlowGo\\n\\n\' ;;\n' +
+      '    version) printf \'= 1.0\\n\\n\' ;;\n' +
+      '    genmove*) (sleep 0.3; printf \'= LATE\\n\\n\') & ;;\n' +
+      '    *) printf \'= ok\\n\\n\' ;;\n' +
+      '  esac\n' +
+      'done'
+  );
+  const engine = new GtpEngine({ binaryPath: fake, commandTimeoutMs: 100 });
+  try {
+    await engine.start();
+    await assert.rejects(engine.command('genmove black'), /timed out after 100ms/);
+    // The stale LATE block arrives while "name" is pending; with no id echo
+    // the client cannot attribute it and must have invalidated the engine.
+    await assert.rejects(
+      engine.command('name', { timeoutMs: 1500 }),
+      /invalidated|not running/,
+    );
   } finally {
     // Even on a failed assertion: a live engine's open stdio pipe would hold
     // the test process open past the runner's exit.

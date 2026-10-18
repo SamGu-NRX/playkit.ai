@@ -12,6 +12,7 @@ import { dirname, join, resolve } from 'node:path';
 
 import { GAMES } from '../../games/index.js';
 import { buildSuite } from '../../scoring/suite.js';
+import { manifestSha256 } from '../../runs/plan.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -237,25 +238,108 @@ export function auditDir() {
 }
 
 /**
+ * Integrity failures in one cell's run.json record: the suite manifest it
+ * claims must equal the expected one, and the agent id must name this cell's
+ * agent. A record copied from another cell, another arm, or an older suite
+ * manifest would otherwise pass the seed/replay checks while describing a
+ * different study (Codex #4301264696).
+ *
+ * Dial agent ids embed the cell's expert (`dial-<expert-id>-p<p*100>`), and
+ * expert ids vary per game (dial-engine, dial-sokoban-engine,
+ * dial-engine-sand), so dial cells check the `dial-` prefix and the encoded
+ * p (0 → p0, 0.5 → p50, 1 → p100) rather than a full template; no-skill
+ * cells record the strategy id verbatim.
+ *
+ * @param {*} run parsed run.json
+ * @param {string} cell
+ * @param {string} expectedManifestSha256
+ * @returns {string[]}
+ */
+export function runRecordFailures(run, cell, expectedManifestSha256) {
+  const failures = [];
+  const recorded = /** @type {*} */ (run)?.suite?.manifestSha256 ?? null;
+  if (recorded !== expectedManifestSha256) {
+    failures.push(
+      `run.json suite manifest ${recorded ? String(recorded).slice(0, 12) : 'none'} != expected ${expectedManifestSha256.slice(0, 12)}`
+    );
+  }
+  const agentId = /** @type {*} */ (run)?.agent?.id ?? null;
+  const pPercent = cell === 'dial-0' ? '0' : cell === 'dial-05' ? '50' : '100';
+  const agentMatches = cell.startsWith('dial-')
+    ? typeof agentId === 'string' && agentId.startsWith('dial-') && agentId.endsWith(`-p${pPercent}`)
+    : agentId === cell;
+  if (!agentMatches) {
+    failures.push(`run.json agent id ${agentId ?? 'none'} does not match the ${cell} cell`);
+  }
+  return failures;
+}
+
+/**
  * Cell-completion verdict for one audit cell bundle: the cell is complete
- * only when every planned seed has a trajectory on disk that records the
- * registry's **current** game version. `run.json` saying the episode count is
- * reached is not enough — #107 committed run.json plus suite.json with the
- * raw trajectories left untracked, and a game version bump (#108: mastermind
- * 1.1.0, wordle 1.2.0) strands every recorded episode — a stale or
- * trajectory-less cell must re-run, not skip.
+ * only when the bundle's suite manifest matches the expected one (when
+ * supplied), run.json carries the same manifest hash, and every planned seed
+ * has an on-disk trajectory that records the registry's **current** game
+ * version AND the identity/shape the downstream readers dereference (game
+ * id, tier, seed, agent seat, end action counts, and the outcome fields
+ * rawEpisodeScore reads). `run.json` saying the episode count is reached is
+ * not enough — #107 committed run.json plus suite.json with the raw
+ * trajectories left untracked, and a game version bump (#108: mastermind
+ * 1.1.0, wordle 1.2.0) strands every recorded episode — a stale,
+ * trajectory-less, or malformed cell must re-run, not skip.
  *
  * @param {string} bundle the cell's bundle directory
  * @param {string} gameId
  * @param {string} tierId
  * @param {string[]} seeds the planned public seeds for the tier
+ * @param {{ expectedManifestSha256?: string }} [opts] when set, the bundle's
+ *   suite.json and run.json manifest hashes must equal it — a bundle built
+ *   from an older manifest is not complete even when every file is present
+ *   (run-cells clears such bundles via clearStaleBundle; the verdict must
+ *   refuse them BEFORE the cleanup runs, or one resumption could skip a
+ *   stale cell that the same invocation then clears).
  * @returns {Promise<{ complete: boolean, reason: string }>}
  */
-export async function cellBundleVerdict(bundle, gameId, tierId, seeds) {
+export async function cellBundleVerdict(bundle, gameId, tierId, seeds, opts = {}) {
   const game = /** @type {*} */ (GAMES[gameId]);
   if (!existsSync(join(bundle, 'run.json'))) {
     return { complete: false, reason: 'no run.json' };
   }
+  if (opts.expectedManifestSha256 !== undefined) {
+    try {
+      const recordedSuite = JSON.parse(await readFile(join(bundle, 'suite.json'), 'utf8'));
+      const recordedHash = manifestSha256(recordedSuite);
+      if (recordedHash !== opts.expectedManifestSha256) {
+        return {
+          complete: false,
+          reason: `bundle suite manifest ${recordedHash.slice(0, 12)} differs from the expected ${opts.expectedManifestSha256.slice(0, 12)}`,
+        };
+      }
+    } catch {
+      return { complete: false, reason: 'bundle has no readable suite.json manifest' };
+    }
+    let run;
+    try {
+      run = JSON.parse(await readFile(join(bundle, 'run.json'), 'utf8'));
+    } catch (err) {
+      return { complete: false, reason: `unreadable run.json (${/** @type {Error} */ (err).message})` };
+    }
+    const runHash = /** @type {*} */ (run)?.suite?.manifestSha256 ?? null;
+    // A missing hash is not evidence of correctness: only a recorded hash that
+    // equals the expected one can vouch for the executed suite (Codex PR #115).
+    if (runHash === null) {
+      return {
+        complete: false,
+        reason: `run.json records no suite manifest (expected ${opts.expectedManifestSha256.slice(0, 12)})`,
+      };
+    }
+    if (runHash !== opts.expectedManifestSha256) {
+      return {
+        complete: false,
+        reason: `run.json suite manifest ${String(runHash).slice(0, 12)} differs from the expected ${opts.expectedManifestSha256.slice(0, 12)}`,
+      };
+    }
+  }
+  const tier = /** @type {*} */ (game)?.spec?.tiers?.find((/** @type {{ id: string }} */ t) => t.id === tierId) ?? null;
   const dir = join(bundle, gameId, tierId);
   for (const seed of seeds) {
     const path = join(dir, `${seed}.json`);
@@ -268,12 +352,53 @@ export async function cellBundleVerdict(bundle, gameId, tierId, seeds) {
     } catch (err) {
       return { complete: false, reason: `unreadable trajectory ${seed} (${/** @type {Error} */ (err).message})` };
     }
-    const recorded = /** @type {*} */ (trajectory)?.game?.version ?? null;
+    const t = /** @type {*} */ (trajectory) ?? {};
+    const recorded = t?.game?.version ?? null;
     if (recorded !== game?.spec?.version) {
       return {
         complete: false,
         reason: `trajectory ${seed} recorded game version ${recorded ?? 'none'}, registry is at ${game?.spec?.version ?? 'unknown'}`,
       };
+    }
+    // Identity and shape: everything the audit's readers dereference without
+    // re-verifying (compute-tiers reads agent.seat and end.* directly; a
+    // malformed or misfiled trajectory must fail the cell, not crash the
+    // audit later).
+    if (t?.game?.id !== gameId || t?.tier !== tierId || t?.seed !== seed) {
+      return {
+        complete: false,
+        reason: `trajectory ${seed} is misfiled or mislabeled (game ${t?.game?.id ?? 'none'}, tier ${t?.tier ?? 'none'}, seed ${t?.seed ?? 'none'})`,
+      };
+    }
+    const seat = t?.agent?.seat;
+    if (!Number.isInteger(seat) || seat < 0) {
+      return { complete: false, reason: `trajectory ${seed} carries no integer agent seat` };
+    }
+    if (!Number.isInteger(t?.end?.agentActions) || t.end.agentActions < 0) {
+      return { complete: false, reason: `trajectory ${seed} carries no non-negative integer end.agentActions` };
+    }
+    if (t?.end?.invalidActions !== undefined && !Number.isInteger(t.end.invalidActions)) {
+      return { complete: false, reason: `trajectory ${seed} carries a non-integer end.invalidActions` };
+    }
+    if (tier) {
+      const outcome = t?.end?.outcome ?? null;
+      if (tier.scoring === 'outcome') {
+        const value = outcome?.normalized?.[seat];
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+          return {
+            complete: false,
+            reason: `trajectory ${seed} ended without a finite normalized[${seat}] on an outcome tier`,
+          };
+        }
+      } else if (outcome?.solved === true) {
+        const par = outcome?.par;
+        if (typeof par !== 'number' || par <= 0 || !Number.isInteger(t.end.agentActions) || t.end.agentActions <= 0) {
+          return {
+            complete: false,
+            reason: `trajectory ${seed} claims solved without usable par/actions`,
+          };
+        }
+      }
     }
   }
   return {

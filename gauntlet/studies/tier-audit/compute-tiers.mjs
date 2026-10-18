@@ -30,7 +30,7 @@ import {
   CELL_KINDS,
   NA_CELLS,
 } from './audit-lib.mjs';
-import { bootstrapCi95, bootstrapEfficiencyCi95, mean, round6, sampleSd, seedsNeeded } from './lib.mjs';
+import { bootstrapCi95, bootstrapEfficiencyCi95, intervalsOverlap, mean, round6, sampleSd, seedsNeeded } from './lib.mjs';
 import { extractExampleToken } from './no-skill.mjs';
 
 const root = auditDir();
@@ -274,7 +274,11 @@ for (const [gameId, gameRaw] of Object.entries(GAMES)) {
     const zeroRaw = seeds.map((s) => cellScores.get(`dial-0|${s}`)?.raw ?? null);
     if (cells['dial-0'] && zeroRaw.length > 0 && zeroRaw.every((x) => x === 0)) flags.push('floor');
     if (cells['dial-0']?.['rhae-v1'].ci95 && cells['dial-1']?.['rhae-v1'].ci95) {
-      if (cells['dial-0']['rhae-v1'].ci95[0] <= cells['dial-1']['rhae-v1'].ci95[1]) flags.push('luck-dominated');
+      // Luck-dominated: the random cell's interval overlaps the expert's —
+      // both bounds, not just dial-0's low bound sitting under dial-1's high
+      // one (an interval entirely below zero would slip through the one-sided
+      // check and mislabel a floor tier as luck-dominated).
+      if (intervalsOverlap(cells['dial-0']['rhae-v1'].ci95, cells['dial-1']['rhae-v1'].ci95)) flags.push('luck-dominated');
     }
     for (const strat of ['copy-example', 'first-legal']) {
       if (exploitableBy[strat] && exploitableBy[strat].ci95[0] > 0) flags.push(`exploitable-by-${strat}`);

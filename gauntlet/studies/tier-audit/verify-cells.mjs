@@ -16,8 +16,10 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { GAMES } from '../../games/index.js';
+import { manifestSha256 } from '../../runs/plan.js';
 import { verifyTrajectory } from '../../core/trajectory.js';
-import { auditDir, seedsForTier } from './audit-lib.mjs';
+import { auditDir, seedsForTier, tierSuite } from './audit-lib.mjs';
+import { runRecordFailures } from './audit-lib.mjs';
 import { CELL_KINDS } from './audit-lib.mjs';
 
 const root = auditDir();
@@ -59,6 +61,14 @@ for (const [gameId, game] of Object.entries(GAMES)) {
         continue; // cell not run (e.g. solo-reused dial) — compute-tiers accounts for it
       }
       bundles += 1;
+      // The record must claim THIS cell's suite manifest and agent (Codex
+      // #4301264696): a run.json from another cell or an older manifest
+      // would otherwise pass seed/replay checks while describing a different
+      // study.
+      const { suite } = tierSuite(gameId, tier.id);
+      for (const failure of runRecordFailures(run, cell, manifestSha256(suite))) {
+        failures.push(`${gameId}/${tier.id}/${cell}: ${failure}`);
+      }
       const expected = new Set(seeds);
       const seen = new Set();
       const dir = join(bundle, gameId, tier.id);

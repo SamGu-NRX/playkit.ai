@@ -36,6 +36,7 @@
  */
 
 import http from 'node:http';
+import { writeFileSync } from 'node:fs';
 
 /** Reply texts the stub cycles through. Deliberately game-agnostic AND
  * deliberately never a legal action in any registered game: the runner reads
@@ -64,6 +65,9 @@ const REFUSAL_TEXT = "I can't help with that request.";
  * @property {'anthropic' | 'openai' | 'openai-chat'} wire
  * @property {number} port
  * @property {string} [host] Default 127.0.0.1 — loopback only, always.
+ * @property {string} [portFile] When set, the actually-bound port is written
+ *   to this file once the server is listening. Required with port 0
+ *   (ephemeral): the launcher cannot know the assigned port otherwise.
  * @property {number} [rateLimitEvery] Every Nth request → 429 + retry-after. 0 disables.
  * @property {number} [overloadEvery] Every Nth request → 529 (anthropic) / 503. 0 disables.
  * @property {number} [refuseEvery] Every Nth request → documented refusal shape. 0 disables.
@@ -389,13 +393,14 @@ function faultResponse(wire, httpFault) {
  * Start the stub server. Resolves when the server is listening.
  *
  * @param {StubOptions} options
- * @returns {Promise<{ url: string, close: () => Promise<void> }>}
+ * @returns {Promise<{ url: string, port: number, close: () => Promise<void> }>}
  */
 export async function startStub(options) {
   const {
     wire,
     port,
     host = '127.0.0.1',
+    portFile,
     rateLimitEvery = 0,
     overloadEvery = 0,
     refuseEvery = 0,
@@ -443,8 +448,17 @@ export async function startStub(options) {
     // Loopback only, always: a stub must never be reachable off-machine.
     server.listen(port, host, () => resolve(undefined));
   });
+  // The kernel assigns the port at bind time and this process holds it for
+  // its whole life — with port 0 there is no probe-close-then-rebind window
+  // for another process to slip into. The launcher reads the assigned port
+  // from portFile instead of predicting it.
+  const boundPort = /** @type {import('node:net').AddressInfo} */ (server.address()).port;
+  if (portFile !== undefined) {
+    writeFileSync(portFile, `${boundPort}\n`, 'utf8');
+  }
   return {
-    url: `http://${host}:${port}`,
+    url: `http://${host}:${boundPort}`,
+    port: boundPort,
     close: () =>
       new Promise((resolve, reject) => {
         server.close(() => resolve(undefined));
@@ -476,12 +490,19 @@ export function parseStubArgs(argv, wire) {
     }
   }
   const port = Number(flags['port'] ?? 0);
-  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+  if (!Number.isInteger(port) || port < 0 || port > 65535) {
     throw new Error(`stub: --port must be a valid port number, got "${flags['port'] ?? ''}"`);
+  }
+  const portFile = flags['port-file'];
+  if (port === 0 && portFile === undefined) {
+    throw new Error(
+      'stub: --port 0 (ephemeral) requires --port-file PATH so the launcher learns the assigned port'
+    );
   }
   return {
     wire,
     port,
+    portFile,
     host: '127.0.0.1',
     rateLimitEvery: Number(flags['rate-limit-every'] ?? 0),
     overloadEvery: Number(flags['overload-every'] ?? 0),

@@ -228,3 +228,43 @@ test('dispose before any turn is a no-op and the agent still plays afterwards', 
   assert.equal(reply.text, 'a1');
   await agent.dispose?.();
 });
+
+test('a script piped before the first agent starts survives dispose into the next episode', async () => {
+  // The resume-flush race: startInput() resumes the shared interface while a
+  // whole piped script is already buffered, so readline emits every line in
+  // one tick — all of them used to land in the CURRENT agent's private
+  // queue, and dispose() dropped that queue with the agent. Retention lives
+  // at the stream level, so the next episode's move is still there.
+  const input = new PassThrough();
+  const output = new PassThrough();
+  output.resume();
+  input.write('a1\na2\n'); // the whole script, before any agent exists
+  const first = createHumanAgent({ input, output });
+  const firstReply = await first.act(makeCtx({ turn: 0 }));
+  assert.equal(firstReply.text, 'a1');
+  await first.dispose?.();
+  const second = createHumanAgent({ input, output });
+  let killer;
+  try {
+    const secondReply = await Promise.race([
+      second.act(makeCtx({ turn: 1 })),
+      new Promise((_resolve, reject) => {
+        killer = setTimeout(
+          () => reject(new Error('timed out: the next episode\u2019s move was drained from the stream')),
+          1000
+        );
+      }),
+    ]);
+    assert.equal(secondReply.text, 'a2');
+  } finally {
+    clearTimeout(killer);
+    // Unblock a losing act() (the timed-out branch) so the suite cannot leak
+    // a pending readline wait: ending the stream closes the shared interface
+    // (destroy() does not — readline closes on input 'end', not on stream
+    // 'close') and delivers close to the still-subscribed agent, which takes
+    // the forfeit path — only then dispose.
+    input.end();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await second.dispose?.();
+  }
+});

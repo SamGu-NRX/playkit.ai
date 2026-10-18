@@ -62,14 +62,16 @@ import readline from 'node:readline';
 /**
  * One readline interface per input stream, shared by every human agent
  * seated from that stream. Sharing (instead of one interface per agent)
- * is what makes sequential episodes on one stream work: buffered-but-
- * unread data stays inside the same interface, and explicit subscribe/
- * pause moves ownership between agents. `eof` records that the stream has
- * ended so a late subscriber takes the forfeit path immediately.
+ * is what makes sequential episodes on one stream work: read-but-
+ * unconsumed lines stay in the stream-level `buffer`, and explicit
+ * subscribe/pause moves ownership between agents. `eof` records that the
+ * stream has ended so a late subscriber takes the forfeit path immediately.
  *
  * @typedef {object} SharedInput
  * @property {readline.Interface} rl
- * @property {Set<{ onLine: (line: string) => void, onClose: () => void }>} subscribers
+ * @property {string[]} buffer Lines read but not yet consumed, retained at
+ *   the stream level so they survive across agents (episodes).
+ * @property {Set<{ onClose: () => void }>} subscribers
  * @property {boolean} eof
  */
 
@@ -86,11 +88,16 @@ function acquireInput(input) {
   const rl = readline.createInterface({ input, terminal: false });
   shared = {
     rl,
+    buffer: [],
     subscribers: new Set(),
     eof: false,
   };
   rl.on('line', (line) => {
-    for (const subscriber of shared.subscribers) subscriber.onLine(line);
+    // Stream-level retention: lines land in the shared buffer whether or
+    // not an agent is subscribed, so a resume flush (a whole piped script
+    // parsed into line events in one tick) is never dropped with a
+    // disposed agent's private queue.
+    shared.buffer.push(line);
   });
   rl.on('close', () => {
     shared.eof = true;
@@ -156,20 +163,21 @@ export function createHumanAgent(options = {}) {
   // lines and never release the stream; a shared interface with explicit
   // ownership does both jobs:
   //
-  //   - Only the subscribed agent receives lines, and the interface is
-  //     paused while no agent is awaiting one — so a line piped for the
-  //     NEXT episode stays in the stream buffer instead of being consumed
-  //     into the previous agent's (discarded) queue.
+  //   - Lines land in the SHARED stream-level buffer, not in the reading
+  //     agent's queue. Pausing the interface does NOT retain a chunk that
+  //     is already buffered: resuming for a new agent flushes every line
+  //     in such a chunk in one tick, so a whole piped script can land
+  //     while one episode is still reading. Because the buffer is shared,
+  //     the lines that agent does not consume survive its dispose() and
+  //     are still there for the next episode's agent.
   //   - dispose() unsubscribes; when the last subscriber leaves, the
   //     interface pauses and the stream is released for the next episode's
   //     agent (who resumes it) instead of holding process.stdin forever.
-  /** @type {string[]} */
-  const pending = [];
   let closed = false;
   let started = false;
   let rulesShown = false;
   let quitting = false;
-  /** @type {{ onLine: (line: string) => void, onClose: () => void } | null} */
+  /** @type {{ onClose: () => void } | null} */
   let subscription = null;
   /** @type {ReturnType<typeof acquireInput> | null} */
   let shared = null;
@@ -185,9 +193,6 @@ export function createHumanAgent(options = {}) {
     started = true;
     shared = acquireInput(input);
     subscription = {
-      onLine: (line) => {
-        pending.push(line);
-      },
       onClose: () => {
         closed = true;
       },
@@ -223,7 +228,7 @@ export function createHumanAgent(options = {}) {
    */
   async function nextLine() {
     for (;;) {
-      const line = pending.shift();
+      const line = shared !== null ? shared.buffer.shift() : undefined;
       if (line !== undefined) return line;
       if (closed) return null;
       await new Promise((resolve) => setImmediate(resolve));

@@ -38,6 +38,7 @@ import path from 'node:path';
 import { GAMES } from '../../../games/index.js';
 import { score } from '../../../scoring/score.js';
 import { streamFromSeed } from '../../../core/rng.js';
+import { usageOf } from './usage-lib.mjs';
 
 const COLLECTED = {};
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -87,27 +88,6 @@ function trajectoryFiles(runDir) {
   };
   walk(runDir);
   return found.sort();
-}
-
-/** Usage summary over a trajectory's agent steps. */
-function usageOf(trajectory) {
-  const agentSteps = trajectory.steps.filter((s) => s.by === 'agent');
-  const usage = agentSteps.map((s) => s.usage).filter(Boolean);
-  return {
-    // Provider-call count, not turn count: an assisted step can carry up to
-    // three provider attempts (retries included) and its usage/ms already
-    // sum all of them, so secPerCall / tokensPerCall must divide by attempts
-    // to stay comparable with the unassisted arm. Steps without the assisted
-    // meta (a plain unassisted run) are one call each.
-    calls: agentSteps.reduce(
-      (a, s) => a + (s.reply?.meta?.assisted?.attempts ?? 1),
-      0
-    ),
-    invalid: agentSteps.filter((s) => s.invalid).length,
-    ms: agentSteps.reduce((a, s) => a + (s.ms || 0), 0),
-    tokIn: usage.reduce((a, u) => a + (u.promptTokens ?? u.inputTokens ?? 0), 0),
-    tokOut: usage.reduce((a, u) => a + (u.completionTokens ?? u.outputTokens ?? 0), 0),
-  };
 }
 
 /** Clone a suite manifest down to one seed. */
@@ -293,6 +273,9 @@ for (const { game, tier } of TIERS) {
       episodes: trajectories.length,
       seeds: episodes.map((e) => e.seed),
       scores: scoresByProfile,
+      // Numerator: wrapper-rejected attempts (usage-lib counts
+      // meta.assisted.invalidAttempts per step, per-step-flag fallback on
+      // legacy trajectories) — the same unit as the calls denominator.
       invalidReplyRate: round6(usage.reduce((a, u) => a + u.invalid, 0) / calls),
       secPerCall: round6(usage.reduce((a, u) => a + u.ms, 0) / 1000 / calls),
       tokensPerCall: round6(usage.reduce((a, u) => a + u.tokIn + u.tokOut, 0) / calls),

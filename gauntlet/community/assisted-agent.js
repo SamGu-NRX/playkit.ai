@@ -18,8 +18,9 @@
  * legal list again as the turn's feedback — up to `retries` times within the
  * same turn. Usage and cost sum across attempts (a null token count anywhere
  * propagates: unmeasured is never reported as measured), and `meta.assisted`
- * records the attempt count, so one runner turn with retries is still one
- * trajectory step.
+ * records the attempt count and how many of them the wrapper rejected
+ * (`invalidAttempts` — the exhausted turn counts every attempt), so one
+ * runner turn with retries is still one trajectory step.
  *
  * The wrapper only ever *withholds* a retry, never a submission: after the
  * last retry (or on success) the inner agent's last reply text is returned
@@ -193,7 +194,11 @@ export function createAssistedAgent(options) {
             text: last.text,
             usage: total,
             meta: {
-              assisted: { attempts: attempt + 1, retried: attempt > 0 },
+              assisted: {
+                attempts: attempt + 1,
+                retried: attempt > 0,
+                invalidAttempts: attempt,
+              },
               ...(last.meta !== undefined ? { inner: last.meta } : {}),
             },
           };
@@ -218,6 +223,7 @@ export function createAssistedAgent(options) {
             attempts: retries + 1,
             retried: retries > 0,
             exhausted: true,
+            invalidAttempts: retries + 1,
           },
           ...(last.meta !== undefined ? { inner: last.meta } : {}),
         },

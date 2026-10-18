@@ -83,7 +83,7 @@ test('an invalid reply is retried with the referee reason as feedback, in the sa
   );
   assert.match(/** @type {*} */ (inner.calls[2].feedback), /"diagonal" is not a legal action/);
   assert.equal(reply.text, 'ACTION: up');
-  assert.deepEqual(reply.meta.assisted, { attempts: 3, retried: true });
+  assert.deepEqual(reply.meta.assisted, { attempts: 3, retried: true, invalidAttempts: 2 });
 });
 
 test('usage and cost sum across attempts, and null propagates', async () => {

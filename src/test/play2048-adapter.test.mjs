@@ -16,19 +16,41 @@
  * not via src/adapters/index.js, whose re-export binding drop is a disclosed
  * latent bug outside this packet's scope (see autodetect.test.mjs).
  *
- * jsdom is installed OUTSIDE the repository (no root package.json / test
- * runner in the repo):
+ * jsdom is an out-of-repository test dependency (no root package.json / test
+ * runner in the repo), resolved exactly like phone.test.mjs and
+ * hud-a11y.test.mjs: install it once into the directory named by
+ * NODE_TEST_ROOT (default <repo>/../hud-test-deps), e.g.
  *
- *   cd /home/user/work && npm init -y && npm i jsdom
+ *   cd "$(dirname <repo>)/hud-test-deps" && npm i jsdom
  *   cd <repo> && node --test src/test/play2048-adapter.test.mjs
+ *
+ * This file creates the node_modules symlink into that directory on demand,
+ * so it also runs standalone rather than only after phone.test.mjs ran first.
  */
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { JSDOM } from "jsdom";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { symlinkSync, existsSync, mkdirSync } from "node:fs";
 
 import { Play2048Adapter } from "../adapters/play2048-adapter.js";
 import { Direction } from "../adapters/adapter.js";
+
+// Same out-of-repo dependency layout as phone.test.mjs / hud-a11y.test.mjs:
+// jsdom resolves through a node_modules symlink into the directory named by
+// NODE_TEST_ROOT. Created here if missing so this test passes standalone
+// (statically importing jsdom before setup fails with ERR_MODULE_NOT_FOUND
+// in a fresh checkout).
+const here = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(here, "..", "..");
+const depsRoot = resolve(repoRoot, process.env.NODE_TEST_ROOT || "../hud-test-deps");
+if (!existsSync(resolve(repoRoot, "node_modules"))) {
+  mkdirSync(depsRoot, { recursive: true });
+  symlinkSync(depsRoot, resolve(repoRoot, "node_modules"), "dir");
+}
+
+const { JSDOM } = await import("jsdom");
 
 const GAME_MARKUP =
   '<div class="game-container">' +

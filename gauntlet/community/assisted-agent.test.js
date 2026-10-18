@@ -228,3 +228,54 @@ test('an action beyond the display cap is accepted on the first attempt', async 
   assert.match(shown, /Legal actions \(70 total, first 10 shown/);
   assert.ok(!shown.includes('move70'), 'move70 is beyond the displayed prefix');
 });
+
+test('the retry quote bounds the per-retry request growth with the inner agent\u2019s output cap', async () => {
+  // A retry's request is not attempt 0's request: after attempt 0 the inner
+  // agent's official turn message embeds the FULL previous reply
+  // (harness/official.js), and the wrapper's rejection feedback re-embeds the
+  // attempted action — itself a substring of that reply. The quote must price
+  // the largest attempt's request, bounded by the inner agent's output cap,
+  // not assume every attempt costs what attempt 0 costs.
+  /** @type {TurnContext[]} */
+  const quoted = [];
+  /** @type {number[]} */
+  const recorded = [];
+  const inner = stubInner(['ACTION: up']);
+  inner.quoteWorstCaseUsd = (/** @type {TurnContext} */ ctx) => {
+    quoted.push(ctx);
+    // Mirror the real estimator: request bytes at one token per two UTF-8
+    // bytes, inputPerMTok 2 → byte count / 1e6 USD.
+    const price = Buffer.byteLength(ctx.observation.text, 'utf8') / 1_000_000;
+    recorded.push(price);
+    return price;
+  };
+  inner.maxOutputTokens = 16;
+
+  // Attempt 0's augmented request, un-padded: the byte baseline every retry
+  // grows from.
+  const base = createAssistedAgent({ inner, retries: 0 });
+  base.quoteWorstCaseUsd?.(legalCtx());
+  assert.equal(quoted.length, 1);
+  const augmentedBytes = Buffer.byteLength(quoted[0].observation.text, 'utf8');
+
+  const agent = createAssistedAgent({ inner, retries: 2 });
+  const quote = agent.quoteWorstCaseUsd?.(legalCtx());
+  // The largest (last) attempt's padded request is priced once.
+  assert.equal(quoted.length, 2);
+  // The quoted request grows by exactly the per-retry bound: a reply of at
+  // most 16 tokens contributes at most 2 * 16 bytes as the next previous-
+  // reply section, and the rejection feedback re-embeds the attempted action
+  // plus fixed text — the pair is bounded at 4 * 16 + 256 bytes per retry.
+  const pad = 2 * (4 * 16 + 256);
+  assert.equal(
+    Buffer.byteLength(quoted[1].observation.text, 'utf8'),
+    augmentedBytes + pad,
+    'the quoted request grows by the cap-bound per-retry maximum'
+  );
+  // Every attempt is priced at that largest request.
+  assert.ok(quote !== null && quote !== undefined);
+  assert.ok(
+    Math.abs(quote - 3 * recorded[1]) < 1e-12,
+    'every attempt runs at the largest request\u2019s price'
+  );
+});

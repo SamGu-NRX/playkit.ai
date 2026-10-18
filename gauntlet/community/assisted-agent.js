@@ -232,20 +232,50 @@ export function createAssistedAgent(options) {
     // Worst-case accounting the run engine can reserve against: the dollar
     // caps price a quoted agent's next call before it starts (runs/run.js),
     // and the wrapper hides up to `retries + 1` inner calls behind one
-    // turn — so the turn's worst case is every attempt running at the
-    // inner agent's per-call worst case. Quoted against the augmented
-    // context attempt 0 actually sees; a retry only appends the fixed
-    // feedback line to the request, well inside the estimate's per-byte
-    // slack. null without an inner quote, mirroring the official agents.
+    // turn. A retry's request is NOT attempt 0's request: the inner agent
+    // carries its previous reply across the turn's attempts, and the
+    // official turn message embeds that reply in full (harness/official.js)
+    // while the rejection feedback re-embeds the attempted action — itself
+    // a substring of the reply. Model agents expose their effective output
+    // cap (maxOutputTokens), which bounds the growth: under this quote's
+    // own conversion (at most one token per two UTF-8 bytes) a capped reply
+    // contributes at most 2 * cap bytes as the next previous-reply section,
+    // so the pair (previous reply + feedback) grows the request by at most
+    // 4 * cap + 256 bytes per retry. Price the largest (last) attempt's
+    // padded request once and charge every attempt at that worst case —
+    // the quote is monotone in bytes, so this bounds the whole turn. An
+    // inner agent without a numeric maxOutputTokens (only model agents
+    // carry the cap) falls back to attempt 0's price times the attempt
+    // count: its growth is unbounded from outside. null without an inner
+    // quote, mirroring the official agents.
     quoteWorstCaseUsd(/** @type {TurnContext} */ ctx) {
       if (typeof inner.quoteWorstCaseUsd !== 'function') return null;
       if (!Array.isArray(ctx.legalActions)) return inner.quoteWorstCaseUsd(ctx);
-      const quoted = inner.quoteWorstCaseUsd({
+      const baseCtx = {
         ...ctx,
         legalActions: null,
         observation: { ...ctx.observation, text: buildObservationText(ctx) },
-      });
+      };
+      const cap = inner.maxOutputTokens;
+      if (retries > 0 && typeof cap === 'number' && Number.isFinite(cap)) {
+        // Price the largest (last) attempt's request once — the padded
+        // observation bounds what every retry's request can have grown to —
+        // and charge every attempt at that worst case.
+        const lastQuote = inner.quoteWorstCaseUsd({
+          ...baseCtx,
+          observation: {
+            ...baseCtx.observation,
+            text: `${baseCtx.observation.text}${' '.repeat(retries * (4 * cap + 256))}`,
+          },
+        });
+        if (lastQuote === null || !Number.isFinite(lastQuote)) return null;
+        return lastQuote * (retries + 1);
+      }
+      const quoted = inner.quoteWorstCaseUsd(baseCtx);
       if (quoted === null || !Number.isFinite(quoted)) return null;
+      if (retries === 0) return quoted;
+      // No numeric cap: the growth is unbounded from outside — price every
+      // attempt at attempt 0's request and accept the underestimate.
       return quoted * (retries + 1);
     },
   };

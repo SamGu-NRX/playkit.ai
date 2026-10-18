@@ -43,7 +43,7 @@ if cmp -s "$TMP/stats.committed.json" "$TMP/stats.json"; then
   echo "stats.json byte-identical on regeneration ✓"
 else
   echo "stats.json MISMATCH on regeneration"
-  diff "$TMP/stats.committed.json" "$HERE/stats.json" | head -20
+  diff "$TMP/stats.committed.json" "$TMP/stats.json" | head -20
   exit 1
 fi
 rm -rf "$TMP"
@@ -69,10 +69,13 @@ for PAIR in \
     --ctx-size 4096 --temp 0.0 --seed 42 --threads 8 > "/tmp/llama-$STEM.log" 2>&1 &
   SRV=$!
   trap 'kill $SRV 2>/dev/null || true' EXIT
-  until curl -sf http://127.0.0.1:8080/health >/dev/null 2>&1; do sleep 2; done
+  # Per-request limits: a server that accepts and never answers must fail the
+  # probe (and reach the exhaustion check) instead of hanging this loop forever
+  # (greptile #115).
+  until curl -sf --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/health >/dev/null 2>&1; do sleep 2; done
   READY=0
   for i in $(seq 1 120); do
-    if curl -sf http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
+    if curl -sf --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
          -d '{"messages":[{"role":"user","content":"hi"}],"max_tokens":1}' > /dev/null 2>&1; then
       READY=1
       break

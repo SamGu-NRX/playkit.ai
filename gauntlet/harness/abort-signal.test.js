@@ -18,6 +18,7 @@
  * @module
  */
 
+import { spawn } from 'node:child_process';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -299,3 +300,109 @@ test('runEpisode ends time-limit inside the grace window and the stub connection
     'the stub server saw the stalled connection close — the abort cancelled the request, it did not merely outlive the episode'
   );
 });
+
+// ---------------------------------------------------------------------------
+// f07 (codex review #103): an abort during the default-sleep retry wait must
+// cancel the pending backoff timer. The in-process tests above prove the WAIT
+// is cut (the race rejects), but the default sleep's 30 s Retry-After
+// setTimeout keeps the event loop — and the process — alive for the whole
+// window after act() rejects. This test runs a child process that aborts
+// mid-backoff and then exits only when its event loop drains: post-fix it
+// exits promptly; pre-fix it rides out the 30 s timer and the test timeout
+// fires.
+// ---------------------------------------------------------------------------
+
+/**
+ * The child: a loopback 429 server with a 30 s Retry-After, an agent with NO
+ * sleep injection (default sleep, default retries), an abort 200 ms into the
+ * backoff, and no further cleanup — node exits iff the event loop is drained,
+ * i.e. iff the aborted wait's timer was canceled. Every request stays on
+ * 127.0.0.1; no paid calls.
+ */
+const CHILD_SCRIPT = `
+import http from 'node:http';
+process.env.GAUNTLET_ABORT_EXIT_TEST_KEY = 'stub-secret';
+const server = http.createServer((req, res) => {
+  res.statusCode = 429;
+  res.setHeader('retry-after', '30');
+  res.setHeader('content-type', 'application/json');
+  res.end(JSON.stringify({ error: { type: 'rate_limit', message: 'slow down' } }));
+});
+await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+const port = server.address().port;
+const { createModelAgent } = await import(process.env.AGENT_PATH);
+const controller = new AbortController();
+const ctx = {
+  spec: { rulesText: 'RULES TEXT.' },
+  tier: { id: 't' },
+  seat: 0,
+  turn: 0,
+  observation: { text: 'OBS', data: {} },
+  legalActions: null,
+  feedback: null,
+  signal: controller.signal,
+};
+const agent = createModelAgent({
+  provider: 'openai',
+  model: 'stub-model',
+  baseUrl: 'http://127.0.0.1:' + port,
+  apiKeyEnv: 'GAUNTLET_ABORT_EXIT_TEST_KEY',
+  maxOutputTokens: 64,
+});
+setTimeout(() => controller.abort(), 200);
+try {
+  await agent.act(ctx);
+  console.error('expected act() to reject');
+  process.exit(1);
+} catch (err) {
+  if (!err || !/episode's time limit ended the call/.test(err.message)) {
+    console.error('unexpected rejection: ' + (err && err.message));
+    process.exit(1);
+  }
+}
+server.closeAllConnections();
+await new Promise((resolve) => server.close(resolve));
+`;
+
+test(
+  'an abort during the default-sleep retry wait cancels the pending backoff timer (the process does not ride out the Retry-After)',
+  { timeout: 30_000 },
+  async () => {
+    const started = Date.now();
+    const child = spawn(
+      process.execPath,
+      ['--input-type=module', '--eval', CHILD_SCRIPT],
+      {
+        stdio: ['ignore', 'ignore', 'pipe'],
+        env: {
+          ...process.env,
+          AGENT_PATH: new URL('./model-agent.js', import.meta.url).href,
+        },
+      }
+    );
+    let stderr = '';
+    child.stderr?.setEncoding('utf8');
+    child.stderr?.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    const exit = await new Promise((resolve, reject) => {
+      child.on('error', reject);
+      child.on('exit', (code, signal) => resolve({ code, signal }));
+    });
+    const elapsedMs = Date.now() - started;
+    assert.equal(
+      exit.signal,
+      null,
+      `child was killed by a signal${stderr ? ': ' + stderr : ''}`
+    );
+    assert.equal(
+      exit.code,
+      0,
+      `child exited nonzero${stderr ? ': ' + stderr : ''}`
+    );
+    assert.ok(
+      elapsedMs < 15_000,
+      `child lived ${elapsedMs}ms — an uncanceled Retry-After timer keeps the process alive for the full 30 s window`
+    );
+  }
+);

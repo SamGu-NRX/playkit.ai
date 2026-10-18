@@ -274,6 +274,15 @@ export class UnknownCostError extends Error {
 }
 
 /**
+ * Thrown when a resumed invocation's factory produces an agent whose identity
+ * differs from the bundle's established agent (codex r4304962694): playing its
+ * episode would mix two agents into one bundle, which bundle scoring refuses.
+ * Fatal like UnknownCostError: the pool stops, the episode stays unplayed, and
+ * the error surfaces after run.json so the partial bundle stays resumable.
+ */
+class ResumeIdentityError extends Error {}
+
+/**
  * @param {unknown} err
  * @returns {string}
  */
@@ -790,12 +799,6 @@ export async function runSuite({
     return write;
   }
 
-  await appendSpendLines([
-    { kind: 'invocation', invocation: invocationIndex, startedAt: new Date(startedAtMs).toISOString(), resumed: resume },
-  ]);
-  if (maxUsdTotal !== undefined) {
-    await appendSpendLines([{ kind: 'cap', invocation: invocationIndex, maxUsdTotal }]);
-  }
   // Spend already on the books from earlier invocations. The per-invocation
   // admission checks below add this invocation's settled and reserved spend.
   const ledgerUsd = ledgerAtStart.summary.totalUsd;
@@ -820,8 +823,19 @@ export async function runSuite({
   // success over an unusable bundle).
   /** @type {RunAgentRecord | null} */
   let agentRecord = null;
+  // The probe's agent is retained and handed to the worker that plays
+  // jobs[0] (codex r4304962689): the factory contract is one instance per
+  // episode, so a stateful or sequential factory must not have an episode
+  // consumed by a probe the run then discards. When jobs[0] is skipped on
+  // resume the retained instance stays unused, exactly like the episode-less
+  // probe always was.
+  /** @type {Agent | null} */
+  let probedAgent = null;
   try {
     const probe = await agentFactory(jobs[0]);
+    if (probe && typeof (/** @type {Agent} */ (probe).act) === 'function') {
+      probedAgent = /** @type {Agent} */ (probe);
+    }
     if (probe && typeof probe.id === 'string') {
       agentRecord = {
         id: probe.id,
@@ -903,20 +917,52 @@ export async function runSuite({
   // Refuse a mixed bundle before anything runs: every already-played
   // trajectory must carry this invocation's agent, and the bundle must not
   // already hold two agents.
-  if (resume && skippedAgentIdentities.size > 0) {
-    const distinct = new Set(skippedAgentIdentities.values());
-    if (distinct.size > 1) {
-      throw new Error(
-        `[gauntlet/runs/run.js] resume: the bundle under ${outDir} already holds trajectories from more than one agent (${[...distinct].join(' vs ')}); refusing to add to a mixed bundle — use a fresh outDir`
-      );
+  // The bundle's agent identity this invocation must match: established from
+  // the skipped trajectories, else from the probe. Every agent the factory
+  // produces while the resume plays is checked against it in the worker, so
+  // a factory that varies identity by job cannot write new trajectories
+  // beside recorded ones from another agent (codex r4304962694).
+  let bundleAgentIdentity = /** @type {string | null} */ (null);
+  if (resume) {
+    if (skippedAgentIdentities.size > 0) {
+      const distinct = new Set(skippedAgentIdentities.values());
+      if (distinct.size > 1) {
+        throw new Error(
+          `[gauntlet/runs/run.js] resume: the bundle under ${outDir} already holds trajectories from more than one agent (${[...distinct].join(' vs ')}); refusing to add to a mixed bundle — use a fresh outDir`
+        );
+      }
+      const [recordedIdentity] = distinct;
+      // Identity must be established to add to a played bundle (greptile
+      // r4305577240): a failed probe used to null incomingAgentIdentity and
+      // skip this refusal entirely, so a later successful factory call could
+      // play a different agent beside the recorded ones.
+      if (incomingAgentIdentity === null) {
+        throw new Error(
+          `[gauntlet/runs/run.js] resume: this invocation's agent identity could not be established (the agentFactory probe for ${jobs[0]?.key ?? 'the first job'} failed or returned no agent id), so it cannot be checked against the agent ${recordedIdentity} recorded in the bundle under ${outDir}; refusing to resume — fix the factory or use a fresh outDir`
+        );
+      }
+      if (recordedIdentity !== incomingAgentIdentity) {
+        const sampleJob = skippedAgentIdentities.keys().next().value;
+        throw new Error(
+          `[gauntlet/runs/run.js] resume: the bundle under ${outDir} holds trajectories from agent ${recordedIdentity} but this invocation runs agent ${incomingAgentIdentity} (first mismatch at ${sampleJob}); refusing to skip another agent's files and mix two agents in one bundle — resume with the same agent or use a fresh outDir`
+        );
+      }
+      bundleAgentIdentity = incomingAgentIdentity;
+    } else {
+      bundleAgentIdentity = incomingAgentIdentity;
     }
-    const [recordedIdentity] = distinct;
-    if (incomingAgentIdentity !== null && recordedIdentity !== incomingAgentIdentity) {
-      const sampleJob = skippedAgentIdentities.keys().next().value;
-      throw new Error(
-        `[gauntlet/runs/run.js] resume: the bundle under ${outDir} holds trajectories from agent ${recordedIdentity} but this invocation runs agent ${incomingAgentIdentity} (first mismatch at ${sampleJob}); refusing to skip another agent's files and mix two agents in one bundle — resume with the same agent or use a fresh outDir`
-      );
-    }
+  }
+
+  // The invocation (and any cap raise) reach the ledger only after the resume
+  // refusals above (greptile r4305577245): a refused resume must leave the
+  // bundle exactly as it was — one rejected for mixing agents must not be
+  // able to raise the recorded maxUsdTotal as a side effect, or a later
+  // resume with the right agent inherits the raised cap.
+  await appendSpendLines([
+    { kind: 'invocation', invocation: invocationIndex, startedAt: new Date(startedAtMs).toISOString(), resumed: resume },
+  ]);
+  if (maxUsdTotal !== undefined) {
+    await appendSpendLines([{ kind: 'cap', invocation: invocationIndex, maxUsdTotal }]);
   }
 
   //
@@ -938,7 +984,7 @@ export async function runSuite({
   let unknownCostSteps = 0;
   let reservedUsd = 0;
   let calls = 0;
-  let fatalError = /** @type {UnknownCostError | null} */ (null);
+  let fatalError = /** @type {UnknownCostError | ResumeIdentityError | null} */ (null);
   const limiter =
     requestsPerMinute === undefined ? null : createRateLimiter({ requestsPerMinute, now, sleep });
 
@@ -959,13 +1005,32 @@ export async function runSuite({
     return {
       ...base,
       async act(/** @type {TurnContext} */ ctx) {
-        // The rate limiter is waited on BEFORE any check: everything from
-        // here through the reservation below is synchronous, so admission and
-        // reservation are atomic under concurrency. A worker queued on the
-        // limiter re-checks every stop rule once it holds a slot — checks
-        // made before the wait went stale while it queued — and no
-        // interleaving can admit two calls that both believe the same spend
-        // headroom is available.
+        // Early stop check BEFORE the limiter wait (codex r4304962691,
+        // greptile r4305577252): a run that already reached a stop condition
+        // refuses immediately instead of queueing a full limiter interval
+        // just to rediscover the stop. This is an optimization only — the
+        // authoritative checks stay AFTER admission below, because checks
+        // made before the wait go stale while the worker queues on it.
+        if (stopped.reason) {
+          throw new RunAbortedError(stopped.reason, `run stopped (${stopped.reason}): ${stopped.detail ?? ''}`);
+        }
+        if (signal?.aborted) {
+          stopped.reason = stopped.reason ?? 'cancelled';
+          stopped.detail = stopped.detail ?? `${jobLabel(job)}: aborted by signal`;
+          throw new RunAbortedError('cancelled', `run aborted by signal at ${jobLabel(job)}`);
+        }
+        if (maxCalls !== undefined && calls >= maxCalls) {
+          stopped.reason = stopped.reason ?? 'calls';
+          stopped.detail = stopped.detail ?? `${jobLabel(job)}: maxCalls ${maxCalls} reached`;
+          throw new RunAbortedError('calls', `maxCalls ${maxCalls} reached at ${jobLabel(job)}`);
+        }
+        // The rate limiter is waited on BEFORE the remaining checks:
+        // everything from here through the reservation below is synchronous,
+        // so admission and reservation are atomic under concurrency. A worker
+        // queued on the limiter re-checks every stop rule once it holds a
+        // slot — checks made before the wait went stale while it queued —
+        // and no interleaving can admit two calls that both believe the same
+        // spend headroom is available.
         if (limiter) await limiter.acquire();
         if (stopped.reason) {
           throw new RunAbortedError(stopped.reason, `run stopped (${stopped.reason}): ${stopped.detail ?? ''}`);
@@ -1145,9 +1210,40 @@ export async function runSuite({
       const job = toRun[i];
       let keptThisAttempt = false;
       try {
-        const base = await agentFactory(job);
+        // Reuse the probe's instance for jobs[0] (codex r4304962689): the
+        // factory contract is one instance per episode, so the probe's
+        // instance IS jobs[0]'s agent.
+        const useProbe =
+          probedAgent !== null && jobs[0] !== undefined && job.key === jobs[0].key;
+        const base = useProbe ? /** @type {Agent} */ (probedAgent) : await agentFactory(job);
+        if (useProbe) probedAgent = null;
         if (!base || typeof base.act !== 'function') {
           throw new Error(`agentFactory returned no Agent for ${jobLabel(job)}`);
+        }
+        // Resume identity discipline (codex r4304962694, greptile
+        // r4305577240): every agent the factory produces during a resume is
+        // checked against the bundle's established identity BEFORE it plays,
+        // so a factory that varies identity by job cannot mix two agents
+        // into one bundle.
+        if (resume) {
+          const liveIdentity =
+            typeof base.id === 'string'
+              ? JSON.stringify({
+                  id: base.id,
+                  track: String(base.track),
+                  provider: base.provider ?? null,
+                  model: base.model ?? null,
+                })
+              : null;
+          if (liveIdentity !== null) {
+            if (bundleAgentIdentity === null) {
+              bundleAgentIdentity = liveIdentity;
+            } else if (bundleAgentIdentity !== liveIdentity) {
+              throw new ResumeIdentityError(
+                `[gauntlet/runs/run.js] resume: the factory returned agent ${liveIdentity} for ${jobLabel(job)} but the bundle's established agent is ${bundleAgentIdentity}; refusing to mix two agents in one bundle — resume with the same agent or use a fresh outDir`
+              );
+            }
+          }
         }
         const game = /** @type {Game<*>} */ (gameMap.get(job.gameId));
         const trajectory = await runEpisode({
@@ -1167,6 +1263,12 @@ export async function runSuite({
         if (err instanceof UnknownCostError) {
           stopped.reason = 'error';
           stopped.detail = err.message;
+          fatalError = err;
+          return;
+        }
+        if (err instanceof ResumeIdentityError) {
+          stopped.reason = stopped.reason ?? 'error';
+          stopped.detail = stopped.detail ?? `${jobLabel(job)}: ${err.message}`;
           fatalError = err;
           return;
         }

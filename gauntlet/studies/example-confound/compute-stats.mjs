@@ -280,7 +280,10 @@ for (const model of MODELS) {
 // tie-corrected form "as in #81"; the old script omitted the statistic).
 {
   const sizeOrder = MODELS.map((m) => {
-    const run = stats.runs[`${m.short}:corrected-official`];
+    // The committed 7B bundles predate the arm rename and are recorded under
+    // corrected-7b only — fall back exactly like the paired section above so
+    // H2 uses all three models instead of silently dropping 7B to a note.
+    const run = stats.runs[`${m.short}:corrected-official`] ?? stats.runs[`${m.short}:corrected-7b`];
     const size = Number(m.short.match(/([\d.]+)b$/)?.[1]);
     return run?.meanScore === null || run?.meanScore === undefined || !Number.isFinite(size)
       ? null
@@ -313,18 +316,39 @@ for (const spec of priorSpecs) {
       };
       continue;
     }
-    const mine = stats.runs[`${model.short}:${spec.arm}`];
+    // The 7B fallback mirrors the paired section: corrected-7b bundles are
+    // the corrected-official arm under its preregistration-era name, so an
+    // H1 comparison against them is the preregistered comparison, not a
+    // substitution. Without it the 7B model silently drops out of H1.
+    const mine =
+      stats.runs[`${model.short}:${spec.arm}`] ??
+      (spec.arm === 'corrected-official' ? stats.runs[`${model.short}:corrected-7b`] : undefined);
     const modelDir = path.join(spec.priorRuns, model.stem);
     if (!mine || !existsSync(modelDir)) {
       stats.prior[key] = { n: 0, note: `no ${spec.arm} run or no prior runs for ${model.stem}` };
       continue;
     }
-    // First subdirectory holding a suite.json is the prior arm's run dir.
-    const runDir = readdirSync(modelDir)
+    // The prior arm's run dir: the subdirectory whose suite.json matches the
+    // corrected study's game AND tier. Taking the first directory with a
+    // suite.json silently paired against a wrong-tier cell when a prior tree
+    // carries more than one suite per model (greptile r4305289846).
+    const candidates = readdirSync(modelDir)
       .map((e) => path.join(modelDir, e))
-      .find((p) => existsSync(path.join(p, 'suite.json')));
+      .filter((p) => existsSync(path.join(p, 'suite.json')));
+    const runDir =
+      candidates.find((p) => {
+        try {
+          const s = JSON.parse(readFileSync(path.join(p, 'suite.json'), 'utf8'));
+          return s.games?.[0]?.id === mine.game && s.games?.[0]?.tiers?.[0]?.id === mine.tier;
+        } catch {
+          return false; // unreadable suite.json — not a match
+        }
+      }) ?? null;
     if (!runDir) {
-      stats.prior[key] = { n: 0, note: `no suite.json under ${path.relative(HERE, modelDir)}` };
+      stats.prior[key] = {
+        n: 0,
+        note: `no suite.json for ${mine.game}/${mine.tier} under ${path.relative(HERE, modelDir)}`,
+      };
       continue;
     }
     try {

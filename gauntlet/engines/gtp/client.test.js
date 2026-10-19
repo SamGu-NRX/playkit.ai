@@ -333,6 +333,66 @@ test('process wiring: a timeout on a non-id-echoing engine retires it instead of
 
 const REAL_BINARY = findGtpBinary();
 
+test('process wiring: quit() does not wait behind a running genmove', { timeout: 25_000 }, async () => {
+  // greptile r4304978353: #send starts each command's timeout only when it
+  // reaches the head of the queue, so quit()'s 2 s deadline covered only the
+  // quit command itself, not the wait behind a long genmove. Shutdown must
+  // bound the whole polite phase — queue wait included — and terminate the
+  // engine when it expires.
+  const fake = fakeEngine(
+    'while IFS= read -r line; do\n' +
+      '  case "$line" in\n' +
+      "    *genmove*) sleep 30; printf '= Q16\\n\\n' ;;\n" +
+      "    *) printf '= \\n\\n' ;;\n" +
+      '  esac\n' +
+      'done'
+  );
+  try {
+    const engine = new GtpEngine({ binaryPath: fake });
+    await engine.start();
+    const genmovePromise = engine.genmove('black');
+    // Settled by the shutdown below: the engine dies with the move in flight.
+    genmovePromise.catch(() => {});
+    const started = Date.now();
+    await engine.quit();
+    const elapsed = Date.now() - started;
+    assert.ok(
+      elapsed < 10_000,
+      `quit() took ${elapsed}ms — it waited behind the running genmove instead of bounding the shutdown`
+    );
+    await assert.rejects(genmovePromise);
+  } finally {
+    cleanupFake();
+  }
+});
+
+test('process wiring: an engine that exits on quit resolves shutdown immediately', { timeout: 10_000 }, async () => {
+  // greptile r4304978358: the engine can exit before quit()'s shutdown wait
+  // installs its exit listener; the later listener never fires and cleanup
+  // rides out the 1.5 s fallback despite the child being long gone.
+  const fake = fakeEngine(
+    'while IFS= read -r line; do\n' +
+      '  case "$line" in\n' +
+      '    *quit*) exit 0 ;;\n' +
+      "    *) printf '= \\n\\n' ;;\n" +
+      '  esac\n' +
+      'done'
+  );
+  try {
+    const engine = new GtpEngine({ binaryPath: fake });
+    await engine.start();
+    const started = Date.now();
+    await engine.quit();
+    const elapsed = Date.now() - started;
+    assert.ok(
+      elapsed < 1_200,
+      `quit() took ${elapsed}ms — it rode out the exit-wait fallback after the engine was already gone`
+    );
+  } finally {
+    cleanupFake();
+  }
+});
+
 test('real gnugo: the protocol starts, identifies itself, and accepts setup', { skip: REAL_BINARY ? false : 'no GNU Go binary found (set GAUNTLET_GNUGO or install gnugo)' }, async () => {
   const binary = /** @type {string} */ (REAL_BINARY);
   const engine = new GtpEngine({

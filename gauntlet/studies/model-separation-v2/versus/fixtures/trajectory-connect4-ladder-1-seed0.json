@@ -2,16 +2,16 @@
   "format": "playkit-gauntlet-trajectory/1",
   "game": {
     "id": "connect4",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "tier": "ladder-1",
   "seed": "connect4/ladder-1/public/0",
   "split": "public",
   "agent": {
-    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+    "id": "model:openai-chat/stub-recut-1.2.0",
     "track": "official",
     "seat": 0,
-    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "model": "stub-recut-1.2.0",
     "provider": "openai-chat",
     "dryRun": false
   },
@@ -41,24 +41,24 @@
       "reply": {
         "text": "4",
         "usage": {
-          "inputTokens": 443,
+          "inputTokens": 442,
           "outputTokens": 2,
           "costUsd": null
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-tPCc9uyvILyh0rYu8xqzV7aqn4DWHcPA",
+          "responseId": "chatcmpl-recut-1",
           "reasoningChars": 0
         }
       },
       "action": "4",
       "invalid": false,
       "usage": {
-        "inputTokens": 443,
+        "inputTokens": 442,
         "outputTokens": 2,
         "costUsd": null
       },
-      "ms": 7436
+      "ms": 44
     },
     {
       "seat": 1,
@@ -85,7 +85,7 @@
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-apLpRlXe8CSjLcGGNHX6yEk9uh6pv2x4",
+          "responseId": "chatcmpl-recut-2",
           "reasoningChars": 0
         }
       },
@@ -96,7 +96,7 @@
         "outputTokens": 2,
         "costUsd": null
       },
-      "ms": 2993
+      "ms": 4
     },
     {
       "seat": 1,
@@ -123,7 +123,7 @@
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-FV87hYT1tIgHaXhIVT2DW28ZUVnmwIQ1",
+          "responseId": "chatcmpl-recut-3",
           "reasoningChars": 0
         }
       },
@@ -134,7 +134,7 @@
         "outputTokens": 2,
         "costUsd": null
       },
-      "ms": 1410
+      "ms": 3
     },
     {
       "seat": 1,
@@ -161,7 +161,7 @@
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-fj5B65gfmJlwLIrgTCmeeS5lzBSUeNJj",
+          "responseId": "chatcmpl-recut-4",
           "reasoningChars": 0
         }
       },
@@ -172,7 +172,7 @@
         "outputTokens": 2,
         "costUsd": null
       },
-      "ms": 1487
+      "ms": 2
     }
   ],
   "end": {
@@ -192,6 +192,6 @@
     "invalidActions": 0,
     "forfeitThreshold": 3
   },
-  "startedAt": "2026-10-16T10:42:57.742Z",
-  "finishedAt": "2026-10-16T10:43:11.071Z"
+  "startedAt": "2026-10-18T23:36:05.075Z",
+  "finishedAt": "2026-10-18T23:36:05.131Z"
 }

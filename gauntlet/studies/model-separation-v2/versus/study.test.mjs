@@ -117,9 +117,16 @@ test('study-local models.sha256 matches the canonical model-separation study fil
 });
 
 test('scorer main() scores real committed fixtures and agrees with the mirror', async () => {
-  // Real, bundle-verified trajectories from the 7B probe run (model stem in the
-  // agent spec): a tictactoe win, a ladder-1 win, and a ladder-0 loss. score()
-  // replays and hash-verifies them, so a fixture drifting from HEAD fails here.
+  // Real, bundle-verified trajectories, re-recorded at the current game
+  // versions (connect4 1.2.0; the 7B probe recordings predate the connect4
+  // engine fix and the scorer's version refusal correctly rejects them).
+  // Each episode was played through the real CLI against a loopback stub
+  // replaying the prior probe recordings' seat-0 reply scripts, so the
+  // recorded outcomes (a tictactoe win, a ladder-1 win, a ladder-0 loss)
+  // match the original pins. The trajectories' agent spec names the actual
+  // recording agent; the stem below is only the directory label the study's
+  // pinned-model discovery scans. score() replays and hash-verifies every
+  // fixture, so a fixture drifting from HEAD fails here.
   const root = mkdtempSync(join(tmpdir(), 'vstudy-run-'));
   const out = mkdtempSync(join(tmpdir(), 'vstudy-out-'));
   const stem = 'qwen2.5-7b-instruct-q4_k_m';

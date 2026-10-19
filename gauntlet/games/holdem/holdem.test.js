@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 
 import { cardName, parseCard } from './cards.js';
 import { evaluate, categorize, CATEGORY_DIVISOR } from './evaluator.js';
-import { applyAction, canRaise, newMatch, normalizedFromChips, seatToAct, toCall, TOTAL_HANDS } from './engine.js';
+import { applyAction, canRaise, matchOutcome, newMatch, normalizedFromChips, seatToAct, toCall, TOTAL_HANDS, truncateOutcome } from './engine.js';
 import { holdem, GAME_ID } from './index.js';
 import { makeBaseline, parseHandsCompleted } from './baselines.js';
 import { chenScore } from './strength.js';
@@ -446,6 +446,28 @@ test('scoring: normalization is antisymmetric and 0.5 at break-even', () => {
   const bb100 = (80 / 2) * (100 / 40);
   assert.equal(n, 1 / (1 + Math.exp(-bb100 / 50)));
   assert.ok(n > 0.85 && n < 0.92);
+});
+
+test('scoring: outcome margins score the seat\'s own net, not the seat differential', () => {
+  // Greptile PR #34: state.chips already holds each seat's net winnings
+  // (chips start at [0, 0]; seat 0's win is seat 1's loss), so
+  // chips[0] - chips[1] doubles the margin before bb100. +80/-80 over 40
+  // hands is the documented 0.881 (100 bb/100 hands), not 0.982.
+  const state = /** @type {import('./engine.js').MatchState} */ (
+    /** @type {unknown} */ ({ chips: [80, -80], history: new Array(40).fill(null) })
+  );
+  const outcome = matchOutcome(state);
+  const expected = 1 / (1 + Math.exp(-2)); // bb100 = (80 / 2) * (100 / 40) = 100
+  assert.ok(Math.abs(outcome.normalized[0] - expected) < 1e-12, `seat 0 ${outcome.normalized[0]}`);
+  assert.ok(Math.abs(outcome.normalized[1] - (1 - expected)) < 1e-12, `seat 1 ${outcome.normalized[1]}`);
+  assert.deepEqual(outcome.raw, [80, -80]);
+
+  // Truncation scores the completed hands the same way.
+  const truncated = /** @type {import('./engine.js').MatchState} */ (
+    /** @type {unknown} */ ({ chips: [20, -20], history: new Array(10).fill(null) })
+  );
+  const cut = truncateOutcome(truncated);
+  assert.ok(Math.abs(cut.normalized[0] - expected) < 1e-12, `truncated seat 0 ${cut.normalized[0]}`);
 });
 
 test('showdown: winner and split pot settle chips correctly', () => {

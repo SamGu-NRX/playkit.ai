@@ -8,10 +8,10 @@
   "seed": "tictactoe/random-opponent/public/0",
   "split": "public",
   "agent": {
-    "id": "model:openai-chat/qwen2.5-7b-instruct-q4_k_m",
+    "id": "model:openai-chat/stub-recut-1.2.0",
     "track": "official",
     "seat": 0,
-    "model": "qwen2.5-7b-instruct-q4_k_m",
+    "model": "stub-recut-1.2.0",
     "provider": "openai-chat",
     "dryRun": false
   },
@@ -29,24 +29,24 @@
       "reply": {
         "text": "a1",
         "usage": {
-          "inputTokens": 326,
-          "outputTokens": 3,
+          "inputTokens": 442,
+          "outputTokens": 2,
           "costUsd": null
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-IoZKGzoZuDoY2s1lSoXZMKbIbgwHiyI5",
+          "responseId": "chatcmpl-recut-1",
           "reasoningChars": 0
         }
       },
       "action": "a1",
       "invalid": false,
       "usage": {
-        "inputTokens": 326,
-        "outputTokens": 3,
+        "inputTokens": 442,
+        "outputTokens": 2,
         "costUsd": null
       },
-      "ms": 5950
+      "ms": 44
     },
     {
       "seat": 1,
@@ -67,24 +67,24 @@
       "reply": {
         "text": "c3",
         "usage": {
-          "inputTokens": 320,
-          "outputTokens": 3,
+          "inputTokens": 442,
+          "outputTokens": 2,
           "costUsd": null
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-n3IZIRiTypJYQFJu4DX5znPrn0Y2BYjf",
+          "responseId": "chatcmpl-recut-2",
           "reasoningChars": 0
         }
       },
       "action": "c3",
       "invalid": false,
       "usage": {
-        "inputTokens": 320,
-        "outputTokens": 3,
+        "inputTokens": 442,
+        "outputTokens": 2,
         "costUsd": null
       },
-      "ms": 2125
+      "ms": 3
     },
     {
       "seat": 1,
@@ -105,24 +105,24 @@
       "reply": {
         "text": "b1",
         "usage": {
-          "inputTokens": 316,
-          "outputTokens": 3,
+          "inputTokens": 442,
+          "outputTokens": 2,
           "costUsd": null
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-j7ealvC9PeQFnfRJ5V8bKUcKNrRz28aD",
+          "responseId": "chatcmpl-recut-3",
           "reasoningChars": 0
         }
       },
       "action": "b1",
       "invalid": false,
       "usage": {
-        "inputTokens": 316,
-        "outputTokens": 3,
+        "inputTokens": 442,
+        "outputTokens": 2,
         "costUsd": null
       },
-      "ms": 2046
+      "ms": 2
     },
     {
       "seat": 1,
@@ -143,24 +143,24 @@
       "reply": {
         "text": "b2",
         "usage": {
-          "inputTokens": 311,
-          "outputTokens": 3,
+          "inputTokens": 442,
+          "outputTokens": 2,
           "costUsd": null
         },
         "meta": {
           "retries": 0,
-          "responseId": "chatcmpl-nTdx6XevMUrBAQN15QipmJoHBiwHpRDu",
+          "responseId": "chatcmpl-recut-4",
           "reasoningChars": 0
         }
       },
       "action": "b2",
       "invalid": false,
       "usage": {
-        "inputTokens": 311,
-        "outputTokens": 3,
+        "inputTokens": 442,
+        "outputTokens": 2,
         "costUsd": null
       },
-      "ms": 1929
+      "ms": 2
     }
   ],
   "end": {
@@ -180,6 +180,6 @@
     "invalidActions": 0,
     "forfeitThreshold": 3
   },
-  "startedAt": "2026-10-16T10:42:37.556Z",
-  "finishedAt": "2026-10-16T10:42:49.610Z"
+  "startedAt": "2026-10-18T23:34:52.568Z",
+  "finishedAt": "2026-10-18T23:34:52.622Z"
 }

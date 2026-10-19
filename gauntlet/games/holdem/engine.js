@@ -416,7 +416,10 @@ export function normalizedFromChips(chipMargin, handsCompleted) {
  */
 export function matchOutcome(state) {
   const hands = state.history.length;
-  const norm0 = normalizedFromChips(state.chips[0] - state.chips[1], hands);
+  // state.chips holds each seat's net winnings (seat 0's win is seat 1's
+  // loss), so the margin is seat 0's chips alone; differencing the seats
+  // would double it (Greptile PR #34).
+  const norm0 = normalizedFromChips(state.chips[0], hands);
   return {
     normalized: [norm0, 1 - norm0],
     raw: [state.chips[0], state.chips[1]],
@@ -432,7 +435,8 @@ export function matchOutcome(state) {
  */
 export function truncateOutcome(state) {
   const hands = state.history.length;
-  const norm0 = normalizedFromChips(state.chips[0] - state.chips[1], hands);
+  // Same seat's-own-net rule as matchOutcome (Greptile PR #34).
+  const norm0 = normalizedFromChips(state.chips[0], hands);
   return {
     normalized: [norm0, 1 - norm0],
     raw: [state.chips[0], state.chips[1]],

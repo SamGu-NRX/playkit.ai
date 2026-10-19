@@ -3,10 +3,10 @@
   "suite": {
     "id": "playkit-gauntlet-tier-audit-minesweeper-expert",
     "split": "public",
-    "manifestSha256": "fe0da2a710bb36dfc2519a17a99d52141ff7a526283a2cfba6c052dbad74638c"
+    "manifestSha256": "dec151d167fc247a55192ad843b99ac0ef58dab415556115232b4c9148ceffa8"
   },
   "git": {
-    "commit": "cd2f7bc0e760e4d9c3a5d149db1f00decfc37d6b"
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,9 +16,9 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T14:14:27.444Z",
-  "finishedAt": "2026-10-17T14:14:29.505Z",
-  "concurrency": 6,
+  "startedAt": "2026-10-18T23:13:36.546Z",
+  "finishedAt": "2026-10-18T23:13:37.828Z",
+  "concurrency": 2,
   "limits": {
     "maxUsd": null,
     "maxUsdTotal": null,
@@ -32,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 253,
+  "calls": 197,
   "total": {
     "episodes": 25,
     "calls": 0,
@@ -60,17 +60,13 @@
   "ledger": {
     "file": "spend.jsonl",
     "invocations": 1,
-    "calls": 253,
+    "calls": 197,
     "cap": null,
     "totalUsd": 0,
     "keptUsd": 0,
     "unwoundUsd": 0,
     "unwoundCalls": 0,
-    "unknownCalls": 253,
-    "problems": [
-      "line 177: prev hash mismatch (expected 1654960969d2…, got 2777a827d029…)",
-      "line 180: prev hash mismatch (expected fdc54044ef99…, got 1654960969d2…)",
-      "line 192: prev hash mismatch (expected 2777a827d029…, got fdc54044ef99…)"
-    ]
+    "unknownCalls": 197,
+    "problems": []
   }
 }

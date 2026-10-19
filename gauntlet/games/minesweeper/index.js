@@ -452,7 +452,7 @@ export function createBoard(params, mineIndices, opening) {
 export const game = {
   spec: {
     id: 'minesweeper',
-    version: '1.1.0',
+    version: '1.2.0',
     title: 'Minesweeper',
     seats: /** @type {1 | 2} */ (1),
     information: /** @type {import('../../core/types.js').InformationMode} */ ('hidden'),

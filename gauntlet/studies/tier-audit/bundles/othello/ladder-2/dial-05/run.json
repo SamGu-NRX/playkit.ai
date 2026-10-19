@@ -6,7 +6,7 @@
     "manifestSha256": "e1ad104610b7a37ec1345259cb06c2c9f846c0c61c5b31b65ea6f6b01b9bd104"
   },
   "git": {
-    "commit": "cd2f7bc0e760e4d9c3a5d149db1f00decfc37d6b"
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,9 +16,9 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T16:53:02.752Z",
-  "finishedAt": "2026-10-17T16:53:06.388Z",
-  "concurrency": 8,
+  "startedAt": "2026-10-19T01:40:44.823Z",
+  "finishedAt": "2026-10-19T01:40:59.898Z",
+  "concurrency": 2,
   "limits": {
     "maxUsd": null,
     "maxUsdTotal": null,
@@ -32,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 120,
+  "calls": 357,
   "total": {
     "episodes": 12,
     "calls": 0,
@@ -45,22 +45,13 @@
   },
   "counts": {
     "jobs": 12,
-    "played": 4,
-    "skipped": 8,
+    "played": 12,
+    "skipped": 0,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [
-    "othello/ladder-2/othello/ladder-2/public/0",
-    "othello/ladder-2/othello/ladder-2/public/1",
-    "othello/ladder-2/othello/ladder-2/public/2",
-    "othello/ladder-2/othello/ladder-2/public/3",
-    "othello/ladder-2/othello/ladder-2/public/4",
-    "othello/ladder-2/othello/ladder-2/public/5",
-    "othello/ladder-2/othello/ladder-2/public/6",
-    "othello/ladder-2/othello/ladder-2/public/7"
-  ],
+  "skipped": [],
   "replayed": [],
   "unplayed": [],
   "failed": [],
@@ -68,7 +59,7 @@
   "stopReason": null,
   "ledger": {
     "file": "spend.jsonl",
-    "invocations": 2,
+    "invocations": 1,
     "calls": 357,
     "cap": null,
     "totalUsd": 0,
@@ -76,10 +67,6 @@
     "unwoundUsd": 0,
     "unwoundCalls": 0,
     "unknownCalls": 357,
-    "problems": [
-      "line 239: prev hash mismatch (expected 4ff0f5ccba3e…, got 692791ad2921…)",
-      "line 301: prev hash mismatch (expected 2dd0c80284f3…, got 4ff0f5ccba3e…)",
-      "line 331: prev hash mismatch (expected 692791ad2921…, got 2dd0c80284f3…)"
-    ]
+    "problems": []
   }
 }

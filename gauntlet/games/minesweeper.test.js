@@ -17,6 +17,41 @@ const tier = (id) => {
   return found;
 };
 
+test('logicalPass: pass-deduced mines leave the global count (no safe-cell flags)', () => {
+  // Greptile PR #34: mines deduced during the pass were excluded from the
+  // undecided-hidden set but not from minesRemaining, so a later iteration
+  // could mark every undecided cell a mine — including provably safe ones.
+  // Minimal 3x3 five-mine case: after layer 2 deduces 1 and 2, the stale
+  // global count flagged safe cells 6 and 7.
+  const lists = neighborLists(3, 3, false);
+  const view = [HIDDEN, HIDDEN, HIDDEN, HIDDEN, HIDDEN, 3, HIDDEN, HIDDEN, 1];
+  const deduced = logicalPass(view, lists, 5);
+  assert.ok(!deduced.mines.includes(6) && !deduced.mines.includes(7), `safe cells flagged: ${deduced.mines}`);
+  assert.ok(deduced.mines.includes(1) && deduced.mines.includes(2), `layer-2 deductions lost: ${deduced.mines}`);
+
+  // Exhaustive sweep over every reachable 3x3 five-mine view: only true
+  // mines are flagged and only true safe cells are cleared (184 views
+  // misfired before the fix).
+  for (let mask = 0; mask < 1 << 9; mask++) {
+    let count = 0;
+    for (let i = 0; i < 9; i++) if ((mask >> i) & 1) count++;
+    if (count !== 5) continue;
+    /** @type {(i: number) => boolean} */
+    const isMine = (i) => ((mask >> i) & 1) === 1;
+    /** @type {(i: number) => number} */
+    const number = (i) => lists[i].filter((j) => isMine(j)).length;
+    const safeCells = [];
+    for (let i = 0; i < 9; i++) if (!isMine(i)) safeCells.push(i);
+    for (let r = 1; r < 1 << safeCells.length; r++) {
+      const v = new Array(9).fill(HIDDEN);
+      for (let k = 0; k < safeCells.length; k++) if ((r >> k) & 1) v[safeCells[k]] = number(safeCells[k]);
+      const out = logicalPass(v, lists, 5);
+      for (const c of out.mines) assert.ok(isMine(c), `mask ${mask}: cell ${c} flagged but safe`);
+      for (const c of out.safe) assert.ok(!isMine(c), `mask ${mask}: cell ${c} cleared but mine`);
+    }
+  }
+});
+
 test('reset is deterministic in (tier, seed) and survives a JSON round trip', () => {
   for (const id of ['beginner', 'intermediate', 'expert', 'torus']) {
     const a = game.reset(tier(id), 'seed-one');

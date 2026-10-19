@@ -3,10 +3,10 @@
   "suite": {
     "id": "playkit-gauntlet-tier-audit-connect4-ladder-4",
     "split": "public",
-    "manifestSha256": "5dec8c3f716342893351d30a10808b6efcd2d7f7a19d0fb11e4130f4697e061b"
+    "manifestSha256": "1a627f8cf579285221395a614ab2e29027083cf457531fe60ba84b28b742795b"
   },
   "git": {
-    "commit": "cd2f7bc0e760e4d9c3a5d149db1f00decfc37d6b"
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,9 +16,9 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T16:44:37.610Z",
-  "finishedAt": "2026-10-17T16:44:39.296Z",
-  "concurrency": 8,
+  "startedAt": "2026-10-18T23:14:56.041Z",
+  "finishedAt": "2026-10-18T23:15:15.500Z",
+  "concurrency": 2,
   "limits": {
     "maxUsd": null,
     "maxUsdTotal": null,
@@ -32,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 45,
+  "calls": 97,
   "total": {
     "episodes": 12,
     "calls": 0,
@@ -45,22 +45,13 @@
   },
   "counts": {
     "jobs": 12,
-    "played": 4,
-    "skipped": 8,
+    "played": 12,
+    "skipped": 0,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [
-    "connect4/ladder-4/connect4/ladder-4/public/0",
-    "connect4/ladder-4/connect4/ladder-4/public/1",
-    "connect4/ladder-4/connect4/ladder-4/public/2",
-    "connect4/ladder-4/connect4/ladder-4/public/3",
-    "connect4/ladder-4/connect4/ladder-4/public/4",
-    "connect4/ladder-4/connect4/ladder-4/public/5",
-    "connect4/ladder-4/connect4/ladder-4/public/6",
-    "connect4/ladder-4/connect4/ladder-4/public/7"
-  ],
+  "skipped": [],
   "replayed": [],
   "unplayed": [],
   "failed": [],
@@ -68,18 +59,14 @@
   "stopReason": null,
   "ledger": {
     "file": "spend.jsonl",
-    "invocations": 2,
-    "calls": 129,
+    "invocations": 1,
+    "calls": 97,
     "cap": null,
     "totalUsd": 0,
     "keptUsd": 0,
     "unwoundUsd": 0,
     "unwoundCalls": 0,
-    "unknownCalls": 129,
-    "problems": [
-      "line 86: prev hash mismatch (expected 1ab22989c062…, got 602350c2a6d0…)",
-      "line 95: prev hash mismatch (expected a64be1345ab5…, got 1ab22989c062…)",
-      "line 106: prev hash mismatch (expected 602350c2a6d0…, got a64be1345ab5…)"
-    ]
+    "unknownCalls": 97,
+    "problems": []
   }
 }

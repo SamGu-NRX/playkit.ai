@@ -1,0 +1,72 @@
+{
+  "format": "playkit-gauntlet-run/1",
+  "suite": {
+    "id": "playkit-gauntlet-tier-audit-connect4-forced-win",
+    "split": "public",
+    "manifestSha256": "cbf3b35dbe6729cd07d074a0ff92becdbd4ed42089ffde2b5c31eae6da290ca6"
+  },
+  "git": {
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
+  },
+  "node": "v20.20.2",
+  "agent": {
+    "id": "dial-engine-d8-p100",
+    "track": "baseline"
+  },
+  "prices": {
+    "sha256": null
+  },
+  "startedAt": "2026-10-18T23:16:35.168Z",
+  "finishedAt": "2026-10-18T23:16:41.542Z",
+  "concurrency": 2,
+  "limits": {
+    "maxUsd": null,
+    "maxUsdTotal": null,
+    "maxCalls": null,
+    "requestsPerMinute": null,
+    "maxOutputTokens": null,
+    "callTimeoutMs": null,
+    "thinkingBudget": null,
+    "reasoningEffort": null,
+    "episodeTimeLimitMs": null
+  },
+  "spendUsd": 0,
+  "unknownCostSteps": 0,
+  "calls": 25,
+  "total": {
+    "episodes": 12,
+    "calls": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0
+    },
+    "spendUsd": 0,
+    "unknownCostSteps": 0
+  },
+  "counts": {
+    "jobs": 12,
+    "played": 12,
+    "skipped": 0,
+    "replayed": 0,
+    "unplayed": 0,
+    "failed": 0
+  },
+  "skipped": [],
+  "replayed": [],
+  "unplayed": [],
+  "failed": [],
+  "stopped": null,
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 1,
+    "calls": 25,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 25,
+    "problems": []
+  }
+}

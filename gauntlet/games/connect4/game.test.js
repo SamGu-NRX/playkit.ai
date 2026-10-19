@@ -196,6 +196,38 @@ test('engine: same seed gives the same tie-breaks, moves stay legal', () => {
   assert.ok([a.col, b.col].every((col) => legalCols(state).includes(col)));
 });
 
+test('engine: an apparent root tie at a bound-only column is re-searched exactly', () => {
+  // Greptile PR #34: root moves searched after alpha has risen get a cutoff
+  // window, so a reported score can be only an upper bound. After [3,3,1,6,5]
+  // every move's reported depth-2 score ties at -3, but column 2 is the unique
+  // full-window-exact best; the bound-tie bug let the seeded tie-break pick
+  // column 1, whose true value is -48 (and -999996 at depth 4: a forced loss
+  // within the horizon reported as a tie with the best move).
+  const state = played([3, 3, 1, 6, 5]);
+  const d2 = chooseMove(state, { depth: 2, seedKey: 'scan-5-5-2' });
+  assert.equal(d2.col, 2);
+  assert.equal(d2.score, -3);
+  const d4 = chooseMove(state, { depth: 4, seedKey: 'scan-5-5-4' });
+  assert.equal(d4.col, 2);
+  assert.equal(d4.score, -6);
+});
+
+test('engine: chooseExactMove plays the proven fastest win, not a bound tie', () => {
+  // Same bound-vs-exact rule at the exact root loop: the unfixed engine
+  // reported a mate score while playing column 6, a slower mate (win in 7);
+  // column 1 is the unique full-window argmax (win in 5).
+  const state = played([
+    6, 3, 5, 3, 2, 3, 5, 6, 2, 5, 5, 4, 0, 0, 3, 0, 2, 2, 0, 2, 3, 3, 1, 1, 0,
+  ]);
+  const choice = chooseExactMove(state, 'late-311-25');
+  assert.equal(choice.col, 1);
+  assert.equal(choice.score, 999995);
+  assert.deepEqual(
+    { verdict: choice.verdict, plies: choice.plies },
+    { verdict: 'win', plies: 5 }
+  );
+});
+
 test('game: the tier ladder has ascending engine depths and a forced-win tier', () => {
   const tiers = game.spec.tiers;
   assert.deepEqual(
@@ -460,9 +492,15 @@ test('game: three seeded records pin the ladder-0 rung', async () => {
   const records = [
     { seed: 'record-0', agentSeat: 1, actions: ['4', '1', '4', '1'], outcome: [1, 0] },
     {
+      // Record re-derived after the PR #34 root-bound-tie fix: the depth-2
+      // opponent held a forced win-in-3 on the old line yet played bound-tie
+      // draw lines twice (exact per-reply values: 999997 available, played a
+      // 0). The re-derived record is verified reply-by-reply against
+      // full-window argmax at depth 2 and converts in 11 actions instead of
+      // 13; same outcome and terminal reason.
       seed: 'record-1',
       agentSeat: 0,
-      actions: ['4', '4', '4', '4', '4', '4', '6', '1', '6', '1', '5', '1', '3'],
+      actions: ['4', '4', '4', '4', '4', '4', '1', '1', '3', '1', '2'],
       outcome: [0, 1],
     },
     { seed: 'record-2', agentSeat: 1, actions: ['4', '4', '6'], outcome: [1, 0] },

@@ -166,7 +166,10 @@ export function logicalPass(view, neighbors, minesTotal) {
 
     // Global mine-count rules: if the remaining mines exactly fill (or are
     // absent from) the undecided hidden cells, every one of them is decided.
-    const minesRemaining = minesTotal - flagCount;
+    // Mines deduced during this pass are excluded from `hidden`, so they must
+    // be subtracted here too — otherwise the stale count over-fills the
+    // undecided cells and flags provably safe ones (Greptile PR #34).
+    const minesRemaining = minesTotal - flagCount - mines.size;
     if (hidden.length > 0) {
       if (minesRemaining === 0) {
         for (const c of hidden) safe.add(c);

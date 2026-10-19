@@ -6,7 +6,7 @@
     "manifestSha256": "2d0691a8cc070cc47cb9aedea4e5b4fc7137a21ebb118834417e9d850d460434"
   },
   "git": {
-    "commit": "5e040283cb1932395ca1c8de72cca2545d371417"
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,9 +16,9 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T17:46:24.922Z",
-  "finishedAt": "2026-10-17T17:46:29.213Z",
-  "concurrency": 8,
+  "startedAt": "2026-10-19T01:13:23.601Z",
+  "finishedAt": "2026-10-19T01:13:29.847Z",
+  "concurrency": 2,
   "limits": {
     "maxUsd": null,
     "maxUsdTotal": null,
@@ -32,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 9720,
+  "calls": 20250,
   "total": {
     "episodes": 25,
     "calls": 0,
@@ -45,27 +45,13 @@
   },
   "counts": {
     "jobs": 25,
-    "played": 12,
-    "skipped": 13,
+    "played": 25,
+    "skipped": 0,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [
-    "nonogram/grand/nonogram/grand/public/0",
-    "nonogram/grand/nonogram/grand/public/1",
-    "nonogram/grand/nonogram/grand/public/2",
-    "nonogram/grand/nonogram/grand/public/3",
-    "nonogram/grand/nonogram/grand/public/4",
-    "nonogram/grand/nonogram/grand/public/5",
-    "nonogram/grand/nonogram/grand/public/6",
-    "nonogram/grand/nonogram/grand/public/7",
-    "nonogram/grand/nonogram/grand/public/8",
-    "nonogram/grand/nonogram/grand/public/9",
-    "nonogram/grand/nonogram/grand/public/10",
-    "nonogram/grand/nonogram/grand/public/11",
-    "nonogram/grand/nonogram/grand/public/12"
-  ],
+  "skipped": [],
   "replayed": [],
   "unplayed": [],
   "failed": [],
@@ -73,7 +59,7 @@
   "stopReason": null,
   "ledger": {
     "file": "spend.jsonl",
-    "invocations": 4,
+    "invocations": 1,
     "calls": 20250,
     "cap": null,
     "totalUsd": 0,
@@ -81,10 +67,6 @@
     "unwoundUsd": 0,
     "unwoundCalls": 0,
     "unknownCalls": 20250,
-    "problems": [
-      "line 10534: prev hash mismatch (expected 10a38f676972…, got fa026bcd1ad2…)",
-      "line 11344: prev hash mismatch (expected aebe4f423b09…, got 10a38f676972…)",
-      "line 12154: prev hash mismatch (expected fa026bcd1ad2…, got aebe4f423b09…)"
-    ]
+    "problems": []
   }
 }

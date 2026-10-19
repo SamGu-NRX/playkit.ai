@@ -1184,3 +1184,146 @@ test('an already-stopped run refuses before waiting on the rate limiter', { time
     await rm(outDir, { recursive: true, force: true });
   }
 });
+
+
+test('resume refuses an agent whose identity is missing once identity is established', async () => {
+  const outDir = await tempDir('identity-missing');
+  try {
+    const suite = buildSuite([takeOrPass], { split: 'public' });
+    const games = [takeOrPass];
+    const jobs = planJobs(suite);
+    const first = await runSuite({
+      suite,
+      games,
+      agentFactory: pricedFactory(),
+      outDir,
+      maxCalls: 1,
+    });
+    assert.equal(first.stopped, 'calls');
+    assert.equal(first.run.counts.played, 1);
+
+    // codex r4309389116: the probe establishes agent A, but a later factory
+    // call returns an object with act() and no string id. A null live
+    // identity used to skip the worker's check entirely, so the identityless
+    // agent played and wrote a trajectory with an undefined agent id — the
+    // run reported success over a bundle scoring refuses. A missing live
+    // identity is fatal during resume, exactly like a mismatched one.
+    let noIdActs = 0;
+    await assert.rejects(
+      runSuite({
+        suite,
+        games,
+        outDir,
+        resume: true,
+        agentFactory: (job) =>
+          job.key === jobs[0].key
+            ? pricedFactory()(job)
+            : /** @type {Agent} */ ({
+                track: 'community',
+                async act(ctx) {
+                  noIdActs += 1;
+                  return {
+                    text: /** @type {string[]} */ (ctx.legalActions)[0],
+                    usage: { inputTokens: 50, outputTokens: 10, costUsd: 0.001 },
+                  };
+                },
+              }),
+      }),
+      /no usable identity/
+    );
+    assert.equal(noIdActs, 0, 'the identityless agent must not play a single move');
+
+    // The bundle still holds only the original agent's trajectory.
+    const trajectories = await readTrajectories(outDir);
+    assert.equal(trajectories.size, 1);
+    for (const t of trajectories.values()) {
+      assert.equal(t.agent?.id, 'fake-priced');
+    }
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a worker-refused resume leaves the spend ledger untouched until an agent plays', async () => {
+  const outDir = await tempDir('ledger-worker-refusal');
+  try {
+    const suite = buildSuite([takeOrPass], { split: 'public' });
+    const games = [takeOrPass];
+    const jobs = planJobs(suite);
+    const first = await runSuite({
+      suite,
+      games,
+      agentFactory: pricedFactory(),
+      outDir,
+      maxCalls: 1,
+      maxUsdTotal: 1,
+    });
+    assert.equal(first.stopped, 'calls');
+    assert.equal(first.run.counts.played, 1);
+
+    // codex r4309389123: the probe matches the recorded agent, but a later
+    // factory call returns a different one — the ResumeIdentityError fires
+    // in the worker, after the invocation and cap lines used to be written.
+    // Admission lines must land only once an agent has passed the identity
+    // check and plays, so a worker-refused resume leaves the ledger
+    // byte-identical and a later resume cannot inherit its raised cap.
+    await assert.rejects(
+      runSuite({
+        suite,
+        games,
+        outDir,
+        resume: true,
+        maxUsdTotal: 100,
+        agentFactory: (job) =>
+          job.key === jobs[0].key
+            ? pricedFactory()(job)
+            : /** @type {Agent} */ ({
+                id: 'fake-priced-b',
+                track: 'community',
+                async act(ctx) {
+                  return {
+                    text: /** @type {string[]} */ (ctx.legalActions)[0],
+                    usage: { inputTokens: 50, outputTokens: 10, costUsd: 0.001 },
+                  };
+                },
+              }),
+      }),
+      /refusing to mix two agents/
+    );
+    const readLedger = async () => {
+      const text = await readFile(path.join(outDir, SPEND_LEDGER_FILENAME), 'utf8');
+      return text
+        .split('\n')
+        .filter((l) => l.trim())
+        .map((l) => JSON.parse(l));
+    };
+    let lines = await readLedger();
+    assert.equal(
+      lines.filter((l) => l.kind === 'invocation').length,
+      1,
+      'the worker-refused resume must not append an invocation line'
+    );
+    assert.equal(lines.filter((l) => l.kind === 'cap').length, 1, 'the worker-refused resume must not append a cap line');
+    assert.equal(lines.find((l) => l.kind === 'cap')?.maxUsdTotal, 1);
+
+    // A later valid resume plays and DOES commit its admission lines: the
+    // deferral defers, it does not drop.
+    const second = await runSuite({
+      suite,
+      games,
+      outDir,
+      resume: true,
+      maxUsdTotal: 100,
+      agentFactory: pricedFactory(),
+    });
+    assert.equal(second.run.counts.played, 1);
+    lines = await readLedger();
+    const invocationLines = lines.filter((l) => l.kind === 'invocation');
+    const capLines = lines.filter((l) => l.kind === 'cap');
+    assert.equal(invocationLines.length, 2, 'the valid resume commits its invocation line');
+    assert.equal(capLines.length, 2, 'the valid resume commits its raised cap');
+    assert.equal(capLines[1].maxUsdTotal, 100);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});

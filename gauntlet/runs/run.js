@@ -953,16 +953,35 @@ export async function runSuite({
     }
   }
 
-  // The invocation (and any cap raise) reach the ledger only after the resume
-  // refusals above (greptile r4305577245): a refused resume must leave the
-  // bundle exactly as it was — one rejected for mixing agents must not be
-  // able to raise the recorded maxUsdTotal as a side effect, or a later
-  // resume with the right agent inherits the raised cap.
-  await appendSpendLines([
-    { kind: 'invocation', invocation: invocationIndex, startedAt: new Date(startedAtMs).toISOString(), resumed: resume },
-  ]);
-  if (maxUsdTotal !== undefined) {
-    await appendSpendLines([{ kind: 'cap', invocation: invocationIndex, maxUsdTotal }]);
+  // The invocation (and any cap raise) reach the ledger only once this
+  // invocation is committed to playing. On a fresh run that is immediately
+  // (unchanged behavior); on a resume, only after the first factory agent
+  // passes the worker's identity check (greptile r4305577245, codex
+  // r4309389123): a resume refused before any agent plays — mixed-agent
+  // refusal at entry or in the worker — must leave the bundle exactly as it
+  // was. Writing the lines eagerly let a worker-refused resume append its
+  // invocation and raised maxUsdTotal anyway, and a later resume with the
+  // right agent inherited that raised cap. Workers await this gate before
+  // playing, so the invocation line always precedes this invocation's call
+  // lines. A resume that only verifies already-played trajectories writes
+  // none — the bundle stays untouched, which is the point.
+  /** @type {Promise<void> | null} */
+  let admissionPromise = null;
+  const writeAdmissionLines = () => {
+    if (admissionPromise === null) {
+      admissionPromise = (async () => {
+        await appendSpendLines([
+          { kind: 'invocation', invocation: invocationIndex, startedAt: new Date(startedAtMs).toISOString(), resumed: resume },
+        ]);
+        if (maxUsdTotal !== undefined) {
+          await appendSpendLines([{ kind: 'cap', invocation: invocationIndex, maxUsdTotal }]);
+        }
+      })();
+    }
+    return admissionPromise;
+  };
+  if (!resume) {
+    await writeAdmissionLines();
   }
 
   //
@@ -1235,16 +1254,29 @@ export async function runSuite({
                   model: base.model ?? null,
                 })
               : null;
-          if (liveIdentity !== null) {
-            if (bundleAgentIdentity === null) {
-              bundleAgentIdentity = liveIdentity;
-            } else if (bundleAgentIdentity !== liveIdentity) {
+          if (liveIdentity === null) {
+            // A missing live identity must be fatal once the bundle's
+            // identity is established (codex r4309389116): an agent with
+            // act() but no usable id used to skip this check entirely and
+            // play, writing a trajectory with an undefined agent id that
+            // scoring refuses — success reported over an unusable bundle.
+            if (bundleAgentIdentity !== null) {
               throw new ResumeIdentityError(
-                `[gauntlet/runs/run.js] resume: the factory returned agent ${liveIdentity} for ${jobLabel(job)} but the bundle's established agent is ${bundleAgentIdentity}; refusing to mix two agents in one bundle — resume with the same agent or use a fresh outDir`
+                `[gauntlet/runs/run.js] resume: agentFactory returned an agent with no usable identity for ${jobLabel(job)} (missing or non-string id) but the bundle's established agent is ${bundleAgentIdentity}; refusing to play an identityless agent into the bundle — fix the factory or use a fresh outDir`
               );
             }
+          } else if (bundleAgentIdentity === null) {
+            bundleAgentIdentity = liveIdentity;
+          } else if (bundleAgentIdentity !== liveIdentity) {
+            throw new ResumeIdentityError(
+              `[gauntlet/runs/run.js] resume: the factory returned agent ${liveIdentity} for ${jobLabel(job)} but the bundle's established agent is ${bundleAgentIdentity}; refusing to mix two agents in one bundle — resume with the same agent or use a fresh outDir`
+            );
           }
         }
+        // The resume's admission lines land here (codex r4309389123): the
+        // first agent that passes the identity check commits the invocation
+        // to the ledger. A refusal above leaves the ledger untouched.
+        await writeAdmissionLines();
         const game = /** @type {Game<*>} */ (gameMap.get(job.gameId));
         const trajectory = await runEpisode({
           game,

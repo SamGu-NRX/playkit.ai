@@ -4,8 +4,8 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 GAUNT="$(cd "$HERE/../../.." && pwd)"
-LLAMA=/home/user/work/llamacpp/llama-b11662/llama-server
-MODELS_DIR=/home/user/work/gauntlet-models
+LLAMA="${LLAMA:-/home/user/work/llamacpp/llama-b11662/llama-server}"
+MODELS_DIR="${MODELS_DIR:-/home/user/work/gauntlet-models}"
 SEEDS_PER_TIER=12
 
 cd "$GAUNT"
@@ -23,9 +23,11 @@ for PAIR in \
     --ctx-size 4096 --temp 0.0 --seed 42 --threads 8 > "/tmp/llama-$STEM.log" 2>&1 &
   SRV=$!
   trap 'kill $SRV 2>/dev/null || true' EXIT
-  # Per-request limits: a hung server must reach the probe-exhaustion check
-  # instead of hanging this loop forever (greptile #115).
-  until curl -sf --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/health >/dev/null 2>&1; do sleep 2; done
+  # Bounded health phase (codex #122): a server that stays alive but never
+  # answers /health must exhaust the attempt budget loudly instead of hanging
+  # this launcher forever; per-request curl limits (greptile #115) bound each
+  # probe, and a dead server fails the liveness check at once.
+  bash "$HERE/../wait-healthy.sh" "$SRV" "$STEM" "/tmp/llama-$STEM.log"
   READY=0
   for i in $(seq 1 120); do
     if curl -sf --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \

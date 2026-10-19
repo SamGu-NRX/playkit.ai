@@ -143,10 +143,11 @@ describe('journeys/pilot stub port allocation', () => {
   });
 
   it('refuses a bare --port-file with no path loudly (the flag-parsing sentinel must not become the path)', () => {
-    const work = mkdirSync(
-      path.join(tmpdir(), `gauntlet-stub-bare-${process.pid}-${Date.now()}`),
-      { recursive: true }
-    );
+    // Precompute the path: non-recursive mkdirSync returns nothing, and the
+    // recursive overload's return is string | undefined under strict checkJs.
+    const work = path.join(tmpdir(), `gauntlet-stub-bare-${process.pid}-${Date.now()}`);
+    rmSync(work, { recursive: true, force: true });
+    mkdirSync(work, { recursive: true });
     try {
       const res = spawnSync(
         process.execPath,
@@ -175,10 +176,11 @@ describe('journeys/pilot stub port allocation', () => {
   });
 
   it('skips the empty port-file write window and reports the real port', async () => {
-    const work = mkdirSync(
-      path.join(tmpdir(), `gauntlet-stub-race-${process.pid}-${Date.now()}`),
-      { recursive: true }
-    );
+    // Precompute the path: non-recursive mkdirSync returns nothing, and the
+    // recursive overload's return is string | undefined under strict checkJs.
+    const work = path.join(tmpdir(), `gauntlet-stub-race-${process.pid}-${Date.now()}`);
+    rmSync(work, { recursive: true, force: true });
+    mkdirSync(work, { recursive: true });
     const portFile = path.join(work, 'lazy.port');
     rmSync(portFile, { force: true });
     const lazy = path.join(work, 'lazy-stub.mjs');
@@ -221,10 +223,11 @@ describe('journeys/pilot stub port allocation', () => {
   });
 
   it('kills a stub that never reports its port before the helper gives up', async () => {
-    const work = mkdirSync(
-      path.join(tmpdir(), `gauntlet-stub-hang-${process.pid}-${Date.now()}`),
-      { recursive: true }
-    );
+    // Precompute the path: non-recursive mkdirSync returns nothing, and the
+    // recursive overload's return is string | undefined under strict checkJs.
+    const work = path.join(tmpdir(), `gauntlet-stub-hang-${process.pid}-${Date.now()}`);
+    rmSync(work, { recursive: true, force: true });
+    mkdirSync(work, { recursive: true });
     const portFile = path.join(work, 'silent.port');
     rmSync(portFile, { force: true });
     const silent = path.join(work, 'silent-stub.mjs');

@@ -22,9 +22,11 @@ sleep 1
   --ctx-size 4096 --temp 0.0 --seed 42 --threads 8 > "/tmp/llama-msep-v2-$M.log" 2>&1 &
 SRV=$!
 trap 'kill $SRV 2>/dev/null || true' EXIT
-# Per-request limits: a hung server must fail the readiness/warm-up step
-# (and abort under set -e) instead of hanging this script forever.
-until curl -sf --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/health >/dev/null; do sleep 2; done
+# Bounded health phase (codex #122): a server that stays alive but never
+# answers /health must exhaust the attempt budget loudly instead of hanging
+# this launcher forever; per-request curl limits (greptile #115) bound each
+# probe, and a dead server fails the liveness check at once.
+bash "$HERE/../wait-healthy.sh" "$SRV" "$M" "/tmp/llama-msep-v2-$M.log"
 curl -s --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
   -d '{"messages":[{"role":"user","content":"hi"}],"max_tokens":1}' > /dev/null   # warm-up
 

@@ -18,8 +18,15 @@ if ! curl -sf http://127.0.0.1:8080/health >/dev/null; then
     --ctx-size 4096 --temp 0.0 --seed 42 --threads 8 > /tmp/llama-msep-v2-7b-rest.log 2>&1 &
   SRV=$!
   trap 'kill $SRV 2>/dev/null || true' EXIT
-  until curl -sf http://127.0.0.1:8080/health >/dev/null; do sleep 2; done
-  curl -s http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
+  # Bounded health phase (codex #122): a server that stays alive but never
+  # answers /health must exhaust the attempt budget loudly instead of hanging
+  # this launcher forever; per-request curl limits (greptile #115) bound each
+  # probe, and a dead server fails the liveness check at once.
+  if ! bash "$HERE/../wait-healthy.sh" "$SRV" "7b-rest" "/tmp/llama-msep-v2-7b-rest.log"; then
+    echo "server 7b-rest never became healthy; aborting before the tier runs" >&2
+    exit 1
+  fi
+  curl -s --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
     -d '{"messages":[{"role":"user","content":"hi"}],"max_tokens":1}' > /dev/null
 fi
 

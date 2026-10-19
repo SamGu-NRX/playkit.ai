@@ -268,3 +268,43 @@ test('a script piped before the first agent starts survives dispose into the nex
     await second.dispose?.();
   }
 });
+
+test('turn 2+ resumes the shared input an interactive player typed into', async () => {
+  // The interactive hang: act()'s finally pauses the shared interface when
+  // this agent is its only subscriber, and the next act() returned early on
+  // `if (started)` without resuming it — so a line typed after turn 1 sat in
+  // the stream forever once the shared buffer was empty. A whole piped
+  // script flushes into the buffer during turn 1, which is why the piped
+  // tests above never caught it; this test reproduces the interactive shape:
+  // each move arrives only after the previous turn resolved.
+  const { agent, input } = makeAgent();
+  input.write('1\n'); // turn 1's move, buffered before the first read
+  const firstReply = await agent.act(makeCtx({ turn: 0 }));
+  assert.equal(firstReply.text, 'a1');
+  input.write('2\n'); // arrives only AFTER turn 1 resolved and paused the interface
+  let killer;
+  try {
+    const secondReply = await Promise.race([
+      agent.act(makeCtx({ turn: 1 })),
+      new Promise((_resolve, reject) => {
+        killer = setTimeout(
+          () => reject(new Error('timed out: turn 2 never saw the typed line — the paused shared input was not resumed')),
+          2000
+        );
+      }),
+    ]);
+    assert.equal(secondReply.text, 'a2');
+  } finally {
+    clearTimeout(killer);
+    // Unblock a losing act() so the suite cannot leak a pending readline
+    // wait. The shared interface is PAUSED here in the unfixed tree, so
+    // ending the stream alone would never deliver 'end' (readline closes on
+    // 'end', which a paused stream does not emit) — resume first so the
+    // buffered line flushes and EOF flows to the still-subscribed agent,
+    // which takes the forfeit path.
+    input.resume();
+    input.end();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await agent.dispose?.();
+  }
+});

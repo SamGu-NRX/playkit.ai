@@ -184,12 +184,25 @@ export function createHumanAgent(options = {}) {
 
   /**
    * Attach to the shared interface lazily, on the first turn, so an agent
-   * built but never seated does not hold the process's stdin open.
+   * built but never seated does not hold the process's stdin open. Later
+   * turns re-arm the interface idleInput() paused: without this, an
+   * interactively typed move would sit in the stream and never flow after
+   * turn 1.
    *
    * @returns {void}
    */
   function startInput() {
-    if (started) return;
+    if (started) {
+      // Turn 2+ of the same episode: idleInput() paused the shared interface
+      // when this agent was its only subscriber. Resume so typed input flows
+      // again — harmless with more than one subscriber (only a sole
+      // subscriber ever pauses it), and piped flushes are absorbed by the
+      // stream-level shared buffer by design.
+      if (shared !== null && !shared.eof) {
+        shared.rl.resume();
+      }
+      return;
+    }
     started = true;
     shared = acquireInput(input);
     subscription = {

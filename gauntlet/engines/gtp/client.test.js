@@ -9,7 +9,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdtempSync, writeFileSync, chmodSync, rmSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -340,9 +341,16 @@ test('process wiring: quit() does not wait behind a running genmove', { timeout:
   // bound the whole polite phase — queue wait included — and terminate the
   // engine when it expires.
   const fake = fakeEngine(
-    'while IFS= read -r line; do\n' +
+    // codex r4309389133: a foreground `sleep 30` survives the engine shell's
+    // termination, keeps the inherited stdio pipes open, and held
+    // `node --test engines/gtp/client.test.js` alive ~29s past this test.
+    // The delay runs in the background under a trap that kills it when the
+    // shell is terminated, so a shutdown closes every writer of the pipes.
+    'child=\n' +
+      "trap '[ -n \"$child\" ] && kill \"$child\" 2>/dev/null; exit 0' TERM INT HUP\n" +
+      'while IFS= read -r line; do\n' +
       '  case "$line" in\n' +
-      "    *genmove*) sleep 30; printf '= Q16\\n\\n' ;;\n" +
+      "    *genmove*) sleep 30 & child=$!; wait \"$child\"; printf '= Q16\\n\\n' ;;\n" +
       "    *) printf '= \\n\\n' ;;\n" +
       '  esac\n' +
       'done'
@@ -361,6 +369,51 @@ test('process wiring: quit() does not wait behind a running genmove', { timeout:
       `quit() took ${elapsed}ms — it waited behind the running genmove instead of bounding the shutdown`
     );
     await assert.rejects(genmovePromise);
+  } finally {
+    cleanupFake();
+  }
+});
+
+test('process wiring: the fake engine reaps its sleeping descendant when terminated', { timeout: 10_000 }, async () => {
+  // codex r4309389133, pinned directly: after the engine shell is terminated
+  // mid-genmove, its delayed reply's sleep must be reaped — every writer of
+  // the inherited stdio pipes must close promptly, or the test process (and
+  // anything holding the engine's streams) lingers for the sleep's duration.
+  const fake = fakeEngine(
+    'child=\n' +
+      "trap '[ -n \"$child\" ] && kill \"$child\" 2>/dev/null; exit 0' TERM INT HUP\n" +
+      'while IFS= read -r line; do\n' +
+      '  case "$line" in\n' +
+      "    *genmove*) sleep 30 & child=$!; wait \"$child\"; printf '= Q16\\n\\n' ;;\n" +
+      "    *) printf '= \\n\\n' ;;\n" +
+      '  esac\n' +
+      'done'
+  );
+  const child = spawn(fake, { stdio: ['pipe', 'pipe', 'pipe'] });
+  const started = Date.now();
+  const closed = once(child, 'close');
+  try {
+    child.stdin.write('1 genmove black\n');
+    // Let the shell reach the backgrounded sleep before the kill lands.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    child.kill('SIGTERM');
+    let timer;
+    try {
+      await Promise.race([
+        closed,
+        new Promise(
+          (_resolve, reject) => {
+            timer = setTimeout(
+              () => reject(new Error('stdio still open 2s after termination — the sleeping descendant kept the pipe open')),
+              2_000
+            );
+          }
+        ),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
+    assert.ok(Date.now() - started < 5_000, 'close took too long after termination');
   } finally {
     cleanupFake();
   }

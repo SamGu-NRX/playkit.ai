@@ -1,7 +1,7 @@
 {
   "meta": {
     "run": "gauntlet/rating/absolute.js",
-    "ladderResults": "/home/user/work/burst17-playkit-review-cli/gauntlet/rating/ladder-results.json",
+    "ladderResults": "/home/user/work/playkit.ai/gauntlet/rating/ladder-results.json",
     "ladderMeta": {
       "run": "gauntlet/rating/ladder.js",
       "builtinOnly": false,
@@ -64,16 +64,15 @@
     },
     "excludedSweptOnly": {
       "players": [
-        "chess-sand",
-        "sf-elo-1700"
+        "chess-sand"
       ],
-      "games": 72
+      "games": 40
     },
     "git": {
-      "baseCommit": "a83ec557d1d28d1e82c0a45adc2921a71ff49ce1",
+      "baseCommit": "ea50717febc7f0b5ed7949bc19e870de641ed493",
       "branch": "obv/burst17-playkit-review-cli"
     },
-    "finishedAt": "2026-10-17T22:46:34.440Z"
+    "finishedAt": "2026-10-18T22:40:07.658Z"
   },
   "levels": {
     "sf-elo-1320-vs-chess-wood": {
@@ -1543,25 +1542,26 @@
   },
   "fit": {
     "ratings": {
-      "chess-wood": 1361.1071208439446,
+      "chess-wood": 1361.0949097930406,
       "chess-paper": 1000,
-      "chess-stockfish-sf-250": 1599.3844535155715,
-      "chess-stockfish-sf-1k": 2152.122049854313,
-      "chess-stockfish-sf-10k": 2788.5478926649125,
-      "chess-stockfish-sf-100k": 3300.049333046044,
-      "sf-elo-1320": 964.7880828017159,
-      "sf-elo-1500": 1103.6434804013809,
-      "sf-elo-1900": 1290.1627776942805,
-      "sf-elo-2100": 1437.9892628921923,
-      "sf-elo-2300": 1527.9614627796905
+      "chess-stockfish-sf-250": 1599.55082856607,
+      "chess-stockfish-sf-1k": 2153.0429587077247,
+      "chess-stockfish-sf-10k": 2789.468801518324,
+      "chess-stockfish-sf-100k": 3300.970241899456,
+      "sf-elo-1320": 964.7876014404787,
+      "sf-elo-1500": 1103.6457301944445,
+      "sf-elo-1700": 888.6032670110279,
+      "sf-elo-1900": 1290.1766047061944,
+      "sf-elo-2100": 1438.035214433144,
+      "sf-elo-2300": 1528.0565483085938
     },
-    "iterations": 14,
-    "gradientInfNorm": 1.8583101030200666e-10,
+    "iterations": 15,
+    "gradientInfNorm": 6.439293542825908e-15,
     "intervals": {
       "chess-wood": {
-        "low": 1264.1111548058616,
-        "high": 1513.5925746286853,
-        "mean": 1369.6577348700037
+        "low": 1266.2296104586958,
+        "high": 1517.0543176823844,
+        "mean": 1370.1104080501896
       },
       "chess-paper": {
         "low": 1000,
@@ -1569,52 +1569,57 @@
         "mean": 1000
       },
       "chess-stockfish-sf-250": {
-        "low": 1469.2013870649073,
-        "high": 1793.637907598645,
-        "mean": 1615.2129264226505
+        "low": 1469.3884676127038,
+        "high": 1792.928495323973,
+        "mean": 1614.8753612363969
       },
       "chess-stockfish-sf-1k": {
-        "low": 1993.418827960056,
-        "high": 2457.3000098194616,
-        "mean": 2190.2621286949257
+        "low": 1989.9642328657762,
+        "high": 2454.2102323081263,
+        "mean": 2192.1165267017905
       },
       "chess-stockfish-sf-10k": {
-        "low": 2539.576963195856,
-        "high": 3137.9569272421295,
-        "mean": 2821.9451495437424
+        "low": 2542.0830850188045,
+        "high": 3133.455196193425,
+        "mean": 2823.375836075977
       },
       "chess-stockfish-sf-100k": {
-        "low": 3006.063153604201,
-        "high": 3738.555263515984,
-        "mean": 3354.2358919243934
+        "low": 2999.995819335029,
+        "high": 3735.4370235585607,
+        "mean": 3349.6755311292454
       },
       "sf-elo-1320": {
-        "low": 702.6847647000114,
-        "high": 1212.7741438487408,
-        "mean": 972.9109911573855
+        "low": 710.1003193026688,
+        "high": 1216.098376358524,
+        "mean": 972.5853376911831
       },
       "sf-elo-1500": {
-        "low": 856.832887079389,
-        "high": 1301.6331244227647,
-        "mean": 1100.0701868567373
+        "low": 857.730918932035,
+        "high": 1316.3575640800507,
+        "mean": 1099.1734513154413
+      },
+      "sf-elo-1700": {
+        "low": 785.2069480858393,
+        "high": 1204.317247980827,
+        "mean": 969.3776962256969
       },
       "sf-elo-1900": {
-        "low": 1084.245785728155,
-        "high": 1503.9005533332218,
-        "mean": 1293.6322653937189
+        "low": 1065.5881011110373,
+        "high": 1533.1212597412652,
+        "mean": 1294.8252179955218
       },
       "sf-elo-2100": {
-        "low": 1271.105985283056,
-        "high": 1634.5578643848626,
-        "mean": 1448.8761911328927
+        "low": 1282.184396471894,
+        "high": 1654.841619327994,
+        "mean": 1451.3085808583392
       },
       "sf-elo-2300": {
-        "low": 1345.345071763749,
-        "high": 1763.3684442183946,
-        "mean": 1544.7987472510836
+        "low": 1346.584579151679,
+        "high": 1774.7415807952946,
+        "mean": 1545.269147074655
       }
     },
-    "replicates": 1998,
-    "divergentReplicates": 2
+    "replicates": 1916,
+    "divergentReplicates": 84
   }
 }

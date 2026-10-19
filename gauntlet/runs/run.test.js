@@ -1327,3 +1327,125 @@ test('a worker-refused resume leaves the spend ledger untouched until an agent p
     await rm(outDir, { recursive: true, force: true });
   }
 });
+
+test('an already-exhausted dollar cap refuses before the rate-limiter wait', async () => {
+  const outDir = await tempDir('pre-limiter-cap');
+  try {
+    const suite = buildSuite([takeOrPass], { split: 'public' });
+    const games = [takeOrPass];
+
+    // codex r4309389121: the pre-limiter checks covered maxCalls only, so a
+    // call that settled exactly on maxUsd left the next call queueing a full
+    // rate-limit interval before the post-limiter check refused it. With a
+    // one-request-per-minute limiter that wait is 60s; the refusal must land
+    // before the wait. The settled-cap checks stay authoritative after the
+    // limiter (reservations and this call's quote are only decided there).
+    /** @type {number[]} */
+    const sleeps = [];
+    const result = await runSuite({
+      suite,
+      games,
+      agentFactory: pricedFactory({ costUsd: 0.001 }),
+      outDir,
+      concurrency: 1,
+      maxUsd: 0.001,
+      requestsPerMinute: 1,
+      sleep: async (/** @type {number} */ ms) => {
+        sleeps.push(ms);
+      },
+    });
+    assert.equal(result.stopped, 'budget');
+    const limiterWaits = sleeps.filter((/** @type {number} */ ms) => ms >= 30_000);
+    assert.equal(
+      limiterWaits.length,
+      0,
+      `a call waited on the rate limiter after the settled cap was already exhausted: ${JSON.stringify(sleeps)}`
+    );
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('resume disposes a refused factory agent before rejecting it', async () => {
+  const outDir = await tempDir('dispose-refused');
+  try {
+    const suite = buildSuite([takeOrPass], { split: 'public' });
+    const games = [takeOrPass];
+    const jobs = planJobs(suite);
+    const first = await runSuite({
+      suite,
+      games,
+      agentFactory: pricedFactory(),
+      outDir,
+      maxCalls: 1,
+    });
+    assert.equal(first.stopped, 'calls');
+    assert.equal(first.run.counts.played, 1);
+
+    // codex r4309389127: an agent refused on resume-identity grounds never
+    // reaches runEpisode(), whose disposeActors() owns agent cleanup — an
+    // eagerly started subprocess or stdin subscription the agent holds leaks
+    // until process exit. The refusal must dispose the agent first, both at
+    // the entry check (the probe) and in the worker.
+    /** @type {string[]} */
+    const disposed = [];
+
+    // Entry refusal: the probe itself returns a mismatched agent.
+    await assert.rejects(
+      runSuite({
+        suite,
+        games,
+        outDir,
+        resume: true,
+        agentFactory: () =>
+          /** @type {Agent} */ ({
+            id: 'fake-other',
+            track: 'community',
+            dispose: async () => {
+              disposed.push('entry');
+            },
+            async act(/** @type {import('../core/types.js').TurnContext} */ ctx) {
+              return { text: /** @type {string[]} */ (ctx.legalActions)[0] };
+            },
+          }),
+      }),
+      /first mismatch/
+    );
+    assert.ok(disposed.includes('entry'), 'the refused probe agent must be disposed before the entry refusal surfaces');
+
+    // Worker refusal: the probe establishes agent A (jobs[0] reuses it), a
+    // later factory call returns agent B with a live dispose.
+    await assert.rejects(
+      runSuite({
+        suite,
+        games,
+        outDir,
+        resume: true,
+        agentFactory: (/** @type {Job} */ job) =>
+          job.key === jobs[0].key
+            ? pricedFactory()(job)
+            : /** @type {Agent} */ ({
+                id: 'fake-other',
+                track: 'community',
+                dispose: async () => {
+                  disposed.push('worker');
+                },
+                async act(/** @type {import('../core/types.js').TurnContext} */ ctx) {
+                  return { text: /** @type {string[]} */ (ctx.legalActions)[0] };
+                },
+              }),
+      }),
+      /mix two agents/
+    );
+    assert.ok(disposed.includes('worker'), 'the refused factory agent must be disposed before the rejection surfaces');
+
+    // The bundle still holds only the original agent's trajectory.
+    const trajectories = await readTrajectories(outDir);
+    assert.equal(trajectories.size, 1);
+    for (const t of trajectories.values()) {
+      assert.equal(t.agent?.id, 'fake-priced');
+    }
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});

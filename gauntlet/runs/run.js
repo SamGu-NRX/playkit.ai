@@ -375,6 +375,29 @@ export async function sumRunDirectory(outDir) {
  */
 
 /**
+ * Dispose an agent the run is refusing (codex r4309389127): a factory agent
+ * rejected on resume-identity grounds never reaches runEpisode(), whose
+ * disposeActors() owns agent cleanup on the play path — and the refused
+ * agent may already own an engine subprocess, a stdin subscription, or any
+ * other handle exposed through dispose(). Await and absorb rejections: the
+ * refusal is the outcome the caller surfaces, and a disposal failure must
+ * not replace it.
+ *
+ * @param {Agent | null} agent
+ * @returns {Promise<void>}
+ */
+async function disposeRefusedAgent(agent) {
+  if (!agent) return;
+  const dispose = /** @type {undefined | (() => unknown)} */ (/** @type {*} */ (agent).dispose);
+  if (typeof dispose !== 'function') return;
+  try {
+    await dispose.call(agent);
+  } catch {
+    // Absorb: the caller is rejecting this agent regardless.
+  }
+}
+
+/**
  * @param {object} options
  * @param {number} options.requestsPerMinute Positive.
  * @param {() => number} [options.now] Millisecond clock. Default Date.now.
@@ -937,11 +960,18 @@ export async function runSuite({
       // skip this refusal entirely, so a later successful factory call could
       // play a different agent beside the recorded ones.
       if (incomingAgentIdentity === null) {
+        // The refused probe agent is this invocation's factory product; it
+        // may own resources only runEpisode's cleanup would release
+        // (codex r4309389127). Dispose before refusing.
+        await disposeRefusedAgent(probedAgent);
         throw new Error(
           `[gauntlet/runs/run.js] resume: this invocation's agent identity could not be established (the agentFactory probe for ${jobs[0]?.key ?? 'the first job'} failed or returned no agent id), so it cannot be checked against the agent ${recordedIdentity} recorded in the bundle under ${outDir}; refusing to resume — fix the factory or use a fresh outDir`
         );
       }
       if (recordedIdentity !== incomingAgentIdentity) {
+        // Same disposal discipline as the worker refusals below
+        // (codex r4309389127): the probe agent is owned by this run.
+        await disposeRefusedAgent(probedAgent);
         const sampleJob = skippedAgentIdentities.keys().next().value;
         throw new Error(
           `[gauntlet/runs/run.js] resume: the bundle under ${outDir} holds trajectories from agent ${recordedIdentity} but this invocation runs agent ${incomingAgentIdentity} (first mismatch at ${sampleJob}); refusing to skip another agent's files and mix two agents in one bundle — resume with the same agent or use a fresh outDir`
@@ -1042,6 +1072,28 @@ export async function runSuite({
           stopped.reason = stopped.reason ?? 'calls';
           stopped.detail = stopped.detail ?? `${jobLabel(job)}: maxCalls ${maxCalls} reached`;
           throw new RunAbortedError('calls', `maxCalls ${maxCalls} reached at ${jobLabel(job)}`);
+        }
+        // Already-exhausted settled dollar caps refuse before the limiter
+        // wait too (codex r4309389121): a cap decided by spend that has
+        // already settled makes the limiter interval pure waste — the
+        // post-limiter check refuses the call the moment it holds a slot.
+        // These are optimizations only; the authoritative post-wait checks
+        // (which also see reservations and this call's quote) stay below.
+        if (maxUsd !== undefined && spendUsd >= maxUsd) {
+          stopped.reason = stopped.reason ?? 'budget';
+          stopped.detail =
+            stopped.detail ?? `${jobLabel(job)}: maxUsd ${maxUsd} reached (settled ${spendUsd})`;
+          throw new RunAbortedError('budget', `maxUsd ${maxUsd} reached at ${jobLabel(job)} (settled ${spendUsd})`);
+        }
+        if (maxUsdTotalEffective !== null && ledgerUsd + spendUsd >= maxUsdTotalEffective) {
+          stopped.reason = stopped.reason ?? 'budget';
+          stopped.detail =
+            stopped.detail ??
+            `${jobLabel(job)}: maxUsdTotal ${maxUsdTotalEffective} reached (ledger ${ledgerUsd}, settled this invocation ${spendUsd})`;
+          throw new RunAbortedError(
+            'budget',
+            `maxUsdTotal ${maxUsdTotalEffective} reached at ${jobLabel(job)} (ledger ${ledgerUsd}, settled this invocation ${spendUsd})`
+          );
         }
         // The rate limiter is waited on BEFORE the remaining checks:
         // everything from here through the reservation below is synchronous,
@@ -1261,6 +1313,7 @@ export async function runSuite({
             // play, writing a trajectory with an undefined agent id that
             // scoring refuses — success reported over an unusable bundle.
             if (bundleAgentIdentity !== null) {
+              await disposeRefusedAgent(base);
               throw new ResumeIdentityError(
                 `[gauntlet/runs/run.js] resume: agentFactory returned an agent with no usable identity for ${jobLabel(job)} (missing or non-string id) but the bundle's established agent is ${bundleAgentIdentity}; refusing to play an identityless agent into the bundle — fix the factory or use a fresh outDir`
               );
@@ -1268,6 +1321,7 @@ export async function runSuite({
           } else if (bundleAgentIdentity === null) {
             bundleAgentIdentity = liveIdentity;
           } else if (bundleAgentIdentity !== liveIdentity) {
+            await disposeRefusedAgent(base);
             throw new ResumeIdentityError(
               `[gauntlet/runs/run.js] resume: the factory returned agent ${liveIdentity} for ${jobLabel(job)} but the bundle's established agent is ${bundleAgentIdentity}; refusing to mix two agents in one bundle — resume with the same agent or use a fresh outDir`
             );

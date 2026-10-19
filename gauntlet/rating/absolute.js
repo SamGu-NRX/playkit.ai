@@ -55,6 +55,7 @@ import { createEngineBaselineAgent } from '../games/chess/baselines.js';
 import { createStockfishOpponentAgent } from '../games/chess-stockfish/stockfish-agent.js';
 import { runEpisode } from '../core/runner.js';
 import { fitRatings, bootstrapRatings } from './elo.js';
+import { sweptOnlyPlayers, carriedSettings } from './absolute-lib.js';
 import { findEngineBinary, probeEngineIdSync } from '../engines/uci/client.js';
 
 const ANCHOR_RUNG = 'chess-paper';
@@ -219,9 +220,9 @@ async function runLevelPair(levelRung, opponent, gamesPerColour) {
 
 async function main() {
   const flags = parseFlags();
-  const gamesPerColour = Number(flags['games-per-colour'] ?? 8);
+  let gamesPerColour = Number(flags['games-per-colour'] ?? 8);
   const replicates = Number(flags.replicates ?? 2000);
-  const levels = (flags.levels ?? '1320,1500,1700,1900,2100,2300')
+  let levels = (flags.levels ?? '1320,1500,1700,1900,2100,2300')
     .split(',')
     .map((s) => Number(s.trim()))
     .filter((n) => Number.isInteger(n));
@@ -263,6 +264,21 @@ async function main() {
       `--merge-from: reusing ${Object.keys(levelResults).length} saved level pairs ` +
         `(levels ${priorLevels || 'unknown'}) from ${mergeFrom}; no engine games replayed\n`
     );
+    // The carried games were played at the prior run's settings: meta and the
+    // report must cover exactly those rungs. Keeping the current CLI flags
+    // would mislabel meta.levels/meta.gamesPerColour and print unplayed
+    // default levels as "excluded — played a total sweep".
+    const carried = carriedSettings(prior);
+    levels = carried.levels;
+    if (carried.gamesPerColour !== null) {
+      gamesPerColour = carried.gamesPerColour;
+    }
+    process.stdout.write(
+      `--merge-from: restoring carried settings — levels ${levels.join(', ')}, ` +
+        `games per colour ${
+          carried.gamesPerColour ?? `${gamesPerColour} (not recorded in the prior file; keeping the CLI flag)`
+        }\n`
+    );
   } else {
     const binaryPath = findEngineBinary();
     const engineId = probeEngineIdSync(binaryPath);
@@ -282,32 +298,26 @@ async function main() {
   );
   const fitGames = [...ladderGames, ...calibrationGames];
 
-  // A rung whose every recorded cross-game is a total sweep (chess-sand lost
-  // 0/40 to the paper rung in the current ladder) has no finite
+  // A rung whose every recorded game is information-free — swept (all
+  // losses: the likelihood's maximum sits at rating -infinity, like
+  // chess-sand's 0/40 against the paper rung in the current ladder) or
+  // unsweepable (all wins: the maximum sits at +infinity) — has no finite
   // maximum-likelihood rating: fitRatings refuses the whole fit because of
-  // it. Such games carry no information about any other player either — the
-  // reported sf-elo rungs are unchanged by dropping them — so exclude them
-  // here, loudly, instead of weakening the fit's guard.
-  const hasMixedEvidence = new Set();
-  for (const g of fitGames) {
-    if (g.score !== 0 && g.score !== 1) {
-      hasMixedEvidence.add(g.a);
-      hasMixedEvidence.add(g.b);
-    }
-  }
-  const sweptOnlyPlayers = [
-    ...new Set(fitGames.flatMap((g) => [g.a, g.b])),
-  ].filter((p) => !hasMixedEvidence.has(p));
-  const fitGamesUsed = sweptOnlyPlayers.length
-    ? fitGames.filter(
-        (g) => !sweptOnlyPlayers.includes(g.a) && !sweptOnlyPlayers.includes(g.b)
-      )
+  // it. Such games carry no information about any other player either (each
+  // game's likelihood factor is 1 and its gradient contribution is 0), so
+  // exclude them here, loudly, instead of weakening the fit's guard. A
+  // player with at least one win and one loss — even without a single draw —
+  // has finite evidence and stays.
+  const sweptOnly = sweptOnlyPlayers(fitGames);
+  const fitGamesUsed = sweptOnly.length
+    ? fitGames.filter((g) => !sweptOnly.includes(g.a) && !sweptOnly.includes(g.b))
     : fitGames;
-  if (sweptOnlyPlayers.length) {
+  if (sweptOnly.length) {
     process.stdout.write(
       `excluding ${fitGames.length - fitGamesUsed.length} games of swept-only players ` +
-        `(${sweptOnlyPlayers.join(', ')}): a player with only total sweeps has no finite ` +
-        `rating, and its games do not affect any other player's fit\n`
+        `(${sweptOnly.join(', ')}): a player swept (all losses) or unsweepable (all wins) ` +
+        `in every recorded game has no finite rating, and its games do not affect any ` +
+        `other player's fit\n`
     );
   }
 
@@ -321,7 +331,7 @@ async function main() {
     bootstrapReplicates: replicates,
     anchor: { rung: ANCHOR_RUNG, rating: ANCHOR_RATING },
     stockfish,
-    excludedSweptOnly: { players: sweptOnlyPlayers, games: fitGames.length - fitGamesUsed.length },
+    excludedSweptOnly: { players: sweptOnly, games: fitGames.length - fitGamesUsed.length },
     git: gitProvenance(),
     finishedAt: new Date().toISOString(),
   };

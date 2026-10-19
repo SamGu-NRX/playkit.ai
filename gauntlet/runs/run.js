@@ -375,13 +375,6 @@ export async function sumRunDirectory(outDir) {
  */
 
 /**
- * @param {object} options
- * @param {number} options.requestsPerMinute Positive.
- * @param {() => number} [options.now] Millisecond clock. Default Date.now.
- * @param {(ms: number) => Promise<void>} [options.sleep] Delay function.
- * @returns {RateLimiter}
- */
-/**
  * Dispose an agent the run is refusing (codex r4309389127): a factory agent
  * rejected on resume-identity grounds never reaches runEpisode(), whose
  * disposeActors() owns agent cleanup on the play path — and the refused
@@ -404,6 +397,13 @@ async function disposeRefusedAgent(agent) {
   }
 }
 
+/**
+ * @param {object} options
+ * @param {number} options.requestsPerMinute Positive.
+ * @param {() => number} [options.now] Millisecond clock. Default Date.now.
+ * @param {(ms: number) => Promise<void>} [options.sleep] Delay function.
+ * @returns {RateLimiter}
+ */
 export function createRateLimiter({ requestsPerMinute, now = Date.now, sleep }) {
   if (typeof requestsPerMinute !== 'number' || !Number.isFinite(requestsPerMinute) || requestsPerMinute <= 0) {
     throw new Error(

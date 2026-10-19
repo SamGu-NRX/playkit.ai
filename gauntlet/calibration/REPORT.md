@@ -8,16 +8,15 @@ Baseline calibration over the gauntlet's public seeds: every game is played by a
 
 | | |
 |---|---|
-| Run at | 2026-10-18T22:56:00.227Z |
+| Run at | 2026-10-19T07:22:12.496Z |
 | Node | v20.20.2 |
 | Machine | linux 6.1.158+ x64, Intel(R) Xeon(R) Processor @ 2.60GHz, 8 cores, 7.8 GiB |
 | Worker parallelism | 7 |
 | Seeds per tier | all public seeds |
 | Per-game wall cap | 1200s |
 | Total wall time | 5569.8s |
-| HEAD | c70b4d873c8b |
+| HEAD | 5bee9def136c |
 | Base | unknown |
-| Merge parents of HEAD | 7475af59bd32b5610a5e6975f8429f956331fb66, 5c318efc57c08ca9fd1112da88fca4b2692599d3 |
 
 Reproduce from `gauntlet/` with `node calibration/run.js` (flags: `--games=`, `--seeds=`, `--per-game-cap=`, `--out=`, `--report=`). One worker process per game; deterministic end to end — same seeds and code produce byte-identical tables.
 

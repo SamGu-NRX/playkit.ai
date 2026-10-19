@@ -108,19 +108,40 @@ if [[ "$MODE" == "--rehearse" ]]; then
   TR="${STUB_TRUNCATE_EVERY:-7}"
   # Free ports, not hard-coded ones: a rehearsal that lands on busy ports
   # fails before its first episode (another rehearsal, a dev server, or any
-  # listener holds 808x). Allocate one free loopback port per stub up front.
+  # listener holds 808x). Each stub binds an ephemeral port (0) itself and
+  # writes the assigned port to a file: the kernel assigns the port at bind
+  # time and the stub holds it for its whole life, so there is no
+  # probe-close-then-rebind window in which another process can take the
+  # port, and no chance of two stubs landing on the same one — a
+  # probe-then-launch allocation can hit both, and the losing stub dies on
+  # EADDRINUSE and aborts the rehearsal. Logs are named per wire because the
+  # port is not known until the stub reports it.
   declare -A STUB_PORT=()
   for ARM in "${ARMS[@]}"; do
-    STUB_PORT[$ARM]="$(node -e 'const n=require("node:net");const s=n.createServer();s.listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close(() => process.exit(0))})')"
-  done
-  for ARM in "${ARMS[@]}"; do
     WIRE="${ARM%%/*}"
-    PORT="${STUB_PORT[$ARM]}"
-    STUB_LOG="$OUT/stub-$PORT.log"
-    node "$SCRIPT_DIR/stubs/$WIRE.mjs" --port "$PORT" \
+    PORT_FILE="$OUT/stub-$WIRE.port"
+    STUB_LOG="$OUT/stub-$WIRE.log"
+    rm -f "$PORT_FILE"
+    node "$SCRIPT_DIR/stubs/$WIRE.mjs" --port 0 --port-file "$PORT_FILE" \
       --rate-limit-every "$RL" --overload-every "$OL" \
       --refuse-every "$RF" --truncate-every "$TR" >"$STUB_LOG" 2>&1 &
     STUB_PIDS+=("$!")
+    # Wait for the stub to bind and report its assigned port (up to ~10 s).
+    for _ in $(seq 1 50); do
+      if [[ -s "$PORT_FILE" ]]; then break; fi
+      if ! kill -0 "${STUB_PIDS[-1]}" 2>/dev/null; then break; fi
+      sleep 0.2
+    done
+    if ! kill -0 "${STUB_PIDS[-1]}" 2>/dev/null || [[ ! -s "$PORT_FILE" ]]; then
+      echo "separation-run: stub for $ARM failed to start — see $STUB_LOG" >&2
+      exit 1
+    fi
+    PORT="$(tr -d '[:space:]' < "$PORT_FILE")"
+    if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [[ "$PORT" -lt 1 ]] || [[ "$PORT" -gt 65535 ]]; then
+      echo "separation-run: stub for $ARM reported an unusable port \"$PORT\" — see $STUB_LOG" >&2
+      exit 1
+    fi
+    STUB_PORT[$ARM]="$PORT"
     # Wait for the stub to accept connections (up to ~10 s).
     for _ in $(seq 1 50); do
       if node -e "
@@ -133,7 +154,7 @@ if [[ "$MODE" == "--rehearse" ]]; then
       sleep 0.2
     done
     if ! kill -0 "${STUB_PIDS[-1]}" 2>/dev/null; then
-      echo "separation-run: stub for $ARM failed to start — see $STUB_LOG" >&2
+      echo "separation-run: stub for $ARM failed during its readiness check — see $STUB_LOG" >&2
       exit 1
     fi
     echo "separation-run: stub $WIRE.mjs on 127.0.0.1:$PORT (pid ${STUB_PIDS[-1]}, log $STUB_LOG)"

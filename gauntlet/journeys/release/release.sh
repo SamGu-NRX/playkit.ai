@@ -80,7 +80,15 @@ if [[ " $STAGES " == *" C "* ]]; then
   SUITE="$WORK/suite-public.json"
   run_gauntlet suite build --split public --seeds-per-tier 1 --out "$SUITE" \
     || fail "journey C: suite build"
-  SEPARATION_RUN_OUT="$WORK/pilot" \
+  # A fresh pilot output directory per invocation: the results bundle's
+  # spend ledger (spend.jsonl) is bundle-wide and read on every invocation,
+  # so a reused directory carries earlier release checks' recorded spend
+  # against the same cap until a healthy rehearsal dies on the
+  # no-headroom guard. mktemp -d guarantees a never-used directory even
+  # for back-to-back invocations, and keeps the bundles under $WORK.
+  PILOT_OUT="$(mktemp -d "$WORK/pilot-XXXXXX")" \
+    || fail "journey C: fresh pilot output directory"
+  SEPARATION_RUN_OUT="$PILOT_OUT" \
   bash journeys/pilot/rehearse.sh "$SUITE" "${RELEASE_MAX_USD:-10}" 2 \
     || fail "journey C: pilot rehearsal (all three wires)"
   echo "=== journey C: PASS"

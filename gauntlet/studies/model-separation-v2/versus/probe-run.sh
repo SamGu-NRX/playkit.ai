@@ -16,12 +16,14 @@ sleep 1
 SRV=$!
 trap 'kill $SRV 2>/dev/null || true' EXIT
 
-until curl -sf http://127.0.0.1:8080/health >/dev/null 2>&1; do sleep 2; done
+# Per-request limits: a hung server must reach the probe-exhaustion check
+# instead of hanging this loop forever (greptile #115).
+until curl -sf --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/health >/dev/null 2>&1; do sleep 2; done
 # /health returns 200 while the model still loads; a real completion is the
 # readiness signal (S3: fetch-failed retries hitting a loading server).
 READY=0
 for i in $(seq 1 120); do
-  if curl -sf http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
+  if curl -sf --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
        -d '{"messages":[{"role":"user","content":"hi"}],"max_tokens":1}' > /dev/null 2>&1; then
     READY=1
     break

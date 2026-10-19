@@ -26,7 +26,7 @@ import { makeOpponent } from './opponents.js';
 
 export const GAME_ID = 'holdem';
 // 1.3.0 records the merged rules fixes and keeps earlier 1.0.1/1.2.0 results distinguishable.
-export const GAME_VERSION = '1.3.0';
+export const GAME_VERSION = '1.4.0';
 
 /**
  * The hold'em spec. benchmark: true per the design doc's roster.

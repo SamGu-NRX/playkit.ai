@@ -6,7 +6,7 @@
     "manifestSha256": "2e61daf31104d5b70b7cad9fb7f6ee86e0b82406fe51be1b8eb7e28eec3c0f52"
   },
   "git": {
-    "commit": "2b1cfba8fcd21e7b91f7114ab3a66db1c34f89af"
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,8 +16,8 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T13:27:48.486Z",
-  "finishedAt": "2026-10-17T13:27:50.172Z",
+  "startedAt": "2026-10-19T02:26:36.777Z",
+  "finishedAt": "2026-10-19T02:26:39.543Z",
   "concurrency": 2,
   "limits": {
     "maxUsd": null,
@@ -32,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 1965,
+  "calls": 10267,
   "total": {
     "episodes": 20,
     "calls": 0,
@@ -45,30 +45,13 @@
   },
   "counts": {
     "jobs": 20,
-    "played": 4,
-    "skipped": 16,
+    "played": 20,
+    "skipped": 0,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [
-    "2048/t1024/2048/t1024/public/0",
-    "2048/t1024/2048/t1024/public/1",
-    "2048/t1024/2048/t1024/public/2",
-    "2048/t1024/2048/t1024/public/3",
-    "2048/t1024/2048/t1024/public/4",
-    "2048/t1024/2048/t1024/public/5",
-    "2048/t1024/2048/t1024/public/6",
-    "2048/t1024/2048/t1024/public/7",
-    "2048/t1024/2048/t1024/public/8",
-    "2048/t1024/2048/t1024/public/9",
-    "2048/t1024/2048/t1024/public/10",
-    "2048/t1024/2048/t1024/public/11",
-    "2048/t1024/2048/t1024/public/12",
-    "2048/t1024/2048/t1024/public/13",
-    "2048/t1024/2048/t1024/public/14",
-    "2048/t1024/2048/t1024/public/15"
-  ],
+  "skipped": [],
   "replayed": [],
   "unplayed": [],
   "failed": [],
@@ -76,33 +59,14 @@
   "stopReason": null,
   "ledger": {
     "file": "spend.jsonl",
-    "invocations": 6,
-    "calls": 18127,
+    "invocations": 1,
+    "calls": 10267,
     "cap": null,
     "totalUsd": 0,
     "keptUsd": 0,
     "unwoundUsd": 0,
     "unwoundCalls": 0,
-    "unknownCalls": 18127,
-    "problems": [
-      "line 8304: prev hash mismatch (expected 62d74cd96c23…, got 992b1bca0f3d…)",
-      "line 8304: invocation index 1, expected 2",
-      "line 8305: prev hash mismatch (expected 1e42bd43c015…, got 992b1bca0f3d…)",
-      "line 8305: invocation index 1, expected 3",
-      "line 8306: prev hash mismatch (expected 551a04bf98f8…, got 992b1bca0f3d…)",
-      "line 8306: invocation index 1, expected 4",
-      "line 8307: prev hash mismatch (expected dc3f5a3232fa…, got 992b1bca0f3d…)",
-      "line 8307: invocation index 1, expected 5",
-      "line 8308: prev hash mismatch (expected 370f41cc2389…, got 62d74cd96c23…)",
-      "line 9284: prev hash mismatch (expected 58e5c2bb0137…, got dc3f5a3232fa…)",
-      "line 10260: prev hash mismatch (expected 61acf13b2097…, got 1e42bd43c015…)",
-      "line 11236: prev hash mismatch (expected e0711aa24418…, got 370f41cc2389…)",
-      "line 12212: prev hash mismatch (expected a06ebd02e670…, got 551a04bf98f8…)",
-      "line 13188: prev hash mismatch (expected 41668c448db5…, got 58e5c2bb0137…)",
-      "line 14177: prev hash mismatch (expected c76ae6a76baa…, got 61acf13b2097…)",
-      "line 15166: prev hash mismatch (expected 254434394603…, got e0711aa24418…)",
-      "line 16155: prev hash mismatch (expected 80b9051f3817…, got a06ebd02e670…)",
-      "line 17144: prev hash mismatch (expected 6b92bccc3223…, got 41668c448db5…)"
-    ]
+    "unknownCalls": 10267,
+    "problems": []
   }
 }

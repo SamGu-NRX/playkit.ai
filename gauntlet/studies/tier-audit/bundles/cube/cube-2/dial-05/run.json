@@ -6,7 +6,7 @@
     "manifestSha256": "1022cdd732c8bf086cf41e9b14299c99bb4d7c1a63a3805ffad86c6938c47746"
   },
   "git": {
-    "commit": "cd2f7bc0e760e4d9c3a5d149db1f00decfc37d6b"
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,9 +16,9 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T16:22:09.233Z",
-  "finishedAt": "2026-10-17T16:22:12.567Z",
-  "concurrency": 8,
+  "startedAt": "2026-10-19T00:27:54.139Z",
+  "finishedAt": "2026-10-19T00:27:59.923Z",
+  "concurrency": 2,
   "limits": {
     "maxUsd": null,
     "maxUsdTotal": null,
@@ -32,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 100,
+  "calls": 187,
   "total": {
     "episodes": 16,
     "calls": 0,
@@ -45,22 +45,13 @@
   },
   "counts": {
     "jobs": 16,
-    "played": 8,
-    "skipped": 8,
+    "played": 16,
+    "skipped": 0,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [
-    "cube/cube-2/cube/cube-2/public/0",
-    "cube/cube-2/cube/cube-2/public/1",
-    "cube/cube-2/cube/cube-2/public/2",
-    "cube/cube-2/cube/cube-2/public/3",
-    "cube/cube-2/cube/cube-2/public/4",
-    "cube/cube-2/cube/cube-2/public/5",
-    "cube/cube-2/cube/cube-2/public/6",
-    "cube/cube-2/cube/cube-2/public/7"
-  ],
+  "skipped": [],
   "replayed": [],
   "unplayed": [],
   "failed": [],
@@ -68,14 +59,14 @@
   "stopReason": null,
   "ledger": {
     "file": "spend.jsonl",
-    "invocations": 2,
-    "calls": 187,
+    "invocations": 3,
+    "calls": 374,
     "cap": null,
     "totalUsd": 0,
     "keptUsd": 0,
     "unwoundUsd": 0,
     "unwoundCalls": 0,
-    "unknownCalls": 187,
+    "unknownCalls": 374,
     "problems": []
   }
 }

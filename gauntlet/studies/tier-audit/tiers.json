@@ -10,7 +10,7 @@
     "games": 18,
     "tiers": 76,
     "usable": 72,
-    "flagged": 12
+    "flagged": 11
   },
   "mirrorChecks": 592,
   "rows": [
@@ -388,39 +388,13 @@
       "exampleSource": "none",
       "chanceBaselineMean": null,
       "cellSources": {
-        "dial-0": "tier-audit",
+        "dial-0": "missing",
         "dial-05": "tier-audit",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
       "cells": {
-        "dial-0": {
-          "rhae-v1": {
-            "n": 20,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          },
-          "squared-outcome": {
-            "n": 20,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
         "dial-05": {
           "rhae-v1": {
             "n": 20,
@@ -543,11 +517,6 @@
         }
       },
       "power": {
-        "p0vs05": {
-          "diffMean": 0.796875,
-          "seedsNeeded": 2,
-          "powerAt12": 1
-        },
         "p05vs1": {
           "diffMean": 0.0125,
           "seedsNeeded": null,
@@ -556,8 +525,7 @@
       },
       "flags": [
         "exploitable-by-copy-example",
-        "exploitable-by-first-legal",
-        "resolves-at-12-or-fewer"
+        "exploitable-by-first-legal"
       ]
     },
     {
@@ -1854,7 +1822,7 @@
       "chanceBaselineMean": null,
       "cellSources": {
         "dial-0": "tier-audit",
-        "dial-05": "tier-audit",
+        "dial-05": "missing",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
@@ -1877,32 +1845,6 @@
             "ci95": [
               0.25,
               1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "dial-05": {
-          "rhae-v1": {
-            "n": 5,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 5,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
             ]
           },
           "chance-adjusted": {
@@ -2007,21 +1949,8 @@
           "mean": 0
         }
       },
-      "power": {
-        "p0vs05": {
-          "diffMean": 0.7,
-          "seedsNeeded": 6,
-          "powerAt12": 1
-        },
-        "p05vs1": {
-          "diffMean": 0,
-          "seedsNeeded": null,
-          "powerAt12": 0
-        }
-      },
-      "flags": [
-        "resolves-at-12-or-fewer"
-      ]
+      "power": {},
+      "flags": []
     },
     {
       "game": "chess-endgames",
@@ -2035,7 +1964,7 @@
       "cellSources": {
         "dial-0": "tier-audit",
         "dial-05": "missing",
-        "dial-1": "tier-audit",
+        "dial-1": "missing",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
@@ -2057,32 +1986,6 @@
             "ci95": [
               1,
               1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "dial-1": {
-          "rhae-v1": {
-            "n": 10,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 10,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
             ]
           },
           "chance-adjusted": {
@@ -2146,26 +2049,11 @@
         }
       },
       "exploitableBy": {
-        "copy-example": {
-          "ci95": [
-            0.00988,
-            0.029039
-          ],
-          "mean": 0.019344
-        },
-        "first-legal": {
-          "ci95": [
-            0.009579,
-            0.029129
-          ],
-          "mean": 0.019344
-        }
+        "copy-example": null,
+        "first-legal": null
       },
       "power": {},
-      "flags": [
-        "exploitable-by-copy-example",
-        "exploitable-by-first-legal"
-      ]
+      "flags": []
     },
     {
       "game": "chess-endgames",
@@ -2178,8 +2066,8 @@
       "chanceBaselineMean": null,
       "cellSources": {
         "dial-0": "tier-audit",
-        "dial-05": "tier-audit",
-        "dial-1": "tier-audit",
+        "dial-05": "missing",
+        "dial-1": "missing",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
@@ -2201,58 +2089,6 @@
             "ci95": [
               1,
               1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "dial-05": {
-          "rhae-v1": {
-            "n": 10,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 10,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "dial-1": {
-          "rhae-v1": {
-            "n": 10,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 10,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
             ]
           },
           "chance-adjusted": {
@@ -2316,36 +2152,11 @@
         }
       },
       "exploitableBy": {
-        "copy-example": {
-          "ci95": [
-            0,
-            0.005436
-          ],
-          "mean": 0.001812
-        },
-        "first-legal": {
-          "ci95": [
-            0,
-            0.005436
-          ],
-          "mean": 0.001812
-        }
+        "copy-example": null,
+        "first-legal": null
       },
-      "power": {
-        "p0vs05": {
-          "diffMean": 1,
-          "seedsNeeded": 2,
-          "powerAt12": 1
-        },
-        "p05vs1": {
-          "diffMean": 0,
-          "seedsNeeded": null,
-          "powerAt12": 0
-        }
-      },
-      "flags": [
-        "resolves-at-12-or-fewer"
-      ]
+      "power": {},
+      "flags": []
     },
     {
       "game": "chess-endgames",
@@ -5615,7 +5426,7 @@
     {
       "game": "minesweeper",
       "tier": "beginner",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "outcome",
       "seedsPlanned": 25,
       "exampleToken": null,
@@ -5658,20 +5469,20 @@
         "dial-05": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.698592,
-            "sd": 0.231896,
+            "mean": 0.68507,
+            "sd": 0.227174,
             "ci95": [
-              0.607324,
-              0.783662
+              0.59662,
+              0.768451
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.539655,
-            "sd": 0.297272,
+            "mean": 0.518865,
+            "sd": 0.287448,
             "ci95": [
-              0.419607,
-              0.651434
+              0.405055,
+              0.6259
             ]
           },
           "chance-adjusted": {
@@ -5684,20 +5495,20 @@
         "dial-1": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.662535,
-            "sd": 0.182668,
+            "mean": 0.655775,
+            "sd": 0.177137,
             "ci95": [
-              0.590423,
-              0.731268
+              0.585352,
+              0.722817
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.470986,
-            "sd": 0.227333,
+            "mean": 0.460163,
+            "sd": 0.216634,
             "ci95": [
-              0.383606,
-              0.557596
+              0.376513,
+              0.54225
             ]
           },
           "chance-adjusted": {
@@ -5710,20 +5521,20 @@
         "copy-example": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.527887,
-            "sd": 0.237326,
+            "mean": 0.566197,
+            "sd": 0.266305,
             "ci95": [
-              0.435493,
-              0.617465
+              0.461972,
+              0.669859
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.332736,
-            "sd": 0.24591,
+            "mean": 0.388661,
+            "sd": 0.296972,
             "ci95": [
-              0.237056,
-              0.426955
+              0.27808,
+              0.502242
             ]
           },
           "chance-adjusted": {
@@ -5736,20 +5547,20 @@
         "first-legal": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.527887,
-            "sd": 0.237326,
+            "mean": 0.566197,
+            "sd": 0.266305,
             "ci95": [
-              0.435493,
-              0.616901
+              0.462535,
+              0.666479
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.332736,
-            "sd": 0.24591,
+            "mean": 0.388661,
+            "sd": 0.296972,
             "ci95": [
-              0.240222,
-              0.42851
+              0.279095,
+              0.504003
             ]
           },
           "chance-adjusted": {
@@ -5763,29 +5574,29 @@
       "exploitableBy": {
         "copy-example": {
           "ci95": [
-            -0.215775,
-            -0.058028
+            -0.176338,
+            -0.010141
           ],
-          "mean": -0.134648
+          "mean": -0.089577
         },
         "first-legal": {
           "ci95": [
-            -0.219155,
-            -0.057465
+            -0.178028,
+            -0.010704
           ],
-          "mean": -0.134648
+          "mean": -0.089577
         }
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.301408,
+          "diffMean": 0.31493,
           "seedsNeeded": 6,
           "powerAt12": 1
         },
         "p05vs1": {
-          "diffMean": 0.036056,
+          "diffMean": 0.029296,
           "seedsNeeded": null,
-          "powerAt12": 0.1185
+          "powerAt12": 0.071
         }
       },
       "flags": [
@@ -5795,7 +5606,7 @@
     {
       "game": "minesweeper",
       "tier": "intermediate",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "outcome",
       "seedsPlanned": 25,
       "exampleToken": null,
@@ -5838,20 +5649,20 @@
         "dial-05": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.380741,
-            "sd": 0.170462,
+            "mean": 0.337778,
+            "sd": 0.167498,
             "ci95": [
-              0.314074,
-              0.44537
+              0.273704,
+              0.403704
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.172858,
-            "sd": 0.130364,
+            "mean": 0.141027,
+            "sd": 0.123724,
             "ci95": [
-              0.125091,
-              0.22405
+              0.095489,
+              0.191251
             ]
           },
           "chance-adjusted": {
@@ -5864,20 +5675,20 @@
         "dial-1": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.353519,
-            "sd": 0.159604,
+            "mean": 0.351481,
+            "sd": 0.16133,
             "ci95": [
-              0.29037,
-              0.415185
+              0.289074,
+              0.413704
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.14943,
-            "sd": 0.112701,
+            "mean": 0.148525,
+            "sd": 0.116221,
             "ci95": [
-              0.107405,
-              0.193771
+              0.104919,
+              0.194767
             ]
           },
           "chance-adjusted": {
@@ -5890,20 +5701,20 @@
         "copy-example": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.234074,
-            "sd": 0.136247,
+            "mean": 0.225185,
+            "sd": 0.106966,
             "ci95": [
-              0.183519,
-              0.289074
+              0.184815,
+              0.267407
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.072611,
-            "sd": 0.081126,
+            "mean": 0.061692,
+            "sd": 0.056171,
             "ci95": [
-              0.044757,
-              0.105871
+              0.041574,
+              0.084263
             ]
           },
           "chance-adjusted": {
@@ -5916,20 +5727,20 @@
         "first-legal": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.234074,
-            "sd": 0.136247,
+            "mean": 0.225185,
+            "sd": 0.106966,
             "ci95": [
-              0.185,
-              0.29037
+              0.185185,
+              0.268333
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.072611,
-            "sd": 0.081126,
+            "mean": 0.061692,
+            "sd": 0.056171,
             "ci95": [
-              0.044282,
-              0.106187
+              0.041804,
+              0.084053
             ]
           },
           "chance-adjusted": {
@@ -5943,29 +5754,29 @@
       "exploitableBy": {
         "copy-example": {
           "ci95": [
-            -0.176852,
-            -0.067407
+            -0.186296,
+            -0.072037
           ],
-          "mean": -0.119444
+          "mean": -0.126296
         },
         "first-legal": {
           "ci95": [
-            -0.176481,
-            -0.067407
+            -0.185556,
+            -0.071111
           ],
-          "mean": -0.119444
+          "mean": -0.126296
         }
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.619259,
+          "diffMean": 0.662222,
           "seedsNeeded": 3,
           "powerAt12": 1
         },
         "p05vs1": {
-          "diffMean": 0.027222,
+          "diffMean": -0.013704,
           "seedsNeeded": null,
-          "powerAt12": 0.0605
+          "powerAt12": 0.065
         }
       },
       "flags": [
@@ -5975,7 +5786,7 @@
     {
       "game": "minesweeper",
       "tier": "torus",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "outcome",
       "seedsPlanned": 25,
       "exampleToken": null,
@@ -6018,20 +5829,20 @@
         "dial-05": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.186882,
-            "sd": 0.075017,
+            "mean": 0.187312,
+            "sd": 0.093311,
             "ci95": [
-              0.16,
-              0.217419
+              0.152688,
+              0.224731
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.040327,
-            "sd": 0.034914,
+            "mean": 0.043444,
+            "sd": 0.042525,
             "ci95": [
-              0.028274,
-              0.054465
+              0.02831,
+              0.06076
             ]
           },
           "chance-adjusted": {
@@ -6044,20 +5855,20 @@
         "dial-1": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.187527,
-            "sd": 0.089161,
+            "mean": 0.161935,
+            "sd": 0.068856,
             "ci95": [
-              0.155699,
-              0.223871
+              0.136989,
+              0.190108
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.042798,
-            "sd": 0.044221,
+            "mean": 0.030775,
+            "sd": 0.028227,
             "ci95": [
-              0.027455,
-              0.06146
+              0.021274,
+              0.042588
             ]
           },
           "chance-adjusted": {
@@ -6070,20 +5881,20 @@
         "copy-example": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.186022,
-            "sd": 0.086273,
+            "mean": 0.154194,
+            "sd": 0.066551,
             "ci95": [
-              0.155269,
-              0.220645
+              0.130323,
+              0.18086
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.041749,
-            "sd": 0.040618,
+            "mean": 0.028028,
+            "sd": 0.026828,
             "ci95": [
-              0.027274,
-              0.058867
+              0.018981,
+              0.03952
             ]
           },
           "chance-adjusted": {
@@ -6096,20 +5907,20 @@
         "first-legal": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.186022,
-            "sd": 0.086273,
+            "mean": 0.154194,
+            "sd": 0.066551,
             "ci95": [
-              0.154409,
-              0.22086
+              0.130108,
+              0.181075
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.041749,
-            "sd": 0.040618,
+            "mean": 0.028028,
+            "sd": 0.026828,
             "ci95": [
-              0.027506,
-              0.058859
+              0.019052,
+              0.039773
             ]
           },
           "chance-adjusted": {
@@ -6123,29 +5934,29 @@
       "exploitableBy": {
         "copy-example": {
           "ci95": [
-            -0.028172,
-            0.023441
+            -0.015484,
+            -0.00086
           ],
-          "mean": -0.001505
+          "mean": -0.007742
         },
         "first-legal": {
           "ci95": [
-            -0.028387,
-            0.023871
+            -0.015699,
+            -0.00086
           ],
-          "mean": -0.001505
+          "mean": -0.007742
         }
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.813118,
+          "diffMean": 0.812688,
           "seedsNeeded": 3,
           "powerAt12": 1
         },
         "p05vs1": {
-          "diffMean": -0.000645,
-          "seedsNeeded": null,
-          "powerAt12": 0.0325
+          "diffMean": 0.025376,
+          "seedsNeeded": 47,
+          "powerAt12": 0.059
         }
       },
       "flags": [
@@ -6155,7 +5966,7 @@
     {
       "game": "minesweeper",
       "tier": "expert",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "outcome",
       "seedsPlanned": 25,
       "exampleToken": null,
@@ -6198,20 +6009,20 @@
         "dial-05": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.128294,
-            "sd": 0.074942,
+            "mean": 0.137638,
+            "sd": 0.084894,
             "ci95": [
-              0.100787,
-              0.158005
+              0.105827,
+              0.172388
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.021851,
-            "sd": 0.02766,
+            "mean": 0.025863,
+            "sd": 0.031172,
             "ci95": [
-              0.012621,
-              0.033468
+              0.015064,
+              0.03872
             ]
           },
           "chance-adjusted": {
@@ -6224,20 +6035,20 @@
         "dial-1": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.135118,
-            "sd": 0.093561,
+            "mean": 0.130289,
+            "sd": 0.089592,
             "ci95": [
-              0.100892,
-              0.173858
+              0.097953,
+              0.166194
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.02666,
-            "sd": 0.037777,
+            "mean": 0.024681,
+            "sd": 0.032088,
             "ci95": [
-              0.013745,
-              0.042317
+              0.013252,
+              0.038103
             ]
           },
           "chance-adjusted": {
@@ -6250,20 +6061,20 @@
         "copy-example": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.090394,
-            "sd": 0.064175,
+            "mean": 0.102362,
+            "sd": 0.074803,
             "ci95": [
-              0.068031,
-              0.117585
+              0.075696,
+              0.134068
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.012125,
-            "sd": 0.019598,
+            "mean": 0.01585,
+            "sd": 0.023625,
             "ci95": [
-              0.005803,
-              0.020745
+              0.007854,
+              0.025763
             ]
           },
           "chance-adjusted": {
@@ -6276,20 +6087,20 @@
         "first-legal": {
           "rhae-v1": {
             "n": 25,
-            "mean": 0.090394,
-            "sd": 0.064175,
+            "mean": 0.102362,
+            "sd": 0.074803,
             "ci95": [
-              0.068346,
-              0.11748
+              0.075486,
+              0.132808
             ]
           },
           "squared-outcome": {
             "n": 25,
-            "mean": 0.012125,
-            "sd": 0.019598,
+            "mean": 0.01585,
+            "sd": 0.023625,
             "ci95": [
-              0.005823,
-              0.020736
+              0.007937,
+              0.025901
             ]
           },
           "chance-adjusted": {
@@ -6303,29 +6114,29 @@
       "exploitableBy": {
         "copy-example": {
           "ci95": [
-            -0.07916,
-            -0.016798
+            -0.055643,
+            -0.008504
           ],
-          "mean": -0.044724
+          "mean": -0.027927
         },
         "first-legal": {
           "ci95": [
-            -0.07958,
-            -0.016588
+            -0.055433,
+            -0.008399
           ],
-          "mean": -0.044724
+          "mean": -0.027927
         }
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.871706,
-          "seedsNeeded": 2,
+          "diffMean": 0.862362,
+          "seedsNeeded": 3,
           "powerAt12": 1
         },
         "p05vs1": {
-          "diffMean": -0.006824,
+          "diffMean": 0.007349,
           "seedsNeeded": null,
-          "powerAt12": 0.0245
+          "powerAt12": 0.0535
         }
       },
       "flags": [
@@ -6344,7 +6155,7 @@
       "cellSources": {
         "dial-0": "tier-audit",
         "dial-05": "tier-audit",
-        "dial-1": "tier-audit",
+        "dial-1": "missing",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
@@ -6407,35 +6218,6 @@
             ]
           }
         },
-        "dial-1": {
-          "rhae-v1": {
-            "n": 16,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 16,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 16,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          }
-        },
         "copy-example": {
           "rhae-v1": {
             "n": 16,
@@ -6496,30 +6278,13 @@
         }
       },
       "exploitableBy": {
-        "copy-example": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        },
-        "first-legal": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        }
+        "copy-example": null,
+        "first-legal": null
       },
       "power": {
         "p0vs05": {
           "diffMean": 0.731856,
           "seedsNeeded": 3,
-          "powerAt12": 1
-        },
-        "p05vs1": {
-          "diffMean": 0.268144,
-          "seedsNeeded": 6,
           "powerAt12": 1
         }
       },
@@ -7126,7 +6891,7 @@
         "dial-05": "skill-dial-solo",
         "dial-1": "skill-dial-solo",
         "copy-example": "tier-audit",
-        "first-legal": "tier-audit"
+        "first-legal": "missing"
       },
       "cells": {
         "dial-0": {
@@ -7244,35 +7009,6 @@
               0
             ]
           }
-        },
-        "first-legal": {
-          "rhae-v1": {
-            "n": 8,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 8,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 8,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          }
         }
       },
       "exploitableBy": {
@@ -7283,13 +7019,7 @@
           ],
           "mean": 0
         },
-        "first-legal": {
-          "ci95": [
-            0,
-            0
-          ],
-          "mean": 0
-        }
+        "first-legal": null
       },
       "power": {
         "p0vs05": {
@@ -7707,13 +7437,42 @@
       "exampleSource": "none",
       "chanceBaselineMean": null,
       "cellSources": {
-        "dial-0": "missing",
+        "dial-0": "tier-audit",
         "dial-05": "tier-audit",
-        "dial-1": "missing",
+        "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
       "cells": {
+        "dial-0": {
+          "rhae-v1": {
+            "n": 25,
+            "mean": 1,
+            "sd": 0,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "squared-outcome": {
+            "n": 25,
+            "mean": 1,
+            "sd": 0,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "chance-adjusted": {
+            "n": 25,
+            "mean": 1,
+            "sd": 0,
+            "ci95": [
+              1,
+              1
+            ]
+          }
+        },
         "dial-05": {
           "rhae-v1": {
             "n": 25,
@@ -7740,6 +7499,35 @@
             "ci95": [
               0.149695,
               0.263321
+            ]
+          }
+        },
+        "dial-1": {
+          "rhae-v1": {
+            "n": 25,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 25,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 25,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
             ]
           }
         },
@@ -7803,11 +7591,36 @@
         }
       },
       "exploitableBy": {
-        "copy-example": null,
-        "first-legal": null
+        "copy-example": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        },
+        "first-legal": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        }
       },
-      "power": {},
-      "flags": []
+      "power": {
+        "p0vs05": {
+          "diffMean": 0.798665,
+          "seedsNeeded": 3,
+          "powerAt12": 1
+        },
+        "p05vs1": {
+          "diffMean": 0.201335,
+          "seedsNeeded": 6,
+          "powerAt12": 1
+        }
+      },
+      "flags": [
+        "resolves-at-12-or-fewer"
+      ]
     },
     {
       "game": "sokoban",
@@ -7819,13 +7632,42 @@
       "exampleSource": "none",
       "chanceBaselineMean": null,
       "cellSources": {
-        "dial-0": "missing",
+        "dial-0": "tier-audit",
         "dial-05": "tier-audit",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
       "cells": {
+        "dial-0": {
+          "rhae-v1": {
+            "n": 25,
+            "mean": 1,
+            "sd": 0,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "squared-outcome": {
+            "n": 25,
+            "mean": 1,
+            "sd": 0,
+            "ci95": [
+              1,
+              1
+            ]
+          },
+          "chance-adjusted": {
+            "n": 25,
+            "mean": 1,
+            "sd": 0,
+            "ci95": [
+              1,
+              1
+            ]
+          }
+        },
         "dial-05": {
           "rhae-v1": {
             "n": 25,
@@ -7960,6 +7802,11 @@
         }
       },
       "power": {
+        "p0vs05": {
+          "diffMean": 0.842652,
+          "seedsNeeded": 3,
+          "powerAt12": 1
+        },
         "p05vs1": {
           "diffMean": 0.157348,
           "seedsNeeded": 7,
@@ -7973,7 +7820,7 @@
     {
       "game": "connect4",
       "tier": "ladder-1",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "outcome",
       "seedsPlanned": 12,
       "exampleToken": "4",
@@ -8155,7 +8002,7 @@
     {
       "game": "connect4",
       "tier": "ladder-0",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "outcome",
       "seedsPlanned": 16,
       "exampleToken": "4",
@@ -8172,20 +8019,20 @@
         "dial-0": {
           "rhae-v1": {
             "n": 16,
-            "mean": 0.90625,
-            "sd": 0.271953,
+            "mean": 0.59375,
+            "sd": 0.455293,
             "ci95": [
-              0.75,
-              1
+              0.375,
+              0.8125
             ]
           },
           "squared-outcome": {
             "n": 16,
-            "mean": 0.890625,
-            "sd": 0.302335,
+            "mean": 0.546875,
+            "sd": 0.476259,
             "ci95": [
-              0.71875,
-              1
+              0.328125,
+              0.765625
             ]
           },
           "chance-adjusted": {
@@ -8198,20 +8045,20 @@
         "dial-05": {
           "rhae-v1": {
             "n": 16,
-            "mean": 0.1875,
-            "sd": 0.403113,
+            "mean": 0.25,
+            "sd": 0.447214,
             "ci95": [
-              0,
-              0.375
+              0.0625,
+              0.5
             ]
           },
           "squared-outcome": {
             "n": 16,
-            "mean": 0.1875,
-            "sd": 0.403113,
+            "mean": 0.25,
+            "sd": 0.447214,
             "ci95": [
-              0,
-              0.375
+              0.0625,
+              0.5
             ]
           },
           "chance-adjusted": {
@@ -8318,24 +8165,24 @@
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.71875,
-          "seedsNeeded": 6,
-          "powerAt12": 0.9995
+          "diffMean": 0.34375,
+          "seedsNeeded": 25,
+          "powerAt12": 0.5145
         },
         "p05vs1": {
-          "diffMean": 0.1875,
-          "seedsNeeded": 29,
-          "powerAt12": 0.1945
+          "diffMean": 0.25,
+          "seedsNeeded": 21,
+          "powerAt12": 0.3605
         }
       },
       "flags": [
-        "resolves-at-12-or-fewer"
+        "does-not-resolve-at-64"
       ]
     },
     {
       "game": "connect4",
       "tier": "ladder-2",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "outcome",
       "seedsPlanned": 12,
       "exampleToken": "4",
@@ -8352,19 +8199,19 @@
         "dial-0": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.916667,
-            "sd": 0.194625,
+            "mean": 0.833333,
+            "sd": 0.325669,
             "ci95": [
-              0.791667,
+              0.625,
               1
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.875,
-            "sd": 0.291937,
+            "mean": 0.791667,
+            "sd": 0.381881,
             "ci95": [
-              0.6875,
+              0.5625,
               1
             ]
           },
@@ -8378,20 +8225,20 @@
         "dial-05": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.25,
-            "sd": 0.452267,
+            "mean": 0.083333,
+            "sd": 0.288675,
             "ci95": [
               0,
-              0.5
+              0.25
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.25,
-            "sd": 0.452267,
+            "mean": 0.083333,
+            "sd": 0.288675,
             "ci95": [
               0,
-              0.5
+              0.25
             ]
           },
           "chance-adjusted": {
@@ -8498,14 +8345,14 @@
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.666667,
-          "seedsNeeded": 6,
-          "powerAt12": 0.998
+          "diffMean": 0.75,
+          "seedsNeeded": 7,
+          "powerAt12": 0.981
         },
         "p05vs1": {
-          "diffMean": 0.25,
-          "seedsNeeded": 21,
-          "powerAt12": 0.3545
+          "diffMean": 0.083333,
+          "seedsNeeded": null,
+          "powerAt12": 0.008
         }
       },
       "flags": [
@@ -8515,7 +8362,7 @@
     {
       "game": "connect4",
       "tier": "ladder-3",
-      "gameVersion": "1.1.0",
+      "gameVersion": "1.2.0",
       "scoring": "outcome",
       "seedsPlanned": 12,
       "exampleToken": "4",
@@ -8532,19 +8379,379 @@
         "dial-0": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.833333,
-            "sd": 0.389249,
+            "mean": 0.625,
+            "sd": 0.482654,
             "ci95": [
-              0.583333,
+              0.375,
+              0.875
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0.604167,
+            "sd": 0.493806,
+            "ci95": [
+              0.333333,
+              0.854167
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
+        "dial-05": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
+        "dial-1": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
+        "copy-example": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
+        "first-legal": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        }
+      },
+      "exploitableBy": {
+        "copy-example": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        },
+        "first-legal": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        }
+      },
+      "power": {
+        "p0vs05": {
+          "diffMean": 0.625,
+          "seedsNeeded": 7,
+          "powerAt12": 0.993
+        },
+        "p05vs1": {
+          "diffMean": 0,
+          "seedsNeeded": null,
+          "powerAt12": 0
+        }
+      },
+      "flags": [
+        "resolves-at-12-or-fewer"
+      ]
+    },
+    {
+      "game": "connect4",
+      "tier": "ladder-4",
+      "gameVersion": "1.2.0",
+      "scoring": "outcome",
+      "seedsPlanned": 12,
+      "exampleToken": "4",
+      "exampleSource": "rules",
+      "chanceBaselineMean": null,
+      "cellSources": {
+        "dial-0": "tier-audit",
+        "dial-05": "tier-audit",
+        "dial-1": "tier-audit",
+        "copy-example": "tier-audit",
+        "first-legal": "tier-audit"
+      },
+      "cells": {
+        "dial-0": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0.416667,
+            "sd": 0.514929,
+            "ci95": [
+              0.166667,
+              0.666667
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0.416667,
+            "sd": 0.514929,
+            "ci95": [
+              0.166667,
+              0.666667
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
+        "dial-05": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
+        "dial-1": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
+        "copy-example": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
+        "first-legal": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        }
+      },
+      "exploitableBy": {
+        "copy-example": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        },
+        "first-legal": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        }
+      },
+      "power": {
+        "p0vs05": {
+          "diffMean": 0.416667,
+          "seedsNeeded": 12,
+          "powerAt12": 0.8055
+        },
+        "p05vs1": {
+          "diffMean": 0,
+          "seedsNeeded": null,
+          "powerAt12": 0
+        }
+      },
+      "flags": [
+        "resolves-at-12-or-fewer"
+      ]
+    },
+    {
+      "game": "connect4",
+      "tier": "forced-win",
+      "gameVersion": "1.2.0",
+      "scoring": "outcome",
+      "seedsPlanned": 12,
+      "exampleToken": "4",
+      "exampleSource": "rules",
+      "chanceBaselineMean": null,
+      "cellSources": {
+        "dial-0": "tier-audit",
+        "dial-05": "tier-audit",
+        "dial-1": "tier-audit",
+        "copy-example": "tier-audit",
+        "first-legal": "tier-audit"
+      },
+      "cells": {
+        "dial-0": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0.875,
+            "sd": 0.310791,
+            "ci95": [
+              0.666667,
               1
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.833333,
-            "sd": 0.389249,
+            "mean": 0.854167,
+            "sd": 0.344739,
             "ci95": [
-              0.583333,
+              0.645833,
               1
             ]
           },
@@ -8678,288 +8885,14 @@
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.625,
-          "seedsNeeded": 13,
-          "powerAt12": 0.79
+          "diffMean": 0.666667,
+          "seedsNeeded": 11,
+          "powerAt12": 0.866
         },
         "p05vs1": {
           "diffMean": 0.208333,
-          "seedsNeeded": 23,
-          "powerAt12": 0.2795
-        }
-      },
-      "flags": [
-        "does-not-resolve-at-64"
-      ]
-    },
-    {
-      "game": "connect4",
-      "tier": "ladder-4",
-      "gameVersion": "1.1.0",
-      "scoring": "outcome",
-      "seedsPlanned": 12,
-      "exampleToken": "4",
-      "exampleSource": "rules",
-      "chanceBaselineMean": null,
-      "cellSources": {
-        "dial-0": "tier-audit",
-        "dial-05": "tier-audit",
-        "dial-1": "missing",
-        "copy-example": "tier-audit",
-        "first-legal": "tier-audit"
-      },
-      "cells": {
-        "dial-0": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0.875,
-            "sd": 0.310791,
-            "ci95": [
-              0.666667,
-              1
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0.854167,
-            "sd": 0.344739,
-            "ci95": [
-              0.645833,
-              1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "dial-05": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0.25,
-            "sd": 0.452267,
-            "ci95": [
-              0,
-              0.5
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0.25,
-            "sd": 0.452267,
-            "ci95": [
-              0,
-              0.5
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "copy-example": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "first-legal": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        }
-      },
-      "exploitableBy": {
-        "copy-example": null,
-        "first-legal": null
-      },
-      "power": {
-        "p0vs05": {
-          "diffMean": 0.625,
-          "seedsNeeded": 7,
-          "powerAt12": 0.9945
-        }
-      },
-      "flags": [
-        "resolves-at-12-or-fewer"
-      ]
-    },
-    {
-      "game": "connect4",
-      "tier": "forced-win",
-      "gameVersion": "1.1.0",
-      "scoring": "outcome",
-      "seedsPlanned": 12,
-      "exampleToken": "4",
-      "exampleSource": "rules",
-      "chanceBaselineMean": null,
-      "cellSources": {
-        "dial-0": "tier-audit",
-        "dial-05": "tier-audit",
-        "dial-1": "missing",
-        "copy-example": "tier-audit",
-        "first-legal": "tier-audit"
-      },
-      "cells": {
-        "dial-0": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 1,
-            "sd": 0,
-            "ci95": [
-              1,
-              1
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "dial-05": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0.375,
-            "sd": 0.482654,
-            "ci95": [
-              0.125,
-              0.625
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0.354167,
-            "sd": 0.482163,
-            "ci95": [
-              0.104167,
-              0.604167
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "copy-example": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        },
-        "first-legal": {
-          "rhae-v1": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "squared-outcome": {
-            "n": 12,
-            "mean": 0,
-            "sd": 0,
-            "ci95": [
-              0,
-              0
-            ]
-          },
-          "chance-adjusted": {
-            "n": 0,
-            "mean": null,
-            "sd": null,
-            "ci95": null
-          }
-        }
-      },
-      "exploitableBy": {
-        "copy-example": null,
-        "first-legal": null
-      },
-      "power": {
-        "p0vs05": {
-          "diffMean": 0.625,
-          "seedsNeeded": 7,
-          "powerAt12": 0.994
+          "seedsNeeded": 24,
+          "powerAt12": 0.2735
         }
       },
       "flags": [
@@ -9749,7 +9682,7 @@
     {
       "game": "holdem",
       "tier": "station",
-      "gameVersion": "1.3.0",
+      "gameVersion": "1.4.0",
       "scoring": "outcome",
       "seedsPlanned": 12,
       "exampleToken": null,
@@ -9766,20 +9699,20 @@
         "dial-0": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.868703,
-            "sd": 0.207655,
+            "mean": 0.803257,
+            "sd": 0.185138,
             "ci95": [
-              0.745086,
-              0.966834
+              0.696702,
+              0.89683
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.794171,
-            "sd": 0.300651,
+            "mean": 0.676642,
+            "sd": 0.269485,
             "ci95": [
-              0.624314,
-              0.939059
+              0.528057,
+              0.811333
             ]
           },
           "chance-adjusted": {
@@ -9792,20 +9725,20 @@
         "dial-05": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.20281,
-            "sd": 0.212718,
+            "mean": 0.287356,
+            "sd": 0.166759,
             "ci95": [
-              0.094182,
-              0.324927
+              0.198309,
+              0.379375
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.08261,
-            "sd": 0.128592,
+            "mean": 0.108064,
+            "sd": 0.105276,
             "ci95": [
-              0.022439,
-              0.159398
+              0.054614,
+              0.168205
             ]
           },
           "chance-adjusted": {
@@ -9818,20 +9751,20 @@
         "dial-1": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.019327,
-            "sd": 0.031192,
+            "mean": 0.095603,
+            "sd": 0.06874,
             "ci95": [
-              0.005193,
-              0.038381
+              0.061914,
+              0.136479
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.001265,
-            "sd": 0.003171,
+            "mean": 0.013471,
+            "sd": 0.019472,
             "ci95": [
-              0.000046,
-              0.00322
+              0.004558,
+              0.025197
             ]
           },
           "chance-adjusted": {
@@ -9844,20 +9777,20 @@
         "copy-example": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.489648,
-            "sd": 0.198906,
+            "mean": 0.492657,
+            "sd": 0.107894,
             "ci95": [
-              0.381895,
-              0.597004
+              0.434006,
+              0.550196
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.276022,
-            "sd": 0.187375,
+            "mean": 0.253382,
+            "sd": 0.102628,
             "ci95": [
-              0.174678,
-              0.379818
+              0.196543,
+              0.309597
             ]
           },
           "chance-adjusted": {
@@ -9870,20 +9803,20 @@
         "first-legal": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.489648,
-            "sd": 0.198906,
+            "mean": 0.492657,
+            "sd": 0.107894,
             "ci95": [
-              0.378818,
-              0.596891
+              0.432077,
+              0.550215
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.276022,
-            "sd": 0.187375,
+            "mean": 0.253382,
+            "sd": 0.102628,
             "ci95": [
-              0.174376,
-              0.37919
+              0.196862,
+              0.308948
             ]
           },
           "chance-adjusted": {
@@ -9897,29 +9830,29 @@
       "exploitableBy": {
         "copy-example": {
           "ci95": [
-            0.363036,
-            0.572126
+            0.333922,
+            0.455263
           ],
-          "mean": 0.470321
+          "mean": 0.397053
         },
         "first-legal": {
           "ci95": [
-            0.36706,
-            0.569809
+            0.337001,
+            0.454579
           ],
-          "mean": 0.470321
+          "mean": 0.397053
         }
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.665893,
-          "seedsNeeded": 4,
+          "diffMean": 0.515901,
+          "seedsNeeded": 3,
           "powerAt12": 1
         },
         "p05vs1": {
-          "diffMean": 0.183483,
-          "seedsNeeded": 9,
-          "powerAt12": 0.9685
+          "diffMean": 0.191752,
+          "seedsNeeded": 6,
+          "powerAt12": 1
         }
       },
       "flags": [
@@ -9931,7 +9864,7 @@
     {
       "game": "holdem",
       "tier": "rules",
-      "gameVersion": "1.3.0",
+      "gameVersion": "1.4.0",
       "scoring": "outcome",
       "seedsPlanned": 12,
       "exampleToken": null,
@@ -9948,20 +9881,20 @@
         "dial-0": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.901308,
-            "sd": 0.231427,
+            "mean": 0.829737,
+            "sd": 0.177585,
             "ci95": [
-              0.758572,
-              0.986632
+              0.721123,
+              0.90671
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.861451,
-            "sd": 0.279739,
+            "mean": 0.717373,
+            "sd": 0.232177,
             "ci95": [
-              0.68229,
-              0.973329
+              0.577618,
+              0.823826
             ]
           },
           "chance-adjusted": {
@@ -9974,20 +9907,20 @@
         "dial-05": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.149176,
-            "sd": 0.162991,
+            "mean": 0.261085,
+            "sd": 0.127157,
             "ci95": [
-              0.072612,
-              0.246579
+              0.196108,
+              0.333686
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.046606,
-            "sd": 0.090962,
+            "mean": 0.082987,
+            "sd": 0.079697,
             "ci95": [
-              0.008658,
-              0.101081
+              0.043913,
+              0.128911
             ]
           },
           "chance-adjusted": {
@@ -10000,20 +9933,20 @@
         "dial-1": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.013901,
-            "sd": 0.026667,
+            "mean": 0.076438,
+            "sd": 0.066223,
             "ci95": [
-              0.003571,
-              0.030485
+              0.044335,
+              0.115869
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.000845,
-            "sd": 0.002602,
+            "mean": 0.009863,
+            "sd": 0.016791,
             "ci95": [
-              0.000033,
-              0.002373
+              0.003052,
+              0.019966
             ]
           },
           "chance-adjusted": {
@@ -10026,20 +9959,20 @@
         "copy-example": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.148338,
-            "sd": 0.153358,
+            "mean": 0.259771,
+            "sd": 0.126996,
             "ci95": [
-              0.071802,
-              0.237302
+              0.192196,
+              0.330995
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.043563,
-            "sd": 0.07532,
+            "mean": 0.082265,
+            "sd": 0.074524,
             "ci95": [
-              0.008833,
-              0.090257
+              0.045216,
+              0.125008
             ]
           },
           "chance-adjusted": {
@@ -10052,20 +9985,20 @@
         "first-legal": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.148338,
-            "sd": 0.153358,
+            "mean": 0.259771,
+            "sd": 0.126996,
             "ci95": [
-              0.072343,
-              0.237434
+              0.19204,
+              0.331147
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.043563,
-            "sd": 0.07532,
+            "mean": 0.082265,
+            "sd": 0.074524,
             "ci95": [
-              0.008838,
-              0.090465
+              0.045455,
+              0.126353
             ]
           },
           "chance-adjusted": {
@@ -10079,29 +10012,29 @@
       "exploitableBy": {
         "copy-example": {
           "ci95": [
-            0.059631,
-            0.224714
+            0.119393,
+            0.252027
           ],
-          "mean": 0.134437
+          "mean": 0.183333
         },
         "first-legal": {
           "ci95": [
-            0.058978,
-            0.223938
+            0.120055,
+            0.250661
           ],
-          "mean": 0.134437
+          "mean": 0.183333
         }
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.752132,
+          "diffMean": 0.568652,
           "seedsNeeded": 4,
           "powerAt12": 1
         },
         "p05vs1": {
-          "diffMean": 0.135275,
-          "seedsNeeded": 11,
-          "powerAt12": 0.8655
+          "diffMean": 0.184647,
+          "seedsNeeded": 8,
+          "powerAt12": 0.9685
         }
       },
       "flags": [
@@ -10113,7 +10046,7 @@
     {
       "game": "holdem",
       "tier": "equity",
-      "gameVersion": "1.3.0",
+      "gameVersion": "1.4.0",
       "scoring": "outcome",
       "seedsPlanned": 12,
       "exampleToken": null,
@@ -10130,20 +10063,20 @@
         "dial-0": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.328611,
-            "sd": 0.40334,
+            "mean": 0.367732,
+            "sd": 0.335282,
             "ci95": [
-              0.125905,
-              0.556573
+              0.199553,
+              0.556747
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.257112,
-            "sd": 0.395627,
+            "mean": 0.238273,
+            "sd": 0.336409,
             "ci95": [
-              0.063233,
-              0.486141
+              0.072988,
+              0.434268
             ]
           },
           "chance-adjusted": {
@@ -10156,20 +10089,20 @@
         "dial-05": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.098059,
-            "sd": 0.161435,
+            "mean": 0.168846,
+            "sd": 0.163883,
             "ci95": [
-              0.020947,
-              0.196675
+              0.086247,
+              0.263683
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.033505,
-            "sd": 0.071675,
+            "mean": 0.053128,
+            "sd": 0.080582,
             "ci95": [
-              0.001293,
-              0.078547
+              0.014338,
+              0.099761
             ]
           },
           "chance-adjusted": {
@@ -10182,20 +10115,20 @@
         "dial-1": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.030808,
-            "sd": 0.076792,
+            "mean": 0.086269,
+            "sd": 0.107867,
             "ci95": [
-              0.002869,
-              0.078337
+              0.03728,
+              0.152706
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.006355,
-            "sd": 0.020798,
+            "mean": 0.018108,
+            "sd": 0.040798,
             "ci95": [
-              0.000018,
-              0.018455
+              0.002332,
+              0.042903
             ]
           },
           "chance-adjusted": {
@@ -10208,20 +10141,20 @@
         "copy-example": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.120907,
-            "sd": 0.184916,
+            "mean": 0.197325,
+            "sd": 0.166216,
             "ci95": [
-              0.024383,
-              0.225316
+              0.115146,
+              0.2912
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.045963,
-            "sd": 0.082282,
+            "mean": 0.064263,
+            "sd": 0.091207,
             "ci95": [
-              0.001099,
-              0.093495
+              0.017845,
+              0.116156
             ]
           },
           "chance-adjusted": {
@@ -10234,20 +10167,20 @@
         "first-legal": {
           "rhae-v1": {
             "n": 12,
-            "mean": 0.120907,
-            "sd": 0.184916,
+            "mean": 0.197325,
+            "sd": 0.166216,
             "ci95": [
-              0.022228,
-              0.225966
+              0.113248,
+              0.291698
             ]
           },
           "squared-outcome": {
             "n": 12,
-            "mean": 0.045963,
-            "sd": 0.082282,
+            "mean": 0.064263,
+            "sd": 0.091207,
             "ci95": [
-              0.001035,
-              0.09273
+              0.016967,
+              0.115782
             ]
           },
           "chance-adjusted": {
@@ -10261,33 +10194,33 @@
       "exploitableBy": {
         "copy-example": {
           "ci95": [
-            -0.02192,
-            0.214108
+            -0.004525,
+            0.227588
           ],
-          "mean": 0.090099
+          "mean": 0.111056
         },
         "first-legal": {
           "ci95": [
-            -0.021267,
-            0.214108
+            -0.002759,
+            0.228544
           ],
-          "mean": 0.090099
+          "mean": 0.111056
         }
       },
       "power": {
         "p0vs05": {
-          "diffMean": 0.230552,
-          "seedsNeeded": 13,
-          "powerAt12": 0.7685
+          "diffMean": 0.198886,
+          "seedsNeeded": 11,
+          "powerAt12": 0.868
         },
         "p05vs1": {
-          "diffMean": 0.067251,
-          "seedsNeeded": 61,
-          "powerAt12": 0.1695
+          "diffMean": 0.082576,
+          "seedsNeeded": 54,
+          "powerAt12": 0.271
         }
       },
       "flags": [
-        "does-not-resolve-at-64"
+        "resolves-at-12-or-fewer"
       ]
     },
     {
@@ -10887,7 +10820,7 @@
       "cellSources": {
         "dial-0": "tier-audit",
         "dial-05": "tier-audit",
-        "dial-1": "missing",
+        "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
@@ -10922,6 +10855,35 @@
           }
         },
         "dial-05": {
+          "rhae-v1": {
+            "n": 25,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 25,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 25,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          }
+        },
+        "dial-1": {
           "rhae-v1": {
             "n": 25,
             "mean": 0,
@@ -11010,14 +10972,31 @@
         }
       },
       "exploitableBy": {
-        "copy-example": null,
-        "first-legal": null
+        "copy-example": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        },
+        "first-legal": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        }
       },
       "power": {
         "p0vs05": {
           "diffMean": 1.15,
           "seedsNeeded": 2,
           "powerAt12": 1
+        },
+        "p05vs1": {
+          "diffMean": 0,
+          "seedsNeeded": null,
+          "powerAt12": 0
         }
       },
       "flags": [
@@ -12086,13 +12065,39 @@
       "exampleSource": "rules",
       "chanceBaselineMean": null,
       "cellSources": {
-        "dial-0": "missing",
+        "dial-0": "tier-audit",
         "dial-05": "tier-audit",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
       "cells": {
+        "dial-0": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0.916667,
+            "sd": 0.288675,
+            "ci95": [
+              0.75,
+              1
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0.916667,
+            "sd": 0.288675,
+            "ci95": [
+              0.75,
+              1
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
         "dial-05": {
           "rhae-v1": {
             "n": 12,
@@ -12215,13 +12220,20 @@
         }
       },
       "power": {
+        "p0vs05": {
+          "diffMean": 0.875,
+          "seedsNeeded": 5,
+          "powerAt12": 1
+        },
         "p05vs1": {
           "diffMean": 0.041667,
           "seedsNeeded": null,
           "powerAt12": 0.018
         }
       },
-      "flags": []
+      "flags": [
+        "resolves-at-12-or-fewer"
+      ]
     },
     {
       "game": "othello",
@@ -12235,7 +12247,7 @@
       "cellSources": {
         "dial-0": "tier-audit",
         "dial-05": "tier-audit",
-        "dial-1": "missing",
+        "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
       },
@@ -12267,6 +12279,32 @@
           }
         },
         "dial-05": {
+          "rhae-v1": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "squared-outcome": {
+            "n": 12,
+            "mean": 0,
+            "sd": 0,
+            "ci95": [
+              0,
+              0
+            ]
+          },
+          "chance-adjusted": {
+            "n": 0,
+            "mean": null,
+            "sd": null,
+            "ci95": null
+          }
+        },
+        "dial-1": {
           "rhae-v1": {
             "n": 12,
             "mean": 0,
@@ -12346,14 +12384,31 @@
         }
       },
       "exploitableBy": {
-        "copy-example": null,
-        "first-legal": null
+        "copy-example": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        },
+        "first-legal": {
+          "ci95": [
+            0,
+            0
+          ],
+          "mean": 0
+        }
       },
       "power": {
         "p0vs05": {
           "diffMean": 0.541667,
           "seedsNeeded": 7,
           "powerAt12": 0.99
+        },
+        "p05vs1": {
+          "diffMean": 0,
+          "seedsNeeded": null,
+          "powerAt12": 0
         }
       },
       "flags": [
@@ -12566,7 +12621,7 @@
       "chanceBaselineMean": null,
       "cellSources": {
         "dial-0": "tier-audit",
-        "dial-05": "tier-audit",
+        "dial-05": "missing",
         "dial-1": "tier-audit",
         "copy-example": "tier-audit",
         "first-legal": "tier-audit"
@@ -12598,35 +12653,6 @@
             "ci95": [
               1,
               1
-            ]
-          }
-        },
-        "dial-05": {
-          "rhae-v1": {
-            "n": 25,
-            "mean": 0.670256,
-            "sd": 0.275487,
-            "ci95": [
-              0.565378,
-              0.776689
-            ]
-          },
-          "squared-outcome": {
-            "n": 25,
-            "mean": 0.670256,
-            "sd": 0.275487,
-            "ci95": [
-              0.566156,
-              0.772678
-            ]
-          },
-          "chance-adjusted": {
-            "n": 25,
-            "mean": 0.670256,
-            "sd": 0.275487,
-            "ci95": [
-              0.565856,
-              0.773356
             ]
           }
         },
@@ -12734,21 +12760,8 @@
           "mean": 0
         }
       },
-      "power": {
-        "p0vs05": {
-          "diffMean": 0.329744,
-          "seedsNeeded": 8,
-          "powerAt12": 0.9805
-        },
-        "p05vs1": {
-          "diffMean": 0.670256,
-          "seedsNeeded": 4,
-          "powerAt12": 1
-        }
-      },
-      "flags": [
-        "resolves-at-12-or-fewer"
-      ]
+      "power": {},
+      "flags": []
     },
     {
       "game": "wordle",

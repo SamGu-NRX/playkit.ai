@@ -6,7 +6,7 @@
     "manifestSha256": "2c542608347dae2f1e812c8d04ca986f17b5509160d2e595247d7902f9d863d5"
   },
   "git": {
-    "commit": "5e040283cb1932395ca1c8de72cca2545d371417"
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,9 +16,9 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T17:46:32.057Z",
-  "finishedAt": "2026-10-17T17:46:37.383Z",
-  "concurrency": 8,
+  "startedAt": "2026-10-19T01:13:47.795Z",
+  "finishedAt": "2026-10-19T01:13:55.327Z",
+  "concurrency": 2,
   "limits": {
     "maxUsd": null,
     "maxUsdTotal": null,
@@ -32,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 7290,
+  "calls": 20250,
   "total": {
     "episodes": 25,
     "calls": 0,
@@ -45,30 +45,13 @@
   },
   "counts": {
     "jobs": 25,
-    "played": 9,
-    "skipped": 16,
+    "played": 25,
+    "skipped": 0,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [
-    "nonogram/probe/nonogram/probe/public/0",
-    "nonogram/probe/nonogram/probe/public/1",
-    "nonogram/probe/nonogram/probe/public/2",
-    "nonogram/probe/nonogram/probe/public/3",
-    "nonogram/probe/nonogram/probe/public/4",
-    "nonogram/probe/nonogram/probe/public/5",
-    "nonogram/probe/nonogram/probe/public/6",
-    "nonogram/probe/nonogram/probe/public/7",
-    "nonogram/probe/nonogram/probe/public/8",
-    "nonogram/probe/nonogram/probe/public/9",
-    "nonogram/probe/nonogram/probe/public/10",
-    "nonogram/probe/nonogram/probe/public/11",
-    "nonogram/probe/nonogram/probe/public/12",
-    "nonogram/probe/nonogram/probe/public/13",
-    "nonogram/probe/nonogram/probe/public/14",
-    "nonogram/probe/nonogram/probe/public/15"
-  ],
+  "skipped": [],
   "replayed": [],
   "unplayed": [],
   "failed": [],
@@ -76,14 +59,14 @@
   "stopReason": null,
   "ledger": {
     "file": "spend.jsonl",
-    "invocations": 4,
-    "calls": 20250,
+    "invocations": 5,
+    "calls": 40500,
     "cap": null,
     "totalUsd": 0,
     "keptUsd": 0,
     "unwoundUsd": 0,
     "unwoundCalls": 0,
-    "unknownCalls": 20250,
+    "unknownCalls": 40500,
     "problems": []
   }
 }

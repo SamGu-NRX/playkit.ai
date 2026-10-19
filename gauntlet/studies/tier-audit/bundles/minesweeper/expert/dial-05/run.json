@@ -3,10 +3,10 @@
   "suite": {
     "id": "playkit-gauntlet-tier-audit-minesweeper-expert",
     "split": "public",
-    "manifestSha256": "fe0da2a710bb36dfc2519a17a99d52141ff7a526283a2cfba6c052dbad74638c"
+    "manifestSha256": "dec151d167fc247a55192ad843b99ac0ef58dab415556115232b4c9148ceffa8"
   },
   "git": {
-    "commit": "2b1cfba8fcd21e7b91f7114ab3a66db1c34f89af"
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
   },
   "node": "v20.20.2",
   "agent": {
@@ -16,9 +16,9 @@
   "prices": {
     "sha256": null
   },
-  "startedAt": "2026-10-17T13:49:31.143Z",
-  "finishedAt": "2026-10-17T13:49:33.319Z",
-  "concurrency": 6,
+  "startedAt": "2026-10-18T23:13:32.517Z",
+  "finishedAt": "2026-10-18T23:13:33.634Z",
+  "concurrency": 2,
   "limits": {
     "maxUsd": null,
     "maxUsdTotal": null,
@@ -32,7 +32,7 @@
   },
   "spendUsd": 0,
   "unknownCostSteps": 0,
-  "calls": 40,
+  "calls": 302,
   "total": {
     "episodes": 25,
     "calls": 0,
@@ -45,35 +45,13 @@
   },
   "counts": {
     "jobs": 25,
-    "played": 4,
-    "skipped": 21,
+    "played": 25,
+    "skipped": 0,
     "replayed": 0,
     "unplayed": 0,
     "failed": 0
   },
-  "skipped": [
-    "minesweeper/expert/minesweeper/expert/public/0",
-    "minesweeper/expert/minesweeper/expert/public/1",
-    "minesweeper/expert/minesweeper/expert/public/2",
-    "minesweeper/expert/minesweeper/expert/public/3",
-    "minesweeper/expert/minesweeper/expert/public/4",
-    "minesweeper/expert/minesweeper/expert/public/5",
-    "minesweeper/expert/minesweeper/expert/public/6",
-    "minesweeper/expert/minesweeper/expert/public/7",
-    "minesweeper/expert/minesweeper/expert/public/8",
-    "minesweeper/expert/minesweeper/expert/public/9",
-    "minesweeper/expert/minesweeper/expert/public/10",
-    "minesweeper/expert/minesweeper/expert/public/11",
-    "minesweeper/expert/minesweeper/expert/public/12",
-    "minesweeper/expert/minesweeper/expert/public/13",
-    "minesweeper/expert/minesweeper/expert/public/14",
-    "minesweeper/expert/minesweeper/expert/public/15",
-    "minesweeper/expert/minesweeper/expert/public/16",
-    "minesweeper/expert/minesweeper/expert/public/17",
-    "minesweeper/expert/minesweeper/expert/public/18",
-    "minesweeper/expert/minesweeper/expert/public/19",
-    "minesweeper/expert/minesweeper/expert/public/20"
-  ],
+  "skipped": [],
   "replayed": [],
   "unplayed": [],
   "failed": [],
@@ -81,14 +59,14 @@
   "stopReason": null,
   "ledger": {
     "file": "spend.jsonl",
-    "invocations": 2,
-    "calls": 307,
+    "invocations": 1,
+    "calls": 302,
     "cap": null,
     "totalUsd": 0,
     "keptUsd": 0,
     "unwoundUsd": 0,
     "unwoundCalls": 0,
-    "unknownCalls": 307,
+    "unknownCalls": 302,
     "problems": []
   }
 }

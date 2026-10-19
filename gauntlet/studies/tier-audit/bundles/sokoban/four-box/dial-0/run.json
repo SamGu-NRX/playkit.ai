@@ -1,0 +1,72 @@
+{
+  "format": "playkit-gauntlet-run/1",
+  "suite": {
+    "id": "playkit-gauntlet-tier-audit-sokoban-four-box",
+    "split": "public",
+    "manifestSha256": "7c464743b32bc1c689c17e9fe862ccaddf8d59787995bdc6556af152ade2a429"
+  },
+  "git": {
+    "commit": "c70b4d873c8b298291958cae2bf98842a9d08d9b"
+  },
+  "node": "v20.20.2",
+  "agent": {
+    "id": "dial-sokoban-engine-p0",
+    "track": "baseline"
+  },
+  "prices": {
+    "sha256": null
+  },
+  "startedAt": "2026-10-19T00:47:23.279Z",
+  "finishedAt": "2026-10-19T00:47:58.306Z",
+  "concurrency": 2,
+  "limits": {
+    "maxUsd": null,
+    "maxUsdTotal": null,
+    "maxCalls": null,
+    "requestsPerMinute": null,
+    "maxOutputTokens": null,
+    "callTimeoutMs": null,
+    "thinkingBudget": null,
+    "reasoningEffort": null,
+    "episodeTimeLimitMs": null
+  },
+  "spendUsd": 0,
+  "unknownCostSteps": 0,
+  "calls": 388,
+  "total": {
+    "episodes": 25,
+    "calls": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0
+    },
+    "spendUsd": 0,
+    "unknownCostSteps": 0
+  },
+  "counts": {
+    "jobs": 25,
+    "played": 25,
+    "skipped": 0,
+    "replayed": 0,
+    "unplayed": 0,
+    "failed": 0
+  },
+  "skipped": [],
+  "replayed": [],
+  "unplayed": [],
+  "failed": [],
+  "stopped": null,
+  "stopReason": null,
+  "ledger": {
+    "file": "spend.jsonl",
+    "invocations": 1,
+    "calls": 388,
+    "cap": null,
+    "totalUsd": 0,
+    "keptUsd": 0,
+    "unwoundUsd": 0,
+    "unwoundCalls": 0,
+    "unknownCalls": 388,
+    "problems": []
+  }
+}

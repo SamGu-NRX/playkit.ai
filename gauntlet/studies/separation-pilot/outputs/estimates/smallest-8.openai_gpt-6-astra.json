@@ -5,7 +5,7 @@
   "suite": {
     "id": "separation-pilot-smallest-8",
     "split": "public",
-    "manifestSha256": "e792aeaf8ed9d06dfed1a5f35916639dd96d592a9bf449da33b77b0142229022"
+    "manifestSha256": "9c253888e7cd69fddca7d79e8a9a6c0be4f7bc25cc2b76073b5bf340c63a4b4d"
   },
   "pricing": {
     "key": "openai/gpt-6-astra",
@@ -26,210 +26,26 @@
       "model-separation-7b-part2"
     ]
   },
-  "generatedAt": "2026-10-17T18:11:10.290Z",
+  "generatedAt": "2026-10-19T02:17:20.130Z",
   "games": [
     {
       "gameId": "sliding",
-      "jobs": 40,
-      "callsLow": 1174,
-      "callsHigh": 6240,
-      "usdLow": 6.4665030000000066,
-      "usdHigh": 40.702
+      "jobs": 32,
+      "callsLow": 1116,
+      "callsHigh": 5920,
+      "usdLow": 6.164468000000004,
+      "usdHigh": 39.0356
     },
     {
       "gameId": "sokoban",
-      "jobs": 8,
-      "callsLow": 46,
-      "callsHigh": 600,
-      "usdLow": 0.20815,
-      "usdHigh": 2.715
-    },
-    {
-      "gameId": "wordle",
-      "jobs": 8,
-      "callsLow": null,
-      "callsHigh": 192,
-      "usdLow": null,
-      "usdHigh": null
+      "jobs": 24,
+      "callsLow": 3446,
+      "callsHigh": 4000,
+      "usdLow": 15.933350000000008,
+      "usdHigh": 19.136999999999997
     }
   ],
   "jobs": [
-    {
-      "key": "sliding/p8-short/sliding/p8-short/public/0",
-      "gameId": "sliding",
-      "tierId": "p8-short",
-      "seed": "sliding/p8-short/public/0",
-      "basis": "par",
-      "callsLow": 8,
-      "callsHigh": 40,
-      "usdLow": 0.04166,
-      "usdHigh": 0.2083,
-      "tokens": {
-        "input": {
-          "mean": 515.75,
-          "max": 515.75
-        },
-        "output": {
-          "mean": 1,
-          "max": 1
-        }
-      },
-      "note": "low = the episode par (8); probe episodes skipped (--no-probes)"
-    },
-    {
-      "key": "sliding/p8-short/sliding/p8-short/public/1",
-      "gameId": "sliding",
-      "tierId": "p8-short",
-      "seed": "sliding/p8-short/public/1",
-      "basis": "par",
-      "callsLow": 4,
-      "callsHigh": 40,
-      "usdLow": 0.02083,
-      "usdHigh": 0.2083,
-      "tokens": {
-        "input": {
-          "mean": 515.75,
-          "max": 515.75
-        },
-        "output": {
-          "mean": 1,
-          "max": 1
-        }
-      },
-      "note": "low = the episode par (8); probe episodes skipped (--no-probes)"
-    },
-    {
-      "key": "sliding/p8-short/sliding/p8-short/public/2",
-      "gameId": "sliding",
-      "tierId": "p8-short",
-      "seed": "sliding/p8-short/public/2",
-      "basis": "par",
-      "callsLow": 8,
-      "callsHigh": 40,
-      "usdLow": 0.04166,
-      "usdHigh": 0.2083,
-      "tokens": {
-        "input": {
-          "mean": 515.75,
-          "max": 515.75
-        },
-        "output": {
-          "mean": 1,
-          "max": 1
-        }
-      },
-      "note": "low = the episode par (8); probe episodes skipped (--no-probes)"
-    },
-    {
-      "key": "sliding/p8-short/sliding/p8-short/public/3",
-      "gameId": "sliding",
-      "tierId": "p8-short",
-      "seed": "sliding/p8-short/public/3",
-      "basis": "par",
-      "callsLow": 8,
-      "callsHigh": 40,
-      "usdLow": 0.04166,
-      "usdHigh": 0.2083,
-      "tokens": {
-        "input": {
-          "mean": 515.75,
-          "max": 515.75
-        },
-        "output": {
-          "mean": 1,
-          "max": 1
-        }
-      },
-      "note": "low = the episode par (8); probe episodes skipped (--no-probes)"
-    },
-    {
-      "key": "sliding/p8-short/sliding/p8-short/public/4",
-      "gameId": "sliding",
-      "tierId": "p8-short",
-      "seed": "sliding/p8-short/public/4",
-      "basis": "par",
-      "callsLow": 8,
-      "callsHigh": 40,
-      "usdLow": 0.04166,
-      "usdHigh": 0.2083,
-      "tokens": {
-        "input": {
-          "mean": 515.75,
-          "max": 515.75
-        },
-        "output": {
-          "mean": 1,
-          "max": 1
-        }
-      },
-      "note": "low = the episode par (8); probe episodes skipped (--no-probes)"
-    },
-    {
-      "key": "sliding/p8-short/sliding/p8-short/public/5",
-      "gameId": "sliding",
-      "tierId": "p8-short",
-      "seed": "sliding/p8-short/public/5",
-      "basis": "par",
-      "callsLow": 6,
-      "callsHigh": 40,
-      "usdLow": 0.031245000000000002,
-      "usdHigh": 0.2083,
-      "tokens": {
-        "input": {
-          "mean": 515.75,
-          "max": 515.75
-        },
-        "output": {
-          "mean": 1,
-          "max": 1
-        }
-      },
-      "note": "low = the episode par (8); probe episodes skipped (--no-probes)"
-    },
-    {
-      "key": "sliding/p8-short/sliding/p8-short/public/6",
-      "gameId": "sliding",
-      "tierId": "p8-short",
-      "seed": "sliding/p8-short/public/6",
-      "basis": "par",
-      "callsLow": 8,
-      "callsHigh": 40,
-      "usdLow": 0.04166,
-      "usdHigh": 0.2083,
-      "tokens": {
-        "input": {
-          "mean": 515.75,
-          "max": 515.75
-        },
-        "output": {
-          "mean": 1,
-          "max": 1
-        }
-      },
-      "note": "low = the episode par (8); probe episodes skipped (--no-probes)"
-    },
-    {
-      "key": "sliding/p8-short/sliding/p8-short/public/7",
-      "gameId": "sliding",
-      "tierId": "p8-short",
-      "seed": "sliding/p8-short/public/7",
-      "basis": "par",
-      "callsLow": 8,
-      "callsHigh": 40,
-      "usdLow": 0.04166,
-      "usdHigh": 0.2083,
-      "tokens": {
-        "input": {
-          "mean": 515.75,
-          "max": 515.75
-        },
-        "output": {
-          "mean": 1,
-          "max": 1
-        }
-      },
-      "note": "low = the episode par (8); probe episodes skipped (--no-probes)"
-    },
     {
       "key": "sliding/p8/sliding/p8/public/0",
       "gameId": "sliding",
@@ -1111,116 +927,359 @@
       "note": "low = the episode par (5); probe episodes skipped (--no-probes)"
     },
     {
-      "key": "wordle/classic/wordle/classic/public/0",
-      "gameId": "wordle",
-      "tierId": "classic",
-      "seed": "wordle/classic/public/0",
-      "basis": "none",
-      "callsLow": null,
-      "callsHigh": 24,
-      "usdLow": null,
-      "usdHigh": null,
-      "tokens": null,
-      "note": "unestimated: no fitted parameters and no par, and probe episodes are skipped (--no-probes)"
+      "key": "sokoban/three-box/sokoban/three-box/public/0",
+      "gameId": "sokoban",
+      "tierId": "three-box",
+      "seed": "sokoban/three-box/public/0",
+      "basis": "model-fit",
+      "callsLow": 200,
+      "callsHigh": 200,
+      "usdLow": 0.9248000000000001,
+      "usdHigh": 0.966,
+      "tokens": {
+        "input": {
+          "mean": 452.4,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
     },
     {
-      "key": "wordle/classic/wordle/classic/public/1",
-      "gameId": "wordle",
-      "tierId": "classic",
-      "seed": "wordle/classic/public/1",
-      "basis": "none",
-      "callsLow": null,
-      "callsHigh": 24,
-      "usdLow": null,
-      "usdHigh": null,
-      "tokens": null,
-      "note": "unestimated: no fitted parameters and no par, and probe episodes are skipped (--no-probes)"
+      "key": "sokoban/three-box/sokoban/three-box/public/1",
+      "gameId": "sokoban",
+      "tierId": "three-box",
+      "seed": "sokoban/three-box/public/1",
+      "basis": "model-fit",
+      "callsLow": 200,
+      "callsHigh": 200,
+      "usdLow": 0.9248000000000001,
+      "usdHigh": 0.966,
+      "tokens": {
+        "input": {
+          "mean": 452.4,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
     },
     {
-      "key": "wordle/classic/wordle/classic/public/2",
-      "gameId": "wordle",
-      "tierId": "classic",
-      "seed": "wordle/classic/public/2",
-      "basis": "none",
-      "callsLow": null,
-      "callsHigh": 24,
-      "usdLow": null,
-      "usdHigh": null,
-      "tokens": null,
-      "note": "unestimated: no fitted parameters and no par, and probe episodes are skipped (--no-probes)"
+      "key": "sokoban/three-box/sokoban/three-box/public/2",
+      "gameId": "sokoban",
+      "tierId": "three-box",
+      "seed": "sokoban/three-box/public/2",
+      "basis": "model-fit",
+      "callsLow": 200,
+      "callsHigh": 200,
+      "usdLow": 0.9248000000000001,
+      "usdHigh": 0.966,
+      "tokens": {
+        "input": {
+          "mean": 452.4,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
     },
     {
-      "key": "wordle/classic/wordle/classic/public/3",
-      "gameId": "wordle",
-      "tierId": "classic",
-      "seed": "wordle/classic/public/3",
-      "basis": "none",
-      "callsLow": null,
-      "callsHigh": 24,
-      "usdLow": null,
-      "usdHigh": null,
-      "tokens": null,
-      "note": "unestimated: no fitted parameters and no par, and probe episodes are skipped (--no-probes)"
+      "key": "sokoban/three-box/sokoban/three-box/public/3",
+      "gameId": "sokoban",
+      "tierId": "three-box",
+      "seed": "sokoban/three-box/public/3",
+      "basis": "model-fit",
+      "callsLow": 200,
+      "callsHigh": 200,
+      "usdLow": 0.9248000000000001,
+      "usdHigh": 0.966,
+      "tokens": {
+        "input": {
+          "mean": 452.4,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
     },
     {
-      "key": "wordle/classic/wordle/classic/public/4",
-      "gameId": "wordle",
-      "tierId": "classic",
-      "seed": "wordle/classic/public/4",
-      "basis": "none",
-      "callsLow": null,
-      "callsHigh": 24,
-      "usdLow": null,
-      "usdHigh": null,
-      "tokens": null,
-      "note": "unestimated: no fitted parameters and no par, and probe episodes are skipped (--no-probes)"
+      "key": "sokoban/three-box/sokoban/three-box/public/4",
+      "gameId": "sokoban",
+      "tierId": "three-box",
+      "seed": "sokoban/three-box/public/4",
+      "basis": "model-fit",
+      "callsLow": 200,
+      "callsHigh": 200,
+      "usdLow": 0.9248000000000001,
+      "usdHigh": 0.966,
+      "tokens": {
+        "input": {
+          "mean": 452.4,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
     },
     {
-      "key": "wordle/classic/wordle/classic/public/5",
-      "gameId": "wordle",
-      "tierId": "classic",
-      "seed": "wordle/classic/public/5",
-      "basis": "none",
-      "callsLow": null,
-      "callsHigh": 24,
-      "usdLow": null,
-      "usdHigh": null,
-      "tokens": null,
-      "note": "unestimated: no fitted parameters and no par, and probe episodes are skipped (--no-probes)"
+      "key": "sokoban/three-box/sokoban/three-box/public/5",
+      "gameId": "sokoban",
+      "tierId": "three-box",
+      "seed": "sokoban/three-box/public/5",
+      "basis": "model-fit",
+      "callsLow": 200,
+      "callsHigh": 200,
+      "usdLow": 0.9248000000000001,
+      "usdHigh": 0.966,
+      "tokens": {
+        "input": {
+          "mean": 452.4,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
     },
     {
-      "key": "wordle/classic/wordle/classic/public/6",
-      "gameId": "wordle",
-      "tierId": "classic",
-      "seed": "wordle/classic/public/6",
-      "basis": "none",
-      "callsLow": null,
-      "callsHigh": 24,
-      "usdLow": null,
-      "usdHigh": null,
-      "tokens": null,
-      "note": "unestimated: no fitted parameters and no par, and probe episodes are skipped (--no-probes)"
+      "key": "sokoban/three-box/sokoban/three-box/public/6",
+      "gameId": "sokoban",
+      "tierId": "three-box",
+      "seed": "sokoban/three-box/public/6",
+      "basis": "model-fit",
+      "callsLow": 200,
+      "callsHigh": 200,
+      "usdLow": 0.9248000000000001,
+      "usdHigh": 0.966,
+      "tokens": {
+        "input": {
+          "mean": 452.4,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
     },
     {
-      "key": "wordle/classic/wordle/classic/public/7",
-      "gameId": "wordle",
-      "tierId": "classic",
-      "seed": "wordle/classic/public/7",
-      "basis": "none",
-      "callsLow": null,
-      "callsHigh": 24,
-      "usdLow": null,
-      "usdHigh": null,
-      "tokens": null,
-      "note": "unestimated: no fitted parameters and no par, and probe episodes are skipped (--no-probes)"
+      "key": "sokoban/three-box/sokoban/three-box/public/7",
+      "gameId": "sokoban",
+      "tierId": "three-box",
+      "seed": "sokoban/three-box/public/7",
+      "basis": "model-fit",
+      "callsLow": 200,
+      "callsHigh": 200,
+      "usdLow": 0.9248000000000001,
+      "usdHigh": 0.966,
+      "tokens": {
+        "input": {
+          "mean": 452.4,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
+    },
+    {
+      "key": "sokoban/four-box/sokoban/four-box/public/0",
+      "gameId": "sokoban",
+      "tierId": "four-box",
+      "seed": "sokoban/four-box/public/0",
+      "basis": "model-fit",
+      "callsLow": 225,
+      "callsHigh": 225,
+      "usdLow": 1.04085,
+      "usdHigh": 1.08675,
+      "tokens": {
+        "input": {
+          "mean": 452.6,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
+    },
+    {
+      "key": "sokoban/four-box/sokoban/four-box/public/1",
+      "gameId": "sokoban",
+      "tierId": "four-box",
+      "seed": "sokoban/four-box/public/1",
+      "basis": "model-fit",
+      "callsLow": 225,
+      "callsHigh": 225,
+      "usdLow": 1.04085,
+      "usdHigh": 1.08675,
+      "tokens": {
+        "input": {
+          "mean": 452.6,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
+    },
+    {
+      "key": "sokoban/four-box/sokoban/four-box/public/2",
+      "gameId": "sokoban",
+      "tierId": "four-box",
+      "seed": "sokoban/four-box/public/2",
+      "basis": "model-fit",
+      "callsLow": 225,
+      "callsHigh": 225,
+      "usdLow": 1.04085,
+      "usdHigh": 1.08675,
+      "tokens": {
+        "input": {
+          "mean": 452.6,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
+    },
+    {
+      "key": "sokoban/four-box/sokoban/four-box/public/3",
+      "gameId": "sokoban",
+      "tierId": "four-box",
+      "seed": "sokoban/four-box/public/3",
+      "basis": "model-fit",
+      "callsLow": 225,
+      "callsHigh": 225,
+      "usdLow": 1.04085,
+      "usdHigh": 1.08675,
+      "tokens": {
+        "input": {
+          "mean": 452.6,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
+    },
+    {
+      "key": "sokoban/four-box/sokoban/four-box/public/4",
+      "gameId": "sokoban",
+      "tierId": "four-box",
+      "seed": "sokoban/four-box/public/4",
+      "basis": "model-fit",
+      "callsLow": 225,
+      "callsHigh": 225,
+      "usdLow": 1.04085,
+      "usdHigh": 1.08675,
+      "tokens": {
+        "input": {
+          "mean": 452.6,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
+    },
+    {
+      "key": "sokoban/four-box/sokoban/four-box/public/5",
+      "gameId": "sokoban",
+      "tierId": "four-box",
+      "seed": "sokoban/four-box/public/5",
+      "basis": "model-fit",
+      "callsLow": 225,
+      "callsHigh": 225,
+      "usdLow": 1.04085,
+      "usdHigh": 1.08675,
+      "tokens": {
+        "input": {
+          "mean": 452.6,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
+    },
+    {
+      "key": "sokoban/four-box/sokoban/four-box/public/6",
+      "gameId": "sokoban",
+      "tierId": "four-box",
+      "seed": "sokoban/four-box/public/6",
+      "basis": "model-fit",
+      "callsLow": 225,
+      "callsHigh": 225,
+      "usdLow": 1.04085,
+      "usdHigh": 1.08675,
+      "tokens": {
+        "input": {
+          "mean": 452.6,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
+    },
+    {
+      "key": "sokoban/four-box/sokoban/four-box/public/7",
+      "gameId": "sokoban",
+      "tierId": "four-box",
+      "seed": "sokoban/four-box/public/7",
+      "basis": "model-fit",
+      "callsLow": 225,
+      "callsHigh": 225,
+      "usdLow": 1.04085,
+      "usdHigh": 1.08675,
+      "tokens": {
+        "input": {
+          "mean": 452.6,
+          "max": 473
+        },
+        "output": {
+          "mean": 2,
+          "max": 2
+        }
+      },
+      "note": "expected = the fitted mean agent actions over 2 committed real-model episode(s) (models: qwen1.5b); worst = the tier's maxActions budget (every fitted episode exhausted the budget); tokens = fitted means/maxima of the runs' recorded provider usage"
     }
   ],
   "tiers": [
-    {
-      "gameId": "sliding",
-      "tierId": "p8-short",
-      "basis": "par"
-    },
     {
       "gameId": "sliding",
       "tierId": "p8",
@@ -1247,22 +1306,23 @@
       "basis": "par"
     },
     {
-      "gameId": "wordle",
-      "tierId": "classic",
-      "basis": "none"
+      "gameId": "sokoban",
+      "tierId": "three-box",
+      "basis": "model-fit"
+    },
+    {
+      "gameId": "sokoban",
+      "tierId": "four-box",
+      "basis": "model-fit"
     }
   ],
   "totals": {
     "jobs": 56,
-    "callsLow": 1220,
-    "callsHigh": 7032,
-    "usdLow": 6.674653000000006,
-    "usdHigh": 43.417,
-    "noLowBasis": [
-      "wordle"
-    ],
-    "noTokenBasis": [
-      "wordle"
-    ]
+    "callsLow": 4562,
+    "callsHigh": 9920,
+    "usdLow": 22.09781800000001,
+    "usdHigh": 58.1726,
+    "noLowBasis": [],
+    "noTokenBasis": []
   }
 }

@@ -55,7 +55,9 @@ for g_ in "${games[@]}"; do
     console.log(s.games.reduce((a, g) => a + g.tiers.reduce((x, t) => x + t.seeds.length, 0), 0));
   ' "$g_")"
 done
-echo "episodes per arm: ${runs[sliding]} sliding, ${runs[sokoban]} sokoban, ${runs[wordle]} wordle"
+episodes_desc=""
+for g_ in "${games[@]}"; do episodes_desc+=" ${runs[$g_]} $g_,"; done
+echo "episodes per arm:${episodes_desc%,}"
 
 for p in 0.25 0.75; do
   for g_ in "${games[@]}"; do

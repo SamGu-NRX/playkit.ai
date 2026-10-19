@@ -1,0 +1,242 @@
+{
+  "format": "playkit-gauntlet-trajectory/1",
+  "game": {
+    "id": "sokoban",
+    "version": "1.0.0"
+  },
+  "tier": "four-box",
+  "seed": "sokoban/four-box/public/6",
+  "split": "public",
+  "agent": {
+    "id": "dial-sokoban-engine-p25",
+    "track": "baseline",
+    "seat": 0
+  },
+  "opponents": [],
+  "steps": [
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "22987737cd5c65fe",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 114
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "65b9a0157a7cb5b9",
+      "reply": {
+        "text": "up"
+      },
+      "action": "up",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "fdedf5b961b1d7e4",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b1cb65f089ac72a7",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b7fcf15f36a05045",
+      "reply": {
+        "text": "undo"
+      },
+      "action": "undo",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2e5c3da40abed6bb",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 11
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "ddba647ed65ca405",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "4791746a3f7f2a46",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 7
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "3dc9b8d2117af63b",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "2305b8f7d51e01d5",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "c0bbd42b72ab723a",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "124db4a12efdf532",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "a0fad91baedf245d",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "e0542b3cd3067f9e",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "b3093f6d31030f0d",
+      "reply": {
+        "text": "left"
+      },
+      "action": "left",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "283b08b1cd09be3b",
+      "reply": {
+        "text": "down"
+      },
+      "action": "down",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    },
+    {
+      "seat": 0,
+      "by": "agent",
+      "observationHash": "d8def8df5abc9db9",
+      "reply": {
+        "text": "right"
+      },
+      "action": "right",
+      "invalid": false,
+      "usage": null,
+      "ms": 0
+    }
+  ],
+  "end": {
+    "reason": "terminal",
+    "outcome": {
+      "normalized": [
+        0.7785467128027681
+      ],
+      "raw": [
+        17,
+        15
+      ],
+      "reason": "solved in 17 actions against par 15",
+      "solved": true,
+      "par": 15
+    },
+    "agentActions": 17,
+    "invalidActions": 0,
+    "forfeitThreshold": 3
+  },
+  "startedAt": "2026-10-19T02:06:56.719Z",
+  "finishedAt": "2026-10-19T02:06:56.852Z"
+}

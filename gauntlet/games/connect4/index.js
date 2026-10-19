@@ -152,7 +152,7 @@ function boardRows(state) {
 export const connect4 = {
   spec: {
     id: 'connect4',
-    version: '1.1.0',
+    version: '1.2.0',
     title: 'Connect Four',
     seats: /** @type {1 | 2} */ (2),
     information: /** @type {InformationMode} */ ('perfect'),

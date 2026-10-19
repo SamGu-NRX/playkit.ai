@@ -294,6 +294,7 @@ export function chooseMove(state, options) {
   const tt = new Map();
   let alpha = -Infinity;
   const scores = new Map();
+  const proven = new Set();
   for (let i = 0; i < WIDTH; i++) {
     const col = ORDER[i];
     const row = u.heights[col];
@@ -317,10 +318,46 @@ export function chooseMove(state, options) {
     );
     u.heights[col] = row;
     scores.set(col, score);
-    if (score > alpha) alpha = score;
+    if (score > alpha) {
+      alpha = score;
+      proven.add(col);
+    }
   }
+  // A move searched after alpha has risen can return only an upper bound, so
+  // a reported score equal to the best is not necessarily a true tie. Treat a
+  // move as proven exactly only when it raised alpha; re-search every other
+  // apparent tie with a full window before the tie-break so seeded tie-breaks
+  // (breakTie) can never select a provably worse move.
   const best = Math.max(...scores.values());
-  const tied = [...scores.entries()].filter(([, s]) => s === best).map(([c]) => c);
+  const tied = [];
+  for (const [col, score] of scores) {
+    if (score !== best) continue;
+    if (proven.has(col)) {
+      tied.push(col);
+      continue;
+    }
+    const row = u.heights[col];
+    const bit = BITS[col][row];
+    u.heights[col] = row + 1;
+    const exact = -search(
+      u.opA,
+      u.opB,
+      u.meA | bit.a,
+      u.meB | bit.b,
+      u.maskA | bit.a,
+      u.maskB | bit.b,
+      u.heights,
+      u.discs + 1,
+      depth - 1,
+      1,
+      -Infinity,
+      Infinity,
+      tt
+    );
+    u.heights[col] = row;
+    scores.set(col, exact);
+    if (exact === best) tied.push(col);
+  }
   return { col: breakTie(tied, options.seedKey), score: best, nodes: tt.size };
 }
 
@@ -462,6 +499,7 @@ export function chooseExactMove(state, seedKey) {
 
   const tt = new Map();
   const scores = new Map();
+  const proven = new Set();
   let alpha = -Infinity;
   // Mate distances are exact within this horizon; beyond it the move choice
   // degrades to heuristic best, which is all the opponent contract needs.
@@ -489,10 +527,44 @@ export function chooseExactMove(state, seedKey) {
     );
     u.heights[col] = row;
     scores.set(col, score);
-    if (score > alpha) alpha = score;
+    if (score > alpha) {
+      alpha = score;
+      proven.add(col);
+    }
   }
+  // Same bound-vs-exact rule as chooseMove: a move that never raised alpha
+  // reports only an upper bound, so an apparent tie at such a move is
+  // re-searched with a full window before entering the tie set.
   const best = Math.max(...scores.values());
-  const tied = [...scores.entries()].filter(([, s]) => s === best).map(([c]) => c);
+  const tied = [];
+  for (const [col, score] of scores) {
+    if (score !== best) continue;
+    if (proven.has(col)) {
+      tied.push(col);
+      continue;
+    }
+    const row = u.heights[col];
+    const bit = BITS[col][row];
+    u.heights[col] = row + 1;
+    const exact = -search(
+      u.opA,
+      u.opB,
+      u.meA | bit.a,
+      u.meB | bit.b,
+      u.maskA | bit.a,
+      u.maskB | bit.b,
+      u.heights,
+      u.discs + 1,
+      depth - 1,
+      1,
+      -Infinity,
+      Infinity,
+      tt
+    );
+    u.heights[col] = row;
+    scores.set(col, exact);
+    if (exact === best) tied.push(col);
+  }
   const value = decodeExact(best);
   return { col: breakTie(tied, seedKey ?? null), score: best, nodes: tt.size, ...value };
 }

@@ -477,6 +477,9 @@ export async function startStub(options) {
 export function parseStubArgs(argv, wire) {
   /** @type {Record<string, string>} */
   const flags = {};
+  /** @type {Set<string>} Flags given without a value: the parser stored its
+   * "1" sentinel because the next argv token was absent or another flag. */
+  const bareFlags = new Set();
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (!a.startsWith('--')) continue;
@@ -487,6 +490,7 @@ export function parseStubArgs(argv, wire) {
       i += 1;
     } else {
       flags[key] = '1';
+      bareFlags.add(key);
     }
   }
   const port = Number(flags['port'] ?? 0);
@@ -494,6 +498,11 @@ export function parseStubArgs(argv, wire) {
     throw new Error(`stub: --port must be a valid port number, got "${flags['port'] ?? ''}"`);
   }
   const portFile = flags['port-file'];
+  if (portFile !== undefined && bareFlags.has('port-file')) {
+    throw new Error(
+      'stub: --port-file PATH requires an explicit path (e.g. --port-file /tmp/stub.port), got none'
+    );
+  }
   if (port === 0 && portFile === undefined) {
     throw new Error(
       'stub: --port 0 (ephemeral) requires --port-file PATH so the launcher learns the assigned port'

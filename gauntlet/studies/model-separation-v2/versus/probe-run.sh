@@ -3,8 +3,8 @@
 # Usage: probe-run.sh <model-file> <agent-stem> <tag>
 set -euo pipefail
 M="$1"; STEM="$2"; TAG="$3"
-LLAMA=/home/user/work/llamacpp/llama-b11662/llama-server
-MODELS=/home/user/work/gauntlet-models
+LLAMA="${LLAMA:-/home/user/work/llamacpp/llama-b11662/llama-server}"
+MODELS="${MODELS:-/home/user/work/gauntlet-models}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 GAUNT="$(cd "$HERE/../../.." && pwd)"
 OUT="/tmp/probe-$TAG"
@@ -16,9 +16,11 @@ sleep 1
 SRV=$!
 trap 'kill $SRV 2>/dev/null || true' EXIT
 
-# Per-request limits: a hung server must reach the probe-exhaustion check
-# instead of hanging this loop forever (greptile #115).
-until curl -sf --connect-timeout 5 --max-time 30 http://127.0.0.1:8080/health >/dev/null 2>&1; do sleep 2; done
+# Bounded health phase (codex #122): a server that stays alive but never
+# answers /health must exhaust the attempt budget loudly instead of hanging
+# this launcher forever; per-request curl limits (greptile #115) bound each
+# probe, and a dead server fails the liveness check at once.
+bash "$HERE/../wait-healthy.sh" "$SRV" "$TAG" "/tmp/llama-$TAG.log"
 # /health returns 200 while the model still loads; a real completion is the
 # readiness signal (S3: fetch-failed retries hitting a loading server).
 READY=0

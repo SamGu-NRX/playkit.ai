@@ -188,10 +188,7 @@ export function referee(previous, direction, next) {
     if (dir === direction) continue;
     const spawn = explainWith(previous, dir, next);
     if (spawn !== null) {
-      const reason =
-        direction === null
-          ? `the agent produced no usable action; the driver's fallback applied "${dir}"`
-          : `the driver applied "${dir}" instead of the agent's "${direction}" (the chosen direction did not change the board)`;
+      const reason = `the driver applied "${dir}" instead of the agent's "${direction}" (the chosen direction did not change the board)`;
       return verdict(direction, dir, spawn, true, reason);
     }
   }

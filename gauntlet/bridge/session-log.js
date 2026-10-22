@@ -13,7 +13,7 @@
  * @module
  */
 
-import { referee } from './referee.js';
+import { isValidBoard, referee } from './referee.js';
 
 /** @import { Board, Direction } from '../games/2048/rules.js' */
 /** @import { Spawn, Verdict } from './referee.js' */
@@ -121,10 +121,16 @@ export function verifyBridgeLog(log) {
   if (log.format !== 'playkit-gauntlet-bridge-log/1') {
     return { ok: false, index: -1, reason: `unknown log format ${JSON.stringify(log.format)}` };
   }
+  if (!isValidBoard(log.initialBoard)) {
+    return { ok: false, index: -1, reason: 'the initial board must be a 4x4 grid of finite non-negative integers' };
+  }
   /** @type {Board} */
   let board = cloneBoard(log.initialBoard);
   for (let i = 0; i < log.steps.length; i++) {
     const step = log.steps[i];
+    if (!isValidBoard(step.boardBefore) || !isValidBoard(step.boardAfter)) {
+      return { ok: false, index: i, reason: 'the recorded boards must each be a 4x4 grid of finite non-negative integers' };
+    }
     if (step.verdict === null || step.verdict === undefined || step.verdict.ok !== true) {
       return { ok: false, index: i, reason: 'the referee did not pass this transition' };
     }

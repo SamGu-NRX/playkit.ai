@@ -190,3 +190,14 @@ test('verifyBridgeLog rejects a boardBefore that does not match the replayed boa
     assert.match(result.reason, /boardBefore/);
   }
 });
+
+test('verifyBridgeLog rejects a forged replay step with a truncated board', () => {
+  const log = cleanLog();
+  log.steps[0].boardAfter = log.steps[0].boardAfter.slice(0, 3);
+  const result = verifyBridgeLog(log);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.index, 0);
+    assert.match(result.reason, /4x4/);
+  }
+});

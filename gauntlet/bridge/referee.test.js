@@ -137,3 +137,33 @@ test('referee flags an unchanged board reported as a move', () => {
   const verdict = referee(prev, 'up', prev);
   assert.equal(verdict.ok, false);
 });
+
+test('referee rejects a truncated board instead of comparing shared cells', () => {
+  const prev = board([
+    [2, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+  const slid = slide(prev, 'left').board;
+  const truncated = slid.slice(0, 3).map((row) => row.slice());
+  truncated[0][3] = 2;
+  const verdict = referee(prev, 'left', /** @type {Board} */ (truncated));
+  assert.equal(verdict.ok, false);
+  assert.match(String(verdict.reason), /4x4/);
+});
+
+test('referee rejects a fallback after the agent produced no action', () => {
+  const prev = board([
+    [2, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+  const next = placeTile(slide(prev, 'left').board, 3, 3, 2);
+  const verdict = referee(prev, null, next);
+  assert.equal(verdict.ok, false);
+  assert.equal(verdict.applied, null);
+  assert.equal(verdict.spawn, null);
+  assert.match(String(verdict.reason), /fallback/);
+});

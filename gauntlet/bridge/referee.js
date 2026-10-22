@@ -45,6 +45,35 @@ import { DIRECTIONS, emptyCells, slide } from '../games/2048/rules.js';
  */
 
 /**
+ * Return whether a value is a valid 2048 board tile.
+ *
+ * @param {*} value
+ * @returns {boolean}
+ */
+function isValidTile(value) {
+  return Number.isInteger(value) && Number.isFinite(value) && value >= 0;
+}
+
+/**
+ * Validate the fixed board shape used by the 2048 rules.
+ *
+ * @param {*} board
+ * @returns {boolean}
+ */
+export function isValidBoard(board) {
+  return (
+    Array.isArray(board) &&
+    board.length === 4 &&
+    board.every(
+      (row) =>
+        Array.isArray(row) &&
+        row.length === 4 &&
+        row.every((value) => isValidTile(value)),
+    )
+  );
+}
+
+/**
  * Cells where two boards differ, as [r, c] pairs.
  *
  * @param {Board} a
@@ -135,11 +164,21 @@ export function referee(previous, direction, next) {
     reason,
   });
 
+  if (!isValidBoard(previous) || !isValidBoard(next)) {
+    return verdict(direction, null, null, false, 'the previous and next boards must each be a 4x4 grid of finite non-negative integers');
+  }
+
   if (direction !== null && DIRECTIONS.includes(direction)) {
     const spawn = explainWith(previous, direction, next);
     if (spawn !== null) {
       return verdict(direction, direction, spawn, false, null);
     }
+  }
+
+  // A missing action is an invalid agent move. Do not credit a driver fallback
+  // as agent-controlled play.
+  if (direction === null) {
+    return verdict(null, null, null, true, 'the agent produced no usable action; the driver fallback is invalid');
   }
 
   // The chosen direction did not explain the page. Look for one that does:

@@ -140,12 +140,11 @@ the caller settles within roughly the timeout itself, not a generous
 ceiling — and asserts no browser context is left open afterwards) and cleanup
 still closes the wedged page.
 
-Accounting on every report: `fallbacks` counts moves the driver played that
-the model did not choose (`chosen === null` steps); `diverged` counts steps
-where the driver applied a different direction than the model chose (the
-driver's designed fall-through when the chosen direction does not change the
-board). Both live in the session log, so `verifyBridgeLog` audits them like
-everything else.
+Accounting on every report: `fallbacks` counts steps marked `agentMove: false`,
+where the driver played its fixed fallback order after the model produced no
+usable action. Those steps remain in `moves` and the session log, but
+`agentMoves` and `diverged` exclude them. `verifyBridgeLog` confirms the fallback
+direction and audits it like every other observed transition.
 
 Tests: an offline fixture test replays a recorded real-model session log
 (`fixtures/model-session-2048.json`) through `verifyBridgeLog`; the pure

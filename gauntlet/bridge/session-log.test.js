@@ -87,6 +87,7 @@ test('verifyBridgeLog rejects a step the referee did not pass', () => {
     applied: null,
     spawn: null,
     diverged: true,
+    agentMove: true,
     reason: 'tampered',
   };
   const result = verifyBridgeLog(log);
@@ -166,6 +167,7 @@ test('verifyBridgeLog rejects a spawn placed on an occupied cell', () => {
       applied: 'left',
       spawn: { r: 0, c: 0, value: 2 },
       diverged: false,
+      agentMove: true,
       reason: null,
     },
   });
@@ -199,5 +201,17 @@ test('verifyBridgeLog rejects a forged replay step with a truncated board', () =
   if (!result.ok) {
     assert.equal(result.index, 0);
     assert.match(result.reason, /4x4/);
+  }
+});
+
+
+test('verifyBridgeLog rejects a step whose chosen direction is omitted', () => {
+  const log = cleanLog();
+  delete /** @type {*} */ (log.steps[0]).chosen;
+  const result = verifyBridgeLog(log);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.index, 0);
+    assert.match(result.reason, /chosen direction/);
   }
 });

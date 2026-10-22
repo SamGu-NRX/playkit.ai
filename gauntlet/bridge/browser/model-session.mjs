@@ -274,6 +274,7 @@ export async function runBrowserModelSession(setup) {
           preMoves: 0,
           endedWhy: result.endedWhy,
           moves: result.moves,
+          agentMoves: result.agentMoves,
           diverged: result.diverged,
           log: result.log,
           perMoveMs,
@@ -289,7 +290,7 @@ export async function runBrowserModelSession(setup) {
     // rejection to the caller while the session may still be wedged.
     const report = await Promise.race([reportPromise, evalPromise]);
     const steps = report.log.steps;
-    const fallbacks = steps.filter((s) => s.chosen === null).length;
+    const fallbacks = steps.filter((s) => s.agentMove === false).length;
     return {
       ...report,
       preMoves: attachInfo.preMoves,

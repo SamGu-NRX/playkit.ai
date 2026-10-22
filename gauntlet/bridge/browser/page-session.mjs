@@ -306,6 +306,7 @@ export async function runPageSession(setup) {
           preMoves: 0,
           endedWhy: result.endedWhy,
           moves: result.moves,
+          agentMoves: result.agentMoves,
           diverged: result.diverged,
           log: result.log,
           perMoveMs,
@@ -324,7 +325,7 @@ export async function runPageSession(setup) {
     evalPromise.catch(() => {});
     const report = await Promise.race([reportPromise, evalPromise]);
     const steps = report.log.steps;
-    const fallbacks = steps.filter((/** @type {*} */ s) => s.chosen === null).length;
+    const fallbacks = steps.filter((/** @type {*} */ s) => s.agentMove === false).length;
     return {
       ...report,
       preMoves: attachInfo.preMoves,

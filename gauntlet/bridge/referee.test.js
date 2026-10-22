@@ -153,7 +153,24 @@ test('referee rejects a truncated board instead of comparing shared cells', () =
   assert.match(String(verdict.reason), /4x4/);
 });
 
-test('referee rejects a fallback after the agent produced no action', () => {
+test('referee records a deterministic fallback without counting an agent move', () => {
+  const prev = board([
+    [0, 2, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+  const next = placeTile(slide(prev, 'left').board, 3, 3, 2);
+  const verdict = referee(prev, null, next);
+  assert.equal(verdict.ok, true);
+  assert.equal(verdict.applied, 'left');
+  assert.equal(verdict.agentMove, false);
+  assert.equal(verdict.diverged, false);
+  assert.match(String(verdict.reason), /fallback/);
+});
+
+
+test('referee rejects an invalid chosen direction', () => {
   const prev = board([
     [2, 0, 0, 0],
     [0, 0, 0, 0],
@@ -161,9 +178,7 @@ test('referee rejects a fallback after the agent produced no action', () => {
     [0, 0, 0, 0],
   ]);
   const next = placeTile(slide(prev, 'left').board, 3, 3, 2);
-  const verdict = referee(prev, null, next);
+  const verdict = referee(prev, /** @type {*} */ ('UP'), next);
   assert.equal(verdict.ok, false);
-  assert.equal(verdict.applied, null);
-  assert.equal(verdict.spawn, null);
-  assert.match(String(verdict.reason), /fallback/);
+  assert.match(String(verdict.reason), /invalid direction/);
 });

@@ -40,6 +40,7 @@ import { DIRECTIONS, emptyCells, slide } from '../games/2048/rules.js';
  *   fell through to another direction; null when nothing explains the board.
  * @property {Spawn | null} spawn The single new tile, when identified.
  * @property {boolean} diverged True when `applied` differs from `direction`.
+ * @property {boolean} agentMove True when the agent supplied the applied move.
  * @property {string | null} reason Why the transition is not a legal move
  *   plus one spawn (null when ok), or a human-readable note on divergence.
  */
@@ -154,31 +155,42 @@ function unexplainedReason(previous, dir, next) {
  * @returns {Verdict}
  */
 export function referee(previous, direction, next) {
-  /** @type {(dir: Direction | null, applied: Direction | null, spawn: Spawn | null, diverged: boolean, reason: string | null) => Verdict} */
-  const verdict = (dir, applied, spawn, diverged, reason) => ({
+  /** @type {(dir: Direction | null, applied: Direction | null, spawn: Spawn | null, diverged: boolean, agentMove: boolean, reason: string | null) => Verdict} */
+  const verdict = (dir, applied, spawn, diverged, agentMove, reason) => ({
     ok: spawn !== null,
     direction: dir,
     applied,
     spawn,
     diverged,
+    agentMove,
     reason,
   });
 
   if (!isValidBoard(previous) || !isValidBoard(next)) {
-    return verdict(direction, null, null, false, 'the previous and next boards must each be a 4x4 grid of finite non-negative integers');
+    return verdict(direction, null, null, false, direction !== null, 'the previous and next boards must each be a 4x4 grid of finite non-negative integers');
   }
 
   if (direction !== null && DIRECTIONS.includes(direction)) {
     const spawn = explainWith(previous, direction, next);
     if (spawn !== null) {
-      return verdict(direction, direction, spawn, false, null);
+      return verdict(direction, direction, spawn, false, true, null);
     }
   }
 
-  // A missing action is an invalid agent move. Do not credit a driver fallback
-  // as agent-controlled play.
+  if (direction !== null && !DIRECTIONS.includes(direction)) {
+    return verdict(direction, null, null, false, false, 'the agent chose an invalid direction');
+  }
+
+  // A missing action uses the driver's fixed fallback order. It remains a
+  // valid observed transition, but it is not an agent move.
   if (direction === null) {
-    return verdict(null, null, null, true, 'the agent produced no usable action; the driver fallback is invalid');
+    for (const dir of /** @type {Direction[]} */ (['left', 'down', 'right', 'up'])) {
+      const spawn = explainWith(previous, dir, next);
+      if (spawn !== null) {
+        return verdict(null, dir, spawn, false, false, `the agent produced no usable action; the driver fallback applied "${dir}"`);
+      }
+    }
+    return verdict(null, null, null, false, false, 'the agent produced no usable action and the driver fallback did not change the board legally');
   }
 
   // The chosen direction did not explain the page. Look for one that does:
@@ -189,12 +201,11 @@ export function referee(previous, direction, next) {
     const spawn = explainWith(previous, dir, next);
     if (spawn !== null) {
       const reason = `the driver applied "${dir}" instead of the agent's "${direction}" (the chosen direction did not change the board)`;
-      return verdict(direction, dir, spawn, true, reason);
+      return verdict(direction, dir, spawn, true, true, reason);
     }
   }
 
-  const probe = direction === null ? 'up' : direction;
-  return verdict(direction, null, null, true, unexplainedReason(previous, probe, next));
+  return verdict(direction, null, null, false, true, unexplainedReason(previous, direction, next));
 }
 
 export {};

@@ -28,7 +28,8 @@ import { game } from '../games/2048/index.js';
  * @property {BridgeLog} log The session log (verify with verifyBridgeLog).
  * @property {string} endedWhy Why the session stopped: 'game-over', the
  *   referee reason, 'move-cap', or a driver failure reason.
- * @property {number} moves Successful, refereed moves.
+ * @property {number} moves Successful, refereed transitions.
+ * @property {number} agentMoves Successful transitions supplied by the agent.
  * @property {number} diverged How many moves the driver applied a different
  *   direction than the agent chose.
  */
@@ -72,6 +73,7 @@ export async function playBridgeSession(setup, options = {}) {
 
   let turn = 0;
   let diverged = 0;
+  let agentMoves = 0;
   /** @type {string | null} */
   let endedWhy = null;
 
@@ -106,13 +108,16 @@ export async function playBridgeSession(setup, options = {}) {
       endedWhy = `referee: ${verdict.reason}`;
       break;
     }
-    if (verdict.diverged) diverged += 1;
+    if (verdict.agentMove) {
+      agentMoves += 1;
+      if (verdict.diverged) diverged += 1;
+    }
   }
 
   if (endedWhy === null) endedWhy = 'move-cap';
   endBridgeLog(log, { reason: endedWhy, turn: log.steps.length, finishedAt: options.finishedAt });
 
-  return { log, endedWhy, moves: log.steps.length, diverged };
+  return { log, endedWhy, moves: log.steps.length, agentMoves, diverged };
 }
 
 /**

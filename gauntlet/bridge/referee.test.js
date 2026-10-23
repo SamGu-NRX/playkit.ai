@@ -165,6 +165,34 @@ test('referee rejects sparse rows instead of treating holes as valid tiles', () 
   assert.match(String(verdict.reason), /4x4/);
 });
 
+test('referee rejects non-power-of-two tiles', () => {
+  const prev = board([
+    [3, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+  const next = placeTile(slide(prev, 'right').board, 3, 0, 2);
+  const verdict = referee(prev, 'right', next);
+  assert.equal(verdict.ok, false);
+  assert.match(String(verdict.reason), /4x4/);
+});
+
+test('referee rejects extra board and row properties', () => {
+  const prev = board([
+    [2, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+  const next = placeTile(slide(prev, 'left').board, 3, 3, 2);
+  /** @type {*} */ (prev).extra = 1;
+  /** @type {*} */ (next[0]).extra = 1;
+  const verdict = referee(prev, 'left', next);
+  assert.equal(verdict.ok, false);
+  assert.match(String(verdict.reason), /4x4/);
+});
+
 test('referee records a deterministic fallback without counting an agent move', () => {
   const prev = board([
     [0, 2, 0, 0],

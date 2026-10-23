@@ -52,7 +52,22 @@ import { DIRECTIONS, emptyCells, slide } from '../games/2048/rules.js';
  * @returns {boolean}
  */
 function isValidTile(value) {
-  return Number.isInteger(value) && Number.isFinite(value) && value >= 0;
+  if (!Number.isSafeInteger(value) || value < 0) return false;
+  if (value === 0) return true;
+  const exponent = Math.log2(value);
+  return value >= 2 && Number.isInteger(exponent);
+}
+
+/**
+ * Return whether an array has only the own keys allowed by a board row.
+ *
+ * @param {unknown[]} row
+ * @returns {boolean}
+ */
+function hasOnlyBoardKeys(row) {
+  return Reflect.ownKeys(row).every(
+    (key) => key === 'length' || (typeof key === 'string' && /^[0-3]$/.test(key)),
+  );
 }
 
 /**
@@ -62,9 +77,9 @@ function isValidTile(value) {
  * @returns {boolean}
  */
 export function isValidBoard(board) {
-  if (!Array.isArray(board) || board.length !== 4) return false;
+  if (!Array.isArray(board) || board.length !== 4 || !hasOnlyBoardKeys(board)) return false;
   for (const row of board) {
-    if (!Array.isArray(row) || row.length !== 4) return false;
+    if (!Array.isArray(row) || row.length !== 4 || !hasOnlyBoardKeys(row)) return false;
     for (let c = 0; c < row.length; c += 1) {
       if (!isValidTile(row[c])) return false;
     }
@@ -199,7 +214,7 @@ export function referee(previous, direction, next) {
     const spawn = explainWith(previous, dir, next);
     if (spawn !== null) {
       const reason = `the driver applied "${dir}" instead of the agent's "${direction}" (the chosen direction did not change the board)`;
-      return verdict(direction, dir, spawn, true, true, reason);
+      return verdict(direction, dir, spawn, true, false, reason);
     }
   }
 

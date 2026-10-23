@@ -13,7 +13,8 @@
  * @module
  */
 
-import { referee } from './referee.js';
+import { DIRECTIONS } from '../games/2048/rules.js';
+import { isValidBoard, referee } from './referee.js';
 
 /** @import { Board, Direction } from '../games/2048/rules.js' */
 /** @import { Spawn, Verdict } from './referee.js' */
@@ -26,6 +27,7 @@ import { referee } from './referee.js';
  * @property {Direction | null} applied The direction whose slide explains the
  *   transition (the driver may apply a different direction than chosen).
  * @property {boolean} diverged True when applied differs from chosen.
+ * @property {boolean} agentMove True when the agent supplied the applied move.
  * @property {Board} boardBefore The board observed before the move.
  * @property {Board} boardAfter The board observed after the move.
  * @property {Spawn | null} spawn The new tile, when the referee identified one.
@@ -76,6 +78,7 @@ export function recordStep(log, step) {
     chosen: step.verdict.direction,
     applied: step.verdict.applied,
     diverged: step.verdict.diverged,
+    agentMove: step.verdict.agentMove,
     boardBefore: cloneBoard(step.boardBefore),
     boardAfter: cloneBoard(step.boardAfter),
     spawn: step.verdict.spawn,
@@ -121,10 +124,19 @@ export function verifyBridgeLog(log) {
   if (log.format !== 'playkit-gauntlet-bridge-log/1') {
     return { ok: false, index: -1, reason: `unknown log format ${JSON.stringify(log.format)}` };
   }
+  if (!isValidBoard(log.initialBoard)) {
+    return { ok: false, index: -1, reason: 'the initial board must be a 4x4 grid of finite non-negative integers' };
+  }
   /** @type {Board} */
   let board = cloneBoard(log.initialBoard);
   for (let i = 0; i < log.steps.length; i++) {
     const step = log.steps[i];
+    if (!isValidBoard(step.boardBefore) || !isValidBoard(step.boardAfter)) {
+      return { ok: false, index: i, reason: 'the recorded boards must each be a 4x4 grid of finite non-negative integers' };
+    }
+    if (step.chosen !== null && !DIRECTIONS.includes(step.chosen)) {
+      return { ok: false, index: i, reason: 'the recorded chosen direction is invalid' };
+    }
     if (step.verdict === null || step.verdict === undefined || step.verdict.ok !== true) {
       return { ok: false, index: i, reason: 'the referee did not pass this transition' };
     }
@@ -158,6 +170,14 @@ export function verifyBridgeLog(log) {
         ok: false,
         index: i,
         reason: 'the recorded spawn is not the one the rules produce for this transition',
+      };
+    }
+    const recordedAgentMove = step.agentMove ?? step.chosen !== null;
+    if (checked.agentMove !== recordedAgentMove || step.verdict.agentMove !== undefined && step.verdict.agentMove !== recordedAgentMove) {
+      return {
+        ok: false,
+        index: i,
+        reason: 'the recorded agent_move flag does not match the replayed transition',
       };
     }
     board = cloneBoard(step.boardAfter);

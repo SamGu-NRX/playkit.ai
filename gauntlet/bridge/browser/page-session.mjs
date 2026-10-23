@@ -119,8 +119,8 @@ export async function launchChromium(options = {}) {
  * @property {number} moves Successful, refereed moves.
  * @property {number} diverged Steps where the applied direction differs from
  *   the agent's chosen one (the driver's designed fall-through).
- * @property {number} fallbacks Steps where the agent produced no usable
- *   action and the driver played its own fallback order (chosen === null).
+ * @property {number} fallbacks Steps where the agent supplied no usable
+ *   action and the driver played its own fallback order.
  * @property {*} log The playkit-gauntlet-bridge-log/1 session log.
  * @property {number[]} perMoveMs Per-move wall time around driver.step().
  * @property {number | null} finalScore The page score at the end.
@@ -212,9 +212,8 @@ export async function runPageSession(setup) {
         return reply;
       } catch (err) {
         // A failed agent call becomes an empty reply: the driver falls back
-        // and the step is recorded with chosen === null, which is exactly how
-        // an unusable reply is recorded. The session continues instead of
-        // dying on transport.
+        // and the step is recorded as an agentMove false transition. The
+        // session continues instead of dying on transport.
         const ms = performance.now() - t0;
         const reason = err instanceof Error ? err.message : String(err);
         // The provider client attaches the retries it performed to every
@@ -306,6 +305,7 @@ export async function runPageSession(setup) {
           preMoves: 0,
           endedWhy: result.endedWhy,
           moves: result.moves,
+          agentMoves: result.agentMoves,
           diverged: result.diverged,
           log: result.log,
           perMoveMs,
@@ -324,7 +324,7 @@ export async function runPageSession(setup) {
     evalPromise.catch(() => {});
     const report = await Promise.race([reportPromise, evalPromise]);
     const steps = report.log.steps;
-    const fallbacks = steps.filter((/** @type {*} */ s) => s.chosen === null).length;
+    const fallbacks = steps.filter((/** @type {*} */ s) => s.agentMove === false).length;
     return {
       ...report,
       preMoves: attachInfo.preMoves,

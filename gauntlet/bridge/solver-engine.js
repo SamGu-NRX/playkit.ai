@@ -20,6 +20,7 @@
  */
 
 import { game } from '../games/2048/index.js';
+import { isValidBoard } from './referee.js';
 import { DIRECTIONS, observationForBoard, slide } from '../games/2048/rules.js';
 import { rngFromSeed } from '../core/rng.js';
 import { extractAction } from '../core/runner.js';
@@ -48,18 +49,6 @@ const DIR = { UP: 0, RIGHT: 1, DOWN: 2, LEFT: 3 };
  * @type {Record<Direction, number>}
  */
 const TO_NUMBER = { up: DIR.UP, right: DIR.RIGHT, down: DIR.DOWN, left: DIR.LEFT };
-
-/**
- * @param {Board} board
- * @returns {boolean}
- */
-function isValidBoard(board) {
-  return (
-    Array.isArray(board) &&
-    board.length === 4 &&
-    board.every((row) => Array.isArray(row) && row.length === 4 && row.every((v) => typeof v === 'number'))
-  );
-}
 
 /**
  * Wrap a Gauntlet agent as an overlay solver engine.

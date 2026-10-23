@@ -95,6 +95,54 @@ test('toSolverEngine ignores an invalid board', async () => {
   assert.equal(seen.length, 0);
 });
 
+test('toSolverEngine rejects non-finite and negative board tiles', async () => {
+  const { agent, seen } = cannedAgent('left');
+  const eng = toSolverEngine(agent);
+  const withNaN = [
+    [2, Number.NaN, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ];
+  const withNegative = [
+    [2, -2, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ];
+  assert.deepEqual(await eng.getMoveOrder(/** @type {*} */ (withNaN)), []);
+  assert.deepEqual(await eng.getMoveOrder(/** @type {*} */ (withNegative)), []);
+  assert.equal(seen.length, 0);
+});
+
+test('toSolverEngine rejects non-power-of-two board tiles', async () => {
+  const { agent, seen } = cannedAgent('left');
+  const eng = toSolverEngine(agent);
+  const invalid = [
+    [3, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ];
+  assert.deepEqual(await eng.getMoveOrder(/** @type {*} */ (invalid)), []);
+  assert.equal(seen.length, 0);
+});
+
+test('toSolverEngine rejects extra board and row properties', async () => {
+  const { agent, seen } = cannedAgent('left');
+  const eng = toSolverEngine(agent);
+  const invalid = [
+    [2, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ];
+  /** @type {*} */ (invalid).extra = 1;
+  /** @type {*} */ (invalid[0]).extra = 1;
+  assert.deepEqual(await eng.getMoveOrder(/** @type {*} */ (invalid)), []);
+  assert.equal(seen.length, 0);
+});
+
 test('toSolverEngine threads the spec and tier through the TurnContext', async () => {
   const { agent, seen } = cannedAgent('left');
   const tier = game.spec.tiers[2];

@@ -129,6 +129,7 @@ test('a full run writes verifiable trajectories and honest provenance', async ()
     assert.equal(result.run.agent.track, 'community');
     assert.equal(result.run.node.startsWith('v'), true);
     assert.equal(result.run.limits.maxUsd, null);
+    assert.equal(result.run.limits.episodeTimeLimitMs, 15 * 60 * 1000);
     assert.equal(result.run.counts.jobs, jobs.length);
     assert.equal(result.run.counts.played, jobs.length);
     assert.equal(result.run.counts.unplayed, 0);
@@ -169,6 +170,56 @@ test('a full run writes verifiable trajectories and honest provenance', async ()
     assert.equal(result.run.total.tokens.output, agentCalls * 10);
     assert.ok(Math.abs(result.run.total.spendUsd - spend) < 1e-9);
     assert.equal(result.run.total.unknownCostSteps, 0);
+  } finally {
+    await rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a game deadline times out one game, cleans up, and continues to the next game', async () => {
+  const outDir = await tempDir('episode-deadline');
+  try {
+    const suite = buildSuite([takeOrPass], { split: 'public' });
+    const jobs = planJobs(suite);
+    const state = { pending: 0, disposed: 0, calls: 0 };
+    const result = await runSuite({
+      suite,
+      games: [takeOrPass],
+      outDir,
+      episodeTimeLimitMs: 25,
+      agentFactory: (job) => /** @type {Agent} */ ({
+        id: `deadline-agent-${job.key}`,
+        track: 'community',
+        async act(ctx) {
+          state.calls += 1;
+          if (job.key === jobs[0].key) {
+            state.pending += 1;
+            return new Promise((_resolve, reject) => {
+              const abort = () => {
+                state.pending -= 1;
+                reject(new Error('stub model aborted'));
+              };
+              if (ctx.signal?.aborted) abort();
+              else ctx.signal?.addEventListener('abort', abort, { once: true });
+            });
+          }
+          return { text: /** @type {string[]} */ (ctx.legalActions)[0] };
+        },
+        async dispose() {
+          state.disposed += 1;
+        },
+      }),
+    });
+
+    assert.equal(result.stopped, null, 'a timed-out game does not stop the suite');
+    assert.equal(result.run.counts.played, 2, 'the timed-out game and the next game are recorded');
+    assert.equal(result.run.counts.failed, 0);
+    assert.equal(result.trajectories[0]?.end.reason, 'time-limit');
+    assert.equal(result.trajectories[0]?.end.timeLimitMs, 25);
+    assert.ok((result.trajectories[0]?.end.elapsedMs ?? 0) >= 25);
+    assert.equal(result.trajectories[1]?.end.reason, 'terminal');
+    assert.equal(state.calls, 2, 'the next game gets a normal model call');
+    assert.equal(state.pending, 0, 'the timed-out model call settled on cancellation');
+    assert.equal(state.disposed, 2, 'both episode agents were disposed before the suite returned');
   } finally {
     await rm(outDir, { recursive: true, force: true });
   }

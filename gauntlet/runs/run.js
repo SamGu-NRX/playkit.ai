@@ -64,6 +64,13 @@ import { atomicWriteFile, canonicalSha256, readJsonFile, sha256Hex, trajectoryPa
 export const RUN_FORMAT = 'playkit-gauntlet-run/1';
 
 /**
+ * Default wall-clock budget for one game in a suite run. The existing
+ * per-call timeout still bounds individual model attempts; this second limit
+ * prevents a sequence of retries and moves from keeping one game open forever.
+ */
+export const DEFAULT_EPISODE_TIME_LIMIT_MS = 15 * 60 * 1000;
+
+/**
  * The bundle's spend ledger, written next to run.json. Append-only JSON
  * Lines; each line's `prev` names the SHA-256 of the previous line's exact
  * text (null on the first line), so any edit or drop of a line is visible.
@@ -573,7 +580,8 @@ function gitCommit() {
  *   run.json's limits for provenance; the OpenAI reasoning effort itself is
  *   applied by the agent layer (reasoning.effort / reasoning_effort).
  * @property {number} [episodeTimeLimitMs] Wall-clock cap on each episode, in
- *   milliseconds. Enforced here by passing it to every `runEpisode` call (the
+ *   milliseconds. Defaults to `DEFAULT_EPISODE_TIME_LIMIT_MS`. Enforced here
+ *   by passing it to every `runEpisode` call (the
  *   runner ends a stalled episode with a `time-limit` trajectory) and
  *   recorded in run.json's limits for provenance.
  * @property {boolean} [resume] Verify existing trajectory files and skip the
@@ -636,7 +644,7 @@ export async function runSuite({
   callTimeoutMs,
   thinkingBudget,
   reasoningEffort,
-  episodeTimeLimitMs,
+  episodeTimeLimitMs = DEFAULT_EPISODE_TIME_LIMIT_MS,
   resume = false,
   signal,
   prices,
